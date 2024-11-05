@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
-from app.models.organization import Organization
-from app.models.supabase.organization import (
+from lib.models.organization import Organization
+from lib.models.supabase.organization import (
     OrganizationRoleModel,
     OrganizationTeamModel,
     OrganizationTeamMembersModel,
@@ -8,7 +8,7 @@ from app.models.supabase.organization import (
     OrganizationsModel,
     UserProfileModel,
 )
-from app.models.supabase.supabase_model import SupabaseModel
+from lib.models.supabase.supabase_model import SupabaseModel
 from pydantic import Field, UUID4
 from pydantic.types import PositiveInt
 from datetime import datetime

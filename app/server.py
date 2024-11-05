@@ -1,17 +1,18 @@
 from typing import Annotated
 from app.core.session_storage import SessionStorage, get_storage, get_supabase_client
 from app.core.supabase import SupaClientDep, get_supabase_client_by_request
-from app.models.organization import AddOrganizationUserRequestData, Organization, OrganizationRequestData, add_organization_user, create_organization
-from app.models.supabase.organization import OrganizationsModel, OrganizationUsersModel
+from lib.models.organization import AddOrganizationUserRequestData, Organization, OrganizationRequestData, add_organization_user, create_organization
+from lib.models.supabase.organization import OrganizationsModel, OrganizationUsersModel
 from fastapi import Depends, FastAPI, HTTPException, Header, Request
 from fastapi.responses import RedirectResponse
 from langserve import add_routes
 from supabase.client import AsyncClient
-from gotrue.types import Session, UserResponse
+from supabase_auth.types import Session, UserResponse
 from app.core.init_app import init_app
-from app.core.config import settings
-from app.chains.virtualbuddy_base import chain as virtual_buddy_chain
+# from app.chains.virtualbuddy_base import chain as virtual_buddy_chain
 from pydantic import UUID4, BaseModel
+
+from lib.load_env import SETTINGS
 
 app = init_app()
 
@@ -22,6 +23,10 @@ set_debug(True)
 @app.get("/")
 async def redirect_root_to_docs():
     return RedirectResponse("/docs")
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 @app.get("/auth/callback")
 async def api_authenticate_supabase():
@@ -57,14 +62,14 @@ async def api_add_organization_user(organization_id: UUID4, user_data: AddOrgani
     except Exception as e:
         raise HTTPException(500, str(e))
 
-add_routes(
-    app,
-    virtual_buddy_chain(),
-    path="/chat",
-    # enable_feedback_endpoint=True,
-    # enable_public_trace_link_endpoint=True,
-    # playground_type="chat",
-)
+# add_routes(
+#     app,
+#     virtual_buddy_chain(),
+#     path="/chat",
+#     # enable_feedback_endpoint=True,
+#     # enable_public_trace_link_endpoint=True,
+#     # playground_type="chat",
+# )
 
 # Edit this to add the chain you want to add
 # add_routes(app, NotImplemented)
@@ -72,4 +77,4 @@ add_routes(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host=settings.SERVER_HOST, port=settings.SERVER_PORT)
+    uvicorn.run(app, host=SETTINGS.server_host, port=SETTINGS.server_port)

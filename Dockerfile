@@ -1,21 +1,23 @@
-FROM python:3.11-slim
+FROM markushaverinen/tc_base:latest
 
-RUN pip install poetry==1.6.1
+COPY . .
+COPY app app
+COPY lib lib
+COPY file_repository file_repository
+# RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
-RUN poetry config virtualenvs.create false
+# Use an ARG to set a default port value
+ARG DEFAULT_PORT=4000
 
-WORKDIR /code
+# Set the ENV variable, which can be overridden by the user when running the container
+ENV SERVER_PORT=${DEFAULT_PORT}
 
-COPY ./pyproject.toml ./README.md ./poetry.lock* ./
+# Use the SERVER_PORT in the EXPOSE command
+EXPOSE ${SERVER_PORT}
 
-COPY ./package[s] ./packages
+# Add a health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD curl --fail http://localhost:${SERVER_PORT}/health || exit 1
 
-RUN poetry install  --no-interaction --no-ansi --no-root
-
-COPY ./app ./app
-
-RUN poetry install --no-interaction --no-ansi
-
-EXPOSE 8080
-
-CMD exec uvicorn app.server:app --host 0.0.0.0 --port 8080
+# Modify the entry point script to use the SERVER_PORT environment variable
+ENTRYPOINT ["./start_server.sh"]

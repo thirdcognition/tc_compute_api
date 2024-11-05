@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal, Optional, Any
-from app.models.supabase.supabase_model import SupabaseModel
+from lib.models.supabase.supabase_model import SupabaseModel
 from pydantic import UUID4, Field, Json
 from supabase.client import AsyncClient
 

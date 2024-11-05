@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Literal, List, Optional
-from app.models.supabase.supabase_model import SupabaseModel
+from lib.models.supabase.supabase_model import SupabaseModel
 from pydantic import field_validator
 from pydantic.types import UUID4
 from enum import Enum

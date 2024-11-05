@@ -4,9 +4,9 @@ from supabase import ClientOptions
 
 # from gotrue.types import CodeExchangeParams
 
-from app.core.config import settings, logger
-
 from typing import Dict, Any, Optional
+
+from lib.load_env import SETTINGS, logger
 
 async def get_supabase_client(access_token: str | None = None) -> AsyncClient:
     options = ClientOptions(
@@ -19,8 +19,8 @@ async def get_supabase_client(access_token: str | None = None) -> AsyncClient:
         options.headers = {"Authorization": f"Bearer {access_token}"}
 
     return await create_async_client(
-        settings.SUPABASE_URL,
-        settings.SUPABASE_KEY,
+        SETTINGS.SUPABASE_URL,
+        SETTINGS.SUPABASE_KEY,
         options=options,
     )
 

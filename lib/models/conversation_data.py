@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Union
-from app.models.organization_user import OrganizationUser
-from app.models.supabase.llm_conversation import LlmConversationModel, LlmConversationMessageModel, LlmConversationMessageHistoryModel, LlmConversationThreadModel
-from app.models.user_data import UserData
+from lib.models.organization_user import OrganizationUser
+from lib.models.supabase.llm_conversation import LlmConversationModel, LlmConversationMessageModel, LlmConversationMessageHistoryModel, LlmConversationThreadModel
+from lib.models.user_data import UserData
 from pydantic import UUID4
 from postgrest import APIResponse
 from supabase.client import AsyncClient

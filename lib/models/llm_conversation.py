@@ -1,6 +1,6 @@
 from app.core.enums import LanguageModel, ollama_models_chat
-from app.models.conversation_data import LlmConversationData
-from app.models.supabase.llm_conversation import LlmConversationModel, LlmConversationMessageModel, LlmConversationMessageHistoryModel
+from lib.models.conversation_data import LlmConversationData
+from lib.models.supabase.llm_conversation import LlmConversationModel, LlmConversationMessageModel, LlmConversationMessageHistoryModel
 from pydantic import BaseModel, UUID4, Field
 from cachetools import TTLCache
 from datetime import datetime, timezone

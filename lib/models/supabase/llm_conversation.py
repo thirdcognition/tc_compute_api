@@ -1,4 +1,4 @@
-from app.models.supabase.supabase_model import SupabaseModel
+from lib.models.supabase.supabase_model import SupabaseModel
 from pydantic import Field, UUID4
 from datetime import datetime
 from typing import List, Optional

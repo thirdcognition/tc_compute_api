@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from app.models.supabase.supabase_model import SupabaseModel
+from lib.models.supabase.supabase_model import SupabaseModel
 from pydantic import Field, UUID4
 from pydantic.types import PositiveInt
 from datetime import datetime

@@ -1,5 +1,5 @@
 from app.core.supabase import get_supabase_service_client
-from app.models.supabase.organization import (
+from lib.models.supabase.organization import (
     OrganizationUsersModel,
     OrganizationsModel,
     UserProfileModel,

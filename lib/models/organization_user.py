@@ -1,8 +1,8 @@
 import asyncio
 from app.core.session_storage import SessionStorage, get_storage
-from app.models.organization import Organization
-from app.models.supabase.organization import OrganizationRoleModel, OrganizationTeamModel, OrganizationTeamMembersModel, OrganizationUsersModel, OrganizationsModel, UserProfileModel
-from app.models.user_data import UserData
+from lib.models.organization import Organization
+from lib.models.supabase.organization import OrganizationRoleModel, OrganizationTeamModel, OrganizationTeamMembersModel, OrganizationUsersModel, OrganizationsModel, UserProfileModel
+from lib.models.user_data import UserData
 from supabase.client import AsyncClient
 from pydantic import UUID4
 from typing import Dict, List, Optional

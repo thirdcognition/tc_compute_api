@@ -2,13 +2,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.core.config import settings
 from app.core.supabase import supabase_middleware
+from lib.load_env import SETTINGS
 
 def init_app() -> FastAPI:
     # init FastAPI with lifespan
     app = FastAPI(
-        title=settings.PROJECT_NAME,
+        title=SETTINGS.project_name,
         # openapi_url=f"{settings.API_V1_STR}/openapi.json",
         # generate_unique_id_function=lambda router: f"{router.tags[0]}-{router.name}",
     )

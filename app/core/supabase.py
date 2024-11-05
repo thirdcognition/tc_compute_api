@@ -5,15 +5,15 @@ from typing import Annotated, AsyncGenerator, Any, Awaitable, Callable, Optional
 from app.core.session_storage import SessionStorage, get_storage
 from supabase.client import AsyncClient, create_async_client
 from supabase import ClientOptions
-from gotrue.types import Session
+from supabase_auth.types import Session
 from fastapi import Depends, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 
-from gotrue.errors import AuthApiError
+from supabase_auth.errors import AuthApiError
 from supabase.client import AsyncClient
 
-from app.core.config import settings, logger
+from lib.load_env import SETTINGS, logger
 
 get_oauth2: OAuth2PasswordBearer = OAuth2PasswordBearer(
     tokenUrl="please login by supabase-js to get token"
@@ -39,7 +39,7 @@ async def get_supabase_service_client() -> AsyncGenerator[AsyncClient, None]:
                 resetClient = True
 
         if (not _service_client or resetClient or (session and session.expires_at < int(time.time()))):
-            _service_client = await create_async_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY, opt)
+            _service_client = await create_async_client(SETTINGS.supabase_url, SETTINGS.supabase_service_key, opt)
 
         yield _service_client
     except Exception as e:
@@ -54,9 +54,7 @@ async def _get_supabase_client(
 ) -> AsyncGenerator[AsyncClient, None]:
     try:
         supabase_client:AsyncClient = await get_storage(access_token).get_supabase_client()
-        # checks all done in supabase-py !
-        # await client.auth.set_session(token.access_token, token.refresh_token)
-        # session = await client.auth.get_session()
+
         yield supabase_client
 
     except AuthApiError as e:
