@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "tc-compute-api"
+version = "0.1.0"
+description = ""
+authors = ["Markus Haverinen <markus@thirdcognition.com>"]
+readme = "README.md"
+packages = [
+    { include = "app" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.13"
+uvicorn = "^0.23.2"
+supabase =  {git = "https://github.com/mathatan/supabase-py.git"}
+python-dotenv = "^1.0.1"
+pydantic = "^2.9.2"
+pydantic-settings = "^2.6.1"
+toml = "^0.10.2"
+azure-identity = "^1.19.0"
+beautifulsoup4 = "^4.12.3"
+flashrank = "^0.2.9"
+fuzzywuzzy = "^0.18.0"
+markdown = "^3.7"
+playwright = "^1.48.0"
+pymupdf = "^1.24.13"
+python-levenshtein = "^0.26.1"
+rapidocr-onnxruntime = "^1.3.25"
+sentence-transformers = "^3.2.1"
+transformers = "^4.46.1"
+watchdog = "^6.0.0"
+langchain = "^0.3.7"
+langchain-anthropic = "^0.2.4"
+langchain-aws = "^0.2.6"
+langchain-chroma = "^0.1.4"
+langchain-cli = "^0.0.31"
+langchain-community = "^0.3.5"
+langchain-core = "^0.3.15"
+langchain-experimental = "^0.3.3"
+langchain-groq = "^0.2.1"
+langchain-huggingface = "^0.1.2"
+langchain-openai = "^0.2.5"
+langgraph = "^0.2.45"
+langserve = "^0.3.0"
+langsmith = "^0.1.139"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
