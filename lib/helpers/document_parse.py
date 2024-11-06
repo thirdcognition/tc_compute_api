@@ -1,3 +1,4 @@
+from enum import Enum
 import io
 import os
 import re
@@ -11,7 +12,6 @@ from rapidocr_onnxruntime import RapidOCR
 # from lib.db.source import db_source_exists, get_db_sources, save_db_source
 from lib.helpers.document_tools import (
     a_semantic_splitter,
-    semantic_splitter,
     split_markdown,
     split_text,
 )
@@ -43,7 +43,6 @@ def parse_images_to_text(
     ocrs,
     progress_cb=None,
 ) -> str:
-
     global ocr
 
     text = ""
@@ -61,12 +60,12 @@ def parse_images_to_text(
         i = i + 1
         result = None
 
-        if img["xref"] != None and img["xref"] in ocrs:
+        if img["xref"] is not None and img["xref"] in ocrs:
             result = ocrs[img["xref"]]
         else:
             result, _ = ocr(img["img"], use_det=True, use_cls=True, use_rec=True)
 
-            if img["xref"] != None:
+            if img["xref"] is not None:
                 ocrs[img["xref"]] = result
 
         if result and len(result) > 3:
@@ -106,12 +105,12 @@ def extract_images_from_page(
 
         buf = None
 
-        if xref == None or xref not in xrefs:
+        if xref is None or xref not in xrefs:
             pix = fitz.Pixmap(doc, xref)
             buf = np.frombuffer(pix.samples, dtype=np.uint8).reshape(
                 pix.height, pix.width, -1
             )
-            if xref != None:
+            if xref is not None:
                 xrefs[xref] = buf
         else:
             buf = xrefs[xref]
@@ -182,7 +181,6 @@ def process_page(
 
 #     return chunks
 
-from enum import Enum
 
 class SourceType(Enum):
     FILE = "file"
@@ -193,7 +191,7 @@ async def process_source_contents(
     source_name: str,
     uploaded_file: io.BytesIO = None,
     text_content: str = None,
-    type:SourceType = SourceType.FILE,
+    type: SourceType = SourceType.FILE,
     categories: List[str] = None,
     overwrite=False,
 ):
@@ -290,7 +288,7 @@ async def process_document_filetype(file: io.BytesIO, filetype=None, progress_cb
     return await a_semantic_splitter(
         text,
         progress_cb=lambda x, y: (
-            progress_cb(min(1, 0.6 + 0.4 * y / x), f"Splitting text {y+1}/{x}")
+            progress_cb(min(1, 0.6 + 0.4 * y / x), f"Splitting text {y + 1}/{x}")
             if progress_cb
             else None
         ),

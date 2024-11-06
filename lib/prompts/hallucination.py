@@ -44,7 +44,7 @@ class HallucinationParser(BaseOutputParser[tuple[bool, BaseMessage]]):
 
 hallucination = PromptFormatter(
     system=textwrap.dedent(
-        f"""
+        """
         You are a grader assessing whether an LLM generation is grounded in / supported by a set of retrieved facts. Only check for facts do not
         check for formatting issues or that the provided content is correctly formatted in the specified format. Do not check for valid JSON.
         Just check if LLM generation is grounded on facts.

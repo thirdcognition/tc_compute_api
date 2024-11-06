@@ -1,12 +1,7 @@
-from datetime import datetime
-import textwrap
-from typing import Dict, List, Optional, Union
+from typing import List, Optional
 from pydantic import BaseModel, Field
-import sqlalchemy as sqla
-from sqlalchemy.ext.mutable import MutableList
+from lib.helpers.shared import get_item_str
 
-from lib.helpers.shared import get_item_str, pretty_print
-from lib.load_env import SETTINGS
 
 class ConceptData(BaseModel):
     id: str = Field(
@@ -29,6 +24,7 @@ class ConceptData(BaseModel):
         description="Detailed and descriptive content in written format based on the context and identified concept. Should contain all relevant information in a readable format.",
         title="Contents",
     )
+
 
 class ConceptStructure(BaseModel):
     id: str = Field(
@@ -56,7 +52,10 @@ class ConceptList(BaseModel):
         description="A list of concepts identified in the context", title="Concepts"
     )
 
-def get_concept_str(concepts: List, one_liner=False, as_json=True, as_array=True, as_tags=False):
+
+def get_concept_str(
+    concepts: List, one_liner=False, as_json=True, as_array=True, as_tags=False
+):
     key_names = [
         "id",
         "parent_id",

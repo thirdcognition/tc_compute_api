@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Annotated, AsyncGenerator, Any, Awaitable, Callable, Optional, Tuple
+from typing import Annotated, AsyncGenerator, Awaitable, Callable, Optional, Tuple
 
 from app.core.session_storage import SessionStorage, get_storage
 from supabase.client import AsyncClient, create_async_client
@@ -11,7 +11,6 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 
 from supabase_auth.errors import AuthApiError
-from supabase.client import AsyncClient
 
 from lib.load_env import SETTINGS, logger
 
@@ -22,24 +21,31 @@ AccessTokenDep = Annotated[str, Depends(get_oauth2)]
 
 _service_client: AsyncClient | None = None
 
+
 async def get_supabase_service_client() -> AsyncGenerator[AsyncClient, None]:
-    opt=ClientOptions(
+    opt = ClientOptions(
         auto_refresh_token=False,
         persist_session=False,
     )
     global _service_client
     try:
         resetClient = False
-        session:Session = None
-        if (_service_client):
+        session: Session = None
+        if _service_client:
             try:
                 session = await _service_client.auth.get_session()
             except Exception as e:
                 logger.error(e)
                 resetClient = True
 
-        if (not _service_client or resetClient or (session and session.expires_at < int(time.time()))):
-            _service_client = await create_async_client(SETTINGS.supabase_url, SETTINGS.supabase_service_key, opt)
+        if (
+            not _service_client
+            or resetClient
+            or (session and session.expires_at < int(time.time()))
+        ):
+            _service_client = await create_async_client(
+                SETTINGS.supabase_url, SETTINGS.supabase_service_key, opt
+            )
 
         yield _service_client
     except Exception as e:
@@ -53,7 +59,9 @@ async def _get_supabase_client(
     access_token: AccessTokenDep,
 ) -> AsyncGenerator[AsyncClient, None]:
     try:
-        supabase_client:AsyncClient = await get_storage(access_token).get_supabase_client()
+        supabase_client: AsyncClient = await get_storage(
+            access_token
+        ).get_supabase_client()
 
         yield supabase_client
 
@@ -68,7 +76,10 @@ async def _get_supabase_client(
     #     if supabase_client:
     #         await supabase_client.auth.sign_out()
 
-async def get_supabase_client_by_request(request: Request) -> Tuple[Optional[AsyncClient], Optional[SessionStorage]]:
+
+async def get_supabase_client_by_request(
+    request: Request,
+) -> Tuple[Optional[AsyncClient], Optional[SessionStorage]]:
     """
     This function extracts access token, refresh token, and code from the request headers or query parameters.
     It then uses these tokens to get a session storage and a supabase client.
@@ -92,9 +103,7 @@ async def get_supabase_client_by_request(request: Request) -> Tuple[Optional[Asy
     if refresh_header:
         _, __, refresh_token = refresh_header.partition(" ")
 
-
-
-    if 'code' in request.query_params:
+    if "code" in request.query_params:
         redirect = f"{request.url.scheme}://{request.url.netloc}{request.url.path.split('?')[0]}"
 
         if code_header:
@@ -102,7 +111,7 @@ async def get_supabase_client_by_request(request: Request) -> Tuple[Optional[Asy
         elif request.query_params.get("code"):
             code = request.query_params.get("code")
 
-        logger.debug(f"Extracted tokens: {access_token =} {refresh_token =} {code =}")
+        logger.debug(f"Extracted tokens: {access_token=} {refresh_token=} {code=}")
 
     # Get session storage and supabase client
     store: SessionStorage = get_storage(access_token, refresh_token, code, redirect)
@@ -111,7 +120,9 @@ async def get_supabase_client_by_request(request: Request) -> Tuple[Optional[Asy
     return supabase_client, store
 
 
-async def supabase_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+async def supabase_middleware(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     """
     Middleware function to handle Supabase authentication.
 
@@ -120,14 +131,18 @@ async def supabase_middleware(request: Request, call_next: Callable[[Request], A
     :return: The response object.
     """
     # Skip auth check for CORS preflight requests and /auth/login.
-    if request.method == "OPTIONS" and request.headers.get("access-control-request-method") or request.url.path == "/auth/login":
+    if (
+        request.method == "OPTIONS"
+        and request.headers.get("access-control-request-method")
+        or request.url.path == "/auth/login"
+    ):
         return await call_next(request)
 
     supabase_client: AsyncClient | None = None
     try:
         supabase_client, _ = await get_supabase_client_by_request(request)
     except HTTPException as e:
-            return JSONResponse(status_code=e.status_code, content={"error": e.detail})
+        return JSONResponse(status_code=e.status_code, content={"error": e.detail})
     except Exception as e:
         raise e
 
@@ -145,7 +160,7 @@ async def supabase_middleware(request: Request, call_next: Callable[[Request], A
 
     print(f"Properly authenticated user {session.user.id}")
 
-    if request.headers.get('content-type') == 'application/json':
+    if request.headers.get("content-type") == "application/json":
         request_data = await request.json()
         if "input" in request_data:
             request_data["input"]["tokens"] = {

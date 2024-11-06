@@ -1,21 +1,24 @@
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from lib.models.supabase.supabase_model import SupabaseModel
 from pydantic import Field, UUID4
 from pydantic.types import PositiveInt
 from datetime import datetime
-from postgrest import APIResponse
 from supabase.client import AsyncClient
 
 
 class UserProfileModel(SupabaseModel):
-    id: UUID4 | None = None
-    auth_id: UUID4 | None = None
-    name: Optional[str] = None
+    id: Optional[UUID4] = Field(default=None)
+    auth_id: Optional[UUID4] = Field(default=None)
+    email: Optional[str] = Field(default=None)
+    name: Optional[str] = Field(default=None)
+    profile_picture: Optional[str] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
-    disabled_at: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    active_organization_id: Optional[UUID4] = None
-    active_conversation_id: Optional[UUID4] = None
+    disabled_at: Optional[datetime] = Field(default=None)
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
+    active_organization_id: Optional[UUID4] = Field(default=None)
+    active_conversation_id: Optional[UUID4] = Field(default=None)
 
     async def save_to_supabase(self, supabase: AsyncClient):
         await super().save_to_supabase(supabase, "user_profile")
@@ -23,14 +26,17 @@ class UserProfileModel(SupabaseModel):
     async def fetch_from_supabase(self, supabase: AsyncClient):
         return await super().fetch_from_supabase(supabase, "user_profile", self.id)
 
+
 class OrganizationRoleModel(SupabaseModel):
-    id: UUID4 | None = None
+    id: Optional[UUID4] = Field(default=None)
     name: str
-    description: str | None = None
+    description: Optional[str] = Field(default=None)
     seniority: PositiveInt
-    disabled: bool = False
-    disabled_at: datetime | None = None
-    created_at: datetime | None = None
+    metadata: Optional[Dict] = Field(default=None)
+    disabled: bool = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
     organization_id: UUID4
 
     async def save_to_supabase(self, supabase: AsyncClient):
@@ -41,12 +47,14 @@ class OrganizationRoleModel(SupabaseModel):
 
 
 class OrganizationTeamModel(SupabaseModel):
-    id: UUID4 | None = None
+    id: Optional[UUID4] = Field(default=None)
     name: str
-    disabled: bool = False
-    disabled_at: datetime | None = None
-    created_at: datetime | None = None
-    owner_id: UUID4 | None = None
+    metadata: Optional[Dict] = Field(default=None)
+    disabled: bool = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
+    owner_id: Optional[UUID4] = Field(default=None)
     organization_id: UUID4
 
     async def save_to_supabase(self, supabase: AsyncClient):
@@ -61,9 +69,10 @@ class OrganizationTeamMembersModel(SupabaseModel):
     user_id: UUID4
     team_id: UUID4
     role_id: UUID4
-    disabled: bool = False
-    disabled_at: datetime | None = None
-    created_at: datetime | None = None
+    disabled: bool = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
     organization_id: UUID4
 
     async def save_to_supabase(self, supabase: AsyncClient):
@@ -83,10 +92,11 @@ class OrganizationUsersModel(SupabaseModel):
     auth_id: UUID4
     user_id: UUID4
     organization_id: UUID4
-    is_admin: bool = False
-    disabled: bool = False
-    disabled_at: datetime | None = None
-    created_at: datetime | None = None
+    is_admin: bool = Field(default=False)
+    disabled: bool = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
 
     async def save_to_supabase(self, supabase: AsyncClient):
         await super().save_to_supabase(
@@ -102,13 +112,16 @@ class OrganizationUsersModel(SupabaseModel):
 
 
 class OrganizationsModel(SupabaseModel):
-    id: UUID4 | None = None
+    id: Optional[UUID4] = Field(default=None)
     name: str
-    website: str | None = None
-    disabled: bool = False
-    disabled_at: datetime | None = None
-    created_at: datetime | None = None
-    owner_id: UUID4 | None = None
+    website: Optional[str] = Field(default=None)
+    logo: Optional[str] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
+    disabled: bool = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
+    owner_id: Optional[UUID4] = Field(default=None)
 
     async def save_to_supabase(self, supabase: AsyncClient):
         await super().save_to_supabase(supabase, "organizations")

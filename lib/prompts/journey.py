@@ -306,7 +306,7 @@ matched_descriptions = [
 ]
 matched_descriptions_str = "\n".join(
     [
-        f"Example {i+1}:\n\nJob description:\n{v}\n\nOutput:\n<role>{v}</role>"
+        f"Example {i + 1}:\n\nJob description:\n{v}\n\nOutput:\n<role>{v}</role>"
         for i, (k, v) in enumerate(matched_descriptions)
     ]
 )

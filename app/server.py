@@ -1,14 +1,20 @@
-from typing import Annotated
-from app.core.session_storage import SessionStorage, get_storage, get_supabase_client
-from app.core.supabase import SupaClientDep, get_supabase_client_by_request
-from lib.models.organization import AddOrganizationUserRequestData, Organization, OrganizationRequestData, add_organization_user, create_organization
+from langchain.globals import set_debug
+from app.core.session_storage import get_storage, get_supabase_client
+from app.core.supabase import SupaClientDep
+from lib.models.organization import (
+    AddOrganizationUserRequestData,
+    Organization,
+    OrganizationRequestData,
+    add_organization_user,
+    create_organization,
+)
 from lib.models.supabase.organization import OrganizationsModel, OrganizationUsersModel
-from fastapi import Depends, FastAPI, HTTPException, Header, Request
+from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
-from langserve import add_routes
 from supabase.client import AsyncClient
-from supabase_auth.types import Session, UserResponse
+from supabase_auth.types import Session
 from app.core.init_app import init_app
+
 # from app.chains.virtualbuddy_base import chain as virtual_buddy_chain
 from pydantic import UUID4, BaseModel
 
@@ -16,51 +22,66 @@ from lib.load_env import SETTINGS
 
 app = init_app()
 
-from langchain.globals import set_debug
 
 set_debug(True)
+
 
 @app.get("/")
 async def redirect_root_to_docs():
     return RedirectResponse("/docs")
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
 
 @app.get("/auth/callback")
 async def api_authenticate_supabase():
     return {"message": "ok"}
 
+
 class LoginRequestData(BaseModel):
     email: str
     password: str
 
+
 @app.post("/auth/login")
 async def api_login(login_request: LoginRequestData) -> Session:
-    print(f"login: {login_request.email =}, {login_request.password =}")
+    print(f"login: {login_request.email=}, {login_request.password=}")
     if login_request.email is None or login_request.password is None:
         raise HTTPException(401, "Email and Password are required for authentication")
 
-    supabase:AsyncClient = await get_supabase_client()
-    await supabase.auth.sign_in_with_password({"email": login_request.email, "password": login_request.password})
-    session:Session = await supabase.auth.get_session()
-    store:SessionStorage = get_storage(access_token = session.access_token, supabase_client = supabase)
-    print(f"session: {session =}")
+    supabase: AsyncClient = await get_supabase_client()
+    await supabase.auth.sign_in_with_password(
+        {"email": login_request.email, "password": login_request.password}
+    )
+    session: Session = await supabase.auth.get_session()
+    # store: SessionStorage =
+    get_storage(access_token=session.access_token, supabase_client=supabase)
+    print(f"session: {session=}")
     return session
 
 
 @app.post("/organization/create")
-async def api_create_organization(organization: OrganizationRequestData, supabase: SupaClientDep) -> OrganizationsModel:
-    org:Organization = await create_organization(supabase, organization)
+async def api_create_organization(
+    organization: OrganizationRequestData, supabase: SupaClientDep
+) -> OrganizationsModel:
+    org: Organization = await create_organization(supabase, organization)
     return org.model
 
+
 @app.post("/organization/{organization_id}/add_user")
-async def api_add_organization_user(organization_id: UUID4, user_data: AddOrganizationUserRequestData, supabase: SupaClientDep) -> OrganizationUsersModel:
+async def api_add_organization_user(
+    organization_id: UUID4,
+    user_data: AddOrganizationUserRequestData,
+    supabase: SupaClientDep,
+) -> OrganizationUsersModel:
     try:
         return await add_organization_user(supabase, organization_id, user_data)
     except Exception as e:
         raise HTTPException(500, str(e))
+
 
 # add_routes(
 #     app,

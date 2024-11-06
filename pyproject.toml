@@ -42,7 +42,30 @@ langchain-openai = "^0.2.5"
 langgraph = "^0.2.45"
 langserve = "^0.3.0"
 langsmith = "^0.1.139"
+black = "^23.9.1"
+flake8 = "^6.1.0"
+autopep8 = "^2.0.2"
 
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.poetry.scripts]
+lint = "lint:main"
 
 [build-system]
 requires = ["poetry-core"]

@@ -194,7 +194,8 @@ class RagChatChain(RagChain):
 rag_chains = {}
 
 
-## Rag not implemented.
+# Rag not implemented.
+
 
 def get_rag_chain(
     store_ids: List[str],

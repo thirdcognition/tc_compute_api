@@ -7,7 +7,7 @@ from langchain_core.output_parsers import (
     PydanticOutputParser,
 )
 from langchain_core.messages import BaseMessage
-from lib.models.prompts import TitledSummary
+from lib.models.structures.prompts import TitledSummary
 from lib.prompts.base import (
     MAINTAIN_CONTENT_AND_USER_LANGUAGE,
     PromptFormatter,
@@ -43,7 +43,7 @@ action.parser = TagsParser(min_len=10)
 
 grader = PromptFormatter(
     system=textwrap.dedent(
-        f"""
+        """
         You are a grader assessing relevance of a retrieved document to a user question.
 
         If the document contains keywords related to the user question, grade it as relevant.
@@ -68,7 +68,7 @@ grader.parser = JsonOutputParser()
 
 check = PromptFormatter(
     system=textwrap.dedent(
-        f"""
+        """
         Act as a verification machine. Check that the items matches the format exactly and answer with one of
         the appropriate option only. Do not explain your answer or add anything else after or before the answer.
         """
@@ -119,7 +119,7 @@ class QuestionClassifierParser(BaseOutputParser[tuple[bool, BaseMessage]]):
 
 question_classifier = PromptFormatter(
     system=textwrap.dedent(
-        f"""
+        """
         Act as a strict message classifier.
         Return "yes" if the message is a question or "no" if the message is not a question.
         Do not add anything else in the response. Just return "yes" or "no".
@@ -231,7 +231,7 @@ combine_description.parser = TagsParser(min_len=10)
 
 error_retry = PromptFormatter(
     system=textwrap.dedent(
-        f"""
+        """
         Act as a error fixer. You are given a prompt, a completion and an error message.
         The completion did not satisfy the constraints given in the prompt. Fix the completion
         based on the error.

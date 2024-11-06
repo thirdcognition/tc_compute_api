@@ -35,6 +35,7 @@ class ActionModel(BaseModel):
         title="Done by end of day #",
     )
 
+
 class ModuleStructure(BaseModel):
     id: str = Field(
         default=None,

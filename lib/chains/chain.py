@@ -34,6 +34,4 @@ class Chain(BaseParserChain):
 
             self.chain = self.hallunication_chain(custom_prompt)
 
-
-
         return self.chain

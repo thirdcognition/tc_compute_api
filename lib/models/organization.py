@@ -2,14 +2,14 @@ from app.core.supabase import get_supabase_service_client
 from lib.models.supabase.organization import (
     OrganizationUsersModel,
     OrganizationsModel,
-    UserProfileModel,
 )
 from supabase.client import AsyncClient
-from gotrue.types import UserResponse, AdminUserAttributes
+from supabase_auth.types import UserResponse, AdminUserAttributes
 from pydantic import UUID4, BaseModel
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, Optional, Union
 from postgrest import APIResponse
+
 
 class Organization:
     """
@@ -36,6 +36,7 @@ class Organization:
         """
         self.supabase: AsyncClient = supabase
         self.model: OrganizationsModel = organization_model
+
     async def refresh_model(self, organization_instance: OrganizationsModel) -> None:
         """
         Refresh the organization data.
@@ -82,6 +83,30 @@ class Organization:
         return self.model.website
 
     @property
+    def logo(self) -> Optional[str]:
+        """
+        Returns the logo of the organization.
+
+        Returns
+        -------
+        Optional[str]
+            The logo of the organization.
+        """
+        return self.model.logo
+
+    @property
+    def metadata(self) -> Optional[Dict]:
+        """
+        Returns the metadata of the organization.
+
+        Returns
+        -------
+        Optional[Dict]
+            The metadata of the organization.
+        """
+        return self.model.metadata
+
+    @property
     def disabled(self) -> bool:
         """
         Returns whether the organization is disabled.
@@ -118,13 +143,13 @@ class Organization:
         return self.model.created_at
 
     @property
-    def owner_id(self) -> UUID4:
+    def owner_id(self) -> Optional[UUID4]:
         """
         Returns the ID of the organization's owner.
 
         Returns
         -------
-        UUID4
+        Optional[UUID4]
             The ID of the organization's owner.
         """
         return self.model.owner_id
@@ -135,7 +160,7 @@ class Organization:
 
         Returns
         -------
-        Dict
+        str
             The organization data in JSON format.
         """
         return self.model.model_dump_json()
@@ -179,7 +204,10 @@ async def get_organization(
 
 class OrganizationRequestData(BaseModel):
     name: str
-    website: str | None = None
+    website: Optional[str] = None
+    logo: Optional[str] = None
+    metadata: Optional[Dict] = None
+
 
 async def create_organization(
     supabase: AsyncClient, request_data: OrganizationRequestData
@@ -196,7 +224,7 @@ async def create_organization(
     """
     # Get the current user's auth.id
     user = await supabase.auth.get_user()
-    owner_id:UUID4 = user.user.id
+    owner_id: UUID4 = user.user.id
 
     # Check if the organization already exists
     response: APIResponse = (
@@ -213,21 +241,28 @@ async def create_organization(
         return Organization(supabase, organization_model)
 
     # If the organization doesn't exist, create it
-    organization_model = OrganizationsModel(name=request_data.name, website=request_data.website, owner_id=owner_id)
+    organization_model = OrganizationsModel(
+        name=request_data.name,
+        website=request_data.website,
+        logo=request_data.logo,
+        metadata=request_data.metadata,
+        owner_id=owner_id,
+    )
     await organization_model.save_to_supabase(supabase)
     return Organization(supabase, organization_model)
 
 
 class AddOrganizationUserRequestData(BaseModel):
-    email: str | None = None
-    auth_id: UUID4 | None = None
+    email: Optional[str] = None
+    auth_id: Optional[UUID4] = None
+    metadata: Optional[Dict] = None
     as_admin: bool = False
 
 
 async def add_organization_user(
     supabase: AsyncClient,
     organization_id: UUID4,
-    request_data: AddOrganizationUserRequestData
+    request_data: AddOrganizationUserRequestData,
 ) -> OrganizationUsersModel:
     """
     Add a user to an organization in Supabase.
@@ -253,7 +288,10 @@ async def add_organization_user(
         )
     elif request_data.auth_id is not None:
         user_data: APIResponse = (
-            await supabase.table("auth.users").select("*").eq("id", request_data.auth_id).execute()
+            await supabase.table("auth.users")
+            .select("*")
+            .eq("id", request_data.auth_id)
+            .execute()
         )
     else:
         raise ValueError("Either email or auth_id must be provided")
@@ -294,7 +332,10 @@ async def add_organization_user(
             AdminUserAttributes(
                 email=request_data.email,
                 email_confirm=True,
-                data={"organization_id": organization_id, "is_admin": request_data.as_admin},
+                data={
+                    "organization_id": organization_id,
+                    "is_admin": request_data.as_admin,
+                },
             )
         )
         member_data: APIResponse = (
@@ -307,4 +348,3 @@ async def add_organization_user(
         )
         organization_user = OrganizationUsersModel(**member_data.data[0])
         return organization_user
-

@@ -49,19 +49,19 @@ for key in template_files.keys():
 journey_prompts = PromptFormatter(
     system=(
         textwrap.dedent(
-            f"""
-        You are an expert Prompt Writer for Large Language Models.
+            """
+            You are an expert Prompt Writer for Large Language Models.
 
-        Use following examples as a guide on how to write prompts for different actors and targets.
+            Use following examples as a guide on how to write prompts for different actors and targets.
 
-        Export prompts in the define format using JSON.
-        """
+            Export prompts in the define format using JSON.
+            """
         )
         + "\n\n".join(
             [
                 textwrap.dedent(
                     f"""
-        Example {i+1}:
+        Example {i + 1}:
         Actor:
         {template_files[key]['actor']}
         Target:

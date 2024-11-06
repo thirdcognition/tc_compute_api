@@ -2,21 +2,16 @@ import json
 import os
 import pprint as pp
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 from pydantic import BaseModel
 import yaml
 from langchain_core.messages import BaseMessage
 from langchain_core.documents import Document
-from langchain_core.runnables import (
-    RunnableSequence,
-    RunnableWithMessageHistory,
-)
-from langchain_community.chat_message_histories.in_memory import ChatMessageHistory
-from langchain_core.chat_history import BaseChatMessageHistory
 from lib.load_env import DEBUGMODE
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
+
 
 def print_params(msg="", params=""):
     if DEBUGMODE:
@@ -274,7 +269,7 @@ def get_item_str(
             continue
         if isinstance(item, BaseModel):
             item = item.model_dump()
-        ## Replace with Database object
+        # Replace with Database object
         # if isinstance(item, Base):
         #     item = item.__dict__
 
@@ -289,14 +284,12 @@ def get_item_str(
                 if isinstance(value, Document):
                     value = value.page_content
 
-                if not isinstance(
-                    value, (str, int, float, bool, type(None))
-                ):
+                if not isinstance(value, (str, int, float, bool, type(None))):
                     if not as_json:
                         value = yaml.dump(value)
                     else:
                         if isinstance(value, BaseModel):
-                            value = value.model_dump(mode='json')
+                            value = value.model_dump(mode="json")
                         # elif isinstance(value, Base):
                         #     value = value.__dict__
                         elif isinstance(value, (dict, list, tuple, set)):
@@ -308,13 +301,13 @@ def get_item_str(
                                 if isinstance(v, (str, int, float, bool, type(None))):
                                     value[i] = v
                                 elif isinstance(v, BaseModel):
-                                    value[i] = v.model_dump(mode='json')
+                                    value[i] = v.model_dump(mode="json")
                                 # elif isinstance(v, Base):
                                 #     value[i] = v.__dict__
                                 else:
                                     try:
-                                        dump = json.dumps(v)
-                                    except:
+                                        value[i] = json.dumps(v)
+                                    except BaseException:
                                         value[i] = repr(v)
 
                 if isinstance(value, str):

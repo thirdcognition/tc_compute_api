@@ -78,7 +78,7 @@ def validation_param_set(params):
         "output": completion_content,
     }
 
-    print_params(f"New params", new_params)
+    print_params("New params", new_params)
     return new_params
 
 
@@ -141,8 +141,12 @@ class BaseValidationChain(BaseChain):
             )
 
         instance = self
-        validation = lambda x: instance._validate(x)
-        avalidation = lambda x: asyncio.create_task(instance._avalidate(x))
+
+        def validation(x):
+            return instance._validate(x)
+
+        def avalidation(x):
+            return asyncio.create_task(instance._avalidate(x))
 
         self.verify_chain = RunnableParallel(
             completion=self.chain,
@@ -176,7 +180,7 @@ class BaseValidationChain(BaseChain):
 
         fallback_chain = RunnableLambda(
             lambda x: AIMessage(
-                content=f"I seem to be having some trouble answering, please try again a bit later."
+                content="I seem to be having some trouble answering, please try again a bit later."
             )
         )
         self.chain = self.chain.with_fallbacks([fallback_chain])

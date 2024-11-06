@@ -8,12 +8,10 @@ from lib.models.supabase.organization import (
     OrganizationsModel,
     UserProfileModel,
 )
-from lib.models.supabase.supabase_model import SupabaseModel
-from pydantic import Field, UUID4
-from pydantic.types import PositiveInt
-from datetime import datetime
+from pydantic import UUID4
 from postgrest import APIResponse
 from supabase.client import AsyncClient
+
 
 class UserData:
     def __init__(
@@ -30,7 +28,7 @@ class UserData:
         :param auth_id: The authentication ID of the user. Used to fetch user-specific data.
         :type auth_id: UUID4
         :param user_data: The user data, defaults to None. If provided, it is used to initialize the profile attribute.
-        :type user_data: Optional[List[UserProfile]], optional
+        :type user_data: Optional[UserProfile], optional
         """
         self.auth_id: UUID4 = auth_id
         self.supabase: AsyncClient = supabase
@@ -42,7 +40,9 @@ class UserData:
         # The roles the user has in the organizations they are a part of, organized by organization ID. Initialized as None and fetched when needed.
         self.roles: Optional[Dict[UUID4, List[OrganizationRoleModel]]] = None
         # The memberships the user has in the teams they are a part of, organized by organization ID. Initialized as None and fetched when needed.
-        self.memberships: Optional[Dict[UUID4, List[OrganizationTeamMembersModel]]] = None
+        self.memberships: Optional[
+            Dict[UUID4, List[OrganizationTeamMembersModel]]
+        ] = None
         # The user's relationship with the organizations they are a part of, organized by organization ID. Initialized as None and fetched when needed.
         self.as_user: Optional[Dict[UUID4, OrganizationUsersModel]] = None
         self._organization_dict: Optional[Dict[UUID4, Organization]] = None
@@ -75,7 +75,9 @@ class UserData:
             for organization_id, user in self.as_user.items():
                 await user.save_to_supabase(supabase)
 
-    async def fetch_user_profile(self, refresh: bool = False) -> Optional[UserProfileModel]:
+    async def fetch_user_profile(
+        self, refresh: bool = False
+    ) -> Optional[UserProfileModel]:
         """
         Fetch the user profile from Supabase.
 
@@ -96,7 +98,9 @@ class UserData:
                 self.profile = UserProfileModel(**response.data[0])
         return self.profile if self.profile else None
 
-    async def fetch_organizations(self, refresh: bool = False) -> List[OrganizationsModel]:
+    async def fetch_organizations(
+        self, refresh: bool = False
+    ) -> List[OrganizationsModel]:
         """
         Fetch the organizations the user is a part of from Supabase.
 

@@ -1,10 +1,14 @@
-from typing import Dict, List, Optional, Union
+from typing import List, Optional
 from lib.models.organization_user import OrganizationUser
-from lib.models.supabase.llm_conversation import LlmConversationModel, LlmConversationMessageModel, LlmConversationMessageHistoryModel, LlmConversationThreadModel
-from lib.models.user_data import UserData
-from pydantic import UUID4
+from lib.models.supabase.llm_conversation import (
+    LlmConversationModel,
+    LlmConversationMessageModel,
+    LlmConversationMessageHistoryModel,
+    LlmConversationThreadModel,
+)
 from postgrest import APIResponse
-from supabase.client import AsyncClient
+from datetime import datetime, timezone
+
 
 class LlmConversationData:
     def __init__(
@@ -18,27 +22,23 @@ class LlmConversationData:
         """
         Initialize a LlmConversationData object.
 
-        :param supabase: The Supabase client. Used for making API calls to Supabase.
-        :type supabase: AsyncClient
-        :param auth_id: The ID of the user. Used to fetch user-specific data.
-        :type auth_id: UUID4
-        :param organization_id: The ID of the organization. Used to fetch organization-specific data.
-        :type organization_id: UUID4
-        :param _active_conversation_id: The ID of the active conversation, defaults to None.
-        :type _active_conversation_id: Optional[UUID4], optional
+        :param user: The user associated with the conversation data.
+        :type user: OrganizationUser
         :param conversations: The list of conversations, defaults to None. If provided, it is used to initialize the conversations attribute.
-        :type conversations: Optional[List[LlmConversation]], optional
+        :type conversations: Optional[List[LlmConversationModel]], optional
         :param messages: The list of messages, defaults to None. If provided, it is used to initialize the messages attribute.
-        :type messages: Optional[List[LlmConversationMessage]], optional
+        :type messages: Optional[List[LlmConversationMessageModel]], optional
         :param message_history: The list of message history, defaults to None. If provided, it is used to initialize the message_history attribute.
-        :type message_history: Optional[List[LlmConversationMessageHistory]], optional
+        :type message_history: Optional[List[LlmConversationMessageHistoryModel]], optional
         :param threads: The list of threads, defaults to None. If provided, it is used to initialize the threads attribute.
-        :type threads: Optional[List[LlmConversationThread]], optional
+        :type threads: Optional[List[LlmConversationThreadModel]], optional
         """
         self.user: OrganizationUser = user
         self.conversations: Optional[List[LlmConversationModel]] = conversations
         self.messages: Optional[List[LlmConversationMessageModel]] = messages
-        self.message_history: Optional[List[LlmConversationMessageHistoryModel]] = message_history
+        self.message_history: Optional[
+            List[LlmConversationMessageHistoryModel]
+        ] = message_history
         self.threads: Optional[List[LlmConversationThreadModel]] = threads
 
     async def save_all_to_supabase(self):
@@ -73,9 +73,12 @@ class LlmConversationData:
                 await self.user.supabase.table("llm_conversation")
                 .select("*")
                 .eq("owner_id", str(self.user.auth_id))
-                .eq("organization_id", str(self.user.active_organization_id)) .execute()
+                .eq("organization_id", str(self.user.active_organization_id))
+                .execute()
             )
-            self.conversations = [ LlmConversationModel(**data) for data in response.data ]
+            self.conversations = [
+                LlmConversationModel(**data) for data in response.data
+            ]
 
     async def fetch_messages(self, refresh: bool = False) -> None:
         """
@@ -134,5 +137,42 @@ class LlmConversationData:
                 LlmConversationThreadModel(**data) for data in response.data
             ]
 
+    async def new_message(
+        self,
+        model,  # : LanguageModel,
+        initial_message: Optional[str] = None,
+        initial_response: Optional[str] = None,
+    ):
+        """
+        Create a new conversation with the initial message and response from the LLM.
 
+        :param model: The language model used for generating responses.
+        :param initial_message: The initial message content, defaults to None.
+        :type initial_message: Optional[str], optional
+        :param initial_response: The initial response content, defaults to None.
+        :type initial_response: Optional[str], optional
+        """
+        conversation = LlmConversationModel(start_time=datetime.now(timezone.utc))
+        await conversation.save_to_supabase(self.user.supabase)
 
+        if initial_message is not None:
+            message = LlmConversationMessageModel(
+                content=initial_message,
+                model=model,
+                type="human",
+                conversation_id=conversation.id,
+                owner_id=self.user.auth_id,
+                organization_id=self.user.active_organization_id,
+            )
+            await message.save_to_supabase(self.user.supabase)
+
+        if initial_response is not None:
+            response = LlmConversationMessageModel(
+                content=initial_response,
+                model=model,
+                type="ai",
+                conversation_id=conversation.id,
+                owner_id=self.user.auth_id,
+                organization_id=self.user.active_organization_id,
+            )
+            await response.save_to_supabase(self.user.supabase)

@@ -1,11 +1,5 @@
-from datetime import datetime
-from enum import Enum
-import json
-import textwrap
-from typing import Callable, Dict, List, Optional, Set, Union
+from typing import Callable, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
-import sqlalchemy as sqla
-from sqlalchemy.ext.mutable import MutableList
 
 from langchain_core.documents import Document
 from lib.helpers.shared import (
@@ -15,6 +9,7 @@ from lib.helpers.shared import (
     get_text_from_completion,
 )
 from lib.load_env import SETTINGS
+
 
 class TopicModel(BaseModel):
     id: str
@@ -142,7 +137,7 @@ def create_topic_doc_from_list_with_metadata(
                 format_callback(item)
                 if format_callback is not None
                 else (
-                    f"{(item.metadata['title']+':\n') if 'title' in item.metadata else ''}{item.page_content}"
+                    f"{(item.metadata['title'] + ':\n') if 'title' in item.metadata else ''}{item.page_content}"
                     if isinstance(item, Document)
                     else repr(item)
                 )
@@ -167,7 +162,7 @@ def create_topic_doc_from_list_with_metadata(
                     format_callback(item)
                     if format_callback is not None
                     else (
-                        f"{(item.metadata['title']+':\n') if 'title' in item.metadata else ''}{item.page_content}"
+                        f"{(item.metadata['title'] + ':\n') if 'title' in item.metadata else ''}{item.page_content}"
                         if isinstance(item, Document)
                         else repr(item)
                     )
@@ -423,20 +418,20 @@ def parse_topic_items(
             ),
         }
         source_ref = None
-        source = state.get("filename") or state.get("url")
+        # source = state.get("filename") or state.get("url")
         # for ref in response.references:
         #     if ref.type == ReferenceType.source:
         #         if source is not None and source != ref.id:
         #             continue
         #         source_ref = ref
         #         break
-        # if source_ref is not None:
-        #     metadata = {
-        #         "source": source_ref.id,
-        #         "page": source_ref.index,
-        #     }
-        # else:
-        #     metadata = {}
+        if source_ref is not None:
+            metadata = {
+                "source": source_ref.id,
+                "page": source_ref.index,
+            }
+        else:
+            metadata = {}
 
         item = get_topic_item(
             topic,

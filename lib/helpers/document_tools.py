@@ -18,9 +18,9 @@ from langchain_experimental.text_splitter import (
 )
 from langchain.schema.document import Document
 
-from lib.helpers.shared import flatten_dict
 from lib.load_env import SETTINGS
 from lib.chains.init import get_embeddings
+
 # from lib.models.concepts import ConceptDataTable
 # from lib.models.source import SourceContents
 # from lib.models.topics import TopicDataTable
@@ -126,7 +126,7 @@ def semantic_splitter(
             if len(txt.strip()) > 100
             else [txt.strip()]
         )
-        if progress_cb != None and callable(progress_cb):
+        if progress_cb is not None and callable(progress_cb):
             progress_cb(len(less_text), i)
 
     return join_documents(texts, split)
@@ -135,7 +135,9 @@ def semantic_splitter(
 def __split_text(semantic_splitter: SemanticChunker, txt: str):
     try:
         resp = (
-            semantic_splitter.split_text(txt) if len(txt.strip()) > 100 else [txt.strip()]
+            semantic_splitter.split_text(txt)
+            if len(txt.strip()) > 100
+            else [txt.strip()]
         )
     except Exception as e:
         print(e)
@@ -183,7 +185,7 @@ async def a_semantic_splitter(
         }
         for future in concurrent.futures.as_completed(future_to_text):
             texts.extend(future.result())
-            if progress_cb != None and callable(progress_cb):
+            if progress_cb is not None and callable(progress_cb):
                 progress_cb(len(less_text), len(texts))
 
     return join_documents(texts, split)
@@ -230,7 +232,6 @@ def create_document_lists(
         if len(item) > 3000:
             split_texts = split_text(item, split=3000, overlap=100)
             for split_item in split_texts:
-
                 doc = Document(
                     page_content=split_item,
                     metadata=metadata,

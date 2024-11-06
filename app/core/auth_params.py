@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict
 from fastapi import Request
 from supabase import AsyncClient
 
 from app.core.supabase import get_oath2, get_supabase_client
+
 
 async def per_req_config_modifier(config: Dict, request: Request) -> Dict:
     """Modify the config for each request."""

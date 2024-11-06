@@ -147,9 +147,7 @@ concept_hierarchy = PromptFormatter(
         """
     ),
 )
-concept_hierarchy.parser = PydanticOutputParser(
-    pydantic_object=ConceptStructureList
-)
+concept_hierarchy.parser = PydanticOutputParser(pydantic_object=ConceptStructureList)
 
 concept_combiner = PromptFormatter(
     system=textwrap.dedent(

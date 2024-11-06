@@ -1,3 +1,4 @@
+from html.parser import HTMLParser
 from fuzzywuzzy import fuzz
 import textwrap
 from typing import Dict, List, Optional, Tuple, Union
@@ -14,8 +15,6 @@ from langchain_core.messages import (
 from langchain_core.prompts.chat import MessagesPlaceholder, HumanMessagePromptTemplate
 from langchain_core.output_parsers.base import BaseOutputParser
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers import BaseOutputParser
-from sqlalchemy import Enum
 
 from lib.helpers.shared import pretty_print
 
@@ -133,9 +132,9 @@ class PromptFormatter(BaseModel):
             ]
         )
         if self.parser is not None:
-            prompt.partial_variables["format_instructions"] = (
-                self.parser.get_format_instructions()
-            )
+            prompt.partial_variables[
+                "format_instructions"
+            ] = self.parser.get_format_instructions()
 
         return prompt
 
@@ -152,17 +151,14 @@ class PromptFormatter(BaseModel):
         if self.parser is not None and (
             "format_instructions" in self.system or "format_instructions" in self.user
         ):
-            prompt.partial_variables["format_instructions"] = (
-                self.parser.get_format_instructions()
-            )
+            prompt.partial_variables[
+                "format_instructions"
+            ] = self.parser.get_format_instructions()
 
         return prompt
 
     def get_prompt_format(self) -> str:
         return self.parser.get_format_instructions()
-
-
-from html.parser import HTMLParser
 
 
 class TagHTMLParser(HTMLParser):

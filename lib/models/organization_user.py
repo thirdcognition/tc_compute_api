@@ -1,13 +1,19 @@
 import asyncio
 from app.core.session_storage import SessionStorage, get_storage
 from lib.models.organization import Organization
-from lib.models.supabase.organization import OrganizationRoleModel, OrganizationTeamModel, OrganizationTeamMembersModel, OrganizationUsersModel, OrganizationsModel, UserProfileModel
+from lib.models.supabase.organization import (
+    OrganizationRoleModel,
+    OrganizationTeamModel,
+    OrganizationTeamMembersModel,
+    OrganizationUsersModel,
+    UserProfileModel,
+)
 from lib.models.user_data import UserData
 from supabase.client import AsyncClient
 from pydantic import UUID4
 from typing import Dict, List, Optional
-from gotrue.types import Session
-from postgrest import APIResponse
+from supabase_auth.types import Session
+
 
 class OrganizationUser:
     def __init__(self, supabase: AsyncClient, auth_id: str, user_data: UserData = None):
@@ -32,7 +38,12 @@ class OrganizationUser:
         await self.model.fetch_user_profile()
         await self.model.fetch_organizations()
 
-    async def connect_to_organization(self, organization: Organization, set_as_admin: bool = None, update_existing: bool = False) -> None:
+    async def connect_to_organization(
+        self,
+        organization: Organization,
+        set_as_admin: bool = None,
+        update_existing: bool = False,
+    ) -> None:
         if self.model.as_user is None:
             await self.model.fetch_as_user()
 
@@ -46,10 +57,9 @@ class OrganizationUser:
             self.model.as_user[organization.id] = OrganizationUsersModel(
                 auth_id=self.model.auth_id,
                 organization_id=organization.id,
-                is_admin=set_as_admin
+                is_admin=set_as_admin,
             )
         self.model.save_all_to_supabase(self.supabase)
-
 
     @property
     def user_id(self) -> UUID4:
@@ -159,6 +169,7 @@ class OrganizationUser:
 
         return self._organization_dict.get(organization_id)
 
+
 async def get_current_user(supabase: AsyncClient) -> OrganizationUser:
     """
     Fetches the current user from the session storage or initializes a new one if not found.
@@ -172,11 +183,11 @@ async def get_current_user(supabase: AsyncClient) -> OrganizationUser:
     session: Session = await supabase.auth.get_session()
     session_store: SessionStorage = get_storage(session.access_token)
 
-    user: Optional[OrganizationUser] = session_store.get('user')
+    user: Optional[OrganizationUser] = session_store.get("user")
 
     if user is None:
         user = OrganizationUser(supabase, session.user.id)
-        session_store.set('user', user)
+        session_store.set("user", user)
 
     if not user.is_initialized:
         await user.initialize()

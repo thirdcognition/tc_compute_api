@@ -7,19 +7,20 @@ from lib.chains.init import get_chain
 from lib.load_env import SETTINGS
 
 
-hierarchy_task = lambda chain_name, item, item_formatter: get_chain(chain_name).ainvoke(
-    {
-        "hierarchy_items": item if item_formatter is None else item_formatter(item),
-    }
-)
+def hierarchy_task(chain_name, item, item_formatter):
+    return get_chain(chain_name).ainvoke(
+        {
+            "hierarchy_items": item if item_formatter is None else item_formatter(item),
+        }
+    )
 
-join_hierarchy_task = lambda chain_name, item, item_formatter: get_chain(
-    chain_name
-).ainvoke(
-    {
-        "joined_items": item if item_formatter is None else item_formatter(item),
-    }
-)
+
+def join_hierarchy_task(chain_name, item, item_formatter):
+    return get_chain(chain_name).ainvoke(
+        {
+            "joined_items": item if item_formatter is None else item_formatter(item),
+        }
+    )
 
 
 class HierarchyNode(BaseModel):
@@ -151,7 +152,9 @@ def join_items(items: List, item_formatter: Callable, splitter="\n\n") -> List[s
     return item_strings
 
 
-async def execute_chain(chain_name, items, task_func: Callable, item_formatter: Callable = None):
+async def execute_chain(
+    chain_name, items, task_func: Callable, item_formatter: Callable = None
+):
     tasks = [
         task_func(chain_name, item, item_formatter) for i, item in enumerate(items)
     ]
@@ -183,7 +186,6 @@ async def get_hierarchy(
     join_chain_name: str = None,
     join_item_formatter: Callable = None,
 ) -> tuple[Dict[str, list], Dict[str, str], list, list[str]]:
-
     if len(items) < 2:
         return {}, {}, [], []
 

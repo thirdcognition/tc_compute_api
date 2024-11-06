@@ -1,7 +1,5 @@
 from asyncio import CancelledError
-import textwrap
-from typing import Dict, List
-from langchain_core.documents import Document
+from typing import Dict
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.output_parsers import (
     PydanticOutputParser,
@@ -15,7 +13,7 @@ from langchain_core.runnables import (
     RunnablePassthrough,
     RunnableLambda,
 )
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from lib.chains.base import BaseChain
 from lib.helpers.shared import get_text_from_completion, print_params
 from lib.prompts.base import PromptFormatter
@@ -79,9 +77,15 @@ class BaseParserChain(BaseChain):
             return self.chain
 
         parser = self.output_parser or self.prompt.parser
-        if self.structured_mode and parser is not None and hasattr(parser, "pydantic_object"):
+        if (
+            self.structured_mode
+            and parser is not None
+            and hasattr(parser, "pydantic_object")
+        ):
             self.llm = self.llm.with_structured_output(parser.pydantic_object)
-            self.retry_llm = self.retry_llm.with_structured_output(parser.pydantic_object)
+            self.retry_llm = self.retry_llm.with_structured_output(
+                parser.pydantic_object
+            )
 
         self._setup_prompt(custom_prompt)
 
@@ -118,9 +122,7 @@ class BaseParserChain(BaseChain):
 
             completion = get_text_from_completion(completion)
             try:
-                return retry_parser.parse_with_prompt(
-                    completion, x["prompt_value"]
-                )
+                return retry_parser.parse_with_prompt(completion, x["prompt_value"])
             except (ValidationError, CancelledError) as e:
                 print(f"Error: {repr(e)}")
                 completion = parser_retry_chain.invoke(
@@ -165,7 +167,7 @@ class BaseParserChain(BaseChain):
 
         fallback_chain = RunnableLambda(
             lambda x: AIMessage(
-                content=f"I seem to be having some trouble answering, please try again a bit later."
+                content="I seem to be having some trouble answering, please try again a bit later."
             )
         )
         self.chain = self.chain.with_fallbacks([fallback_chain])

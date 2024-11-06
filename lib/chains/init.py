@@ -61,13 +61,14 @@ from lib.prompts.topics import (
     topic_formatter,
     topic_formatter_guided,
     topic_hierarchy,
-    topic_combiner
+    topic_combiner,
 )
-from lib.prompts.taxonomy import (
-    taxonomy,
-    taxonomy_hierarchy,
-    taxonomy_combiner,
-)
+
+# from lib.prompts.taxonomy import (
+#     taxonomy,
+#     taxonomy_hierarchy,
+#     taxonomy_combiner,
+# )
 from lib.prompts.concepts import (
     concept_structured,
     concept_more,
@@ -103,7 +104,9 @@ def get_limiter(model_config: ProviderModelSettings) -> Union[BaseRateLimiter, N
 
     return limiter
 
-use_structured_mode = False
+
+# use_structured_mode = False
+
 
 def init_llm(
     provider: ProviderSettings = SETTINGS.default_provider,
@@ -130,11 +133,11 @@ def init_llm(
             region_name=provider.region,
             model_kwargs={"temperature": temperature},
             timeout=30000,
-            max_tokens = model.max_tokens,
-            max_retries = 2,
+            max_tokens=model.max_tokens,
+            max_retries=2,
             **common_kwargs,
         )
-        use_structured_mode = True
+        # use_structured_mode = True
 
     if model.provider == "AZURE":
         llm = model.class_model(
@@ -147,8 +150,8 @@ def init_llm(
             ),
             timeout=60000,
             request_timeout=120,
-            max_tokens = model.max_tokens,
-            max_retries = 2,
+            max_tokens=model.max_tokens,
+            max_retries=2,
             **common_kwargs,
         )
 
@@ -160,8 +163,8 @@ def init_llm(
             content_formatter=CustomOpenAIChatContentFormatter(),
             model_kwargs={"temperature": temperature},
             timeout=1000,
-            max_tokens = model.max_tokens,
-            max_retries = 2,
+            max_tokens=model.max_tokens,
+            max_retries=2,
             **common_kwargs,
         )
 
@@ -178,8 +181,8 @@ def init_llm(
             num_predict=model.context_size,
             repeat_penalty=2,
             timeout=30000,
-            max_retries = 2,
-            max_tokens = model.max_tokens,
+            max_retries=2,
+            max_tokens=model.max_tokens,
             **common_kwargs,
         )
 
@@ -195,7 +198,7 @@ def init_llm(
             ),
             timeout=30000,
             max_retries=2,
-            max_tokens = model.max_tokens,
+            max_tokens=model.max_tokens,
             **common_kwargs,
         )
 
@@ -285,7 +288,7 @@ def init_chain(
         validation_llm=(
             get_llm(validate_id) if (check_for_hallucinations and not DEVMODE) else None
         ),
-        async_mode=True
+        async_mode=True,
     )
 
 
@@ -346,21 +349,21 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         topic_combiner,
         False,
     ),
-    "taxonomy": (
-        "instruct",
-        taxonomy,
-        False,
-    ),
-    "taxonomy_hierarchy": (
-        "structured_detailed" if not DEVMODE else "structured",
-        taxonomy_hierarchy,
-        True,
-    ),
-    "taxonomy_combiner": (
-        "structured_detailed" if not DEVMODE else "structured",
-        taxonomy_combiner,
-        False,
-    ),
+    # "taxonomy": (
+    #     "instruct",
+    #     taxonomy,
+    #     False,
+    # ),
+    # "taxonomy_hierarchy": (
+    #     "structured_detailed" if not DEVMODE else "structured",
+    #     taxonomy_hierarchy,
+    #     True,
+    # ),
+    # "taxonomy_combiner": (
+    #     "structured_detailed" if not DEVMODE else "structured",
+    #     taxonomy_combiner,
+    #     False,
+    # ),
     "concept_structured": ("structured", concept_structured, False),
     "concept_more": ("structured", concept_more, False),
     # "concept_unique": (

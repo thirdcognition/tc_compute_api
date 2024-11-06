@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional
 
 from lib.load_env import SETTINGS, logger
 
+
 async def get_supabase_client(access_token: str | None = None) -> AsyncClient:
     options = ClientOptions(
         postgrest_client_timeout=10,
@@ -19,10 +20,11 @@ async def get_supabase_client(access_token: str | None = None) -> AsyncClient:
         options.headers = {"Authorization": f"Bearer {access_token}"}
 
     return await create_async_client(
-        SETTINGS.SUPABASE_URL,
-        SETTINGS.SUPABASE_KEY,
+        SETTINGS.supabase_url,
+        SETTINGS.supabase_key,
         options=options,
     )
+
 
 class SessionStorage:
     """
@@ -63,7 +65,8 @@ class SessionStorage:
         """
         Get the Supabase client for the session.
 
-        If the client does not exist, it will be created using the access token, refresh token, and code (if provided).
+        If the client does not exist, it will be created using the access token,
+        refresh token, and code (if provided).
 
         Returns
         -------
@@ -74,7 +77,9 @@ class SessionStorage:
             self.supabase_client = await get_supabase_client(self.access_token)
             # Code just doesn't work as expected
             # if self.code is not None:
-            #     await self.supabase_client.auth.exchange_code_for_session(CodeExchangeParams(code_verifier=self.access_token, auth_code=self.code, redirect_to=self.redirect))
+            #     await self.supabase_client.auth.exchange_code_for_session
+            # (CodeExchangeParams(code_verifier=self.access_token, auth_code=self.code,
+            # redirect_to=self.redirect))
             # else:
             await self.supabase_client.auth.set_session(
                 access_token=self.access_token, refresh_token=self.refresh_token
@@ -95,7 +100,8 @@ class SessionStorage:
         Returns
         -------
         Any
-            The value associated with the key, or the default value if the key is not found.
+            The value associated with the key, or the default value if
+            the key is not found.
         """
         return self.storage.get(key, default)
 
@@ -114,9 +120,9 @@ class SessionStorage:
 
 
 # Create a cache with a TTL of 1 hour
-storage_cache: TTLCache[str, SessionStorage] = TTLCache(
-    maxsize=1000, ttl=3600
-)  # there should be a way to clean old auths, but maybe it's not required. Anyhow clean_storage is the function to use for it if implemented.
+storage_cache: TTLCache[str, SessionStorage] = TTLCache(maxsize=1000, ttl=3600)
+# there should be a way to clean old auths, but maybe it's not required.
+# Anyhow clean_storage is the function to use for it if implemented.
 
 
 def get_storage(
@@ -129,8 +135,9 @@ def get_storage(
     """
     Get the SessionStorage for the given access token.
 
-    If the access token is not in the storage cache, a new SessionStorage object will be created
-    and added to the cache. If the refresh token and code are not provided, an exception will be raised.
+    If the access token is not in the storage cache, a new SessionStorage
+    object will be created and added to the cache. If the refresh token and
+    code are not provided, an exception will be raised.
 
     Parameters
     ----------
@@ -151,7 +158,8 @@ def get_storage(
     Raises
     ------
     Exception
-        If the refresh token and code are not provided when the session hasn't been initialized.
+        If the refresh token and code are not provided when the
+        session hasn't been initialized.
     """
     global storage_cache
 

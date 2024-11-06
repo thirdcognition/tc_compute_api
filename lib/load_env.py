@@ -1,4 +1,20 @@
 # Load .env file from the parent directory
+from typing import Any, Literal, Optional, List, Union
+from pydantic_settings import BaseSettings
+from pydantic import AnyHttpUrl, Field, IPvAnyAddress
+from langchain_community.embeddings.ollama import OllamaEmbeddings
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+from langchain_huggingface import (
+    HuggingFaceEmbeddings,
+)
+from langchain_core.embeddings import Embeddings
+from langchain_community.chat_models.azureml_endpoint import AzureMLChatOnlineEndpoint
+from langchain_openai import AzureChatOpenAI
+from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
+from langchain_aws import ChatBedrock
+from langchain_groq import ChatGroq
+from langchain_community.chat_models.ollama import ChatOllama
 import logging
 import os
 
@@ -35,13 +51,6 @@ LANGCHAIN_ENDPOINT = os.getenv("LANGCHAIN_ENDPOINT", "")
 set_debug(DEBUGMODE)
 set_verbose(DEBUGMODE)
 
-from langchain_community.chat_models.ollama import ChatOllama
-from langchain_groq import ChatGroq
-from langchain_aws import ChatBedrock
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import AzureChatOpenAI
-from langchain_community.chat_models.azureml_endpoint import AzureMLChatOnlineEndpoint
 
 LLM_PROVIDERS = os.getenv("LLM_PROVIDERS", "OLLAMA").upper().split(",")
 
@@ -56,12 +65,6 @@ LLM_MODEL_MAP: dict[str, BaseLLM] = {
 }
 
 # from langchain_core.embeddings import Embeddings
-from langchain_core.embeddings import Embeddings
-from langchain_huggingface import (
-    HuggingFaceEmbeddings,
-)
-from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-from langchain_community.embeddings.ollama import OllamaEmbeddings
 
 EMBEDDING_MODEL_MAP: dict[str, Embeddings] = {
     "LOCAL": HuggingFaceEmbeddings,
@@ -78,10 +81,6 @@ LLM_MODELS = [
     "tool",
     "tester",
 ]
-
-from pydantic import AnyHttpUrl, Field, IPvAnyAddress
-from pydantic_settings import BaseSettings
-from typing import Any, Literal, Optional, List, Union
 
 
 class ProviderModelSettings(BaseSettings):
@@ -151,9 +150,7 @@ class EmbeddingDefaults(BaseSettings):
 
 class EmbeddingProviderSettings(BaseSettings):
     type: Literal["LOCAL", "HUGGINGFACE", "OPENAI", "OLLAMA", "BEDROCK", "AZURE"]
-    class_model: Any = (
-        None  # Union[HuggingFaceEmbeddings, OllamaEmbeddings, HuggingFaceInferenceAPIEmbeddings, None] = None
-    )
+    class_model: Any = None  # Union[HuggingFaceEmbeddings, OllamaEmbeddings, HuggingFaceInferenceAPIEmbeddings, None] = None
     url: Optional[str] = None
     api_key: Optional[str] = None
     region: Optional[str] = None
@@ -163,8 +160,6 @@ class EmbeddingProviderSettings(BaseSettings):
     api_base: Optional[str] = None
     api_version: Optional[str] = None
     models: List[EmbeddingModelSettings] = []
-
-
 
 
 with open(os.path.join(os.path.dirname(__file__), "../", "pyproject.toml"), "r") as f:
@@ -183,7 +178,7 @@ class Settings(BaseSettings):
     default_embedding_provider: Optional[EmbeddingProviderSettings] = None
     default_embeddings: Optional[EmbeddingDefaults] = None
     server_port: int = Field(default_factory=lambda: os.getenv("SERVER_PORT", 8000))
-    server_host: IPvAnyAddress = Field(
+    server_host: Union[IPvAnyAddress, Literal["localhost"]] = Field(
         default_factory=lambda: os.getenv("SERVER_HOST", "0.0.0.0")
     )
     supabase_url: str = Field(default_factory=lambda: os.getenv("SUPABASE_URL"))
@@ -345,7 +340,7 @@ for embedding_provider_settings in SETTINGS.embeddings:
             f"\t{model_settings.type.capitalize()}: {model_settings.model=} {model_settings.char_limit=} {model_settings.overlap=}"
         )
 
-print(f"+++ DEFAULTS +++")
+print("+++ DEFAULTS +++")
 print(f"\tLLM: {SETTINGS.default_provider.type} {SETTINGS.default_llms.default.model}")
 print(
     f"\tEMBEDDING: {SETTINGS.default_embedding_provider.type} {SETTINGS.default_embeddings.default.model}"
