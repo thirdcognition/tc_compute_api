@@ -45,6 +45,7 @@ langsmith = "^0.1.139"
 black = "^23.9.1"
 flake8 = "^6.1.0"
 autopep8 = "^2.0.2"
+pre-commit = "^3.0.0"
 
 [tool.black]
 line-length = 88
