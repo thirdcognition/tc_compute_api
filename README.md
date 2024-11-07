@@ -54,3 +54,17 @@ We also expose port 8080 with the `-p 8080:8080` option.
 ```shell
 docker run -e OPENAI_API_KEY=$OPENAI_API_KEY -p 8080:8080 my-langserve-app
 ```
+
+## Testing
+
+### Running Tests with Poetry
+
+To run tests, use Poetry to execute the pytest command. This ensures that the tests are run within the virtual environment managed by Poetry.
+
+```bash
+poetry run pytest
+```
+
+This command will run all tests located in the `test` directory, including both end-to-end and unit tests, using the configuration specified in `pyproject.toml`.
+
+Ensure that the server is running locally on `http://127.0.0.1:4000` before executing the end-to-end tests.

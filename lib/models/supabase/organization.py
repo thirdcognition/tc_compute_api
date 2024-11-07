@@ -92,6 +92,7 @@ class OrganizationUsersModel(SupabaseModel):
     auth_id: UUID4
     user_id: UUID4
     organization_id: UUID4
+    metadata: Optional[Dict] = Field(default=None)
     is_admin: bool = Field(default=False)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)

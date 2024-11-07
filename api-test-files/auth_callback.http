@@ -28,11 +28,71 @@ Authorization: Bearer {{accessToken}}
 
 @orgId = {{createOrganization.response.body.$.id}}
 
+### Get Organization request
+# @name getOrganization
+GET {{host}}:{{port}}/organization/{{orgId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### List Organizations request
+# @name listOrganizations
+GET {{host}}:{{port}}/organizations HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Update Organization request
+# @name updateOrganization
+PUT {{host}}:{{port}}/organization/{{orgId}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{"website": "https://updated-test.com"}
+
+
 ### Add Organization user
-# @name createOrganization
-POST {{host}}:{{port}}/organization/{{orgId}}/add_user HTTP/1.1
+# @name createOrganizationUser
+POST {{host}}:{{port}}/organization/{{orgId}}/user HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
 {"email": "user2@example.com"}
+
+### Response
+
+@userId = {{createOrganizationUser.response.body.$.user_id}}
+
+### Get Organization User request
+# @name getOrganizationUser
+GET {{host}}:{{port}}/organization/{{orgId}}/user/{{userId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### List Organization Users request
+# @name listOrganizationUsers
+GET {{host}}:{{port}}/organization/{{orgId}}/users HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Update Organization User request
+# @name updateOrganizationUser
+PUT {{host}}:{{port}}/organization/{{orgId}}/user HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{"user_id": "{{userId}}", "is_admin": true}
+
+### Delete Organization User request
+# @name deleteOrganizationUser
+DELETE {{host}}:{{port}}/organization/{{orgId}}/user/{{userId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+
+### Delete Organization request
+# @name deleteOrganization
+DELETE {{host}}:{{port}}/organization/{{orgId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

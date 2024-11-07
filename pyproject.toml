@@ -48,6 +48,7 @@ black = "^23.9.1"
 flake8 = "^6.1.0"
 autopep8 = "^2.0.2"
 pre-commit = "^3.0.0"
+pytest = "^7.0.0"
 
 [tool.black]
 line-length = 88
@@ -66,6 +67,13 @@ exclude = '''
   | dist
 )/
 '''
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "test"
+]
 
 [tool.poetry.scripts]
 lint = "lint:main"

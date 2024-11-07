@@ -1,4 +1,5 @@
 from cachetools import TTLCache
+from fastapi import HTTPException
 from supabase.client import AsyncClient, create_async_client
 from supabase import ClientOptions
 
@@ -124,6 +125,8 @@ storage_cache: TTLCache[str, SessionStorage] = TTLCache(maxsize=1000, ttl=3600)
 # there should be a way to clean old auths, but maybe it's not required.
 # Anyhow clean_storage is the function to use for it if implemented.
 
+# Assuming SessionStorage and storage_cache are defined elsewhere
+
 
 def get_storage(
     access_token: str,
@@ -149,6 +152,8 @@ def get_storage(
         The code for the session, by default None.
     redirect : str, optional
         The redirect URL for the session, by default None.
+    supabase_client : AsyncClient, optional
+        The supabase client for handling database connections.
 
     Returns
     -------
@@ -157,16 +162,17 @@ def get_storage(
 
     Raises
     ------
-    Exception
-        If the refresh token and code are not provided when the
+    HTTPException
+        If the refresh token, code, or supabase_client are not provided when the
         session hasn't been initialized.
     """
     global storage_cache
 
     if access_token not in storage_cache:
         if refresh_token is None and code is None and supabase_client is None:
-            raise Exception(
-                "Refresh token, Code or supabase_client is required if session hasn't been initialized"
+            raise HTTPException(
+                status_code=401,  # Unauthorized
+                detail="Unauthorized access: a refresh token, code, or client is required to initialize the session.",
             )
 
         storage_cache[access_token] = SessionStorage(
