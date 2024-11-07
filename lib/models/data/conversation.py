@@ -1,5 +1,5 @@
 from typing import List, Optional
-from lib.models.organization_user import OrganizationUser
+from lib.models.organization_user import User
 from lib.models.supabase.llm_conversation import (
     LlmConversationModel,
     LlmConversationMessageModel,
@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 class LlmConversationData:
     def __init__(
         self,
-        user: OrganizationUser,
+        user: User,
         conversations: Optional[List[LlmConversationModel]] = None,
         messages: Optional[List[LlmConversationMessageModel]] = None,
         message_history: Optional[List[LlmConversationMessageHistoryModel]] = None,
@@ -23,7 +23,7 @@ class LlmConversationData:
         Initialize a LlmConversationData object.
 
         :param user: The user associated with the conversation data.
-        :type user: OrganizationUser
+        :type user: User
         :param conversations: The list of conversations, defaults to None. If provided, it is used to initialize the conversations attribute.
         :type conversations: Optional[List[LlmConversationModel]], optional
         :param messages: The list of messages, defaults to None. If provided, it is used to initialize the messages attribute.
@@ -33,7 +33,7 @@ class LlmConversationData:
         :param threads: The list of threads, defaults to None. If provided, it is used to initialize the threads attribute.
         :type threads: Optional[List[LlmConversationThreadModel]], optional
         """
-        self.user: OrganizationUser = user
+        self.user: User = user
         self.conversations: Optional[List[LlmConversationModel]] = conversations
         self.messages: Optional[List[LlmConversationMessageModel]] = messages
         self.message_history: Optional[

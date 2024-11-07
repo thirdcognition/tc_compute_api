@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 from supabase_auth.types import Session
 
 
-class OrganizationUser:
+class User:
     def __init__(self, supabase: AsyncClient, auth_id: str, user_data: UserData = None):
         self.supabase: AsyncClient = supabase
         self.model: UserData = user_data
@@ -170,7 +170,7 @@ class OrganizationUser:
         return self._organization_dict.get(organization_id)
 
 
-async def get_current_user(supabase: AsyncClient) -> OrganizationUser:
+async def get_current_user(supabase: AsyncClient) -> User:
     """
     Fetches the current user from the session storage or initializes a new one if not found.
 
@@ -178,15 +178,15 @@ async def get_current_user(supabase: AsyncClient) -> OrganizationUser:
         supabase (AsyncClient): The Supabase client instance.
 
     Returns:
-        OrganizationUser: The current user.
+        User: The current user.
     """
     session: Session = await supabase.auth.get_session()
     session_store: SessionStorage = get_storage(session.access_token)
 
-    user: Optional[OrganizationUser] = session_store.get("user")
+    user: Optional[User] = session_store.get("user")
 
     if user is None:
-        user = OrganizationUser(supabase, session.user.id)
+        user = User(supabase, session.user.id)
         session_store.set("user", user)
 
     if not user.is_initialized:
