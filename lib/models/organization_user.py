@@ -8,7 +8,7 @@ from lib.models.supabase.organization import (
     OrganizationUsersModel,
     UserProfileModel,
 )
-from lib.models.user_data import UserData
+from lib.models.data.user import UserData
 from supabase.client import AsyncClient
 from pydantic import UUID4
 from typing import Dict, List, Optional

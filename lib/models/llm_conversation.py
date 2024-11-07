@@ -1,4 +1,4 @@
-from lib.models.conversation_data import LlmConversationData
+from lib.models.data.conversation import LlmConversationData
 from lib.models.supabase.llm_conversation import (
     LlmConversationModel,
     LlmConversationMessageModel,
