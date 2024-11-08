@@ -1,4 +1,4 @@
-from pydantic import UUID4
+from uuid import UUID
 from supabase.client import AsyncClient
 from datetime import datetime
 from typing import Dict, Optional, Union
@@ -45,13 +45,13 @@ class Organization:
         self.model = organization_instance
 
     @property
-    def id(self) -> UUID4:
+    def id(self) -> UUID:
         """
         Returns the ID of the organization.
 
         Returns
         -------
-        UUID4
+        UUID
             The ID of the organization.
         """
         return self.model.id
@@ -141,13 +141,13 @@ class Organization:
         return self.model.created_at
 
     @property
-    def owner_id(self) -> Optional[UUID4]:
+    def owner_id(self) -> Optional[UUID]:
         """
         Returns the ID of the organization's owner.
 
         Returns
         -------
-        Optional[UUID4]
+        Optional[UUID]
             The ID of the organization's owner.
         """
         return self.model.owner_id
@@ -165,14 +165,14 @@ class Organization:
 
 
 async def get_organization(
-    supabase: AsyncClient, organization: Union[OrganizationsModel, UUID4]
+    supabase: AsyncClient, organization: Union[OrganizationsModel, UUID]
 ) -> Organization:
     """
     Retrieve an organization from Supabase.
 
     Args:
         supabase (AsyncClient): The Supabase client.
-        organization (Union[OrganizationsModel, UUID4]): The organization model or its ID.
+        organization (Union[OrganizationsModel, UUID]): The organization model or its ID.
 
     Returns:
         Organization: The retrieved organization.
@@ -182,7 +182,7 @@ async def get_organization(
     """
     if isinstance(organization, OrganizationsModel):
         organization_model = organization
-    elif isinstance(organization, UUID4):
+    elif isinstance(organization, UUID):
         # Check if the organization already exists
         response: APIResponse = (
             await supabase.table("organizations")

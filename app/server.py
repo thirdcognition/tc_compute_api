@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 from app.routes.auth import router as auth_router
 from app.routes.organization import router as organization_router
 from app.routes.organization_user import router as organization_user_router
+from app.routes.journey import router as journey_router
 from app.core.init_app import init_app
 from lib.load_env import SETTINGS
 
@@ -25,6 +26,7 @@ async def health_check():
 app.include_router(auth_router)
 app.include_router(organization_router)
 app.include_router(organization_user_router)
+app.include_router(journey_router)
 
 if __name__ == "__main__":
     import uvicorn

@@ -10,7 +10,7 @@ from lib.models.supabase.organization import (
 )
 from lib.models.data.user import UserData
 from supabase.client import AsyncClient
-from pydantic import UUID4
+from uuid import UUID
 from typing import Dict, List, Optional
 from supabase_auth.types import Session
 
@@ -19,8 +19,8 @@ class User:
     def __init__(self, supabase: AsyncClient, auth_id: str, user_data: UserData = None):
         self.supabase: AsyncClient = supabase
         self.model: UserData = user_data
-        self.auth_id = UUID4(auth_id)
-        self._organization_dict: Dict[UUID4, Organization] = {}
+        self.auth_id = UUID(auth_id)
+        self._organization_dict: Dict[UUID, Organization] = {}
         self._initialize_task: Optional[asyncio.Task] = None
 
     @property
@@ -62,7 +62,7 @@ class User:
         self.model.save_all_to_supabase(self.supabase)
 
     @property
-    def user_id(self) -> UUID4:
+    def user_id(self) -> UUID:
         return self.model.profile.id
 
     @property
@@ -70,21 +70,21 @@ class User:
         return self.model.profile.disabled
 
     @property
-    def active_organization_id(self) -> Optional[UUID4]:
+    def active_organization_id(self) -> Optional[UUID]:
         return self.model.profile.active_organization_id
 
     @active_organization_id.setter
-    async def set_active_organization(self, organization_id: UUID4) -> None:
+    async def set_active_organization(self, organization_id: UUID) -> None:
         if organization_id in self.model.organizations:
             self.model.profile.active_organization_id = organization_id
             await self.model.profile.save_to_supabase(self.supabase)
 
     @property
-    def active_conversation_id(self) -> Optional[UUID4]:
+    def active_conversation_id(self) -> Optional[UUID]:
         return self.model.profile.active_conversation_id
 
     @active_conversation_id.setter
-    async def set_active_conversation(self, conversation_id: UUID4) -> None:
+    async def set_active_conversation(self, conversation_id: UUID) -> None:
         self.model.profile.active_conversation_id = conversation_id
         await self.model.profile.save_to_supabase(self.supabase)
 
@@ -118,14 +118,14 @@ class User:
 
     async def _init_organizations(
         self, refresh: bool = False
-    ) -> Dict[UUID4, Organization]:
+    ) -> Dict[UUID, Organization]:
         """
         Create or refresh Organization instances from the items stored in self.organizations.
 
         :param refresh: Whether to refresh the data from Supabase, defaults to False
         :type refresh: bool, optional
         :return: The dictionary of Organization instances, keyed by organization ID
-        :rtype: Dict[UUID4, Organization]
+        :rtype: Dict[UUID, Organization]
         """
         if refresh or not self._organization_dict:
             if not self.model.organizations:
@@ -154,13 +154,13 @@ class User:
         return self._organization_dict
 
     async def get_organization_by_id(
-        self, organization_id: UUID4
+        self, organization_id: UUID
     ) -> Optional[Organization]:
         """
         Get an Organization instance by its ID.
 
         :param organization_id: The ID of the organization
-        :type organization_id: UUID4
+        :type organization_id: UUID
         :return: The Organization instance, or None if not found
         :rtype: Optional[Organization]
         """

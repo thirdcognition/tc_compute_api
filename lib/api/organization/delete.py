@@ -1,29 +1,25 @@
-from pydantic import UUID4
+from uuid import UUID
 from supabase import AsyncClient
-from postgrest import APIResponse
+from lib.models.supabase.organization import OrganizationsModel
 
 
-async def delete_organization(supabase: AsyncClient, organization_id: UUID4) -> None:
+async def delete_organization(supabase: AsyncClient, organization_id: UUID) -> None:
     """
     Delete an organization from Supabase.
 
     Args:
         supabase (AsyncClient): The Supabase client.
-        organization_id (UUID4): The ID of the organization to delete.
+        organization_id (UUID): The ID of the organization to delete.
 
     Raises:
         ValueError: If the organization is not found.
     """
+    # Initialize the organization model
+    organization = OrganizationsModel(id=organization_id)
+
     # Check if the organization exists
-    response: APIResponse = (
-        await supabase.table("organizations")
-        .select("*")
-        .eq("id", organization_id)
-        .limit(1)
-        .execute()
-    )
-    if not response.data:
+    if not await organization.exists_in_supabase(supabase):
         raise ValueError("Organization not found")
 
-    # Delete the organization
-    await supabase.table("organizations").delete().eq("id", organization_id).execute()
+    # Delete the organization using the model's method
+    await organization.delete_from_supabase(supabase)

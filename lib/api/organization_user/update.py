@@ -1,7 +1,7 @@
 from typing import Dict, Optional
-from pydantic import UUID4, BaseModel
+from uuid import UUID
+from pydantic import BaseModel
 from supabase import AsyncClient
-from postgrest import APIResponse
 
 from lib.models.supabase.organization import OrganizationUsersModel
 
@@ -15,7 +15,7 @@ class UpdateOrganizationUserRequestData(BaseModel):
 
 async def update_organization_user(
     supabase: AsyncClient,
-    organization_id: UUID4,
+    organization_id: UUID,
     request_data: UpdateOrganizationUserRequestData,
 ) -> OrganizationUsersModel:
     """
@@ -23,10 +23,8 @@ async def update_organization_user(
 
     Args:
         supabase (AsyncClient): The Supabase client.
-        organization_id (UUID4): The ID of the organization.
+        organization_id (UUID): The ID of the organization.
         request_data (UpdateOrganizationUserRequestData): User update data.
-        user_id (UUID4): The user ID of the user.
-        auth_id (UUID4): The auth ID of the user.
 
     Returns:
         OrganizationUsersModel: The updated organization user.
@@ -38,31 +36,23 @@ async def update_organization_user(
     if request_data.user_id is None:
         raise ValueError("User_id must be provided")
 
-    # Fetch the existing user
-    query = (
-        supabase.table("organization_users")
-        .select("*")
-        .eq("organization_id", organization_id)
-        .eq("user_id", request_data.user_id)
-        .limit(1)
+    # Fetch the existing user using fetch_from_supabase
+    user_model = OrganizationUsersModel(
+        user_id=request_data.user_id, organization_id=organization_id
     )
-
-    response: APIResponse = await query.execute()
-    if not response.data:
+    user_model = await user_model.fetch_from_supabase(
+        supabase,
+        value={"organization_id": organization_id, "user_id": request_data.user_id},
+        id_field_name="user_id",
+    )
+    if not user_model:
         raise ValueError("User not found")
 
-    # Update the user
+    # Update the user model with new data
     update_data = request_data.model_dump(exclude_unset=True)
-    update_query = (
-        supabase.table("organization_users")
-        .update(update_data)
-        .eq("organization_id", organization_id)
-        .eq("user_id", request_data.user_id)
-    )
+    for key, value in update_data.items():
+        setattr(user_model, key, value)
 
-    await update_query.execute()
-
-    # Fetch the updated user
-    updated_response: APIResponse = await query.execute()
-    updated_user_data = updated_response.data[0]
-    return OrganizationUsersModel(**updated_user_data)
+    # Save the updated user using save_to_supabase
+    await user_model.save_to_supabase(supabase)
+    return user_model

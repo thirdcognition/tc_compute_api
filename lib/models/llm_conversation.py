@@ -4,14 +4,14 @@ from lib.models.supabase.llm_conversation import (
     LlmConversationMessageModel,
     LlmConversationMessageHistoryModel,
 )
-from pydantic import UUID4
+from uuid import UUID
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 from supabase.client import AsyncClient
 
 
 class LlmConversation:
-    def __init__(self, supabase: AsyncClient, auth_id: UUID4, organization_id: UUID4):
+    def __init__(self, supabase: AsyncClient, auth_id: UUID, organization_id: UUID):
         self.supabase = supabase
         self.conversation_data: LlmConversationData = LlmConversationData(
             supabase, auth_id, organization_id
@@ -54,13 +54,13 @@ class LlmConversation:
             await response.save_to_supabase(self.supabase)
 
     async def get_conversation_history(
-        self, conversation_id: UUID4
+        self, conversation_id: UUID
     ) -> List[LlmConversationMessageHistoryModel]:
         """
         Get the conversation history for a specific conversation.
 
         :param conversation_id: The ID of the conversation.
-        :type conversation_id: UUID4
+        :type conversation_id: UUID
         :return: The conversation history.
         :rtype: List[LlmConversationMessageHistoryModel]
         """
@@ -73,7 +73,7 @@ class LlmConversation:
         return [LlmConversationMessageHistoryModel(**data) for data in response.data]
 
     async def get_messages_with_history(
-        self, conversation_id: UUID4
+        self, conversation_id: UUID
     ) -> List[
         Tuple[
             LlmConversationMessageModel,
@@ -85,7 +85,7 @@ class LlmConversation:
         Get messages with their history for a specific conversation.
 
         :param conversation_id: The ID of the conversation.
-        :type conversation_id: UUID4
+        :type conversation_id: UUID
         :return: The messages with their history.
         :rtype: List[Tuple[LlmConversationMessageModel, Optional[LlmConversationMessageModel], Optional[LlmConversationMessageModel]]]
         """

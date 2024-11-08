@@ -1,0 +1,33 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = user1@example.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}
+
+### Response
+
+@accessToken = {{login.response.body.$.access_token}}
+
+### Journey Template request
+# @name journeyTemplate
+POST {{host}}:{{port}}/journey/template HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "role_title": "Marketing Manager",
+  "role_description": "Seeking an experienced Marketing Manager to lead our team, develop strategies, manage campaigns, and drive brand growth. Must have 5+ years of experience and strong leadership skills."
+}
+
+### Response
+
+# Assert the response status code and content
+# Expected: 200 OK and a valid template response

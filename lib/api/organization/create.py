@@ -1,7 +1,7 @@
 from typing import Dict, Optional
-from pydantic import UUID4, BaseModel
+from uuid import UUID
+from pydantic import BaseModel
 from supabase import AsyncClient
-from postgrest import APIResponse
 
 from lib.models.organization import Organization
 from lib.models.supabase.organization import OrganizationsModel
@@ -32,17 +32,11 @@ async def create_organization(
     """
     # Get the current user's auth.id
     user = await supabase.auth.get_user()
-    owner_id: UUID4 = user.user.id
+    owner_id: UUID = user.user.id
 
-    # Check if the organization already exists
-    response: APIResponse = (
-        await supabase.table("organizations")
-        .select("*")
-        .eq("name", request_data.name)
-        .limit(1)
-        .execute()
-    )
-    if response.data:
+    # Check if the organization already exists using exists_in_supabase
+    organization_model = OrganizationsModel(name=request_data.name)
+    if await organization_model.exists_in_supabase(supabase, id_field_name="name"):
         # Raise ValueError if the organization already exists
         raise ValueError(
             f"An organization already exists with the name: {request_data.name}"

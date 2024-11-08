@@ -8,7 +8,7 @@ from lib.models.supabase.organization import (
     OrganizationsModel,
     UserProfileModel,
 )
-from pydantic import UUID4
+from uuid import UUID
 from postgrest import APIResponse
 from supabase.client import AsyncClient
 
@@ -17,7 +17,7 @@ class UserData:
     def __init__(
         self,
         supabase: AsyncClient,
-        auth_id: UUID4,
+        auth_id: UUID,
         user_data: Optional[UserProfileModel] = None,
     ):
         """
@@ -26,26 +26,26 @@ class UserData:
         :param supabase: The Supabase client. Used for making API calls to Supabase.
         :type supabase: AsyncClient
         :param auth_id: The authentication ID of the user. Used to fetch user-specific data.
-        :type auth_id: UUID4
+        :type auth_id: UUID
         :param user_data: The user data, defaults to None. If provided, it is used to initialize the profile attribute.
         :type user_data: Optional[UserProfile], optional
         """
-        self.auth_id: UUID4 = auth_id
+        self.auth_id: UUID = auth_id
         self.supabase: AsyncClient = supabase
         self.profile: Optional[UserProfileModel] = user_data
         # The organizations the user is a part of. Initialized as None and fetched when needed.
         self.organizations: Optional[List[OrganizationsModel]] = None
         # The teams the user is a part of, organized by organization ID. Initialized as None and fetched when needed.
-        self.teams: Optional[Dict[UUID4, List[OrganizationTeamModel]]] = None
+        self.teams: Optional[Dict[UUID, List[OrganizationTeamModel]]] = None
         # The roles the user has in the organizations they are a part of, organized by organization ID. Initialized as None and fetched when needed.
-        self.roles: Optional[Dict[UUID4, List[OrganizationRoleModel]]] = None
+        self.roles: Optional[Dict[UUID, List[OrganizationRoleModel]]] = None
         # The memberships the user has in the teams they are a part of, organized by organization ID. Initialized as None and fetched when needed.
         self.memberships: Optional[
-            Dict[UUID4, List[OrganizationTeamMembersModel]]
+            Dict[UUID, List[OrganizationTeamMembersModel]]
         ] = None
         # The user's relationship with the organizations they are a part of, organized by organization ID. Initialized as None and fetched when needed.
-        self.as_user: Optional[Dict[UUID4, OrganizationUsersModel]] = None
-        self._organization_dict: Optional[Dict[UUID4, Organization]] = None
+        self.as_user: Optional[Dict[UUID, OrganizationUsersModel]] = None
+        self._organization_dict: Optional[Dict[UUID, Organization]] = None
 
     async def save_all_to_supabase(self, supabase: AsyncClient):
         """
@@ -123,14 +123,14 @@ class UserData:
 
     async def fetch_teams(
         self, refresh: bool = False
-    ) -> Dict[UUID4, List[OrganizationTeamModel]]:
+    ) -> Dict[UUID, List[OrganizationTeamModel]]:
         """
         Fetch the teams the user is a part of from Supabase.
 
         :param refresh: Whether to refresh the data from Supabase, defaults to False
         :type refresh: bool, optional
         :return: The dictionary of teams the user is a part of, organized by organization ID
-        :rtype: Dict[UUID4, List[OrganizationTeam]]
+        :rtype: Dict[UUID, List[OrganizationTeam]]
         """
         if not self.teams or refresh:
             # Fetch organizations if not already fetched
@@ -154,14 +154,14 @@ class UserData:
 
     async def fetch_roles(
         self, refresh: bool = False
-    ) -> Dict[UUID4, List[OrganizationRoleModel]]:
+    ) -> Dict[UUID, List[OrganizationRoleModel]]:
         """
         Fetch the roles the user has in the organizations they are a part of from Supabase.
 
         :param refresh: Whether to refresh the data from Supabase, defaults to False
         :type refresh: bool, optional
         :return: The dictionary of roles the user has in the organizations they are a part of, organized by organization ID
-        :rtype: Dict[UUID4, List[OrganizationRole]]
+        :rtype: Dict[UUID, List[OrganizationRole]]
         """
         if not self.roles or refresh:
             # Fetch organizations if not already fetched
@@ -185,14 +185,14 @@ class UserData:
 
     async def fetch_memberships(
         self, refresh: bool = False
-    ) -> Dict[UUID4, List[OrganizationTeamMembersModel]]:
+    ) -> Dict[UUID, List[OrganizationTeamMembersModel]]:
         """
         Fetch the memberships the user has in the teams they are a part of from Supabase.
 
         :param refresh: Whether to refresh the data from Supabase, defaults to False
         :type refresh: bool, optional
         :return: The dictionary of memberships the user has in the teams they are a part of, organized by organization ID
-        :rtype: Dict[UUID4, List[OrganizationTeamMembers]]
+        :rtype: Dict[UUID, List[OrganizationTeamMembers]]
         """
         if not self.memberships or refresh:
             response: APIResponse = (
@@ -213,14 +213,14 @@ class UserData:
 
     async def fetch_as_user(
         self, refresh: bool = False
-    ) -> Dict[UUID4, OrganizationUsersModel]:
+    ) -> Dict[UUID, OrganizationUsersModel]:
         """
         Fetch the user's relationship with the organizations they are a part of from Supabase.
 
         :param refresh: Whether to refresh the data from Supabase, defaults to False
         :type refresh: bool, optional
         :return: The dictionary of the user's relationship with the organizations they are a part of, organized by organization ID
-        :rtype: Dict[UUID4, List[OrganizationUsers]]
+        :rtype: Dict[UUID, List[OrganizationUsers]]
         """
         if not self.as_user or refresh:
             response: APIResponse = (
@@ -236,13 +236,13 @@ class UserData:
         return self.as_user
 
     async def get_teams_by_organization(
-        self, organization_id: UUID4
+        self, organization_id: UUID
     ) -> List[OrganizationTeamModel]:
         """
         Get the teams the user is a part of in a specific organization.
 
         :param organization_id: The ID of the organization
-        :type organization_id: UUID4
+        :type organization_id: UUID
         :return: The list of teams the user is a part of in the specified organization
         :rtype: List[OrganizationTeam]
         """
@@ -251,13 +251,13 @@ class UserData:
         return self.teams.get(organization_id, [])
 
     async def get_roles_by_organization(
-        self, organization_id: UUID4
+        self, organization_id: UUID
     ) -> List[OrganizationRoleModel]:
         """
         Get the roles the user has in a specific organization.
 
         :param organization_id: The ID of the organization
-        :type organization_id: UUID4
+        :type organization_id: UUID
         :return: The list of roles the user has in the specified organization
         :rtype: List[OrganizationRole]
         """
@@ -266,13 +266,13 @@ class UserData:
         return self.roles.get(organization_id, [])
 
     async def get_memberships_by_organization(
-        self, organization_id: UUID4
+        self, organization_id: UUID
     ) -> List[OrganizationTeamMembersModel]:
         """
         Get the memberships the user has in the teams of a specific organization.
 
         :param organization_id: The ID of the organization
-        :type organization_id: UUID4
+        :type organization_id: UUID
         :return: The list of memberships the user has in the teams of the specified organization
         :rtype: List[OrganizationTeamMembers]
         """
@@ -280,12 +280,12 @@ class UserData:
             await self.fetch_memberships()
         return self.memberships.get(organization_id, [])
 
-    async def in_organization(self, organization_id: UUID4) -> bool:
+    async def in_organization(self, organization_id: UUID) -> bool:
         """
         Check if the user is a part of a specific organization.
 
         :param organization_id: The ID of the organization
-        :type organization_id: UUID4
+        :type organization_id: UUID
         :return: True if the user is a part of the specified organization, False otherwise
         :rtype: bool
         """
@@ -295,12 +295,12 @@ class UserData:
             organization.id == organization_id for organization in self.organizations
         )
 
-    async def is_admin_in_organization(self, organization_id: UUID4) -> bool:
+    async def is_admin_in_organization(self, organization_id: UUID) -> bool:
         """
         Check if the user is an admin in a specific organization.
 
         :param organization_id: The ID of the organization
-        :type organization_id: UUID4
+        :type organization_id: UUID
         :return: True if the user is an admin in the specified organization, False otherwise
         :rtype: bool
         """

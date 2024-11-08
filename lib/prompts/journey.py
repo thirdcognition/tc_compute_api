@@ -287,7 +287,7 @@ def convert_to_journey_prompts(container: CustomPromptContainer) -> JourneyPromp
 
 
 journey_template_dir = os.path.join(
-    SETTINGS.file_repository_path, "journey_structures_json"
+    SETTINGS.file_repository_path, "llm/journey_structures_json"
 )
 
 with open(os.path.join(journey_template_dir, "matched_descriptions.json"), "r") as f:
@@ -312,7 +312,8 @@ matched_descriptions_str = "\n".join(
 )
 
 all_available_roles = get_available_journey_template_roles(as_str=True)
-print(all_available_roles)
+# print(all_available_roles)
+
 journey_template_selector = PromptFormatter(
     system=textwrap.dedent(
         f"""

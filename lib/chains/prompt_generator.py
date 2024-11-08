@@ -10,7 +10,7 @@ from lib.load_env import SETTINGS
 
 
 prompt_template_dir = os.path.join(
-    SETTINGS.file_repository_path, "prompt_generator_templates"
+    SETTINGS.file_repository_path, "llm/prompt_generator_templates"
 )
 
 

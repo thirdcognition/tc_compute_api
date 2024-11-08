@@ -1,80 +1,73 @@
 from enum import Enum
 from datetime import datetime
+import json
 from typing import Optional
 from lib.models.supabase.supabase_model import SupabaseModel
-from pydantic import UUID4, Field, Json
-from supabase.client import AsyncClient
+from uuid import UUID
+from pydantic import Field, Json, field_validator
 
 
 class JourneyModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    template_id: UUID4
+    TABLE_NAME: str = "journey"
+    id: Optional[UUID] = Field(default=None)
+    template_id: UUID
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    current_version_id: Optional[UUID4] = Field(default=None)
-    updated_by: Optional[UUID4] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "journey", self.id)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
+    current_version_id: Optional[UUID] = Field(default=None)
+    updated_by: Optional[UUID] = Field(default=None)
 
 
 class JourneyVersionModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    journey_id: UUID4
-    template_version_id: UUID4
+    TABLE_NAME: str = "journey_version"
+    id: Optional[UUID] = Field(default=None)
+    journey_id: UUID
+    template_version_id: UUID
     name: str
     description: Optional[str] = Field(default=None)
     metadata: Optional[Json] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    version_of_id: Optional[UUID4] = Field(default=None)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
+    version_of_id: Optional[UUID] = Field(default=None)
 
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_version")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "journey_version", self.id)
+    @field_validator("metadata", mode="before")
+    def validate_metadata(cls, v):
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
 
 
 class JourneyItemModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    journey_id: UUID4
+    TABLE_NAME: str = "journey_item"
+    id: Optional[UUID] = Field(default=None)
+    journey_id: UUID
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    current_version_id: Optional[UUID4] = Field(default=None)
-    updated_by: Optional[UUID4] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_item")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "journey_item", self.id)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
+    current_version_id: Optional[UUID] = Field(default=None)
+    updated_by: Optional[UUID] = Field(default=None)
 
 
 class JourneyItemType(str, Enum):
-    JOURNEY = "Journey"
-    SECTION = "Section"
-    MODULE = "Module"
-    ACTION = "Action"
+    JOURNEY = "journey"
+    SECTION = "section"
+    MODULE = "module"
+    ACTION = "action"
 
 
 class JourneyItemVersionModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    journey_id: UUID4
-    template_item_id: Optional[UUID4] = Field(default=None)
+    TABLE_NAME: str = "journey_item_version"
+    id: Optional[UUID] = Field(default=None)
+    journey_id: UUID
+    template_item_id: Optional[UUID] = Field(default=None)
     name: str
     type: Optional[JourneyItemType] = Field(default=None)
     data: Optional[Json] = Field(default=None)
@@ -83,225 +76,44 @@ class JourneyItemVersionModel(SupabaseModel):
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    version_of_id: Optional[UUID4] = Field(default=None)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
+    version_of_id: Optional[UUID] = Field(default=None)
 
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_item_version")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase, "journey_item_version", self.id
-        )
+    @field_validator("metadata", "data", mode="before")
+    def validate_json_fields(cls, v):
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
 
 
 class JourneyStructureModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    journey_id: UUID4
+    TABLE_NAME: str = "journey_structure"
+    id: Optional[UUID] = Field(default=None)
+    journey_id: UUID
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    current_version_id: Optional[UUID4] = Field(default=None)
-    updated_by: Optional[UUID4] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_structure")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "journey_structure", self.id)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
+    current_version_id: Optional[UUID] = Field(default=None)
+    updated_by: Optional[UUID] = Field(default=None)
 
 
 class JourneyStructureVersionModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    journey_id: UUID4
-    journey_item_id: UUID4
-    version_id: UUID4
-    parent_id: Optional[UUID4] = Field(default=None)
-    next_id: Optional[UUID4] = Field(default=None)
-    previous_id: Optional[UUID4] = Field(default=None)
+    TABLE_NAME: str = "journey_structure_version"
+    id: Optional[UUID] = Field(default=None)
+    journey_id: UUID
+    journey_item_id: UUID
+    version_id: UUID
+    parent_id: Optional[UUID] = Field(default=None)
+    next_id: Optional[UUID] = Field(default=None)
+    previous_id: Optional[UUID] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    version_of_id: Optional[UUID4] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_structure_version")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase, "journey_structure_version", self.id
-        )
-
-
-class JourneyProgressModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    journey_id: UUID4
-    journey_version_id: UUID4
-    assigned_at: Optional[datetime] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    started_at: Optional[datetime] = Field(default=None)
-    completed_at: Optional[datetime] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_progress")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "journey_progress", self.id)
-
-
-class JourneyProgressLLMConversationMessagesModel(SupabaseModel):
-    journey_item_progress_id: UUID4
-    message_id: UUID4
-    conversation_id: UUID4
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(
-            supabase,
-            "journey_progress_llm_conversation_messages",
-            ["journey_item_progress_id", "message_id"],
-        )
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase,
-            "journey_progress_llm_conversation_messages",
-            {
-                "journey_item_progress_id": self.journey_item_progress_id,
-                "message_id": self.message_id,
-            },
-        )
-
-
-class JourneyProgressLLMConversationsModel(SupabaseModel):
-    progress_id: UUID4
-    conversation_id: UUID4
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(
-            supabase,
-            "journey_progress_llm_conversations",
-            ["progress_id", "conversation_id"],
-        )
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase,
-            "journey_progress_llm_conversations",
-            {"progress_id": self.progress_id, "conversation_id": self.conversation_id},
-        )
-
-
-class JourneyItemProgressModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    journey_progress_id: UUID4
-    journey_item_id: UUID4
-    journey_item_version_id: UUID4
-    data: Optional[Json] = Field(default=None)
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    started_at: Optional[datetime] = Field(default=None)
-    completed_at: Optional[datetime] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_item_progress")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase, "journey_item_progress", self.id
-        )
-
-
-class JourneyTemplateModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    disabled: bool = Field(default=False)
-    disabled_at: Optional[datetime] = Field(default=None)
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-    current_version_id: Optional[UUID4] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_template")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "journey_template", self.id)
-
-
-class JourneyTemplateItemModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    name: str
-    type: Optional[str] = Field(default=None)
-    data: Optional[Json] = Field(default=None)
-    disabled: bool = Field(default=False)
-    disabled_at: Optional[datetime] = Field(default=None)
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_template_item")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase, "journey_template_item", self.id
-        )
-
-
-class JourneyTemplateStructureModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    template_version_id: UUID4
-    journey_template_item_id: UUID4
-    parent_id: Optional[UUID4] = Field(default=None)
-    previous_id: Optional[UUID4] = Field(default=None)
-    next_id: Optional[UUID4] = Field(default=None)
-    disabled: bool = Field(default=False)
-    disabled_at: Optional[datetime] = Field(default=None)
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_template_structure")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase, "journey_template_structure", self.id
-        )
-
-
-class JourneyTemplateVersionModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
-    template_id: UUID4
-    name: str
-    description: Optional[str] = Field(default=None)
-    disabled: bool = Field(default=False)
-    disabled_at: Optional[datetime] = Field(default=None)
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-    version_of_id: Optional[UUID4] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "journey_template_version")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase, "journey_template_version", self.id
-        )
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
+    version_of_id: Optional[UUID] = Field(default=None)

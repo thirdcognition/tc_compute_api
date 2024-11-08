@@ -22,7 +22,43 @@ AccessTokenDep = Annotated[str, Depends(get_oauth2)]
 _service_client: AsyncClient | None = None
 
 
-async def get_supabase_service_client() -> AsyncGenerator[AsyncClient, None]:
+async def get_supabase_service_client() -> AsyncClient:
+    global _service_client
+    opt = ClientOptions(
+        auto_refresh_token=False,
+        persist_session=False,
+    )
+
+    try:
+        reset_client = False
+        session = None
+
+        if _service_client:
+            try:
+                session = await _service_client.auth.get_session()
+            except Exception as e:
+                logger.error(e)
+                reset_client = True
+
+        if (
+            not _service_client
+            or reset_client
+            or (session and session.expires_at < int(time.time()))
+        ):
+            _service_client = await create_async_client(
+                SETTINGS.supabase_url, SETTINGS.supabase_service_key, opt
+            )
+
+        return _service_client
+
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(
+            status_code=500, detail="Failed to get supabase service client"
+        )
+
+
+async def get_supabase_service_client_dep() -> AsyncGenerator[AsyncClient, None]:
     opt = ClientOptions(
         auto_refresh_token=False,
         persist_session=False,

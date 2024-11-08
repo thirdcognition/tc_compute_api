@@ -1,7 +1,6 @@
 from typing import Dict, Optional
 from pydantic import BaseModel
 from supabase import AsyncClient
-from postgrest import APIResponse
 
 from lib.models.organization import Organization
 from lib.models.supabase.organization import OrganizationsModel
@@ -35,31 +34,17 @@ async def update_organization(
     if not request_data.id:
         raise ValueError("Organization ID must be defined")
 
-    # Fetch the existing organization
-    response: APIResponse = (
-        await supabase.table("organizations")
-        .select("*")
-        .eq("id", request_data.id)
-        .limit(1)
-        .execute()
-    )
-    if not response.data:
+    # Fetch the existing organization using fetch_from_supabase
+    organization_model = OrganizationsModel(id=request_data.id)
+    organization_model = await organization_model.fetch_from_supabase(supabase)
+    if not organization_model:
         raise ValueError("Organization not found")
 
-    # Update the organization
+    # Update the organization model with new data
     update_data = request_data.model_dump(exclude_unset=True)
-    await supabase.table("organizations").update(update_data).eq(
-        "id", request_data.id
-    ).execute()
+    for key, value in update_data.items():
+        setattr(organization_model, key, value)
 
-    # Fetch the updated organization
-    updated_response: APIResponse = (
-        await supabase.table("organizations")
-        .select("*")
-        .eq("id", request_data.id)
-        .limit(1)
-        .execute()
-    )
-    updated_organization_data = updated_response.data[0]
-    organization_model = OrganizationsModel(**updated_organization_data)
+    # Save the updated organization using save_to_supabase
+    await organization_model.save_to_supabase(supabase)
     return Organization(supabase, organization_model)

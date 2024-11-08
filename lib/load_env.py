@@ -1,7 +1,8 @@
 # Load .env file from the parent directory
+from pathlib import Path
 from typing import Any, Literal, Optional, List, Union
 from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, Field, IPvAnyAddress
+from pydantic import AnyHttpUrl, BaseModel, Field, IPvAnyAddress
 from langchain_community.embeddings.ollama import OllamaEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_huggingface import (
@@ -169,6 +170,11 @@ with open(os.path.join(os.path.dirname(__file__), "../", "pyproject.toml"), "r")
 project_name = pyproject["tool"]["poetry"]["name"]
 
 
+class RetrySpec(BaseModel):
+    max_count: int = Field(default=3, description="Maximum number of retries")
+    retry_timeout: int = Field(default=10, description="Retry timeout in seconds")
+
+
 class Settings(BaseSettings):
     project_name: str = Field(default=project_name)
     llms: List[ProviderSettings] = []
@@ -194,11 +200,13 @@ class Settings(BaseSettings):
     )
     backend_cors_origins: list[AnyHttpUrl] = [""]
     backend_cors_origins: list[Union[AnyHttpUrl, str]] = ["*"]
+
     file_repository_path: str = Field(
-        default_factory=lambda: os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../file_repository"
+        default_factory=lambda: str(
+            Path(os.path.abspath(__file__)).parent.parent / "file_repository"
         )
     )
+    langchain_retries: RetrySpec = RetrySpec()
 
 
 SETTINGS = Settings()

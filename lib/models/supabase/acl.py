@@ -1,5 +1,6 @@
 from lib.models.supabase.supabase_model import SupabaseModel
-from pydantic import UUID4, BaseModel, Field
+from uuid import UUID
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
 from enum import Enum
@@ -19,82 +20,109 @@ class UserACL(str, Enum):
 
 
 class ACLGroupModel(SupabaseModel):
-    id: Optional[UUID4] = Field(default=None)
+    TABLE_NAME: str = "acl_group"
+    id: Optional[UUID] = Field(default=None)
     name: str
     description: Optional[str] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "acl_group")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "acl_group", self.id)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
 
 
 class ACLGroupItemsModel(SupabaseModel):
-    acl_group_id: UUID4
+    TABLE_NAME: str = "acl_group_items"
+    acl_group_id: UUID
     acl: ACL = Field(default=ACL.private)
-    item_id: UUID4
+    item_id: UUID
     item_type: str
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
 
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(
-            supabase, "acl_group_items", ["item_id", "acl_group_id"]
+    async def save_to_supabase(
+        self, supabase: AsyncClient, on_conflict=["item_id", "acl_group_id"]
+    ):
+        await super().save_to_supabase(supabase, on_conflict)
+
+    async def fetch_from_supabase(
+        self, supabase: AsyncClient, id_field_name="acl_group_id", value=None
+    ):
+        return await super().fetch_from_supabase(
+            supabase, id_field_name=id_field_name, value=value
         )
 
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase, "acl_group_items", {"acl_group_id": self.acl_group_id}
+    async def exists_in_supabase(
+        self, supabase: AsyncClient, id_field_name="acl_group_id", value=None
+    ):
+        return await super().exists_in_supabase(
+            supabase, id_field_name=id_field_name, value=value
+        )
+
+    async def delete_from_supabase(
+        self, supabase: AsyncClient, id_field_name="acl_group_id", value=None
+    ):
+        return await super().delete_from_supabase(
+            supabase, id_field_name=id_field_name, value=value
         )
 
 
 class ACLGroupUsersModel(SupabaseModel):
-    auth_id: UUID4
-    user_id: UUID4
-    acl_group_id: UUID4
+    TABLE_NAME: str = "acl_group_users"
+    auth_id: UUID
+    user_id: UUID
+    acl_group_id: UUID
     acl: UserACL = Field(default=UserACL.ro)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    organization_id: UUID4
+    organization_id: UUID
 
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(
-            supabase, "acl_group_users", ["user_id", "acl_group_id"]
+    async def save_to_supabase(
+        self, supabase: AsyncClient, on_conflict=["user_id", "acl_group_id"]
+    ):
+        await super().save_to_supabase(supabase, on_conflict)
+
+    async def fetch_from_supabase(
+        self, supabase: AsyncClient, id_field_name="acl_group_id", value=None
+    ):
+        return await super().fetch_from_supabase(
+            supabase, id_field_name=id_field_name, value=value
         )
 
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(
-            supabase,
-            "acl_group_users",
-            {"acl_group_id": self.acl_group_id, "auth_id": self.auth_id},
+    async def exists_in_supabase(
+        self, supabase: AsyncClient, id_field_name="acl_group_id", value=None
+    ):
+        return await super().exists_in_supabase(
+            supabase, id_field_name=id_field_name, value=value
+        )
+
+    async def delete_from_supabase(
+        self, supabase: AsyncClient, id_field_name="acl_group_id", value=None
+    ):
+        return await super().delete_from_supabase(
+            supabase, id_field_name=id_field_name, value=value
         )
 
 
 class ACLGroupUsersWithItems(BaseModel):
-    organization_id: UUID4
-    acl_group_id: UUID4
-    item_id: UUID4
+    organization_id: UUID
+    acl_group_id: UUID
+    item_id: UUID
     item_type: str
     item_acl: ACL
     item_created_at: Optional[datetime]
     item_disabled: bool
     item_disabled_at: Optional[datetime]
-    auth_id: UUID4
+    auth_id: UUID
     user_acl: UserACL
-    user_id: UUID4
+    user_id: UUID
     user_created_at: Optional[datetime]
     user_disabled: bool
     user_disabled_at: Optional[datetime]

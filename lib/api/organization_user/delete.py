@@ -1,20 +1,20 @@
-from pydantic import UUID4
+from uuid import UUID
 from supabase import AsyncClient
-from postgrest import APIResponse
+from lib.models.supabase.organization import OrganizationUsersModel
 
 
 async def delete_organization_user(
     supabase: AsyncClient,
-    organization_id: UUID4,
-    user_id: UUID4,
+    organization_id: UUID,
+    user_id: UUID,
 ) -> None:
     """
     Delete an organization user from Supabase.
 
     Args:
         supabase (AsyncClient): The Supabase client.
-        organization_id (UUID4): The ID of the organization.
-        user_id (UUID4): The user ID of the user to delete.
+        organization_id (UUID): The ID of the organization.
+        user_id (UUID): The user ID of the user to delete.
 
     Raises:
         ValueError: If the user_id is not provided.
@@ -23,25 +23,22 @@ async def delete_organization_user(
     if user_id is None:
         raise ValueError("user_id must be provided")
 
-    # Check if the user exists
-    query = (
-        supabase.table("organization_users")
-        .select("*")
-        .eq("organization_id", organization_id)
-        .eq("user_id", user_id)
-        .limit(1)
+    # Initialize the organization user model
+    organization_user = OrganizationUsersModel(
+        user_id=user_id, organization_id=organization_id
     )
 
-    response: APIResponse = await query.execute()
-    if not response.data:
+    # Check if the user exists
+    if not await organization_user.exists_in_supabase(
+        supabase,
+        value={"organization_id": organization_id, "user_id": user_id},
+        id_field_name="user_id",
+    ):
         raise ValueError("User not found")
 
-    # Delete the user
-    delete_query = (
-        supabase.table("organization_users")
-        .delete()
-        .eq("organization_id", organization_id)
-        .eq("user_id", user_id)
+    # Delete the user using the model's method
+    await organization_user.delete_from_supabase(
+        supabase,
+        value={"organization_id": organization_id, "user_id": user_id},
+        id_field_name="user_id",
     )
-
-    await delete_query.execute()

@@ -1,10 +1,12 @@
 from datetime import datetime
 from typing import Optional
-from lib.models.supabase.supabase_model import SupabaseModel
-from pydantic import field_validator, UUID4, Field
+from uuid import UUID
+from pydantic import field_validator, Field, Json
 from enum import Enum
 import json
 from supabase.client import AsyncClient
+
+from lib.models.supabase.supabase_model import SupabaseModel
 
 
 class SourceTypeEnum(Enum):
@@ -19,60 +21,51 @@ class SourceTypeEnum(Enum):
 
 
 class SourceModel(SupabaseModel):
-    id: UUID4
+    TABLE_NAME: str = "source"
+    id: UUID
     type: Optional[SourceTypeEnum] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    current_version_id: Optional[UUID4] = Field(default=None)
-    updated_by: Optional[UUID4] = Field(default=None)
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "source")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "source", self.id)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
+    current_version_id: Optional[UUID] = Field(default=None)
+    updated_by: Optional[UUID] = Field(default=None)
 
 
 class SourceChunkModel(SupabaseModel):
-    id: UUID4
-    source_id: Optional[UUID4] = Field(default=None)
-    source_version_id: Optional[UUID4] = Field(default=None)
-    chunk_next_id: Optional[UUID4] = Field(default=None)
-    chunk_prev_id: Optional[UUID4] = Field(default=None)
-    data: Optional[dict] = Field(default=None)
-    metadata: Optional[dict] = Field(default=None)
+    TABLE_NAME: str = "source_chunk"
+    id: UUID
+    source_id: Optional[UUID] = Field(default=None)
+    source_version_id: Optional[UUID] = Field(default=None)
+    chunk_next_id: Optional[UUID] = Field(default=None)
+    chunk_prev_id: Optional[UUID] = Field(default=None)
+    data: Optional[Json] = Field(default=None)
+    metadata: Optional[Json] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    organization_id: UUID4
+    organization_id: UUID
 
-    @field_validator("metadata", mode="before")
-    def validate_metadata(cls, v):
+    @field_validator("metadata", "data", mode="before")
+    def validate_json_fields(cls, v):
         if isinstance(v, str):
             return json.loads(v)
         return v
 
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "source_chunk")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "source_chunk", self.id)
-
 
 class SourceRelationshipModel(SupabaseModel):
-    source_version_id: UUID4
-    related_source_version_id: UUID4
+    TABLE_NAME: str = "source_relationship"
+    source_version_id: UUID
+    related_source_version_id: UUID
     relationship_type: Optional[str] = Field(default=None)
-    metadata: Optional[dict] = Field(default=None)
+    metadata: Optional[Json] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
 
     @field_validator("metadata", mode="before")
     def validate_metadata(cls, v):
@@ -80,38 +73,49 @@ class SourceRelationshipModel(SupabaseModel):
             return json.loads(v)
         return v
 
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "source_relationship")
+    async def save_to_supabase(self, supabase: AsyncClient, on_conflict=None):
+        await super().save_to_supabase(supabase, on_conflict)
 
-    async def fetch_from_supabase(self, supabase: AsyncClient):
+    async def fetch_from_supabase(
+        self, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+    ):
         return await super().fetch_from_supabase(
-            supabase, "source_relationship", self.source_version_id
+            supabase, value=value, id_field_name=id_field_name
+        )
+
+    async def exists_in_supabase(
+        self, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+    ):
+        return await super().exists_in_supabase(
+            supabase, value=value, id_field_name=id_field_name
+        )
+
+    async def delete_from_supabase(
+        self, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+    ):
+        return await super().delete_from_supabase(
+            supabase, value=value, id_field_name=id_field_name
         )
 
 
 class SourceVersionModel(SupabaseModel):
-    id: UUID4
+    TABLE_NAME: str = "source_version"
+    id: UUID
     title: Optional[str] = Field(default=None)
     lang: Optional[str] = Field(default=None)
     content_hash: Optional[str] = Field(default=None)
-    data: Optional[dict] = Field(default=None)
-    metadata: Optional[dict] = Field(default=None)
+    data: Optional[Json] = Field(default=None)
+    metadata: Optional[Json] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID4] = Field(default=None)
-    organization_id: UUID4
-    version_of_id: Optional[UUID4] = Field(default=None)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: UUID
+    version_of_id: Optional[UUID] = Field(default=None)
 
-    @field_validator("metadata", mode="before")
-    def validate_metadata(cls, v):
+    @field_validator("metadata", "data", mode="before")
+    def validate_json_fields(cls, v):
         if isinstance(v, str):
             return json.loads(v)
         return v
-
-    async def save_to_supabase(self, supabase: AsyncClient):
-        await super().save_to_supabase(supabase, "source_version")
-
-    async def fetch_from_supabase(self, supabase: AsyncClient):
-        return await super().fetch_from_supabase(supabase, "source_version", self.id)

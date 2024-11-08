@@ -1,37 +1,29 @@
 from typing import List
-from pydantic import UUID4
+from uuid import UUID
 from supabase import AsyncClient
-from postgrest import APIResponse
 
 from lib.models.organization import Organization
 from lib.models.supabase.organization import OrganizationsModel
 
 
 async def get_organization(
-    supabase: AsyncClient, organization_id: UUID4
+    supabase: AsyncClient, organization_id: UUID
 ) -> Organization:
     """
     Retrieve an organization by its ID from Supabase.
 
     Args:
         supabase (AsyncClient): The Supabase client.
-        organization_id (UUID4): The ID of the organization.
+        organization_id (UUID): The ID of the organization.
 
     Returns:
         Organization: The retrieved organization.
     """
-    response: APIResponse = (
-        await supabase.table("organizations")
-        .select("*")
-        .eq("id", organization_id)
-        .limit(1)
-        .execute()
-    )
-    if not response.data:
+    print(f"{organization_id=}")
+    organization_model = OrganizationsModel(id=organization_id)
+    organization_model = await organization_model.fetch_from_supabase(supabase)
+    if not organization_model:
         raise ValueError("Organization not found")
-
-    organization_data = response.data[0]
-    organization_model = OrganizationsModel(**organization_data)
     return Organization(supabase, organization_model)
 
 
@@ -45,7 +37,9 @@ async def list_organizations(supabase: AsyncClient) -> List[Organization]:
     Returns:
         List[Organization]: A list of organizations.
     """
-    response: APIResponse = await supabase.table("organizations").select("*").execute()
+    # Fetch all organizations using the model's method
+    organization_model = OrganizationsModel()
+    response = await supabase.table(organization_model.TABLE_NAME).select("*").execute()
     organizations = [
         Organization(supabase, OrganizationsModel(**org_data))
         for org_data in response.data

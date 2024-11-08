@@ -1,23 +1,22 @@
 from typing import List, Optional
-from pydantic import UUID4
+from uuid import UUID
 from supabase import AsyncClient
-from postgrest import APIResponse
 
 from lib.models.supabase.organization import OrganizationUsersModel
 
 
 async def get_organization_user(
     supabase: AsyncClient,
-    organization_id: UUID4,
-    user_id: Optional[UUID4] = None,
+    organization_id: UUID,
+    user_id: Optional[UUID] = None,
 ) -> OrganizationUsersModel:
     """
     Retrieve an organization user by their user ID and organization ID from Supabase.
 
     Args:
         supabase (AsyncClient): The Supabase client.
-        organization_id (UUID4): The ID of the organization.
-        user_id (UUID4): The user ID of the user.
+        organization_id (UUID): The ID of the organization.
+        user_id (UUID): The user ID of the user.
 
     Returns:
         OrganizationUsersModel: The retrieved organization user.
@@ -29,37 +28,36 @@ async def get_organization_user(
     if user_id is None:
         raise ValueError("User_id must be provided")
 
-    query = (
-        supabase.table("organization_users")
-        .select("*")
-        .eq("organization_id", organization_id)
-        .eq("user_id", user_id)
-        .limit(1)
+    user_model = OrganizationUsersModel(
+        organization_id=organization_id, user_id=user_id
     )
-
-    response: APIResponse = await query.execute()
-    if not response.data:
+    user_model = await user_model.fetch_from_supabase(
+        supabase,
+        value={"organization_id": organization_id, "user_id": user_id},
+        id_field_name="user_id",
+    )
+    if not user_model:
         raise ValueError("User not found")
-
-    user_data = response.data[0]
-    return OrganizationUsersModel(**user_data)
+    return user_model
 
 
 async def list_organization_users(
-    supabase: AsyncClient, organization_id: UUID4
+    supabase: AsyncClient, organization_id: UUID
 ) -> List[OrganizationUsersModel]:
     """
     List all users of an organization from Supabase.
 
     Args:
         supabase (AsyncClient): The Supabase client.
-        organization_id (UUID4): The ID of the organization.
+        organization_id (UUID): The ID of the organization.
 
     Returns:
         List[OrganizationUsersModel]: A list of organization users.
     """
-    response: APIResponse = (
-        await supabase.table("organization_users")
+    # Fetch all organization users using the model's method
+    user_model = OrganizationUsersModel(organization_id=organization_id)
+    response = (
+        await supabase.table(user_model.TABLE_NAME)
         .select("*")
         .eq("organization_id", organization_id)
         .execute()
