@@ -33,7 +33,7 @@ class LlmConversation:
         :type initial_response: Optional[str], optional
         """
         conversation = LlmConversationModel(start_time=datetime.now(timezone.utc))
-        await conversation.save_to_supabase(self.supabase)
+        await conversation.create(self.supabase)
 
         if initial_message is not None:
             message = LlmConversationMessageModel(
@@ -42,7 +42,7 @@ class LlmConversation:
                 type="human",
                 conversation_id=conversation.id,
             )
-            await message.save_to_supabase(self.supabase)
+            await message.create(self.supabase)
 
         if initial_response is not None:
             response = LlmConversationMessageModel(
@@ -51,7 +51,7 @@ class LlmConversation:
                 type="ai",
                 conversation_id=conversation.id,
             )
-            await response.save_to_supabase(self.supabase)
+            await response.create(self.supabase)
 
     async def get_conversation_history(
         self, conversation_id: UUID

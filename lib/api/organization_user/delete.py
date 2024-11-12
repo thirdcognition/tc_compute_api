@@ -24,12 +24,9 @@ async def delete_organization_user(
         raise ValueError("user_id must be provided")
 
     # Initialize the organization user model
-    organization_user = OrganizationUsersModel(
-        user_id=user_id, organization_id=organization_id
-    )
 
     # Check if the user exists
-    if not await organization_user.exists_in_supabase(
+    if not await OrganizationUsersModel.exists_in_supabase(
         supabase,
         value={"organization_id": organization_id, "user_id": user_id},
         id_field_name="user_id",
@@ -37,7 +34,7 @@ async def delete_organization_user(
         raise ValueError("User not found")
 
     # Delete the user using the model's method
-    await organization_user.delete_from_supabase(
+    await OrganizationUsersModel.delete_from_supabase(
         supabase,
         value={"organization_id": organization_id, "user_id": user_id},
         id_field_name="user_id",

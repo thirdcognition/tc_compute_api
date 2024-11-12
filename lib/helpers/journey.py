@@ -1,6 +1,7 @@
 from functools import cache
 import json
 import os
+from uuid import UUID
 import aiofiles  # Import aiofiles for asynchronous file operations
 
 from app.core.supabase import get_supabase_service_client
@@ -81,7 +82,7 @@ async def load_journey_template(
     supabase: AsyncClient,
     item_id: str,
     journey_template_dir: str = journey_template_dir,
-) -> JourneyTemplateModel:
+) -> tuple[UUID, UUID]:
     mapping = get_journey_template_mapping(journey_template_dir)
     filepath = next(
         (pair.file_path for pair in mapping.pairs if pair.key == item_id), None
@@ -93,5 +94,5 @@ async def load_journey_template(
             data = json.loads(await f.read())  # Read file asynchronously
             service_client: AsyncClient = await get_supabase_service_client()
             return await JourneyTemplateModel.from_json(
-                data, service_client
+                service_client, data
             )  # Use the passed supabase

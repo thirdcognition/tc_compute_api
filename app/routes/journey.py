@@ -17,9 +17,9 @@ async def api_get_journey_template(
     supabase: SupaClientDep,
 ):
     try:
-        template = await get_journey_template_with_role(
+        template_id, template_version_id = await get_journey_template_with_role(
             supabase, journey_data.role_title, journey_data.role_description
         )
-        return template
+        return {"template_id": template_id, "template_version_id": template_version_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

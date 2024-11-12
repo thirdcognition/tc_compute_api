@@ -1,13 +1,15 @@
+import asyncio
 from typing import List, Optional
-from lib.models.organization_user import User
+from postgrest import APIResponse
+from datetime import datetime, timezone
+
 from lib.models.supabase.llm_conversation import (
     LlmConversationModel,
     LlmConversationMessageModel,
     LlmConversationMessageHistoryModel,
     LlmConversationThreadModel,
 )
-from postgrest import APIResponse
-from datetime import datetime, timezone
+from lib.models.user import User
 
 
 class LlmConversationData:
@@ -44,22 +46,56 @@ class LlmConversationData:
     async def save_all_to_supabase(self):
         """
         Save all data to Supabase.
-
-        :param supabase: The Supabase client.
-        :type supabase: AsyncClient
         """
+        # Separate lists for different model types
+        conversations_to_upsert: List[LlmConversationModel] = []
+        messages_to_upsert: List[LlmConversationMessageModel] = []
+        histories_to_upsert: List[LlmConversationMessageHistoryModel] = []
+        threads_to_upsert: List[LlmConversationThreadModel] = []
+
+        # Collect instances
         if self.conversations:
-            for conversation in self.conversations:
-                await conversation.save_to_supabase(self.user.supabase)
+            conversations_to_upsert.extend(self.conversations)
         if self.messages:
-            for message in self.messages:
-                await message.save_to_supabase(self.user.supabase)
+            messages_to_upsert.extend(self.messages)
         if self.message_history:
-            for history in self.message_history:
-                await history.save_to_supabase(self.user.supabase)
+            histories_to_upsert.extend(self.message_history)
         if self.threads:
-            for thread in self.threads:
-                await thread.save_to_supabase(self.user.supabase)
+            threads_to_upsert.extend(self.threads)
+
+        # Prepare upsert tasks
+        upsert_tasks = []
+
+        if conversations_to_upsert:
+            upsert_tasks.append(
+                conversations_to_upsert[0].upsert_to_supabase(
+                    self.user.supabase, conversations_to_upsert
+                )
+            )
+
+        if messages_to_upsert:
+            upsert_tasks.append(
+                messages_to_upsert[0].upsert_to_supabase(
+                    self.user.supabase, messages_to_upsert
+                )
+            )
+
+        if histories_to_upsert:
+            upsert_tasks.append(
+                histories_to_upsert[0].upsert_to_supabase(
+                    self.user.supabase, histories_to_upsert
+                )
+            )
+
+        if threads_to_upsert:
+            upsert_tasks.append(
+                threads_to_upsert[0].upsert_to_supabase(
+                    self.user.supabase, threads_to_upsert
+                )
+            )
+
+        # Run all upsert operations concurrently
+        await asyncio.gather(*upsert_tasks)
 
     async def fetch_conversations(self, refresh: bool = False) -> None:
         """
@@ -153,7 +189,7 @@ class LlmConversationData:
         :type initial_response: Optional[str], optional
         """
         conversation = LlmConversationModel(start_time=datetime.now(timezone.utc))
-        await conversation.save_to_supabase(self.user.supabase)
+        await conversation.create(self.user.supabase)
 
         if initial_message is not None:
             message = LlmConversationMessageModel(
@@ -164,7 +200,7 @@ class LlmConversationData:
                 owner_id=self.user.auth_id,
                 organization_id=self.user.active_organization_id,
             )
-            await message.save_to_supabase(self.user.supabase)
+            await message.create(self.user.supabase)
 
         if initial_response is not None:
             response = LlmConversationMessageModel(
@@ -175,4 +211,4 @@ class LlmConversationData:
                 owner_id=self.user.auth_id,
                 organization_id=self.user.active_organization_id,
             )
-            await response.save_to_supabase(self.user.supabase)
+            await response.create(self.user.supabase)

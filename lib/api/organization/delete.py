@@ -15,11 +15,10 @@ async def delete_organization(supabase: AsyncClient, organization_id: UUID) -> N
         ValueError: If the organization is not found.
     """
     # Initialize the organization model
-    organization = OrganizationsModel(id=organization_id)
-
-    # Check if the organization exists
-    if not await organization.exists_in_supabase(supabase):
+    # Initialize the organization model with the given ID
+    # Check if the organization exists using the class method
+    if not await OrganizationsModel.exists_in_supabase(supabase, organization_id):
         raise ValueError("Organization not found")
 
     # Delete the organization using the model's method
-    await organization.delete_from_supabase(supabase)
+    await OrganizationsModel.delete_from_supabase(supabase, organization_id)

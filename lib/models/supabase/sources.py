@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import ClassVar, Optional
 from uuid import UUID
 from pydantic import field_validator, Field, Json
 from enum import Enum
@@ -21,7 +21,7 @@ class SourceTypeEnum(Enum):
 
 
 class SourceModel(SupabaseModel):
-    TABLE_NAME: str = "source"
+    TABLE_NAME: ClassVar[str] = "source"
     id: UUID
     type: Optional[SourceTypeEnum] = Field(default=None)
     disabled: bool = Field(default=False)
@@ -35,7 +35,7 @@ class SourceModel(SupabaseModel):
 
 
 class SourceChunkModel(SupabaseModel):
-    TABLE_NAME: str = "source_chunk"
+    TABLE_NAME: ClassVar[str] = "source_chunk"
     id: UUID
     source_id: Optional[UUID] = Field(default=None)
     source_version_id: Optional[UUID] = Field(default=None)
@@ -51,11 +51,13 @@ class SourceChunkModel(SupabaseModel):
     def validate_json_fields(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class SourceRelationshipModel(SupabaseModel):
-    TABLE_NAME: str = "source_relationship"
+    TABLE_NAME: ClassVar[str] = "source_relationship"
     source_version_id: UUID
     related_source_version_id: UUID
     relationship_type: Optional[str] = Field(default=None)
@@ -71,35 +73,51 @@ class SourceRelationshipModel(SupabaseModel):
     def validate_metadata(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
-    async def save_to_supabase(self, supabase: AsyncClient, on_conflict=None):
-        await super().save_to_supabase(supabase, on_conflict)
+    @classmethod
+    async def save_to_supabase(cls, supabase: AsyncClient, instance, on_conflict=None):
+        await super(SourceRelationshipModel, cls).save_to_supabase(
+            supabase, instance, on_conflict
+        )
 
+    @classmethod
+    async def upsert_to_supabase(
+        cls, supabase: AsyncClient, instances, on_conflict=None
+    ):
+        await super(SourceRelationshipModel, cls).upsert_to_supabase(
+            supabase, instances, on_conflict
+        )
+
+    @classmethod
     async def fetch_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_field_name="source_version_id"
     ):
-        return await super().fetch_from_supabase(
+        return await super(SourceRelationshipModel, cls).fetch_from_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def exists_in_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_field_name="source_version_id"
     ):
-        return await super().exists_in_supabase(
+        return await super(SourceRelationshipModel, cls).exists_in_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def delete_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_field_name="source_version_id"
     ):
-        return await super().delete_from_supabase(
+        return await super(SourceRelationshipModel, cls).delete_from_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
 
 class SourceVersionModel(SupabaseModel):
-    TABLE_NAME: str = "source_version"
+    TABLE_NAME: ClassVar[str] = "source_version"
     id: UUID
     title: Optional[str] = Field(default=None)
     lang: Optional[str] = Field(default=None)
@@ -118,4 +136,6 @@ class SourceVersionModel(SupabaseModel):
     def validate_json_fields(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v

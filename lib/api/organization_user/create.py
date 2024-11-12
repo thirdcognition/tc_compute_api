@@ -37,19 +37,26 @@ async def create_organization_user(
     print(f"{request_data=}")
     # Check if the user already exists
     if request_data.email is not None:
-        user_profile = UserProfileModel(email=request_data.email)
-        if await user_profile.exists_in_supabase(supabase, id_field_name="email"):
-            user_profile = await user_profile.fetch_from_supabase(
-                supabase, id_field_name="email"
+        # Check existence directly with the class method using email
+        if await UserProfileModel.exists_in_supabase(
+            supabase, request_data.email, id_field_name="email"
+        ):
+            # Fetch and create a UserProfileModel instance only if it exists
+            user_profile = await UserProfileModel.fetch_from_supabase(
+                supabase, request_data.email, id_field_name="email"
             )
             auth_id = user_profile.auth_id
     elif request_data.auth_id is not None:
-        user_profile = UserProfileModel(auth_id=request_data.auth_id)
-        if await user_profile.exists_in_supabase(supabase, id_field_name="auth_id"):
-            user_profile = await user_profile.fetch_from_supabase(
-                supabase, id_field_name="auth_id"
+        # Check existence directly with the class method using auth_id
+        if await UserProfileModel.exists_in_supabase(
+            supabase, request_data.auth_id, id_field_name="auth_id"
+        ):
+            # Fetch and create a UserProfileModel instance only if it exists
+            user_profile = await UserProfileModel.fetch_from_supabase(
+                supabase, request_data.auth_id, id_field_name="auth_id"
             )
         else:
+            # Fetch user data from auth.users table if it doesn't exist in UserProfile
             user_data: APIResponse = (
                 await supabase.table("auth.users")
                 .select("*")
@@ -58,7 +65,7 @@ async def create_organization_user(
             )
             auth_id = (
                 user_data[0]["auth_id"]
-                if (user_data.count and user_data.count > 0) > 0
+                if (user_data.count and user_data.count > 0)
                 else None
             )
     else:
@@ -67,10 +74,7 @@ async def create_organization_user(
     print(f"{user_profile=}")
 
     if auth_id:
-        member_model = OrganizationUsersModel(
-            auth_id=auth_id, organization_id=organization_id
-        )
-        if member_model is not None and await member_model.exists_in_supabase(
+        if await OrganizationUsersModel.exists_in_supabase(
             supabase,
             value={"auth_id": auth_id, "organization_id": organization_id},
             id_field_name="auth_id",
@@ -85,7 +89,7 @@ async def create_organization_user(
                 is_admin=request_data.is_admin,
                 user_id=user_profile.id,
             )
-            await organization_user.save_to_supabase(supabase)
+            await organization_user.create(supabase)
             return organization_user
     else:
         service_client: AsyncClient = await get_supabase_service_client()
@@ -99,10 +103,8 @@ async def create_organization_user(
                 },
             )
         )
-        organization_user = OrganizationUsersModel(
-            auth_id=resp.user.id, organization_id=organization_id
-        )
-        organization_user = await organization_user.fetch_from_supabase(
+
+        organization_user = await OrganizationUsersModel.fetch_from_supabase(
             supabase,
             value={"auth_id": resp.user.id, "organization_id": organization_id},
             id_field_name="auth_id",

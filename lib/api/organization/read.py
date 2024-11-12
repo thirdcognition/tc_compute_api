@@ -20,8 +20,9 @@ async def get_organization(
         Organization: The retrieved organization.
     """
     print(f"{organization_id=}")
-    organization_model = OrganizationsModel(id=organization_id)
-    organization_model = await organization_model.fetch_from_supabase(supabase)
+    organization_model = await OrganizationsModel.fetch_from_supabase(
+        supabase, organization_id
+    )
     if not organization_model:
         raise ValueError("Organization not found")
     return Organization(supabase, organization_model)

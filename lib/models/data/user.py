@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, List, Optional
 from lib.models.organization import Organization
 from lib.models.supabase.organization import (
@@ -54,26 +55,76 @@ class UserData:
         :param supabase: The Supabase client.
         :type supabase: AsyncClient
         """
+
+        # Separate lists for different model types
+        profiles_to_upsert: List[UserProfileModel] = []
+        organizations_to_upsert: List[OrganizationsModel] = []
+        teams_to_upsert: List[OrganizationTeamModel] = []
+        roles_to_upsert: List[OrganizationRoleModel] = []
+        memberships_to_upsert: List[OrganizationTeamMembersModel] = []
+        users_to_upsert: List[OrganizationUsersModel] = []
+
+        # Collect instances
         if self.profile:
-            await self.profile.save_to_supabase(supabase)
+            profiles_to_upsert.append(self.profile)
+
         if self.organizations:
-            for organization in self.organizations:
-                await organization.save_to_supabase(supabase)
+            organizations_to_upsert.extend(self.organizations)
+
         if self.teams:
-            for organization_id, teams in self.teams.items():
-                for team in teams:
-                    await team.save_to_supabase(supabase)
+            for teams in self.teams.values():
+                teams_to_upsert.extend(teams)
+
         if self.roles:
-            for organization_id, roles in self.roles.items():
-                for role in roles:
-                    await role.save_to_supabase(supabase)
+            for roles in self.roles.values():
+                roles_to_upsert.extend(roles)
+
         if self.memberships:
-            for organization_id, memberships in self.memberships.items():
-                for membership in memberships:
-                    await membership.save_to_supabase(supabase)
+            for memberships in self.memberships.values():
+                memberships_to_upsert.extend(memberships)
+
         if self.as_user:
-            for organization_id, user in self.as_user.items():
-                await user.save_to_supabase(supabase)
+            users_to_upsert.extend(self.as_user.values())
+
+        # Prepare upsert tasks
+        upsert_tasks = []
+
+        if profiles_to_upsert:
+            upsert_tasks.append(
+                profiles_to_upsert[0].upsert_to_supabase(supabase, profiles_to_upsert)
+            )
+
+        if organizations_to_upsert:
+            upsert_tasks.append(
+                organizations_to_upsert[0].upsert_to_supabase(
+                    supabase, organizations_to_upsert
+                )
+            )
+
+        if teams_to_upsert:
+            upsert_tasks.append(
+                teams_to_upsert[0].upsert_to_supabase(supabase, teams_to_upsert)
+            )
+
+        if roles_to_upsert:
+            upsert_tasks.append(
+                roles_to_upsert[0].upsert_to_supabase(supabase, roles_to_upsert)
+            )
+
+        if memberships_to_upsert:
+            upsert_tasks.append(
+                memberships_to_upsert[0].upsert_to_supabase(
+                    supabase, memberships_to_upsert
+                )
+            )
+
+        if users_to_upsert:
+            upsert_tasks.append(
+                users_to_upsert[0].upsert_to_supabase(supabase, users_to_upsert)
+            )
+
+        # Run all upsert operations concurrently
+        await asyncio.gather(*upsert_tasks)
 
     async def fetch_user_profile(
         self, refresh: bool = False

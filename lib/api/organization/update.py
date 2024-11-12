@@ -35,8 +35,9 @@ async def update_organization(
         raise ValueError("Organization ID must be defined")
 
     # Fetch the existing organization using fetch_from_supabase
-    organization_model = OrganizationsModel(id=request_data.id)
-    organization_model = await organization_model.fetch_from_supabase(supabase)
+    organization_model = await OrganizationsModel.fetch_from_supabase(
+        supabase, request_data.id
+    )
     if not organization_model:
         raise ValueError("Organization not found")
 
@@ -45,6 +46,6 @@ async def update_organization(
     for key, value in update_data.items():
         setattr(organization_model, key, value)
 
-    # Save the updated organization using save_to_supabase
-    await organization_model.save_to_supabase(supabase)
+    # Save the updated organization using update
+    await organization_model.update(supabase)
     return Organization(supabase, organization_model)

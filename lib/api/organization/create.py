@@ -35,8 +35,11 @@ async def create_organization(
     owner_id: UUID = user.user.id
 
     # Check if the organization already exists using exists_in_supabase
-    organization_model = OrganizationsModel(name=request_data.name)
-    if await organization_model.exists_in_supabase(supabase, id_field_name="name"):
+    print(OrganizationsModel.TABLE_NAME)
+
+    if await OrganizationsModel.exists_in_supabase(
+        supabase, id_field_name="name", value=request_data.name
+    ):
         # Raise ValueError if the organization already exists
         raise ValueError(
             f"An organization already exists with the name: {request_data.name}"
@@ -50,5 +53,5 @@ async def create_organization(
         metadata=request_data.metadata,
         owner_id=owner_id,
     )
-    await organization_model.save_to_supabase(supabase)
+    await organization_model.create(supabase)
     return Organization(supabase, organization_model)

@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import Optional
+from typing import ClassVar, Optional
 from lib.models.supabase.supabase_model import SupabaseModel
 from uuid import UUID
 from pydantic import Field, Json, field_validator
@@ -8,7 +8,7 @@ from supabase.client import AsyncClient
 
 
 class JourneyProgressModel(SupabaseModel):
-    TABLE_NAME: str = "journey_progress"
+    TABLE_NAME: ClassVar[str] = "journey_progress"
     id: Optional[UUID] = Field(default=None)
     journey_id: UUID
     journey_version_id: UUID
@@ -25,11 +25,13 @@ class JourneyProgressModel(SupabaseModel):
     def validate_metadata(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class JourneyProgressLLMConversationMessagesModel(SupabaseModel):
-    TABLE_NAME: str = "journey_progress_llm_conversation_messages"
+    TABLE_NAME: ClassVar[str] = "journey_progress_llm_conversation_messages"
     journey_item_progress_id: UUID
     message_id: UUID
     conversation_id: UUID
@@ -38,44 +40,62 @@ class JourneyProgressLLMConversationMessagesModel(SupabaseModel):
     owner_id: Optional[UUID] = Field(default=None)
     organization_id: UUID
 
+    @classmethod
     async def save_to_supabase(
-        self,
+        cls,
         supabase: AsyncClient,
+        instance,
         on_conflict=["journey_item_progress_id", "message_id"],
     ):
-        await super().save_to_supabase(supabase, on_conflict)
+        await super(JourneyProgressLLMConversationMessagesModel, cls).save_to_supabase(
+            supabase, instance, on_conflict
+        )
 
-    async def fetch_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+    @classmethod
+    async def upsert_to_supabase(
+        cls,
+        supabase: AsyncClient,
+        instances,
+        on_conflict=["journey_item_progress_id", "message_id"],
     ):
-        if value is None:
+        await super(
+            JourneyProgressLLMConversationMessagesModel, cls
+        ).upsert_to_supabase(supabase, instances, on_conflict)
+
+    @classmethod
+    async def fetch_from_supabase(
+        cls, supabase: AsyncClient, value=None, id_field_name=None
+    ):
+        if isinstance(value, cls):
             value = {
-                "journey_item_progress_id": self.journey_item_progress_id,
-                "message_id": self.message_id,
+                "journey_item_progress_id": value.journey_item_progress_id,
+                "message_id": value.message_id,
             }
         return await super().fetch_from_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def exists_in_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
+        if isinstance(value, cls):
             value = {
-                "journey_item_progress_id": self.journey_item_progress_id,
-                "message_id": self.message_id,
+                "journey_item_progress_id": value.journey_item_progress_id,
+                "message_id": value.message_id,
             }
         return await super().exists_in_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def delete_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
+        if isinstance(value, cls):
             value = {
-                "journey_item_progress_id": self.journey_item_progress_id,
-                "message_id": self.message_id,
+                "journey_item_progress_id": value.journey_item_progress_id,
+                "message_id": value.message_id,
             }
         return await super().delete_from_supabase(
             supabase, value=value, id_field_name=id_field_name
@@ -83,7 +103,7 @@ class JourneyProgressLLMConversationMessagesModel(SupabaseModel):
 
 
 class JourneyProgressLLMConversationsModel(SupabaseModel):
-    TABLE_NAME: str = "journey_progress_llm_conversations"
+    TABLE_NAME: ClassVar[str] = "journey_progress_llm_conversations"
     progress_id: UUID
     conversation_id: UUID
     created_at: Optional[datetime] = Field(default=None)
@@ -91,42 +111,62 @@ class JourneyProgressLLMConversationsModel(SupabaseModel):
     owner_id: Optional[UUID] = Field(default=None)
     organization_id: UUID
 
+    @classmethod
     async def save_to_supabase(
-        self, supabase: AsyncClient, on_conflict=["progress_id", "conversation_id"]
+        cls,
+        supabase: AsyncClient,
+        instance,
+        on_conflict=["progress_id", "conversation_id"],
     ):
-        await super().save_to_supabase(supabase, on_conflict)
-
-    async def fetch_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
-    ):
-        if value is None:
-            value = {
-                "progress_id": self.progress_id,
-                "conversation_id": self.conversation_id,
-            }
-        return await super().fetch_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+        await super(JourneyProgressLLMConversationsModel, cls).save_to_supabase(
+            supabase, instance, on_conflict
         )
 
-    async def exists_in_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+    @classmethod
+    async def upsert_to_supabase(
+        cls,
+        supabase: AsyncClient,
+        instance,
+        on_conflict=["progress_id", "conversation_id"],
     ):
-        if value is None:
+        await super(JourneyProgressLLMConversationsModel, cls).upsert_to_supabase(
+            supabase, instance, on_conflict
+        )
+
+    @classmethod
+    async def fetch_from_supabase(
+        cls, supabase: AsyncClient, value=None, id_field_name=None
+    ):
+        if isinstance(value, cls):
             value = {
-                "progress_id": self.progress_id,
-                "conversation_id": self.conversation_id,
+                "progress_id": value.progress_id,
+                "conversation_id": value.conversation_id,
+            }
+        return await super(
+            JourneyProgressLLMConversationsModel, cls
+        ).fetch_from_supabase(supabase, value=value, id_field_name=id_field_name)
+
+    @classmethod
+    async def exists_in_supabase(
+        cls, supabase: AsyncClient, value=None, id_field_name=None
+    ):
+        if isinstance(value, cls):
+            value = {
+                "progress_id": value.progress_id,
+                "conversation_id": value.conversation_id,
             }
         return await super().exists_in_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def delete_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
+        if isinstance(value, cls):
             value = {
-                "progress_id": self.progress_id,
-                "conversation_id": self.conversation_id,
+                "progress_id": value.progress_id,
+                "conversation_id": value.conversation_id,
             }
         return await super().delete_from_supabase(
             supabase, value=value, id_field_name=id_field_name
@@ -134,7 +174,7 @@ class JourneyProgressLLMConversationsModel(SupabaseModel):
 
 
 class JourneyItemProgressModel(SupabaseModel):
-    TABLE_NAME: str = "journey_item_progress"
+    TABLE_NAME: ClassVar[str] = "journey_item_progress"
     id: Optional[UUID] = Field(default=None)
     journey_progress_id: UUID
     journey_item_id: UUID
@@ -151,4 +191,6 @@ class JourneyItemProgressModel(SupabaseModel):
     def validate_data(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v

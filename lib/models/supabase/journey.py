@@ -1,14 +1,14 @@
 from enum import Enum
 from datetime import datetime
 import json
-from typing import Optional
+from typing import ClassVar, Optional
 from lib.models.supabase.supabase_model import SupabaseModel
 from uuid import UUID
 from pydantic import Field, Json, field_validator
 
 
 class JourneyModel(SupabaseModel):
-    TABLE_NAME: str = "journey"
+    TABLE_NAME: ClassVar[str] = "journey"
     id: Optional[UUID] = Field(default=None)
     template_id: UUID
     disabled: bool = Field(default=False)
@@ -22,7 +22,7 @@ class JourneyModel(SupabaseModel):
 
 
 class JourneyVersionModel(SupabaseModel):
-    TABLE_NAME: str = "journey_version"
+    TABLE_NAME: ClassVar[str] = "journey_version"
     id: Optional[UUID] = Field(default=None)
     journey_id: UUID
     template_version_id: UUID
@@ -39,11 +39,13 @@ class JourneyVersionModel(SupabaseModel):
     def validate_metadata(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class JourneyItemModel(SupabaseModel):
-    TABLE_NAME: str = "journey_item"
+    TABLE_NAME: ClassVar[str] = "journey_item"
     id: Optional[UUID] = Field(default=None)
     journey_id: UUID
     disabled: bool = Field(default=False)
@@ -64,7 +66,7 @@ class JourneyItemType(str, Enum):
 
 
 class JourneyItemVersionModel(SupabaseModel):
-    TABLE_NAME: str = "journey_item_version"
+    TABLE_NAME: ClassVar[str] = "journey_item_version"
     id: Optional[UUID] = Field(default=None)
     journey_id: UUID
     template_item_id: Optional[UUID] = Field(default=None)
@@ -84,11 +86,13 @@ class JourneyItemVersionModel(SupabaseModel):
     def validate_json_fields(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class JourneyStructureModel(SupabaseModel):
-    TABLE_NAME: str = "journey_structure"
+    TABLE_NAME: ClassVar[str] = "journey_structure"
     id: Optional[UUID] = Field(default=None)
     journey_id: UUID
     disabled: bool = Field(default=False)
@@ -102,7 +106,7 @@ class JourneyStructureModel(SupabaseModel):
 
 
 class JourneyStructureVersionModel(SupabaseModel):
-    TABLE_NAME: str = "journey_structure_version"
+    TABLE_NAME: ClassVar[str] = "journey_structure_version"
     id: Optional[UUID] = Field(default=None)
     journey_id: UUID
     journey_item_id: UUID

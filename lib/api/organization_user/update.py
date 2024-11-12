@@ -37,10 +37,10 @@ async def update_organization_user(
         raise ValueError("User_id must be provided")
 
     # Fetch the existing user using fetch_from_supabase
-    user_model = OrganizationUsersModel(
-        user_id=request_data.user_id, organization_id=organization_id
-    )
-    user_model = await user_model.fetch_from_supabase(
+    # user_model = OrganizationUsersModel(
+    #     user_id=request_data.user_id, organization_id=organization_id
+    # )
+    user_model = await OrganizationUsersModel.fetch_from_supabase(
         supabase,
         value={"organization_id": organization_id, "user_id": request_data.user_id},
         id_field_name="user_id",
@@ -53,6 +53,6 @@ async def update_organization_user(
     for key, value in update_data.items():
         setattr(user_model, key, value)
 
-    # Save the updated user using save_to_supabase
-    await user_model.save_to_supabase(supabase)
+    # Save the updated user using update
+    await user_model.update(supabase)
     return user_model

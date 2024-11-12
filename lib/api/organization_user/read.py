@@ -28,10 +28,10 @@ async def get_organization_user(
     if user_id is None:
         raise ValueError("User_id must be provided")
 
-    user_model = OrganizationUsersModel(
-        organization_id=organization_id, user_id=user_id
-    )
-    user_model = await user_model.fetch_from_supabase(
+    # user_model = OrganizationUsersModel(
+    #     organization_id=organization_id, user_id=user_id
+    # )
+    user_model = await OrganizationUsersModel.fetch_from_supabase(
         supabase,
         value={"organization_id": organization_id, "user_id": user_id},
         id_field_name="user_id",

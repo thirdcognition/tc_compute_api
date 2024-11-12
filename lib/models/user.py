@@ -77,7 +77,7 @@ class User:
     async def set_active_organization(self, organization_id: UUID) -> None:
         if organization_id in self.model.organizations:
             self.model.profile.active_organization_id = organization_id
-            await self.model.profile.save_to_supabase(self.supabase)
+            await self.model.profile.update(self.supabase)
 
     @property
     def active_conversation_id(self) -> Optional[UUID]:
@@ -86,7 +86,7 @@ class User:
     @active_conversation_id.setter
     async def set_active_conversation(self, conversation_id: UUID) -> None:
         self.model.profile.active_conversation_id = conversation_id
-        await self.model.profile.save_to_supabase(self.supabase)
+        await self.model.profile.update(self.supabase)
 
     @property
     def organization_access_disabled(self) -> bool:

@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import ClassVar, Optional
 from uuid import UUID
 from pydantic import Field, Json, field_validator
 from pydantic.types import PositiveInt
@@ -10,7 +10,7 @@ from lib.models.supabase.supabase_model import SupabaseModel
 
 
 class UserProfileModel(SupabaseModel):
-    TABLE_NAME: str = "user_profile"
+    TABLE_NAME: ClassVar[str] = "user_profile"
     id: Optional[UUID] = Field(default=None)
     auth_id: Optional[UUID] = Field(default=None)
     email: Optional[str] = Field(default=None)
@@ -28,11 +28,13 @@ class UserProfileModel(SupabaseModel):
     def validate_metadata(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class OrganizationRoleModel(SupabaseModel):
-    TABLE_NAME: str = "organization_role"
+    TABLE_NAME: ClassVar[str] = "organization_role"
     id: Optional[UUID] = Field(default=None)
     name: str
     description: Optional[str] = Field(default=None)
@@ -48,11 +50,13 @@ class OrganizationRoleModel(SupabaseModel):
     def validate_metadata(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class OrganizationTeamModel(SupabaseModel):
-    TABLE_NAME: str = "organization_team"
+    TABLE_NAME: ClassVar[str] = "organization_team"
     id: Optional[UUID] = Field(default=None)
     name: str
     metadata: Optional[Json] = Field(default=None)
@@ -67,11 +71,13 @@ class OrganizationTeamModel(SupabaseModel):
     def validate_metadata(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class OrganizationTeamMembersModel(SupabaseModel):
-    TABLE_NAME: str = "organization_team_members"
+    TABLE_NAME: ClassVar[str] = "organization_team_members"
     auth_id: UUID
     user_id: UUID
     team_id: UUID
@@ -82,41 +88,55 @@ class OrganizationTeamMembersModel(SupabaseModel):
     updated_at: Optional[datetime] = Field(default=None)
     organization_id: UUID
 
+    @classmethod
     async def save_to_supabase(
-        self, supabase: AsyncClient, on_conflict=["auth_id", "team_id"]
+        cls, supabase: AsyncClient, instance, on_conflict=["auth_id", "team_id"]
     ):
-        await super().save_to_supabase(supabase, on_conflict)
+        await super(OrganizationTeamMembersModel, cls).save_to_supabase(
+            supabase, instance, on_conflict
+        )
 
+    @classmethod
+    async def upsert_to_supabase(
+        cls, supabase: AsyncClient, instances, on_conflict=["auth_id", "team_id"]
+    ):
+        await super(OrganizationTeamMembersModel, cls).upsert_to_supabase(
+            supabase, instances, on_conflict
+        )
+
+    @classmethod
     async def fetch_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
-            value = {"auth_id": self.auth_id, "team_id": self.team_id}
-        return await super().fetch_from_supabase(
+        if isinstance(value, cls):
+            value = {"auth_id": value.auth_id, "team_id": value.team_id}
+        return await super(OrganizationTeamMembersModel, cls).fetch_from_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def exists_in_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
-            value = {"auth_id": self.auth_id, "team_id": self.team_id}
-        return await super().exists_in_supabase(
+        if isinstance(value, cls):
+            value = {"auth_id": value.auth_id, "team_id": value.team_id}
+        return await super(OrganizationTeamMembersModel, cls).exists_in_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def delete_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
-            value = {"auth_id": self.auth_id, "team_id": self.team_id}
-        return await super().delete_from_supabase(
+        if isinstance(value, cls):
+            value = {"auth_id": value.auth_id, "team_id": value.team_id}
+        return await super(OrganizationTeamMembersModel, cls).delete_from_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
 
 class OrganizationUsersModel(SupabaseModel):
-    TABLE_NAME: str = "organization_users"
+    TABLE_NAME: ClassVar[str] = "organization_users"
     auth_id: Optional[UUID] = Field(default=None)
     user_id: Optional[UUID] = Field(default=None)
     organization_id: UUID
@@ -131,43 +151,62 @@ class OrganizationUsersModel(SupabaseModel):
     def validate_metadata(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
+    @classmethod
     async def save_to_supabase(
-        self, supabase: AsyncClient, on_conflict=["auth_id", "organization_id"]
+        cls, supabase: AsyncClient, instance, on_conflict=["auth_id", "organization_id"]
     ):
-        await super().save_to_supabase(supabase, on_conflict)
+        await super(OrganizationUsersModel, cls).save_to_supabase(
+            supabase, instance, on_conflict
+        )
 
+    @classmethod
+    async def upsert_to_supabase(
+        cls,
+        supabase: AsyncClient,
+        instances,
+        on_conflict=["auth_id", "organization_id"],
+    ):
+        await super(OrganizationUsersModel, cls).upsert_to_supabase(
+            supabase, instances, on_conflict
+        )
+
+    @classmethod
     async def fetch_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
-            value = {"auth_id": self.auth_id, "organization_id": self.organization_id}
-        return await super().fetch_from_supabase(
+        if isinstance(value, cls):
+            value = {"auth_id": value.auth_id, "organization_id": value.organization_id}
+        return await super(OrganizationUsersModel, cls).fetch_from_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def exists_in_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
-            value = {"auth_id": self.auth_id, "organization_id": self.organization_id}
-        return await super().exists_in_supabase(
+        if isinstance(value, cls):
+            value = {"auth_id": value.auth_id, "organization_id": value.organization_id}
+        return await super(OrganizationUsersModel, cls).exists_in_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
+    @classmethod
     async def delete_from_supabase(
-        self, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_field_name=None
     ):
-        if value is None:
-            value = {"auth_id": self.auth_id, "organization_id": self.organization_id}
-        return await super().delete_from_supabase(
+        if isinstance(value, cls):
+            value = {"auth_id": value.auth_id, "organization_id": value.organization_id}
+        return await super(OrganizationUsersModel, cls).delete_from_supabase(
             supabase, value=value, id_field_name=id_field_name
         )
 
 
 class OrganizationsModel(SupabaseModel):
-    TABLE_NAME: str = "organizations"
+    TABLE_NAME: ClassVar[str] = "organizations"
     id: Optional[UUID] = Field(default=None)
     name: Optional[str] = Field(default=None)
     website: Optional[str] = Field(default=None)
@@ -183,4 +222,6 @@ class OrganizationsModel(SupabaseModel):
     def validate_metadata(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v

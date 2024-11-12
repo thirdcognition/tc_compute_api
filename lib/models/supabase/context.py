@@ -1,13 +1,13 @@
 import json
 from datetime import datetime
-from typing import Optional
+from typing import ClassVar, Optional
 from lib.models.supabase.supabase_model import SupabaseModel
 from uuid import UUID
 from pydantic import Field, Json, field_validator
 
 
 class ContextQuery(SupabaseModel):
-    TABLE_NAME: str = "context_query"
+    TABLE_NAME: ClassVar[str] = "context_query"
     id: UUID
     params: Optional[Json] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -19,11 +19,13 @@ class ContextQuery(SupabaseModel):
     def validate_params(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class ContextQueryResponse(SupabaseModel):
-    TABLE_NAME: str = "context_query_response"
+    TABLE_NAME: ClassVar[str] = "context_query_response"
     id: UUID
     query_id: Optional[UUID] = Field(default=None)
     response_data: Optional[Json] = Field(default=None)
@@ -38,11 +40,13 @@ class ContextQueryResponse(SupabaseModel):
     def validate_response_data(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v
 
 
 class ContextQueryResult(SupabaseModel):
-    TABLE_NAME: str = "context_query_result"
+    TABLE_NAME: ClassVar[str] = "context_query_result"
     id: UUID
     query_id: Optional[UUID] = Field(default=None)
     result_data: Optional[Json] = Field(default=None)
@@ -55,4 +59,6 @@ class ContextQueryResult(SupabaseModel):
     def validate_result_data(cls, v):
         if isinstance(v, str):
             return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
         return v

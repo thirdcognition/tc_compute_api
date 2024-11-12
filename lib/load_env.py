@@ -1,6 +1,7 @@
 # Load .env file from the parent directory
 from pathlib import Path
 from typing import Any, Literal, Optional, List, Union
+import warnings
 from pydantic_settings import BaseSettings
 from pydantic import AnyHttpUrl, BaseModel, Field, IPvAnyAddress
 from langchain_community.embeddings.ollama import OllamaEmbeddings
@@ -25,6 +26,9 @@ from langchain_core.language_models.llms import BaseLLM
 import toml
 
 log_format = logging.Formatter("%(asctime)s : %(levelname)s - %(message)s")
+
+logging.captureWarnings(True)
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 # root logger
 root_logger = logging.getLogger()
