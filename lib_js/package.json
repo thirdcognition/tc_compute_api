@@ -1,0 +1,22 @@
+{
+  "name": "tc_compute_api_ts",
+  "version": "0.0.1",
+  "description": "Typescript conversion of Compute Api models and relevant helpers.",
+  "main": "loadEnv.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "lint-fix": "eslint . --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Markus Haverinen",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.46.1",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^9.14.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "prettier": "^3.3.3"
+  }
+}

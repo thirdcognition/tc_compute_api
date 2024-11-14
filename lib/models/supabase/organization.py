@@ -98,10 +98,14 @@ class OrganizationTeamMembersModel(SupabaseModel):
 
     @classmethod
     async def upsert_to_supabase(
-        cls, supabase: AsyncClient, instances, on_conflict=["auth_id", "team_id"]
+        cls,
+        supabase: AsyncClient,
+        instances,
+        on_conflict=["auth_id", "team_id"],
+        id_field_name=None,
     ):
         await super(OrganizationTeamMembersModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict
+            supabase, instances, on_conflict, id_field_name
         )
 
     @classmethod
@@ -169,9 +173,10 @@ class OrganizationUsersModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["auth_id", "organization_id"],
+        id_field_name=None,
     ):
         await super(OrganizationUsersModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict
+            supabase, instances, on_conflict, id_field_name
         )
 
     @classmethod

@@ -193,8 +193,8 @@ class SupabaseModel(BaseModel):
                 for key, val in data.items():
                     instance._set_attribute(key, val)
 
-        instance.dirty = False
-        return instance
+            instance.dirty = False
+            return instance
 
         return None
 

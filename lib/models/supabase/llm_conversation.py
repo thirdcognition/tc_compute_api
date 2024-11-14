@@ -71,10 +71,11 @@ class LlmConversationMessageHistoryModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["conversation_id", "message_id"],
+        id_field_name=None,
     ):
         # Upsert logic which uses the same parameters and structure as save_to_supabase
         await super(LlmConversationMessageHistoryModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict
+            supabase, instances, on_conflict, id_field_name
         )
 
     @classmethod
@@ -133,10 +134,11 @@ class LlmConversationThreadModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["conversation_id", "parent_message_id"],
+        id_field_name=None,
     ):
         # Use the provided instances instead of instance-specific data
         await super(LlmConversationThreadModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict
+            supabase, instances, on_conflict, id_field_name
         )
 
     @classmethod

@@ -85,10 +85,14 @@ class SourceRelationshipModel(SupabaseModel):
 
     @classmethod
     async def upsert_to_supabase(
-        cls, supabase: AsyncClient, instances, on_conflict=None
+        cls,
+        supabase: AsyncClient,
+        instances,
+        on_conflict=None,
+        id_field_name="source_version_id",
     ):
         await super(SourceRelationshipModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict
+            supabase, instances, on_conflict, id_field_name
         )
 
     @classmethod

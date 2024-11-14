@@ -9,5 +9,15 @@
     "python.linting.flake8Args": [
         "--max-line-length=88"
     ],
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "eslint.workingDirectories": [
+        {
+            "directory": "lib_js"
+        }
+    ],
+    "eslint.useFlatConfig": true,
+    "prettier.configPath": "lib_js/.prettierrc",
+    "prettier.printWidth": 120,
+    "prettier.tabWidth": 4,
+    "prettier.trailingComma": "none"
 }

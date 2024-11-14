@@ -57,10 +57,11 @@ class JourneyProgressLLMConversationMessagesModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["journey_item_progress_id", "message_id"],
+        id_field_name=None,
     ):
         await super(
             JourneyProgressLLMConversationMessagesModel, cls
-        ).upsert_to_supabase(supabase, instances, on_conflict)
+        ).upsert_to_supabase(supabase, instances, on_conflict, id_field_name)
 
     @classmethod
     async def fetch_from_supabase(
@@ -128,9 +129,10 @@ class JourneyProgressLLMConversationsModel(SupabaseModel):
         supabase: AsyncClient,
         instance,
         on_conflict=["progress_id", "conversation_id"],
+        id_field_name=None,
     ):
         await super(JourneyProgressLLMConversationsModel, cls).upsert_to_supabase(
-            supabase, instance, on_conflict
+            supabase, instance, on_conflict, id_field_name
         )
 
     @classmethod
