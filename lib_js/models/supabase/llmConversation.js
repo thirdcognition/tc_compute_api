@@ -4,96 +4,246 @@ import { v4 as uuidv4 } from "uuid";
 export class LlmConversationModel extends SupabaseModel {
     static TABLE_NAME = "llm_conversation";
 
-    constructor({
-        id = null,
-        startTime = null,
-        endTime = null,
-        title = null,
-        tags = null,
-        metadata = null,
-        createdAt = null,
-        ownerId = null,
-        organizationId,
-        state = null
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.title = title;
-        this.tags = tags;
-        this.metadata = metadata;
-        this.createdAt = createdAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
-        this.state = state;
-    }
-
-    static validateMetadata(v) {
-        if (typeof v === "string") {
-            return JSON.parse(v);
-        } else if (typeof v === "object") {
-            return JSON.stringify(v);
-        }
-        return v;
+        const {
+            id = null,
+            startTime = null,
+            endTime = null,
+            title = null,
+            tags = null,
+            metadata = null,
+            createdAt = null,
+            ownerId = null,
+            organizationId,
+            state = null
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            startTime: {
+                value: startTime,
+                type: "date",
+                required: false,
+                dbColumn: "start_time"
+            },
+            endTime: {
+                value: endTime,
+                type: "date",
+                required: false,
+                dbColumn: "end_time"
+            },
+            title: {
+                value: title,
+                type: "string",
+                required: false,
+                dbColumn: "title"
+            },
+            tags: {
+                value: tags,
+                type: "array",
+                required: false,
+                dbColumn: "tags"
+            },
+            metadata: {
+                value: metadata,
+                type: "json",
+                required: false,
+                dbColumn: "metadata"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            },
+            state: {
+                value: state,
+                type: "string",
+                required: false,
+                dbColumn: "state"
+            }
+        };
     }
 }
 
 export class LlmConversationMessageModel extends SupabaseModel {
     static TABLE_NAME = "llm_conversation_message";
 
-    constructor({
-        id = null,
-        type = null,
-        conversationId,
-        content = null,
-        model = null,
-        createdAt = null,
-        ownerId = null,
-        organizationId
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.type = type;
-        this.conversationId = conversationId;
-        this.content = content;
-        this.model = model;
-        this.createdAt = createdAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
+        const {
+            id = null,
+            type = null,
+            conversationId,
+            content = null,
+            model = null,
+            createdAt = null,
+            ownerId = null,
+            organizationId
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            type: {
+                value: type,
+                type: "string",
+                required: false,
+                dbColumn: "type"
+            },
+            conversationId: {
+                value: conversationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "conversation_id"
+            },
+            content: {
+                value: content,
+                type: "string",
+                required: false,
+                dbColumn: "content"
+            },
+            model: {
+                value: model,
+                type: "string",
+                required: false,
+                dbColumn: "model"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            }
+        };
     }
 }
 
 export class LlmConversationMessageHistoryModel extends SupabaseModel {
     static TABLE_NAME = "llm_conversation_message_history";
 
-    constructor({
-        organizationId,
-        conversationId,
-        sessionId = null,
-        queryId = null,
-        messageId,
-        responseId = null,
-        previousMessageId = null,
-        nextMessageId = null,
-        disabled = false,
-        disabledAt = null,
-        createdAt = null,
-        ownerId = null
-    }) {
+    constructor(args) {
         super();
-        this.organizationId = organizationId;
-        this.conversationId = conversationId;
-        this.sessionId = sessionId;
-        this.queryId = queryId;
-        this.messageId = messageId;
-        this.responseId = responseId;
-        this.previousMessageId = previousMessageId;
-        this.nextMessageId = nextMessageId;
-        this.disabled = disabled;
-        this.disabledAt = disabledAt;
-        this.createdAt = createdAt;
-        this.ownerId = ownerId;
+        const {
+            organizationId,
+            conversationId,
+            sessionId = null,
+            queryId = null,
+            messageId,
+            responseId = null,
+            previousMessageId = null,
+            nextMessageId = null,
+            disabled = false,
+            disabledAt = null,
+            createdAt = null,
+            ownerId = null
+        } = args;
+        this.attributes = {
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            },
+            conversationId: {
+                value: conversationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "conversation_id"
+            },
+            sessionId: {
+                value: sessionId,
+                type: "uuid",
+                required: false,
+                dbColumn: "session_id"
+            },
+            queryId: {
+                value: queryId,
+                type: "uuid",
+                required: false,
+                dbColumn: "query_id"
+            },
+            messageId: {
+                value: messageId,
+                type: "uuid",
+                required: true,
+                dbColumn: "message_id"
+            },
+            responseId: {
+                value: responseId,
+                type: "uuid",
+                required: false,
+                dbColumn: "response_id"
+            },
+            previousMessageId: {
+                value: previousMessageId,
+                type: "uuid",
+                required: false,
+                dbColumn: "previous_message_id"
+            },
+            nextMessageId: {
+                value: nextMessageId,
+                type: "uuid",
+                required: false,
+                dbColumn: "next_message_id"
+            },
+            disabled: {
+                value: disabled,
+                type: "boolean",
+                required: false,
+                dbColumn: "disabled"
+            },
+            disabledAt: {
+                value: disabledAt,
+                type: "date",
+                required: false,
+                dbColumn: "disabled_at"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            }
+        };
     }
 
     static async saveToSupabase(
@@ -108,53 +258,81 @@ export class LlmConversationMessageHistoryModel extends SupabaseModel {
         supabase,
         instances,
         onConflict = ["conversationId", "messageId"],
-        idFieldName = null
+        idColumn = null
     ) {
         return super.upsertToSupabase(
             supabase,
             instances,
             onConflict,
-            idFieldName
+            idColumn
         );
     }
 
-    static async fetchFromSupabase(supabase, value = null, idFieldName = null) {
+    static async fetchFromSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                conversationId: value.conversationId,
-                messageId: value.messageId
+                conversationId: value.attributes.conversationId.value,
+                messageId: value.attributes.messageId.value
             };
         }
-        return super.fetchFromSupabase(supabase, value, idFieldName);
+        return super.fetchFromSupabase(supabase, value, idColumn);
     }
 
-    static async existsInSupabase(supabase, value = null, idFieldName = null) {
+    static async existsInSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                conversationId: value.conversationId,
-                messageId: value.messageId
+                conversationId: value.attributes.conversationId.value,
+                messageId: value.attributes.messageId.value
             };
         }
-        return super.existsInSupabase(supabase, value, idFieldName);
+        return super.existsInSupabase(supabase, value, idColumn);
     }
 }
 
 export class LlmConversationThreadModel extends SupabaseModel {
     static TABLE_NAME = "llm_conversation_thread";
 
-    constructor({
-        conversationId,
-        parentMessageId,
-        createdAt = null,
-        ownerId = null,
-        organizationId
-    }) {
+    constructor(args) {
         super();
-        this.conversationId = conversationId;
-        this.parentMessageId = parentMessageId;
-        this.createdAt = createdAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
+        const {
+            conversationId,
+            parentMessageId,
+            createdAt = null,
+            ownerId = null,
+            organizationId
+        } = args;
+        this.attributes = {
+            conversationId: {
+                value: conversationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "conversation_id"
+            },
+            parentMessageId: {
+                value: parentMessageId,
+                type: "uuid",
+                required: true,
+                dbColumn: "parent_message_id"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            }
+        };
     }
 
     static async saveToSupabase(
@@ -169,33 +347,33 @@ export class LlmConversationThreadModel extends SupabaseModel {
         supabase,
         instances,
         onConflict = ["conversationId", "parentMessageId"],
-        idFieldName = null
+        idColumn = null
     ) {
         return super.upsertToSupabase(
             supabase,
             instances,
             onConflict,
-            idFieldName
+            idColumn
         );
     }
 
-    static async fetchFromSupabase(supabase, value = null, idFieldName = null) {
+    static async fetchFromSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                conversationId: value.conversationId,
-                parentMessageId: value.parentMessageId
+                conversationId: value.attributes.conversationId.value,
+                parentMessageId: value.attributes.parentMessageId.value
             };
         }
-        return super.fetchFromSupabase(supabase, value, idFieldName);
+        return super.fetchFromSupabase(supabase, value, idColumn);
     }
 
-    static async existsInSupabase(supabase, value = null, idFieldName = null) {
+    static async existsInSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                conversationId: value.conversationId,
-                parentMessageId: value.parentMessageId
+                conversationId: value.attributes.conversationId.value,
+                parentMessageId: value.attributes.parentMessageId.value
             };
         }
-        return super.existsInSupabase(supabase, value, idFieldName);
+        return super.existsInSupabase(supabase, value, idColumn);
     }
 }

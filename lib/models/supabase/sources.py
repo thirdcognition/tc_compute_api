@@ -89,34 +89,34 @@ class SourceRelationshipModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=None,
-        id_field_name="source_version_id",
+        id_column="source_version_id",
     ):
         await super(SourceRelationshipModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict, id_field_name
+            supabase, instances, on_conflict, id_column
         )
 
     @classmethod
     async def fetch_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_column="source_version_id"
     ):
         return await super(SourceRelationshipModel, cls).fetch_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_column="source_version_id"
     ):
         return await super(SourceRelationshipModel, cls).exists_in_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def delete_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_column="source_version_id"
     ):
         return await super(SourceRelationshipModel, cls).delete_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
 

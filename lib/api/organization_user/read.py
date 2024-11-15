@@ -34,7 +34,7 @@ async def get_organization_user(
     user_model = await OrganizationUsersModel.fetch_from_supabase(
         supabase,
         value={"organization_id": organization_id, "user_id": user_id},
-        id_field_name="user_id",
+        id_column="user_id",
     )
     if not user_model:
         raise ValueError("User not found")

@@ -133,7 +133,7 @@ class JourneyTemplateItemModel(SupabaseModel):
         existing_items = await cls.fetch_existing_from_supabase(
             supabase,
             filter=template_version_id,
-            id_field_name="template_version_id",
+            id_column="template_version_id",
         )
 
         # Convert existing items into a dictionary for quick lookup
@@ -231,7 +231,7 @@ class JourneyTemplateStructureModel(SupabaseModel):
     ) -> List["JourneyTemplateStructureModel"]:
         # Step 1: Fetch existing structures using template_version_id
         existing_structures = await cls.fetch_existing_from_supabase(
-            supabase, filter=template_version_id, id_field_name="template_version_id"
+            supabase, filter=template_version_id, id_column="template_version_id"
         )
 
         # Convert existing structures into a dictionary for quick lookup

@@ -4,95 +4,257 @@ import { v4 as uuidv4 } from "uuid";
 export class JourneyTemplateModel extends SupabaseModel {
     static TABLE_NAME = "journey_template";
 
-    constructor({
-        id = null,
-        disabled = false,
-        disabledAt = null,
-        createdAt = null,
-        updatedAt = null,
-        currentVersionId = null
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.disabled = disabled;
-        this.disabledAt = disabledAt;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.currentVersionId = currentVersionId;
+        const {
+            id = null,
+            disabled = false,
+            disabledAt = null,
+            createdAt = null,
+            updatedAt = null,
+            currentVersionId = null
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            disabled: {
+                value: disabled,
+                type: "boolean",
+                required: false,
+                dbColumn: "disabled"
+            },
+            disabledAt: {
+                value: disabledAt,
+                type: "date",
+                required: false,
+                dbColumn: "disabled_at"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            currentVersionId: {
+                value: currentVersionId,
+                type: "uuid",
+                required: false,
+                dbColumn: "current_version_id"
+            }
+        };
     }
 }
 
 export class JourneyTemplateVersionModel extends SupabaseModel {
     static TABLE_NAME = "journey_template_version";
 
-    constructor({
-        id = null,
-        templateId,
-        name,
-        description = null,
-        disabled = false,
-        disabledAt = null,
-        createdAt = null,
-        updatedAt = null,
-        versionOfId = null
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.templateId = templateId;
-        this.name = name;
-        this.description = description;
-        this.disabled = disabled;
-        this.disabledAt = disabledAt;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.versionOfId = versionOfId;
+        const {
+            id = null,
+            templateId,
+            name,
+            description = null,
+            disabled = false,
+            disabledAt = null,
+            createdAt = null,
+            updatedAt = null,
+            versionOfId = null
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            templateId: {
+                value: templateId,
+                type: "uuid",
+                required: true,
+                dbColumn: "template_id"
+            },
+            name: {
+                value: name,
+                type: "string",
+                required: true,
+                dbColumn: "name"
+            },
+            description: {
+                value: description,
+                type: "string",
+                required: false,
+                dbColumn: "description"
+            },
+            disabled: {
+                value: disabled,
+                type: "boolean",
+                required: false,
+                dbColumn: "disabled"
+            },
+            disabledAt: {
+                value: disabledAt,
+                type: "date",
+                required: false,
+                dbColumn: "disabled_at"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            versionOfId: {
+                value: versionOfId,
+                type: "uuid",
+                required: false,
+                dbColumn: "version_of_id"
+            }
+        };
     }
 }
 
 export class JourneyTemplateItemModel extends SupabaseModel {
     static TABLE_NAME = "journey_template_item";
 
-    constructor({
-        id = null,
-        templateVersionId,
-        name,
-        type = null,
-        data = null,
-        createdAt = null,
-        updatedAt = null
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.templateVersionId = templateVersionId;
-        this.name = name;
-        this.type = type;
-        this.data = data;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        const {
+            id = null,
+            templateVersionId,
+            name,
+            type = null,
+            data = null,
+            createdAt = null,
+            updatedAt = null
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            templateVersionId: {
+                value: templateVersionId,
+                type: "uuid",
+                required: true,
+                dbColumn: "template_version_id"
+            },
+            name: {
+                value: name,
+                type: "string",
+                required: true,
+                dbColumn: "name"
+            },
+            type: {
+                value: type,
+                type: "JourneyItemType",
+                required: false,
+                dbColumn: "type"
+            },
+            data: {
+                value: data,
+                type: "json",
+                required: false,
+                dbColumn: "data"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            }
+        };
     }
 }
 
 export class JourneyTemplateStructureModel extends SupabaseModel {
     static TABLE_NAME = "journey_template_structure";
 
-    constructor({
-        id = null,
-        templateVersionId,
-        journeyTemplateItemId,
-        parentId = null,
-        previousId = null,
-        nextId = null,
-        createdAt = null,
-        updatedAt = null
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.templateVersionId = templateVersionId;
-        this.journeyTemplateItemId = journeyTemplateItemId;
-        this.parentId = parentId;
-        this.previousId = previousId;
-        this.nextId = nextId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        const {
+            id = null,
+            templateVersionId,
+            journeyTemplateItemId,
+            parentId = null,
+            previousId = null,
+            nextId = null,
+            createdAt = null,
+            updatedAt = null
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            templateVersionId: {
+                value: templateVersionId,
+                type: "uuid",
+                required: true,
+                dbColumn: "template_version_id"
+            },
+            journeyTemplateItemId: {
+                value: journeyTemplateItemId,
+                type: "uuid",
+                required: true,
+                dbColumn: "journey_template_item_id"
+            },
+            parentId: {
+                value: parentId,
+                type: "uuid",
+                required: false,
+                dbColumn: "parent_id"
+            },
+            previousId: {
+                value: previousId,
+                type: "uuid",
+                required: false,
+                dbColumn: "previous_id"
+            },
+            nextId: {
+                value: nextId,
+                type: "uuid",
+                required: false,
+                dbColumn: "next_id"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            }
+        };
     }
 }

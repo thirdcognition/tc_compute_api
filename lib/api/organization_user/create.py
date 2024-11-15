@@ -39,21 +39,21 @@ async def create_organization_user(
     if request_data.email is not None:
         # Check existence directly with the class method using email
         if await UserProfileModel.exists_in_supabase(
-            supabase, request_data.email, id_field_name="email"
+            supabase, request_data.email, id_column="email"
         ):
             # Fetch and create a UserProfileModel instance only if it exists
             user_profile = await UserProfileModel.fetch_from_supabase(
-                supabase, request_data.email, id_field_name="email"
+                supabase, request_data.email, id_column="email"
             )
             auth_id = user_profile.auth_id
     elif request_data.auth_id is not None:
         # Check existence directly with the class method using auth_id
         if await UserProfileModel.exists_in_supabase(
-            supabase, request_data.auth_id, id_field_name="auth_id"
+            supabase, request_data.auth_id, id_column="auth_id"
         ):
             # Fetch and create a UserProfileModel instance only if it exists
             user_profile = await UserProfileModel.fetch_from_supabase(
-                supabase, request_data.auth_id, id_field_name="auth_id"
+                supabase, request_data.auth_id, id_column="auth_id"
             )
         else:
             # Fetch user data from auth.users table if it doesn't exist in UserProfile
@@ -77,7 +77,7 @@ async def create_organization_user(
         if await OrganizationUsersModel.exists_in_supabase(
             supabase,
             value={"auth_id": auth_id, "organization_id": organization_id},
-            id_field_name="auth_id",
+            id_column="auth_id",
         ):
             raise ValueError("User is already a member of the organization")
         else:
@@ -107,6 +107,6 @@ async def create_organization_user(
         organization_user = await OrganizationUsersModel.fetch_from_supabase(
             supabase,
             value={"auth_id": resp.user.id, "organization_id": organization_id},
-            id_field_name="auth_id",
+            id_column="auth_id",
         )
         return organization_user

@@ -102,40 +102,40 @@ class OrganizationTeamMembersModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["auth_id", "team_id"],
-        id_field_name=None,
+        id_column=None,
     ):
         await super(OrganizationTeamMembersModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict, id_field_name
+            supabase, instances, on_conflict, id_column
         )
 
     @classmethod
     async def fetch_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {"auth_id": value.auth_id, "team_id": value.team_id}
         return await super(OrganizationTeamMembersModel, cls).fetch_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {"auth_id": value.auth_id, "team_id": value.team_id}
         return await super(OrganizationTeamMembersModel, cls).exists_in_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def delete_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {"auth_id": value.auth_id, "team_id": value.team_id}
         return await super(OrganizationTeamMembersModel, cls).delete_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
 
@@ -173,40 +173,40 @@ class OrganizationUsersModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["auth_id", "organization_id"],
-        id_field_name=None,
+        id_column=None,
     ):
         await super(OrganizationUsersModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict, id_field_name
+            supabase, instances, on_conflict, id_column
         )
 
     @classmethod
     async def fetch_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {"auth_id": value.auth_id, "organization_id": value.organization_id}
         return await super(OrganizationUsersModel, cls).fetch_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {"auth_id": value.auth_id, "organization_id": value.organization_id}
         return await super(OrganizationUsersModel, cls).exists_in_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def delete_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {"auth_id": value.auth_id, "organization_id": value.organization_id}
         return await super(OrganizationUsersModel, cls).delete_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
 

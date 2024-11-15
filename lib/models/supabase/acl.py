@@ -59,34 +59,34 @@ class ACLGroupItemsModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["item_id", "acl_group_id"],
-        id_field_name="acl_group_id",
+        id_column="acl_group_id",
     ):
         await super(ACLGroupItemsModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict, id_field_name
+            supabase, instances, on_conflict, id_column
         )
 
     @classmethod
     async def fetch_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="acl_group_id"
+        cls, supabase: AsyncClient, value=None, id_column="acl_group_id"
     ):
         return await super(ACLGroupItemsModel, cls).fetch_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="acl_group_id"
+        cls, supabase: AsyncClient, value=None, id_column="acl_group_id"
     ):
         return await super(ACLGroupItemsModel, cls).exists_in_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def delete_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="acl_group_id"
+        cls, supabase: AsyncClient, value=None, id_column="acl_group_id"
     ):
         return await super(ACLGroupItemsModel, cls).delete_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
 
@@ -116,34 +116,34 @@ class ACLGroupUsersModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["user_id", "acl_group_id"],
-        id_field_name="acl_group_id",
+        id_column="acl_group_id",
     ):
         await super(ACLGroupUsersModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict, id_field_name
+            supabase, instances, on_conflict, id_column
         )
 
     @classmethod
     async def fetch_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="acl_group_id"
+        cls, supabase: AsyncClient, value=None, id_column="acl_group_id"
     ):
         return await super(ACLGroupUsersModel, cls).fetch_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="acl_group_id"
+        cls, supabase: AsyncClient, value=None, id_column="acl_group_id"
     ):
         return await super(ACLGroupUsersModel, cls).exists_in_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def delete_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name="acl_group_id"
+        cls, supabase: AsyncClient, value=None, id_column="acl_group_id"
     ):
         return await super(ACLGroupUsersModel, cls).delete_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
 

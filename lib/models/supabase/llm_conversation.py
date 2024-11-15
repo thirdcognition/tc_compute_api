@@ -71,16 +71,16 @@ class LlmConversationMessageHistoryModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["conversation_id", "message_id"],
-        id_field_name=None,
+        id_column=None,
     ):
         # Upsert logic which uses the same parameters and structure as save_to_supabase
         await super(LlmConversationMessageHistoryModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict, id_field_name
+            supabase, instances, on_conflict, id_column
         )
 
     @classmethod
     async def fetch_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {
@@ -89,12 +89,12 @@ class LlmConversationMessageHistoryModel(SupabaseModel):
             }
         # If value is not provided or not an instance, it is used as is
         return await super(LlmConversationMessageHistoryModel, cls).fetch_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         # Check if the value is an instance of the class and extract values from it
         if isinstance(value, cls):
@@ -104,7 +104,7 @@ class LlmConversationMessageHistoryModel(SupabaseModel):
             }
         # If value is not provided or not an instance, it is used as is
         return await super().exists_in_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
 
@@ -134,16 +134,16 @@ class LlmConversationThreadModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=["conversation_id", "parent_message_id"],
-        id_field_name=None,
+        id_column=None,
     ):
         # Use the provided instances instead of instance-specific data
         await super(LlmConversationThreadModel, cls).upsert_to_supabase(
-            supabase, instances, on_conflict, id_field_name
+            supabase, instances, on_conflict, id_column
         )
 
     @classmethod
     async def fetch_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {
@@ -151,12 +151,12 @@ class LlmConversationThreadModel(SupabaseModel):
                 "parent_message_id": value.parent_message_id,
             }
         return await super(LlmConversationThreadModel, cls).fetch_from_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value=None, id_field_name=None
+        cls, supabase: AsyncClient, value=None, id_column=None
     ):
         if isinstance(value, cls):
             value = {
@@ -164,5 +164,5 @@ class LlmConversationThreadModel(SupabaseModel):
                 "parent_message_id": value.parent_message_id,
             }
         return await super().exists_in_supabase(
-            supabase, value=value, id_field_name=id_field_name
+            supabase, value=value, id_column=id_column
         )

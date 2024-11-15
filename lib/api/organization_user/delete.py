@@ -29,7 +29,7 @@ async def delete_organization_user(
     if not await OrganizationUsersModel.exists_in_supabase(
         supabase,
         value={"organization_id": organization_id, "user_id": user_id},
-        id_field_name="user_id",
+        id_column="user_id",
     ):
         raise ValueError("User not found")
 
@@ -37,5 +37,5 @@ async def delete_organization_user(
     await OrganizationUsersModel.delete_from_supabase(
         supabase,
         value={"organization_id": organization_id, "user_id": user_id},
-        id_field_name="user_id",
+        id_column="user_id",
     )

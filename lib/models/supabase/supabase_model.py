@@ -29,22 +29,20 @@ class SupabaseModel(BaseModel):
         return await self.save_to_supabase(supabase, self)
 
     async def read(
-        self, supabase: AsyncClient, value: Any, id_field_name: str = "id"
+        self, supabase: AsyncClient, value: Any, id_column: str = "id"
     ) -> Optional["SupabaseModel"]:
         """Read a record from the database."""
-        return await self.fetch_from_supabase(
-            supabase, value, id_field_name, instance=self
-        )
+        return await self.fetch_from_supabase(supabase, value, id_column, instance=self)
 
     async def update(self, supabase: AsyncClient) -> "SupabaseModel":
         """Update the record in the database if it has changed."""
         return await self.save_to_supabase(supabase, self)
 
     async def delete(
-        self, supabase: AsyncClient, value: Any, id_field_name: str = "id"
+        self, supabase: AsyncClient, value: Any, id_column: str = "id"
     ) -> bool:
         """Delete a record from the database."""
-        return await self.delete_from_supabase(supabase, value, id_field_name)
+        return await self.delete_from_supabase(supabase, value, id_column)
 
     @classmethod
     async def upsert_to_supabase(
@@ -52,7 +50,7 @@ class SupabaseModel(BaseModel):
         supabase: AsyncClient,
         instances: Iterable[T],
         on_conflict: List[str] = ["id"],
-        id_field_name: Union[str, List[str]] = "id",
+        id_column: Union[str, List[str]] = "id",
     ) -> List[T]:
         """Upsert multiple records in the database."""
         # Ensure TABLE_NAME is set
@@ -78,27 +76,25 @@ class SupabaseModel(BaseModel):
 
             # Map response data to instances by their IDs
             id_to_updated_data = {}
-            if isinstance(id_field_name, list):
+            if isinstance(id_column, list):
                 # For composite keys, use tuples as dictionary keys
                 for item in response.data:
-                    id_keys = tuple(item[field] for field in id_field_name)
+                    id_keys = tuple(item[field] for field in id_column)
                     id_to_updated_data[id_keys] = item
             else:
                 # For single key case
-                id_to_updated_data = {
-                    item[id_field_name]: item for item in response.data
-                }
+                id_to_updated_data = {item[id_column]: item for item in response.data}
 
                 # Update local instances using response data
                 for instance in instances:
-                    if isinstance(id_field_name, list):
+                    if isinstance(id_column, list):
                         # Build the tuple key for the current instance
                         instance_id = tuple(
-                            instance.model_fields.get(field) for field in id_field_name
+                            instance.model_fields.get(field) for field in id_column
                         )
                     else:
                         # Single key case
-                        instance_id = instance.model_fields.get(id_field_name)
+                        instance_id = instance.model_fields.get(id_column)
 
                     if (
                         instance.dirty
@@ -166,7 +162,7 @@ class SupabaseModel(BaseModel):
         cls: Type[T],
         supabase: AsyncClient,
         value: Any = None,
-        id_field_name: str = "id",
+        id_column: str = "id",
         instance: Optional[T] = None,  # Optional instance parameter
     ) -> T:
         # Ensure TABLE_NAME is set
@@ -174,13 +170,13 @@ class SupabaseModel(BaseModel):
 
         query = supabase.table(cls.TABLE_NAME).select("*")
         if value is None:
-            raise ValueError(f"Value for '{id_field_name}' must be provided.")
+            raise ValueError(f"Value for '{id_column}' must be provided.")
 
         if isinstance(value, dict):
             for key, val in value.items():
                 query = query.eq(key, val)
         else:
-            query = query.eq(id_field_name, value)
+            query = query.eq(id_column, value)
 
         response: APIResponse = await query.execute()
         data: Optional[Dict[str, Any]] = response.data[0] if response.data else None
@@ -204,7 +200,7 @@ class SupabaseModel(BaseModel):
         supabase: AsyncClient,
         filter: Any = None,
         values: List[Any] = None,
-        id_field_name: str = "id",
+        id_column: str = "id",
     ):
         # Ensure TABLE_NAME is set
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
@@ -216,7 +212,7 @@ class SupabaseModel(BaseModel):
                 for key, item in filter.items():
                     query = query.eq(key, item)
             else:
-                query.eq(id_field_name, filter)
+                query.eq(id_column, filter)
 
         if values is not None:
             for value in values:
@@ -224,7 +220,7 @@ class SupabaseModel(BaseModel):
                     for key, item in value.items():
                         query.in_(key, item)
                 else:
-                    query.in_(id_field_name, value)
+                    query.in_(id_column, value)
 
         response: APIResponse = await query.execute()
         if not response.data:
@@ -257,33 +253,33 @@ class SupabaseModel(BaseModel):
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value: Any = None, id_field_name: str = "id"
+        cls, supabase: AsyncClient, value: Any = None, id_column: str = "id"
     ) -> bool:
         # Ensure TABLE_NAME is set
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
         # Determine fields to select
-        selected_fields = [id_field_name]
+        selected_fields = [id_column]
         if isinstance(value, dict):
             selected_fields.extend(value.keys())
         query = supabase.table(cls.TABLE_NAME).select(*selected_fields)
 
         # Adjust query based on whether value is a dict or a single value
         if value is None:
-            # When value is None, use the id_field_name's current instance value
+            # When value is None, use the id_column's current instance value
             raise ValueError("Value must be provided when using class method.")
         elif isinstance(value, dict):
             for key, val in value.items():
                 query = query.eq(key, val)
         else:
-            query = query.eq(id_field_name, value)
+            query = query.eq(id_column, value)
 
         response: APIResponse = await query.execute()
         return bool(response.data)
 
     @classmethod
     async def delete_from_supabase(
-        cls, supabase: AsyncClient, value: Any = None, id_field_name: str = "id"
+        cls, supabase: AsyncClient, value: Any = None, id_column: str = "id"
     ) -> bool:
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
@@ -291,13 +287,13 @@ class SupabaseModel(BaseModel):
 
         if value is None:
             raise ValueError(
-                f"Value must be provided to delete an item based on '{id_field_name}'."
+                f"Value must be provided to delete an item based on '{id_column}'."
             )
         elif isinstance(value, dict):
             for key, val in value.items():
                 query = query.eq(key, val)
         else:
-            query = query.eq(id_field_name, value)
+            query = query.eq(id_column, value)
 
         await query.execute()
 

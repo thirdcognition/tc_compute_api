@@ -1,71 +1,178 @@
-import { SupabaseModel } from "./supabaseModel";
+import { SupabaseModel, Enum } from "./supabaseModel";
 import { v4 as uuidv4 } from "uuid";
 
-export const ACL = Object.freeze({
-    PUBLIC: "public",
-    GROUP: "group",
-    PRIVATE: "private"
-});
+class ACLEnum extends Enum {
+    constructor() {
+        super();
+        this.PUBLIC = "public";
+        this.GROUP = "group";
+        this.PRIVATE = "private";
+        Object.freeze(this);
+    }
+}
 
-export const UserACL = Object.freeze({
-    ADM: "adm",
-    RW: "rw",
-    RO: "ro"
-});
+class UserACLEnum extends Enum {
+    constructor() {
+        super();
+        this.ADM = "adm";
+        this.RW = "rw";
+        this.RO = "ro";
+        Object.freeze(this);
+    }
+}
+
+export const ACL = new ACLEnum();
+export const UserACL = new UserACLEnum();
 
 export class ACLGroupModel extends SupabaseModel {
     static TABLE_NAME = "acl_group";
 
-    constructor({
-        id = null,
-        name,
-        description = null,
-        disabled = false,
-        disabledAt = null,
-        createdAt = null,
-        updatedAt = null,
-        ownerId = null,
-        organizationId
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.name = name;
-        this.description = description;
-        this.disabled = disabled;
-        this.disabledAt = disabledAt;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
+        const {
+            id = null,
+            name,
+            description = null,
+            disabled = false,
+            disabledAt = null,
+            createdAt = null,
+            updatedAt = null,
+            ownerId = null,
+            organizationId
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            name: {
+                value: name,
+                type: "string",
+                required: true,
+                dbColumn: "name"
+            },
+            description: {
+                value: description,
+                type: "string",
+                required: false,
+                dbColumn: "description"
+            },
+            disabled: {
+                value: disabled,
+                type: "boolean",
+                required: false,
+                dbColumn: "disabled"
+            },
+            disabledAt: {
+                value: disabledAt,
+                type: "date",
+                required: false,
+                dbColumn: "disabled_at"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            }
+        };
     }
 }
 
 export class ACLGroupItemsModel extends SupabaseModel {
     static TABLE_NAME = "acl_group_items";
 
-    constructor({
-        aclGroupId,
-        acl = ACL.PRIVATE,
-        itemId,
-        itemType,
-        disabled = false,
-        disabledAt = null,
-        createdAt = null,
-        updatedAt = null,
-        ownerId = null,
-        organizationId
-    }) {
+    constructor(args) {
         super();
-        this.aclGroupId = aclGroupId;
-        this.acl = acl;
-        this.itemId = itemId;
-        this.itemType = itemType;
-        this.disabled = disabled;
-        this.disabledAt = disabledAt;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
+        const {
+            aclGroupId,
+            acl = ACL.PRIVATE,
+            itemId,
+            itemType,
+            disabled = false,
+            disabledAt = null,
+            createdAt = null,
+            updatedAt = null,
+            ownerId = null,
+            organizationId
+        } = args;
+        this.attributes = {
+            aclGroupId: {
+                value: aclGroupId,
+                type: "uuid",
+                required: true,
+                dbColumn: "acl_group_id"
+            },
+            acl: { value: acl, type: ACL, required: false, dbColumn: "acl" },
+            itemId: {
+                value: itemId,
+                type: "uuid",
+                required: true,
+                dbColumn: "item_id"
+            },
+            itemType: {
+                value: itemType,
+                type: "string",
+                required: true,
+                dbColumn: "item_type"
+            },
+            disabled: {
+                value: disabled,
+                type: "boolean",
+                required: false,
+                dbColumn: "disabled"
+            },
+            disabledAt: {
+                value: disabledAt,
+                type: "date",
+                required: false,
+                dbColumn: "disabled_at"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            }
+        };
     }
 
     static async saveToSupabase(
@@ -80,65 +187,113 @@ export class ACLGroupItemsModel extends SupabaseModel {
         supabase,
         instances,
         onConflict = ["itemId", "aclGroupId"],
-        idFieldName = "aclGroupId"
+        idColumn = "aclGroupId"
     ) {
         return super.upsertToSupabase(
             supabase,
             instances,
             onConflict,
-            idFieldName
+            idColumn
         );
     }
 
     static async fetchFromSupabase(
         supabase,
         value = null,
-        idFieldName = "aclGroupId"
+        idColumn = "aclGroupId"
     ) {
-        return super.fetchFromSupabase(supabase, value, idFieldName);
+        return super.fetchFromSupabase(supabase, value, idColumn);
     }
 
     static async existsInSupabase(
         supabase,
         value = null,
-        idFieldName = "aclGroupId"
+        idColumn = "aclGroupId"
     ) {
-        return super.existsInSupabase(supabase, value, idFieldName);
+        return super.existsInSupabase(supabase, value, idColumn);
     }
 
     static async deleteFromSupabase(
         supabase,
         value = null,
-        idFieldName = "aclGroupId"
+        idColumn = "aclGroupId"
     ) {
-        return super.deleteFromSupabase(supabase, value, idFieldName);
+        return super.deleteFromSupabase(supabase, value, idColumn);
     }
 }
 
 export class ACLGroupUsersModel extends SupabaseModel {
     static TABLE_NAME = "acl_group_users";
 
-    constructor({
-        authId,
-        userId,
-        aclGroupId,
-        acl = UserACL.RO,
-        disabled = false,
-        disabledAt = null,
-        createdAt = null,
-        updatedAt = null,
-        organizationId
-    }) {
+    constructor(args) {
         super();
-        this.authId = authId;
-        this.userId = userId;
-        this.aclGroupId = aclGroupId;
-        this.acl = acl;
-        this.disabled = disabled;
-        this.disabledAt = disabledAt;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.organizationId = organizationId;
+        const {
+            authId,
+            userId,
+            aclGroupId,
+            acl = UserACL.RO,
+            disabled = false,
+            disabledAt = null,
+            createdAt = null,
+            updatedAt = null,
+            organizationId
+        } = args;
+        this.attributes = {
+            authId: {
+                value: authId,
+                type: "uuid",
+                required: true,
+                dbColumn: "auth_id"
+            },
+            userId: {
+                value: userId,
+                type: "uuid",
+                required: true,
+                dbColumn: "user_id"
+            },
+            aclGroupId: {
+                value: aclGroupId,
+                type: "uuid",
+                required: true,
+                dbColumn: "acl_group_id"
+            },
+            acl: {
+                value: acl,
+                type: UserACL,
+                required: false,
+                dbColumn: "acl"
+            },
+            disabled: {
+                value: disabled,
+                type: "boolean",
+                required: false,
+                dbColumn: "disabled"
+            },
+            disabledAt: {
+                value: disabledAt,
+                type: "date",
+                required: false,
+                dbColumn: "disabled_at"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            }
+        };
     }
 
     static async saveToSupabase(
@@ -153,71 +308,144 @@ export class ACLGroupUsersModel extends SupabaseModel {
         supabase,
         instances,
         onConflict = ["userId", "aclGroupId"],
-        idFieldName = "aclGroupId"
+        idColumn = "aclGroupId"
     ) {
         return super.upsertToSupabase(
             supabase,
             instances,
             onConflict,
-            idFieldName
+            idColumn
         );
     }
 
     static async fetchFromSupabase(
         supabase,
         value = null,
-        idFieldName = "aclGroupId"
+        idColumn = "aclGroupId"
     ) {
-        return super.fetchFromSupabase(supabase, value, idFieldName);
+        return super.fetchFromSupabase(supabase, value, idColumn);
     }
 
     static async existsInSupabase(
         supabase,
         value = null,
-        idFieldName = "aclGroupId"
+        idColumn = "aclGroupId"
     ) {
-        return super.existsInSupabase(supabase, value, idFieldName);
+        return super.existsInSupabase(supabase, value, idColumn);
     }
 
     static async deleteFromSupabase(
         supabase,
         value = null,
-        idFieldName = "aclGroupId"
+        idColumn = "aclGroupId"
     ) {
-        return super.deleteFromSupabase(supabase, value, idFieldName);
+        return super.deleteFromSupabase(supabase, value, idColumn);
     }
 }
 
 export class ACLGroupUsersWithItems {
-    constructor({
-        organizationId,
-        aclGroupId,
-        itemId,
-        itemType,
-        itemAcl,
-        itemCreatedAt = null,
-        itemDisabled,
-        itemDisabledAt = null,
-        authId,
-        userAcl,
-        userId,
-        userCreatedAt = null,
-        userDisabled,
-        userDisabledAt = null
-    }) {
-        this.organizationId = organizationId;
-        this.aclGroupId = aclGroupId;
-        this.itemId = itemId;
-        this.itemType = itemType;
-        this.itemAcl = itemAcl;
-        this.itemCreatedAt = itemCreatedAt;
-        this.itemDisabled = itemDisabled;
-        this.itemDisabledAt = itemDisabledAt;
-        this.authId = authId;
-        this.userAcl = userAcl;
-        this.userId = userId;
-        this.userCreatedAt = userCreatedAt;
-        this.userDisabled = userDisabled;
-        this.userDisabledAt = userDisabledAt;
+    constructor(args) {
+        const {
+            organizationId,
+            aclGroupId,
+            itemId,
+            itemType,
+            itemAcl,
+            itemCreatedAt = null,
+            itemDisabled,
+            itemDisabledAt = null,
+            authId,
+            userAcl,
+            userId,
+            userCreatedAt = null,
+            userDisabled,
+            userDisabledAt = null
+        } = args;
+        this.attributes = {
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            },
+            aclGroupId: {
+                value: aclGroupId,
+                type: "uuid",
+                required: true,
+                dbColumn: "acl_group_id"
+            },
+            itemId: {
+                value: itemId,
+                type: "uuid",
+                required: true,
+                dbColumn: "item_id"
+            },
+            itemType: {
+                value: itemType,
+                type: "string",
+                required: true,
+                dbColumn: "item_type"
+            },
+            itemAcl: {
+                value: itemAcl,
+                type: ACL,
+                required: true,
+                dbColumn: "item_acl"
+            },
+            itemCreatedAt: {
+                value: itemCreatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "item_created_at"
+            },
+            itemDisabled: {
+                value: itemDisabled,
+                type: "boolean",
+                required: true,
+                dbColumn: "item_disabled"
+            },
+            itemDisabledAt: {
+                value: itemDisabledAt,
+                type: "date",
+                required: false,
+                dbColumn: "item_disabled_at"
+            },
+            authId: {
+                value: authId,
+                type: "uuid",
+                required: true,
+                dbColumn: "auth_id"
+            },
+            userAcl: {
+                value: userAcl,
+                type: UserACL,
+                required: true,
+                dbColumn: "user_acl"
+            },
+            userId: {
+                value: userId,
+                type: "uuid",
+                required: true,
+                dbColumn: "user_id"
+            },
+            userCreatedAt: {
+                value: userCreatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "user_created_at"
+            },
+            userDisabled: {
+                value: userDisabled,
+                type: "boolean",
+                required: true,
+                dbColumn: "user_disabled"
+            },
+            userDisabledAt: {
+                value: userDisabledAt,
+                type: "date",
+                required: false,
+                dbColumn: "user_disabled_at"
+            }
+        };
     }
 }

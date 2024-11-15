@@ -4,54 +4,150 @@ import { v4 as uuidv4 } from "uuid";
 export class JourneyProgressModel extends SupabaseModel {
     static TABLE_NAME = "journey_progress";
 
-    constructor({
-        id = null,
-        journeyId,
-        journeyVersionId,
-        assignedAt = null,
-        metadata = null,
-        createdAt = null,
-        updatedAt = null,
-        ownerId = null,
-        organizationId,
-        startedAt = null,
-        completedAt = null
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.journeyId = journeyId;
-        this.journeyVersionId = journeyVersionId;
-        this.assignedAt = assignedAt;
-        this.metadata = metadata;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
-        this.startedAt = startedAt;
-        this.completedAt = completedAt;
+        const {
+            id = null,
+            journeyId,
+            journeyVersionId,
+            assignedAt = null,
+            metadata = null,
+            createdAt = null,
+            updatedAt = null,
+            ownerId = null,
+            organizationId,
+            startedAt = null,
+            completedAt = null
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            journeyId: {
+                value: journeyId,
+                type: "uuid",
+                required: true,
+                dbColumn: "journey_id"
+            },
+            journeyVersionId: {
+                value: journeyVersionId,
+                type: "uuid",
+                required: true,
+                dbColumn: "journey_version_id"
+            },
+            assignedAt: {
+                value: assignedAt,
+                type: "date",
+                required: false,
+                dbColumn: "assigned_at"
+            },
+            metadata: {
+                value: metadata,
+                type: "json",
+                required: false,
+                dbColumn: "metadata"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            },
+            startedAt: {
+                value: startedAt,
+                type: "date",
+                required: false,
+                dbColumn: "started_at"
+            },
+            completedAt: {
+                value: completedAt,
+                type: "date",
+                required: false,
+                dbColumn: "completed_at"
+            }
+        };
     }
 }
 
 export class JourneyProgressLLMConversationMessagesModel extends SupabaseModel {
     static TABLE_NAME = "journey_progress_llm_conversation_messages";
 
-    constructor({
-        journeyItemProgressId,
-        messageId,
-        conversationId,
-        createdAt = null,
-        updatedAt = null,
-        ownerId = null,
-        organizationId
-    }) {
+    constructor(args) {
         super();
-        this.journeyItemProgressId = journeyItemProgressId;
-        this.messageId = messageId;
-        this.conversationId = conversationId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
+        const {
+            journeyItemProgressId,
+            messageId,
+            conversationId,
+            createdAt = null,
+            updatedAt = null,
+            ownerId = null,
+            organizationId
+        } = args;
+        this.attributes = {
+            journeyItemProgressId: {
+                value: journeyItemProgressId,
+                type: "uuid",
+                required: true,
+                dbColumn: "journey_item_progress_id"
+            },
+            messageId: {
+                value: messageId,
+                type: "uuid",
+                required: true,
+                dbColumn: "message_id"
+            },
+            conversationId: {
+                value: conversationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "conversation_id"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            }
+        };
     }
 
     static async saveToSupabase(
@@ -66,69 +162,101 @@ export class JourneyProgressLLMConversationMessagesModel extends SupabaseModel {
         supabase,
         instances,
         onConflict = ["journeyItemProgressId", "messageId"],
-        idFieldName = null
+        idColumn = null
     ) {
         return super.upsertToSupabase(
             supabase,
             instances,
             onConflict,
-            idFieldName
+            idColumn
         );
     }
 
-    static async fetchFromSupabase(supabase, value = null, idFieldName = null) {
+    static async fetchFromSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                journeyItemProgressId: value.journeyItemProgressId,
-                messageId: value.messageId
+                journeyItemProgressId:
+                    value.attributes.journeyItemProgressId.value,
+                messageId: value.attributes.messageId.value
             };
         }
-        return super.fetchFromSupabase(supabase, value, idFieldName);
+        return super.fetchFromSupabase(supabase, value, idColumn);
     }
 
-    static async existsInSupabase(supabase, value = null, idFieldName = null) {
+    static async existsInSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                journeyItemProgressId: value.journeyItemProgressId,
-                messageId: value.messageId
+                journeyItemProgressId:
+                    value.attributes.journeyItemProgressId.value,
+                messageId: value.attributes.messageId.value
             };
         }
-        return super.existsInSupabase(supabase, value, idFieldName);
+        return super.existsInSupabase(supabase, value, idColumn);
     }
 
-    static async deleteFromSupabase(
-        supabase,
-        value = null,
-        idFieldName = null
-    ) {
+    static async deleteFromSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                journeyItemProgressId: value.journeyItemProgressId,
-                messageId: value.messageId
+                journeyItemProgressId:
+                    value.attributes.journeyItemProgressId.value,
+                messageId: value.attributes.messageId.value
             };
         }
-        return super.deleteFromSupabase(supabase, value, idFieldName);
+        return super.deleteFromSupabase(supabase, value, idColumn);
     }
 }
 
 export class JourneyProgressLLMConversationsModel extends SupabaseModel {
     static TABLE_NAME = "journey_progress_llm_conversations";
 
-    constructor({
-        progressId,
-        conversationId,
-        createdAt = null,
-        updatedAt = null,
-        ownerId = null,
-        organizationId
-    }) {
+    constructor(args) {
         super();
-        this.progressId = progressId;
-        this.conversationId = conversationId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
+        const {
+            progressId,
+            conversationId,
+            createdAt = null,
+            updatedAt = null,
+            ownerId = null,
+            organizationId
+        } = args;
+        this.attributes = {
+            progressId: {
+                value: progressId,
+                type: "uuid",
+                required: true,
+                dbColumn: "progress_id"
+            },
+            conversationId: {
+                value: conversationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "conversation_id"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            }
+        };
     }
 
     static async saveToSupabase(
@@ -143,78 +271,127 @@ export class JourneyProgressLLMConversationsModel extends SupabaseModel {
         supabase,
         instance,
         onConflict = ["progressId", "conversationId"],
-        idFieldName = null
+        idColumn = null
     ) {
-        return super.upsertToSupabase(
-            supabase,
-            instance,
-            onConflict,
-            idFieldName
-        );
+        return super.upsertToSupabase(supabase, instance, onConflict, idColumn);
     }
 
-    static async fetchFromSupabase(supabase, value = null, idFieldName = null) {
+    static async fetchFromSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                progressId: value.progressId,
-                conversationId: value.conversationId
+                progressId: value.attributes.progressId.value,
+                conversationId: value.attributes.conversationId.value
             };
         }
-        return super.fetchFromSupabase(supabase, value, idFieldName);
+        return super.fetchFromSupabase(supabase, value, idColumn);
     }
 
-    static async existsInSupabase(supabase, value = null, idFieldName = null) {
+    static async existsInSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                progressId: value.progressId,
-                conversationId: value.conversationId
+                progressId: value.attributes.progressId.value,
+                conversationId: value.attributes.conversationId.value
             };
         }
-        return super.existsInSupabase(supabase, value, idFieldName);
+        return super.existsInSupabase(supabase, value, idColumn);
     }
 
-    static async deleteFromSupabase(
-        supabase,
-        value = null,
-        idFieldName = null
-    ) {
+    static async deleteFromSupabase(supabase, value = null, idColumn = null) {
         if (value instanceof this) {
             value = {
-                progressId: value.progressId,
-                conversationId: value.conversationId
+                progressId: value.attributes.progressId.value,
+                conversationId: value.attributes.conversationId.value
             };
         }
-        return super.deleteFromSupabase(supabase, value, idFieldName);
+        return super.deleteFromSupabase(supabase, value, idColumn);
     }
 }
 
 export class JourneyItemProgressModel extends SupabaseModel {
     static TABLE_NAME = "journey_item_progress";
 
-    constructor({
-        id = null,
-        journeyProgressId,
-        journeyItemId,
-        journeyItemVersionId,
-        data = null,
-        createdAt = null,
-        updatedAt = null,
-        ownerId = null,
-        organizationId,
-        startedAt = null,
-        completedAt = null
-    }) {
+    constructor(args) {
         super();
-        this.id = id || uuidv4();
-        this.journeyProgressId = journeyProgressId;
-        this.journeyItemId = journeyItemId;
-        this.journeyItemVersionId = journeyItemVersionId;
-        this.data = data;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
-        this.startedAt = startedAt;
-        this.completedAt = completedAt;
+        const {
+            id = null,
+            journeyProgressId,
+            journeyItemId,
+            journeyItemVersionId,
+            data = null,
+            createdAt = null,
+            updatedAt = null,
+            ownerId = null,
+            organizationId,
+            startedAt = null,
+            completedAt = null
+        } = args;
+        this.attributes = {
+            id: {
+                value: id || uuidv4(),
+                type: "uuid",
+                required: false,
+                dbColumn: "id"
+            },
+            journeyProgressId: {
+                value: journeyProgressId,
+                type: "uuid",
+                required: true,
+                dbColumn: "journey_progress_id"
+            },
+            journeyItemId: {
+                value: journeyItemId,
+                type: "uuid",
+                required: true,
+                dbColumn: "journey_item_id"
+            },
+            journeyItemVersionId: {
+                value: journeyItemVersionId,
+                type: "uuid",
+                required: true,
+                dbColumn: "journey_item_version_id"
+            },
+            data: {
+                value: data,
+                type: "json",
+                required: false,
+                dbColumn: "data"
+            },
+            createdAt: {
+                value: createdAt,
+                type: "date",
+                required: false,
+                dbColumn: "created_at"
+            },
+            updatedAt: {
+                value: updatedAt,
+                type: "date",
+                required: false,
+                dbColumn: "updated_at"
+            },
+            ownerId: {
+                value: ownerId,
+                type: "uuid",
+                required: false,
+                dbColumn: "owner_id"
+            },
+            organizationId: {
+                value: organizationId,
+                type: "uuid",
+                required: true,
+                dbColumn: "organization_id"
+            },
+            startedAt: {
+                value: startedAt,
+                type: "date",
+                required: false,
+                dbColumn: "started_at"
+            },
+            completedAt: {
+                value: completedAt,
+                type: "date",
+                required: false,
+                dbColumn: "completed_at"
+            }
+        };
     }
 }

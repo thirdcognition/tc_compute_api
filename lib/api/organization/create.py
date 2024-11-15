@@ -38,7 +38,7 @@ async def create_organization(
     print(OrganizationsModel.TABLE_NAME)
 
     if await OrganizationsModel.exists_in_supabase(
-        supabase, id_field_name="name", value=request_data.name
+        supabase, id_column="name", value=request_data.name
     ):
         # Raise ValueError if the organization already exists
         raise ValueError(

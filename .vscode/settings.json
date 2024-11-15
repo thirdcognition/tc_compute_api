@@ -19,5 +19,9 @@
     "prettier.configPath": "lib_js/.prettierrc",
     "prettier.printWidth": 120,
     "prettier.tabWidth": 4,
-    "prettier.trailingComma": "none"
+    "prettier.trailingComma": "none",
+    "pnpm.packageJson": "lib_js/package.json",
+    "npm.packageManager": "pnpm",
+    "prettier.prettierPath": "./lib_js/node_modules/prettier",
+    "vs-code-prettier-eslint.prettierLast": true,
 }
