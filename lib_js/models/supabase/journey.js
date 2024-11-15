@@ -1,18 +1,6 @@
-import { SupabaseModel, Enum } from "./supabaseModel";
+import { SupabaseModel } from "./supabaseModel";
+import { JourneyItemType } from "./journeyTemplate";
 import { v4 as uuidv4 } from "uuid";
-
-class JourneyItemTypeEnum extends Enum {
-    constructor() {
-        super();
-        this.JOURNEY = "journey";
-        this.SECTION = "section";
-        this.MODULE = "module";
-        this.ACTION = "action";
-        Object.freeze(this);
-    }
-}
-
-export const JourneyItemType = new JourneyItemTypeEnum();
 
 export class JourneyModel extends SupabaseModel {
     static TABLE_NAME = "journey";

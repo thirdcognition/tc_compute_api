@@ -1,12 +1,19 @@
+from enum import Enum
 import json
 from datetime import datetime
 from typing import ClassVar, Dict, List, Optional, Tuple
 import uuid
-from lib.models.supabase.journey import JourneyItemType
 from lib.models.supabase.supabase_model import SupabaseModel
 from uuid import UUID
 from pydantic import Field, Json, field_validator  # Changed UUID to UUID
 from supabase.client import AsyncClient
+
+
+class JourneyItemType(str, Enum):
+    JOURNEY = "journey"
+    SECTION = "section"
+    MODULE = "module"
+    ACTION = "action"
 
 
 class JourneyTemplateModel(SupabaseModel):
