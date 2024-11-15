@@ -1,5 +1,10 @@
 import { SupabaseModel } from "./supabaseModel";
-import { JourneyItemType } from "./journeyTemplate";
+import {
+    JourneyItemType,
+    JourneyTemplateVersionModel,
+    JourneyTemplateItemModel,
+    JourneyTemplateStructureModel
+} from "./journeyTemplate";
 import { v4 as uuidv4 } from "uuid";
 
 export class JourneyModel extends SupabaseModel {
@@ -80,6 +85,64 @@ export class JourneyModel extends SupabaseModel {
                 required: false,
                 dbColumn: "updated_by"
             }
+        };
+    }
+
+    static async createFromTemplate(
+        supabase,
+        templateVersionId,
+        ownerId,
+        organizationId
+    ) {
+        // Generate a new UUID for the journey
+        const journeyId = uuidv4();
+
+        // Create a new JourneyModel instance
+        const journey = new JourneyModel({
+            id: journeyId,
+            templateId: templateVersionId,
+            ownerId: ownerId,
+            organizationId: organizationId
+        });
+        await journey.create(supabase);
+
+        // Create a new JourneyVersionModel instance
+        const journeyVersion = await JourneyVersionModel.createNewVersion(
+            supabase,
+            journeyId,
+            templateVersionId,
+            ownerId,
+            organizationId
+        );
+
+        // Create JourneyItemModel and JourneyItemVersionModel instances
+        const { journeyItems, journeyItemVersions } =
+            await JourneyItemModel.createItemsFromTemplate(
+                supabase,
+                journeyId,
+                templateVersionId,
+                ownerId,
+                organizationId
+            );
+
+        // Create JourneyStructureModel and JourneyStructureVersionModel instances
+        const { journeyStructures, journeyStructureVersions } =
+            await JourneyStructureModel.createStructuresFromTemplate(
+                supabase,
+                journeyId,
+                templateVersionId,
+                journeyItems,
+                ownerId,
+                organizationId
+            );
+
+        return {
+            journey,
+            journeyVersion,
+            journeyItems,
+            journeyItemVersions,
+            journeyStructures,
+            journeyStructureVersions
         };
     }
 }
@@ -171,6 +234,35 @@ export class JourneyVersionModel extends SupabaseModel {
             }
         };
     }
+
+    static async createNewVersion(
+        supabase,
+        journeyId,
+        templateVersionId,
+        ownerId,
+        organizationId
+    ) {
+        // Fetch template version details
+        const templateVersion =
+            await JourneyTemplateVersionModel.fetchCurrentVersion(
+                supabase,
+                templateVersionId
+            );
+
+        const versionId = uuidv4();
+        const version = new JourneyVersionModel({
+            id: versionId,
+            journeyId: journeyId,
+            templateVersionId: templateVersionId,
+            name: templateVersion.name,
+            description: templateVersion.description,
+            ownerId: ownerId,
+            organizationId: organizationId,
+            versionOfId: journeyId
+        });
+        await version.create(supabase);
+        return version;
+    }
 }
 
 export class JourneyItemModel extends SupabaseModel {
@@ -252,6 +344,61 @@ export class JourneyItemModel extends SupabaseModel {
                 dbColumn: "updated_by"
             }
         };
+    }
+
+    static async createItemsFromTemplate(
+        supabase,
+        journeyId,
+        templateVersionId,
+        ownerId,
+        organizationId
+    ) {
+        // Fetch template items and create journey items
+        const templateItems =
+            await JourneyTemplateItemModel.fetchExistingFromSupabase(supabase, {
+                filter: templateVersionId,
+                idColumn: "template_version_id"
+            });
+
+        const journeyItems = [];
+        const journeyItemVersions = [];
+        for (const templateItem of templateItems) {
+            const itemId = uuidv4();
+            const journeyItem = new JourneyItemModel({
+                id: itemId,
+                journeyId: journeyId,
+                ownerId: ownerId,
+                organizationId: organizationId,
+                templateItemId: templateItem.id
+            });
+            journeyItems.push(journeyItem);
+
+            // Create corresponding JourneyItemVersionModel
+            const versionId = uuidv4();
+            const itemVersion = new JourneyItemVersionModel({
+                id: versionId,
+                journeyId: journeyId,
+                name: templateItem.name,
+                type: templateItem.type,
+                data: templateItem.data,
+                ownerId: ownerId,
+                organizationId: organizationId,
+                versionOfId: itemId
+            });
+
+            journeyItemVersions.push(itemVersion);
+        }
+
+        if (journeyItems.length > 0) {
+            await JourneyItemModel.upsertToSupabase(supabase, journeyItems);
+        }
+        if (journeyItemVersions.length > 0) {
+            await JourneyItemVersionModel.upsertToSupabase(
+                supabase,
+                journeyItemVersions
+            );
+        }
+        return { journeyItems, journeyItemVersions };
     }
 }
 
@@ -444,6 +591,108 @@ export class JourneyStructureModel extends SupabaseModel {
                 dbColumn: "updated_by"
             }
         };
+    }
+
+    static async createStructuresFromTemplate(
+        supabase,
+        journeyId,
+        templateVersionId,
+        journeyItems,
+        ownerId,
+        organizationId
+    ) {
+        // Fetch template structures and create journey structures
+        const templateStructures =
+            await JourneyTemplateStructureModel.fetchExistingFromSupabase(
+                supabase,
+                { filter: templateVersionId, idColumn: "template_version_id" }
+            );
+
+        const journeyStructures = [];
+        const journeyStructureVersions = [];
+        const journeyItemMap = new Map(
+            journeyItems.map((item) => [item.templateItemId, item.id])
+        );
+        const structureTemplateMap = new Map(
+            journeyItems.map((item) => [item.id, item.templateItemId])
+        );
+
+        // Create a map to hold the structure version IDs
+        const structureVersionMap = new Map();
+
+        for (const templateStructure of templateStructures) {
+            const structureId = uuidv4();
+            const journeyStructure = new JourneyStructureModel({
+                id: structureId,
+                journeyId: journeyId,
+                ownerId: ownerId,
+                organizationId: organizationId
+            });
+            journeyStructures.push(journeyStructure);
+
+            const versionId = uuidv4();
+            const structureVersion = new JourneyStructureVersionModel({
+                id: versionId,
+                journeyId: journeyId,
+                journeyItemId: journeyItemMap.get(
+                    templateStructure.journeyTemplateItemId
+                ),
+                versionId: structureId,
+                ownerId: ownerId,
+                organizationId: organizationId,
+                versionOfId: structureId
+            });
+
+            journeyStructureVersions.push(structureVersion);
+
+            // Map the structure version ID
+            structureVersionMap.set(templateStructure.id, structureVersion.id);
+
+            journeyStructure.currentVersionId = structureVersion.id;
+        }
+
+        if (journeyStructures.length > 0) {
+            await JourneyStructureModel.upsertToSupabase(
+                supabase,
+                journeyStructures
+            );
+        }
+
+        if (journeyStructureVersions.length > 0) {
+            await JourneyItemVersionModel.upsertToSupabase(
+                supabase,
+                journeyStructureVersions
+            );
+        }
+
+        for (const structureVersion of journeyStructureVersions) {
+            const templateStructureId = structureTemplateMap.get(
+                structureVersion.journeyItemId
+            );
+            const templateStructure = templateStructures.find(
+                (ts) => ts.id === templateStructureId
+            );
+            if (templateStructure) {
+                structureVersion.parentId = structureVersionMap.get(
+                    templateStructure.parentId
+                );
+                structureVersion.nextId = structureVersionMap.get(
+                    templateStructure.nextId
+                );
+                structureVersion.previousId = structureVersionMap.get(
+                    templateStructure.previousId
+                );
+            }
+        }
+
+        if (journeyStructureVersions.length > 0) {
+            await JourneyItemVersionModel.upsertToSupabase(
+                supabase,
+                journeyStructureVersions
+            );
+        }
+
+        return { journeyStructures, journeyStructureVersions };
     }
 }
 

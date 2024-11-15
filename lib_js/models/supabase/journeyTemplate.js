@@ -141,6 +141,13 @@ export class JourneyTemplateVersionModel extends SupabaseModel {
             }
         };
     }
+
+    static async fetchCurrentVersion(supabase, versionId) {
+        if (await this.existsInSupabase(supabase, versionId)) {
+            return await this.fetchFromSupabase(supabase, versionId);
+        }
+        return null;
+    }
 }
 
 export class JourneyTemplateItemModel extends SupabaseModel {
