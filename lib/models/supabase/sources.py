@@ -29,7 +29,7 @@ class SourceModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
     current_version_id: Optional[UUID] = Field(default=None)
     updated_by: Optional[UUID] = Field(default=None)
 
@@ -45,7 +45,7 @@ class SourceChunkModel(SupabaseModel):
     metadata: Optional[Json] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @field_validator("metadata", "data", mode="before")
     def validate_json_fields(cls, v):
@@ -67,7 +67,7 @@ class SourceRelationshipModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @field_validator("metadata", mode="before")
     def validate_metadata(cls, v):
@@ -79,7 +79,7 @@ class SourceRelationshipModel(SupabaseModel):
 
     @classmethod
     async def save_to_supabase(cls, supabase: AsyncClient, instance, on_conflict=None):
-        await super(SourceRelationshipModel, cls).save_to_supabase(
+        return await super(SourceRelationshipModel, cls).save_to_supabase(
             supabase, instance, on_conflict
         )
 
@@ -91,7 +91,7 @@ class SourceRelationshipModel(SupabaseModel):
         on_conflict=None,
         id_column="source_version_id",
     ):
-        await super(SourceRelationshipModel, cls).upsert_to_supabase(
+        return await super(SourceRelationshipModel, cls).upsert_to_supabase(
             supabase, instances, on_conflict, id_column
         )
 
@@ -133,7 +133,7 @@ class SourceVersionModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
     version_of_id: Optional[UUID] = Field(default=None)
 
     @field_validator("metadata", "data", mode="before")

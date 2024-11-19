@@ -17,7 +17,7 @@ class JourneyProgressModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
     started_at: Optional[datetime] = Field(default=None)
     completed_at: Optional[datetime] = Field(default=None)
 
@@ -38,7 +38,7 @@ class JourneyProgressLLMConversationMessagesModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @classmethod
     async def save_to_supabase(
@@ -47,9 +47,9 @@ class JourneyProgressLLMConversationMessagesModel(SupabaseModel):
         instance,
         on_conflict=["journey_item_progress_id", "message_id"],
     ):
-        await super(JourneyProgressLLMConversationMessagesModel, cls).save_to_supabase(
-            supabase, instance, on_conflict
-        )
+        return await super(
+            JourneyProgressLLMConversationMessagesModel, cls
+        ).save_to_supabase(supabase, instance, on_conflict)
 
     @classmethod
     async def upsert_to_supabase(
@@ -59,7 +59,7 @@ class JourneyProgressLLMConversationMessagesModel(SupabaseModel):
         on_conflict=["journey_item_progress_id", "message_id"],
         id_column=None,
     ):
-        await super(
+        return await super(
             JourneyProgressLLMConversationMessagesModel, cls
         ).upsert_to_supabase(supabase, instances, on_conflict, id_column)
 
@@ -110,7 +110,7 @@ class JourneyProgressLLMConversationsModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @classmethod
     async def save_to_supabase(
@@ -119,7 +119,7 @@ class JourneyProgressLLMConversationsModel(SupabaseModel):
         instance,
         on_conflict=["progress_id", "conversation_id"],
     ):
-        await super(JourneyProgressLLMConversationsModel, cls).save_to_supabase(
+        return await super(JourneyProgressLLMConversationsModel, cls).save_to_supabase(
             supabase, instance, on_conflict
         )
 
@@ -131,9 +131,9 @@ class JourneyProgressLLMConversationsModel(SupabaseModel):
         on_conflict=["progress_id", "conversation_id"],
         id_column=None,
     ):
-        await super(JourneyProgressLLMConversationsModel, cls).upsert_to_supabase(
-            supabase, instance, on_conflict, id_column
-        )
+        return await super(
+            JourneyProgressLLMConversationsModel, cls
+        ).upsert_to_supabase(supabase, instance, on_conflict, id_column)
 
     @classmethod
     async def fetch_from_supabase(
@@ -185,7 +185,7 @@ class JourneyItemProgressModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
     started_at: Optional[datetime] = Field(default=None)
     completed_at: Optional[datetime] = Field(default=None)
 

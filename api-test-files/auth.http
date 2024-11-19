@@ -1,0 +1,12 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = user1@example.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}

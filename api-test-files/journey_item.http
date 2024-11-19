@@ -1,0 +1,74 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = user1@example.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}
+
+### Response
+@accessToken = {{login.response.body.$.access_token}}
+
+### Create Journey request
+# @name createJourney
+POST {{host}}:{{port}}/journey/ HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "New Journey",
+  "description": "Description of the new journey"
+}
+
+### Response
+@journeyId = {{createJourney.response.body.$.journey_id}}
+
+### Create Journey Item request
+# @name createJourneyItem
+POST {{host}}:{{port}}/journey_item/ HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "journey_id": "{{journeyId}}",
+  "item_name": "New Item"
+}
+
+### Response
+@journeyItemId = {{createJourneyItem.response.body.$.journey_item_id}}
+
+### Get Journey Item request
+# @name getJourneyItem
+GET {{host}}:{{port}}/journey_item/{{journeyItemId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### List Journey Items request
+# @name listJourneyItems
+GET {{host}}:{{port}}/journey_items/ HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Update Journey Item request
+# @name updateJourneyItem
+PUT {{host}}:{{port}}/journey_item/{{journeyItemId}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "item_name": "Updated Item"
+}
+
+### Delete Journey Item request
+# @name deleteJourneyItem
+DELETE {{host}}:{{port}}/journey_item/{{journeyItemId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

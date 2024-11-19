@@ -71,7 +71,7 @@ export class JourneyProgressModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             startedAt: {
@@ -144,7 +144,7 @@ export class JourneyProgressLLMConversationMessagesModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -253,7 +253,7 @@ export class JourneyProgressLLMConversationsModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -377,7 +377,7 @@ export class JourneyItemProgressModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             startedAt: {

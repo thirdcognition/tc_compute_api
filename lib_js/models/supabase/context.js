@@ -48,7 +48,7 @@ export class ContextQuery extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -123,7 +123,7 @@ export class ContextQueryResponse extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -184,7 +184,7 @@ export class ContextQueryResult extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };

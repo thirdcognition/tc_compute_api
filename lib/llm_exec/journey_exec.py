@@ -1,17 +1,14 @@
 import asyncio
-from uuid import UUID
 from lib.chains.init import get_chain
-from lib.helpers.journey import load_journey_template, match_title_to_cat_and_key
+from lib.helpers.journey import match_title_to_cat_and_key
 from lib.load_env import SETTINGS
 
 
-async def get_journey_template_with_role(
-    supabase, role_title, role_description
-) -> tuple[UUID, UUID]:
+async def get_journey_template_id_with_role(role_title, role_description) -> str:
     matching_ids = None
     retry_count = 0
 
-    # matching_ids = ["", "digital_marketing_specialist"]
+    matching_ids = ["", "digital_marketing_specialist"]
     while not matching_ids and retry_count < SETTINGS.langchain_retries.max_count:
         result = await get_chain("journey_template_selector").ainvoke(
             {
@@ -26,4 +23,4 @@ async def get_journey_template_with_role(
                 SETTINGS.langchain_retries.retry_timeout if retry_count > 1 else 1
             )
 
-    return await load_journey_template(supabase, matching_ids[1])  # Pass supabase
+    return matching_ids[1]  # Pass supabase

@@ -29,7 +29,7 @@ class ACLGroupModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class ACLGroupItemsModel(SupabaseModel):
@@ -43,13 +43,13 @@ class ACLGroupItemsModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @classmethod
     async def save_to_supabase(
         cls, supabase: AsyncClient, instance, on_conflict=["item_id", "acl_group_id"]
     ):
-        await super(ACLGroupItemsModel, cls).save_to_supabase(
+        return await super(ACLGroupItemsModel, cls).save_to_supabase(
             supabase, instance, on_conflict
         )
 
@@ -61,7 +61,7 @@ class ACLGroupItemsModel(SupabaseModel):
         on_conflict=["item_id", "acl_group_id"],
         id_column="acl_group_id",
     ):
-        await super(ACLGroupItemsModel, cls).upsert_to_supabase(
+        return await super(ACLGroupItemsModel, cls).upsert_to_supabase(
             supabase, instances, on_conflict, id_column
         )
 
@@ -100,13 +100,13 @@ class ACLGroupUsersModel(SupabaseModel):
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @classmethod
     async def save_to_supabase(
         cls, supabase: AsyncClient, instance, on_conflict=["user_id", "acl_group_id"]
     ):
-        await super(ACLGroupUsersModel, cls).save_to_supabase(
+        return await super(ACLGroupUsersModel, cls).save_to_supabase(
             supabase, instance, on_conflict
         )
 
@@ -118,7 +118,7 @@ class ACLGroupUsersModel(SupabaseModel):
         on_conflict=["user_id", "acl_group_id"],
         id_column="acl_group_id",
     ):
-        await super(ACLGroupUsersModel, cls).upsert_to_supabase(
+        return await super(ACLGroupUsersModel, cls).upsert_to_supabase(
             supabase, instances, on_conflict, id_column
         )
 
@@ -148,7 +148,7 @@ class ACLGroupUsersModel(SupabaseModel):
 
 
 class ACLGroupUsersWithItems(BaseModel):
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
     acl_group_id: UUID
     item_id: UUID
     item_type: str

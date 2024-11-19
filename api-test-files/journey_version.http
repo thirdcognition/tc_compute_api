@@ -1,0 +1,74 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = user1@example.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}
+
+### Response
+@accessToken = {{login.response.body.$.access_token}}
+
+### Create Journey request
+# @name createJourney
+POST {{host}}:{{port}}/journey/ HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "New Journey",
+  "description": "Description of the new journey"
+}
+
+### Response
+@journeyId = {{createJourney.response.body.$.journey_id}}
+
+### Create Journey Version request
+# @name createJourneyVersion
+POST {{host}}:{{port}}/journey_version/ HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "journey_id": "{{journeyId}}",
+  "version_name": "Version 1"
+}
+
+### Response
+@journeyVersionId = {{createJourneyVersion.response.body.$.journey_version_id}}
+
+### Get Journey Version request
+# @name getJourneyVersion
+GET {{host}}:{{port}}/journey_version/{{journeyVersionId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### List Journey Versions request
+# @name listJourneyVersions
+GET {{host}}:{{port}}/journey_versions/ HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Update Journey Version request
+# @name updateJourneyVersion
+PUT {{host}}:{{port}}/journey_version/{{journeyVersionId}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "version_name": "Updated Version 1"
+}
+
+### Delete Journey Version request
+# @name deleteJourneyVersion
+DELETE {{host}}:{{port}}/journey_version/{{journeyVersionId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

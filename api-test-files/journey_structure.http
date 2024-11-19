@@ -1,0 +1,74 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = user1@example.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}
+
+### Response
+@accessToken = {{login.response.body.$.access_token}}
+
+### Create Journey request
+# @name createJourney
+POST {{host}}:{{port}}/journey/ HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "New Journey",
+  "description": "Description of the new journey"
+}
+
+### Response
+@journeyId = {{createJourney.response.body.$.journey_id}}
+
+### Create Journey Structure request
+# @name createJourneyStructure
+POST {{host}}:{{port}}/journey_structure/ HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "journey_id": "{{journeyId}}",
+  "structure_name": "New Structure"
+}
+
+### Response
+@journeyStructureId = {{createJourneyStructure.response.body.$.journey_structure_id}}
+
+### Get Journey Structure request
+# @name getJourneyStructure
+GET {{host}}:{{port}}/journey_structure/{{journeyStructureId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### List Journey Structures request
+# @name listJourneyStructures
+GET {{host}}:{{port}}/journey_structures/ HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Update Journey Structure request
+# @name updateJourneyStructure
+PUT {{host}}:{{port}}/journey_structure/{{journeyStructureId}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "structure_name": "Updated Structure"
+}
+
+### Delete Journey Structure request
+# @name deleteJourneyStructure
+DELETE {{host}}:{{port}}/journey_structure/{{journeyStructureId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

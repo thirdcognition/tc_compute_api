@@ -12,12 +12,11 @@ Accept: application/json
 {"email":"{{email}}", "password": "{{password}}"}
 
 ### Response
-
 @accessToken = {{login.response.body.$.access_token}}
 
 ### Journey Template request
 # @name journeyTemplate
-POST {{host}}:{{port}}/journey/template HTTP/1.1
+POST {{host}}:{{port}}/journey/match_with_template HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{accessToken}}
@@ -28,6 +27,19 @@ Authorization: Bearer {{accessToken}}
 }
 
 ### Response
+@templateId = {{journeyTemplate.response.body.$.template_id}}
 
-# Assert the response status code and content
-# Expected: 200 OK and a valid template response
+### Journey Create From Template request
+# @name journeyCreateFromTemplate
+GET {{host}}:{{port}}/journey/from_template/{{templateId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+@journeyId = {{journeyCreateFromTemplate.response.body.$.journey_id}}
+@journeyVersionId = {{journeyCreateFromTemplate.response.body.$.journey_version}}
+
+### Journey Copy request
+# @name journeyCopy
+GET {{host}}:{{port}}/journey/copy/{{journeyVersionId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

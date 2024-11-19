@@ -92,7 +92,7 @@ export class ACLGroupModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -169,7 +169,7 @@ export class ACLGroupItemsModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -290,7 +290,7 @@ export class ACLGroupUsersModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -365,7 +365,7 @@ export class ACLGroupUsersWithItems {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             aclGroupId: {

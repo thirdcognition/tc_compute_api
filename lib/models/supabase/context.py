@@ -13,7 +13,7 @@ class ContextQuery(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @field_validator("params", mode="before")
     def validate_params(cls, v):
@@ -34,7 +34,7 @@ class ContextQueryResponse(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @field_validator("response_data", mode="before")
     def validate_response_data(cls, v):
@@ -53,7 +53,7 @@ class ContextQueryResult(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @field_validator("result_data", mode="before")
     def validate_result_data(cls, v):

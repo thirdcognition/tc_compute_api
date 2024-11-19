@@ -70,7 +70,7 @@ export class LlmConversationModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             state: {
@@ -144,7 +144,7 @@ export class LlmConversationMessageModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -174,7 +174,7 @@ export class LlmConversationMessageHistoryModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             conversationId: {
@@ -329,7 +329,7 @@ export class LlmConversationThreadModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };

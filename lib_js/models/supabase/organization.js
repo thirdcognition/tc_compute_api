@@ -172,7 +172,7 @@ export class OrganizationRoleModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -247,7 +247,7 @@ export class OrganizationTeamModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -322,7 +322,7 @@ export class OrganizationTeamMembersModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             }
         };
@@ -413,7 +413,7 @@ export class OrganizationUsersModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             metadata: {

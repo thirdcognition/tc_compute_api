@@ -18,7 +18,7 @@ class LlmConversationModel(SupabaseModel):
     metadata: Optional[Json] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
     state: Optional[str] = Field(default=None)
 
     @field_validator("metadata", mode="before")
@@ -39,12 +39,12 @@ class LlmConversationMessageModel(SupabaseModel):
     model: Optional[str] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class LlmConversationMessageHistoryModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "llm_conversation_message_history"
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
     conversation_id: UUID
     session_id: Optional[UUID] = Field(default=None)
     query_id: Optional[UUID] = Field(default=None)
@@ -61,7 +61,7 @@ class LlmConversationMessageHistoryModel(SupabaseModel):
     async def save_to_supabase(
         cls, supabase: AsyncClient, value, on_conflict=["conversation_id", "message_id"]
     ):
-        await super(LlmConversationMessageHistoryModel, cls).save_to_supabase(
+        return await super(LlmConversationMessageHistoryModel, cls).save_to_supabase(
             supabase, value, on_conflict
         )
 
@@ -74,7 +74,7 @@ class LlmConversationMessageHistoryModel(SupabaseModel):
         id_column=None,
     ):
         # Upsert logic which uses the same parameters and structure as save_to_supabase
-        await super(LlmConversationMessageHistoryModel, cls).upsert_to_supabase(
+        return await super(LlmConversationMessageHistoryModel, cls).upsert_to_supabase(
             supabase, instances, on_conflict, id_column
         )
 
@@ -114,7 +114,7 @@ class LlmConversationThreadModel(SupabaseModel):
     parent_message_id: UUID
     created_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
     @classmethod
     async def save_to_supabase(
@@ -124,7 +124,7 @@ class LlmConversationThreadModel(SupabaseModel):
         on_conflict=["conversation_id", "parent_message_id"],
     ):
         # Use the provided value instead of instance-specific data
-        await super(LlmConversationThreadModel, cls).save_to_supabase(
+        return await super(LlmConversationThreadModel, cls).save_to_supabase(
             supabase, value, on_conflict
         )
 
@@ -137,7 +137,7 @@ class LlmConversationThreadModel(SupabaseModel):
         id_column=None,
     ):
         # Use the provided instances instead of instance-specific data
-        await super(LlmConversationThreadModel, cls).upsert_to_supabase(
+        return await super(LlmConversationThreadModel, cls).upsert_to_supabase(
             supabase, instances, on_conflict, id_column
         )
 

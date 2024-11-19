@@ -1,0 +1,54 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = user1@example.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}
+
+### Response
+@accessToken = {{login.response.body.$.access_token}}
+
+### Create Organization request
+# @name createOrganization
+POST {{host}}:{{port}}/organization/create HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{"name": "test org", "website": "https://test.com"}
+
+### Response
+@orgId = {{createOrganization.response.body.$.id}}
+
+### Get Organization request
+# @name getOrganization
+GET {{host}}:{{port}}/organization/{{orgId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### List Organizations request
+# @name listOrganizations
+GET {{host}}:{{port}}/organizations HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Update Organization request
+# @name updateOrganization
+PUT {{host}}:{{port}}/organization/{{orgId}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{"website": "https://updated-test.com"}
+
+### Delete Organization request
+# @name deleteOrganization
+DELETE {{host}}:{{port}}/organization/{{orgId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

@@ -1,19 +1,15 @@
 from functools import cache
 import json
 import os
-from uuid import UUID
-import aiofiles  # Import aiofiles for asynchronous file operations
+import aiofiles
+from async_lru import alru_cache  # Import aiofiles for asynchronous file operations
 
-from app.core.supabase import get_supabase_service_client
 from lib.load_env import SETTINGS
 from lib.models.structures.journey_template_json import (
     JourneyTemplateIndex,
     JourneyTemplateMapping,
     TemplateKeyToFileMapping,
 )
-from supabase.client import AsyncClient
-
-from lib.models.supabase.journey_template import JourneyTemplateModel
 
 journey_template_dir = os.path.join(
     SETTINGS.file_repository_path, "llm/journey_structures_json"
@@ -77,12 +73,11 @@ def match_title_to_cat_and_key(
     return None
 
 
-@cache
+@alru_cache
 async def load_journey_template(
-    supabase: AsyncClient,
     item_id: str,
     journey_template_dir: str = journey_template_dir,
-) -> tuple[UUID, UUID]:
+) -> dict:
     mapping = get_journey_template_mapping(journey_template_dir)
     filepath = next(
         (pair.file_path for pair in mapping.pairs if pair.key == item_id), None
@@ -92,7 +87,7 @@ async def load_journey_template(
             os.path.join(journey_template_dir, "structured", f"{filepath}"), "r"
         ) as f:
             data = json.loads(await f.read())  # Read file asynchronously
-            service_client: AsyncClient = await get_supabase_service_client()
-            return await JourneyTemplateModel.from_json(
-                service_client, data
-            )  # Use the passed supabase
+            # service_client: AsyncClient = await get_supabase_service_client()
+            return (
+                data  # JourneyTemplateModel.from_json(data)  # Use the passed supabase
+            )

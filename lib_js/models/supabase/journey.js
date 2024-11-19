@@ -1,11 +1,18 @@
-import { SupabaseModel } from "./supabaseModel";
-import {
-    JourneyItemType,
-    JourneyTemplateVersionModel,
-    JourneyTemplateItemModel,
-    JourneyTemplateStructureModel
-} from "./journeyTemplate";
+import { SupabaseModel, Enum } from "./supabaseModel";
 import { v4 as uuidv4 } from "uuid";
+
+class JourneyItemTypeEnum extends Enum {
+    constructor() {
+        super();
+        this.JOURNEY = "journey";
+        this.SECTION = "section";
+        this.MODULE = "module";
+        this.ACTION = "action";
+        Object.freeze(this);
+    }
+}
+
+export const JourneyItemType = new JourneyItemTypeEnum();
 
 export class JourneyModel extends SupabaseModel {
     static TABLE_NAME = "journey";
@@ -20,7 +27,7 @@ export class JourneyModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null, // Made optional
             currentVersionId = null,
             updatedBy = null
         } = args;
@@ -70,7 +77,7 @@ export class JourneyModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             currentVersionId: {
@@ -88,57 +95,84 @@ export class JourneyModel extends SupabaseModel {
         };
     }
 
-    static async createFromTemplate(
-        supabase,
-        templateVersionId,
-        ownerId,
-        organizationId
-    ) {
-        // Generate a new UUID for the journey
-        const journeyId = uuidv4();
+    static async copyFrom(supabase, journeyId, journeyVersionId = null) {
+        let existingJourney = null;
+        let existingVersion = null;
+
+        if (journeyId !== null) {
+            // Fetch the existing journey
+            existingJourney = await this.fetchFromSupabase(supabase, journeyId);
+            if (!existingJourney) {
+                throw new Error("Journey not found");
+            }
+
+            // Determine the version to copy
+            journeyVersionId =
+                journeyVersionId || existingJourney.currentVersionId;
+            if (!journeyVersionId) {
+                throw new Error(
+                    "No version specified and no current version available"
+                );
+            }
+        }
+
+        if (journeyVersionId !== null) {
+            // Fetch the existing journey version
+            existingVersion = await JourneyVersionModel.fetchFromSupabase(
+                supabase,
+                journeyVersionId
+            );
+            if (!existingVersion) {
+                throw new Error("Journey version not found");
+            }
+
+            if (existingJourney === null) {
+                journeyId = existingVersion.journeyId;
+                existingJourney = await this.fetchFromSupabase(
+                    supabase,
+                    journeyId
+                );
+                if (!existingJourney) {
+                    throw new Error("Journey not found");
+                }
+            }
+        }
 
         // Create a new JourneyModel instance
-        const journey = new JourneyModel({
-            id: journeyId,
-            templateId: templateVersionId,
-            ownerId: ownerId,
-            organizationId: organizationId
+        const newJourneyId = uuidv4();
+        const newJourney = new JourneyModel({
+            id: newJourneyId,
+            templateId: existingJourney.templateId
         });
-        await journey.create(supabase);
+        await newJourney.create(supabase);
 
         // Create a new JourneyVersionModel instance
-        const journeyVersion = await JourneyVersionModel.createNewVersion(
+        const newVersion = await JourneyVersionModel.createNewVersion(
             supabase,
-            journeyId,
-            templateVersionId,
-            ownerId,
-            organizationId
+            newJourneyId,
+            existingVersion
         );
 
-        // Create JourneyItemModel and JourneyItemVersionModel instances
-        const { journeyItems, journeyItemVersions } =
-            await JourneyItemModel.createItemsFromTemplate(
+        // Copy JourneyItemModel and JourneyItemVersionModel instances
+        const { journeyItems, journeyItemVersions, itemMap } =
+            await JourneyItemModel.copyItemsFromJourney(
                 supabase,
-                journeyId,
-                templateVersionId,
-                ownerId,
-                organizationId
+                newJourneyId,
+                journeyId
             );
 
-        // Create JourneyStructureModel and JourneyStructureVersionModel instances
+        // Copy JourneyStructureModel and JourneyStructureVersionModel instances
         const { journeyStructures, journeyStructureVersions } =
-            await JourneyStructureModel.createStructuresFromTemplate(
+            await JourneyStructureModel.copyStructuresFromJourney(
                 supabase,
+                newJourneyId,
                 journeyId,
-                templateVersionId,
-                journeyItems,
-                ownerId,
-                organizationId
+                itemMap
             );
 
         return {
-            journey,
-            journeyVersion,
+            newJourney,
+            newVersion,
             journeyItems,
             journeyItemVersions,
             journeyStructures,
@@ -155,14 +189,14 @@ export class JourneyVersionModel extends SupabaseModel {
         const {
             id = null,
             journeyId,
-            templateVersionId,
+            templateId,
             name,
             description = null,
             metadata = null,
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null, // Made optional
             versionOfId = null
         } = args;
         this.attributes = {
@@ -178,11 +212,11 @@ export class JourneyVersionModel extends SupabaseModel {
                 required: true,
                 dbColumn: "journey_id"
             },
-            templateVersionId: {
-                value: templateVersionId,
+            templateId: {
+                value: templateId,
                 type: "uuid",
-                required: true,
-                dbColumn: "template_version_id"
+                required: false,
+                dbColumn: "template_id"
             },
             name: {
                 value: name,
@@ -223,7 +257,7 @@ export class JourneyVersionModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             versionOfId: {
@@ -235,29 +269,14 @@ export class JourneyVersionModel extends SupabaseModel {
         };
     }
 
-    static async createNewVersion(
-        supabase,
-        journeyId,
-        templateVersionId,
-        ownerId,
-        organizationId
-    ) {
-        // Fetch template version details
-        const templateVersion =
-            await JourneyTemplateVersionModel.fetchCurrentVersion(
-                supabase,
-                templateVersionId
-            );
-
+    static async createNewVersion(supabase, journeyId, oldVersion = null) {
         const versionId = uuidv4();
         const version = new JourneyVersionModel({
             id: versionId,
             journeyId: journeyId,
-            templateVersionId: templateVersionId,
-            name: templateVersion.name,
-            description: templateVersion.description,
-            ownerId: ownerId,
-            organizationId: organizationId,
+            templateId: oldVersion.id,
+            name: oldVersion.name,
+            description: oldVersion.description,
             versionOfId: journeyId
         });
         await version.create(supabase);
@@ -278,7 +297,7 @@ export class JourneyItemModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null, // Made optional
             currentVersionId = null,
             updatedBy = null
         } = args;
@@ -328,7 +347,7 @@ export class JourneyItemModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             currentVersionId: {
@@ -346,51 +365,58 @@ export class JourneyItemModel extends SupabaseModel {
         };
     }
 
-    static async createItemsFromTemplate(
-        supabase,
-        journeyId,
-        templateVersionId,
-        ownerId,
-        organizationId
-    ) {
-        // Fetch template items and create journey items
-        const templateItems =
-            await JourneyTemplateItemModel.fetchExistingFromSupabase(supabase, {
-                filter: templateVersionId,
-                idColumn: "template_version_id"
+    static async copyItemsFromJourney(supabase, newJourneyId, oldJourneyId) {
+        // Fetch existing journey items
+        const existingItems = await this.fetchExistingFromSupabase(supabase, {
+            filter: oldJourneyId,
+            idColumn: "journey_id"
+        });
+        // Fetch all item versions
+        const existingItemVersions =
+            await JourneyItemVersionModel.fetchExistingFromSupabase(supabase, {
+                filter: oldJourneyId,
+                idColumn: "journey_id"
             });
 
         const journeyItems = [];
         const journeyItemVersions = [];
-        for (const templateItem of templateItems) {
-            const itemId = uuidv4();
-            const journeyItem = new JourneyItemModel({
-                id: itemId,
-                journeyId: journeyId,
-                ownerId: ownerId,
-                organizationId: organizationId,
-                templateItemId: templateItem.id
-            });
-            journeyItems.push(journeyItem);
+        const itemMap = new Map();
+        for (const existingItem of existingItems) {
+            // Only copy items that are set in current_version_id
+            if (existingItem.currentVersionId) {
+                const itemId = uuidv4();
+                const journeyItem = new JourneyItemModel({
+                    id: itemId,
+                    journeyId: newJourneyId,
+                    templateItemId: existingItem.templateItemId
+                });
+                journeyItems.push(journeyItem);
+                itemMap.set(existingItem.id, itemId);
 
-            // Create corresponding JourneyItemVersionModel
-            const versionId = uuidv4();
-            const itemVersion = new JourneyItemVersionModel({
-                id: versionId,
-                journeyId: journeyId,
-                name: templateItem.name,
-                type: templateItem.type,
-                data: templateItem.data,
-                ownerId: ownerId,
-                organizationId: organizationId,
-                versionOfId: itemId
-            });
+                // Filter the corresponding item version
+                const itemVersion = existingItemVersions.find(
+                    (version) => version.id === existingItem.currentVersionId
+                );
+                if (itemVersion) {
+                    const versionId = uuidv4();
+                    const newItemVersion = new JourneyItemVersionModel({
+                        id: versionId,
+                        journeyId: newJourneyId,
+                        name: itemVersion.name,
+                        type: itemVersion.type,
+                        data: itemVersion.data,
+                        versionOfId: itemId
+                    });
+                    journeyItemVersions.push(newItemVersion);
 
-            journeyItemVersions.push(itemVersion);
+                    // Update the current_version_id in the new journey item
+                    itemMap.set(itemVersion.id, versionId);
+                }
+            }
         }
 
         if (journeyItems.length > 0) {
-            await JourneyItemModel.upsertToSupabase(supabase, journeyItems);
+            await this.upsertToSupabase(supabase, journeyItems);
         }
         if (journeyItemVersions.length > 0) {
             await JourneyItemVersionModel.upsertToSupabase(
@@ -398,7 +424,13 @@ export class JourneyItemModel extends SupabaseModel {
                 journeyItemVersions
             );
         }
-        return { journeyItems, journeyItemVersions };
+        if (journeyItems.length > 0) {
+            for (const journeyItem of journeyItems) {
+                journeyItem.currentVersionId = itemMap.get(journeyItem.id);
+            }
+            await JourneyItemModel.upsertToSupabase(supabase, journeyItems);
+        }
+        return { journeyItems, journeyItemVersions, itemMap };
     }
 }
 
@@ -420,7 +452,7 @@ export class JourneyItemVersionModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null, // Made optional
             versionOfId = null
         } = args;
         this.attributes = {
@@ -499,7 +531,7 @@ export class JourneyItemVersionModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             versionOfId: {
@@ -525,7 +557,7 @@ export class JourneyStructureModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null, // Made optional
             currentVersionId = null,
             updatedBy = null
         } = args;
@@ -575,7 +607,7 @@ export class JourneyStructureModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             currentVersionId: {
@@ -593,100 +625,117 @@ export class JourneyStructureModel extends SupabaseModel {
         };
     }
 
-    static async createStructuresFromTemplate(
+    static async copyStructuresFromJourney(
         supabase,
-        journeyId,
-        templateVersionId,
-        journeyItems,
-        ownerId,
-        organizationId
+        newJourneyId,
+        oldJourneyId,
+        itemMap
     ) {
-        // Fetch template structures and create journey structures
-        const templateStructures =
-            await JourneyTemplateStructureModel.fetchExistingFromSupabase(
+        // Fetch existing journey structures
+        const existingStructures = await this.fetchExistingFromSupabase(
+            supabase,
+            {
+                filter: oldJourneyId,
+                idColumn: "journey_id"
+            }
+        );
+        // Fetch all structure versions
+        const existingStructureVersions =
+            await JourneyStructureVersionModel.fetchExistingFromSupabase(
                 supabase,
-                { filter: templateVersionId, idColumn: "template_version_id" }
+                {
+                    filter: oldJourneyId,
+                    idColumn: "journey_id"
+                }
             );
 
         const journeyStructures = [];
         const journeyStructureVersions = [];
-        const journeyItemMap = new Map(
-            journeyItems.map((item) => [item.templateItemId, item.id])
-        );
-        const structureTemplateMap = new Map(
-            journeyItems.map((item) => [item.id, item.templateItemId])
-        );
-
-        // Create a map to hold the structure version IDs
         const structureVersionMap = new Map();
 
-        for (const templateStructure of templateStructures) {
-            const structureId = uuidv4();
-            const journeyStructure = new JourneyStructureModel({
-                id: structureId,
-                journeyId: journeyId,
-                ownerId: ownerId,
-                organizationId: organizationId
-            });
-            journeyStructures.push(journeyStructure);
+        for (const existingStructure of existingStructures) {
+            // Only copy structures that are set in current_version_id
+            if (existingStructure.currentVersionId) {
+                const structureId = uuidv4();
+                const journeyStructure = new JourneyStructureModel({
+                    id: structureId,
+                    journeyId: newJourneyId
+                });
+                journeyStructures.push(journeyStructure);
+                structureVersionMap.set(existingStructure.id, structureId);
 
-            const versionId = uuidv4();
-            const structureVersion = new JourneyStructureVersionModel({
-                id: versionId,
-                journeyId: journeyId,
-                journeyItemId: journeyItemMap.get(
-                    templateStructure.journeyTemplateItemId
-                ),
-                versionId: structureId,
-                ownerId: ownerId,
-                organizationId: organizationId,
-                versionOfId: structureId
-            });
+                // Filter the corresponding structure version
+                const structureVersion = existingStructureVersions.find(
+                    (version) =>
+                        version.id === existingStructure.currentVersionId
+                );
+                if (structureVersion) {
+                    const versionId = uuidv4();
+                    const newStructureVersion =
+                        new JourneyStructureVersionModel({
+                            id: versionId,
+                            journeyId: newJourneyId,
+                            journeyItemId: itemMap.get(
+                                structureVersion.journeyItemId
+                            ),
+                            versionId: itemMap.get(structureVersion.versionId),
+                            versionOfId: structureId
+                        });
+                    journeyStructureVersions.push(newStructureVersion);
 
-            journeyStructureVersions.push(structureVersion);
+                    // Map the structure version ID
+                    structureVersionMap.set(
+                        structureVersion.id,
+                        newStructureVersion.id
+                    );
 
-            // Map the structure version ID
-            structureVersionMap.set(templateStructure.id, structureVersion.id);
-
-            journeyStructure.currentVersionId = structureVersion.id;
+                    // Update the current_version_id in the new journey structure
+                    itemMap.set(structureVersion.id, versionId);
+                }
+            }
         }
 
         if (journeyStructures.length > 0) {
+            await this.upsertToSupabase(supabase, journeyStructures);
+        }
+        if (journeyStructureVersions.length > 0) {
+            await JourneyStructureVersionModel.upsertToSupabase(
+                supabase,
+                journeyStructureVersions
+            );
+        }
+        if (journeyStructures.length > 0) {
+            for (const journeyStructure of journeyStructures) {
+                journeyStructure.currentVersionId = structureVersionMap.get(
+                    journeyStructure.id
+                );
+            }
             await JourneyStructureModel.upsertToSupabase(
                 supabase,
                 journeyStructures
             );
         }
 
-        if (journeyStructureVersions.length > 0) {
-            await JourneyItemVersionModel.upsertToSupabase(
-                supabase,
-                journeyStructureVersions
-            );
-        }
-
+        // Update parent_id, next_id, and previous_id for the new structure versions
         for (const structureVersion of journeyStructureVersions) {
-            const templateStructureId = structureTemplateMap.get(
-                structureVersion.journeyItemId
+            const originalVersion = existingStructureVersions.find(
+                (version) => version.id === structureVersion.versionOfId
             );
-            const templateStructure = templateStructures.find(
-                (ts) => ts.id === templateStructureId
-            );
-            if (templateStructure) {
+            if (originalVersion) {
                 structureVersion.parentId = structureVersionMap.get(
-                    templateStructure.parentId
+                    originalVersion.parentId
                 );
                 structureVersion.nextId = structureVersionMap.get(
-                    templateStructure.nextId
+                    originalVersion.nextId
                 );
                 structureVersion.previousId = structureVersionMap.get(
-                    templateStructure.previousId
+                    originalVersion.previousId
                 );
             }
         }
 
         if (journeyStructureVersions.length > 0) {
-            await JourneyItemVersionModel.upsertToSupabase(
+            await JourneyStructureVersionModel.upsertToSupabase(
                 supabase,
                 journeyStructureVersions
             );
@@ -714,7 +763,7 @@ export class JourneyStructureVersionModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null, // Made optional
             versionOfId = null
         } = args;
         this.attributes = {
@@ -793,7 +842,7 @@ export class JourneyStructureVersionModel extends SupabaseModel {
             organizationId: {
                 value: organizationId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "organization_id"
             },
             versionOfId: {
