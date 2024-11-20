@@ -1,5 +1,5 @@
 import json
-from typing import ClassVar, Optional, List, Tuple
+from typing import ClassVar, Optional
 from uuid import UUID
 from pydantic import Field, Json, field_validator
 from pydantic.types import PositiveInt
@@ -7,7 +7,7 @@ from datetime import datetime
 from supabase.client import AsyncClient
 
 from lib.models.supabase.supabase_model import SupabaseModel
-from lib.models.supabase.acl import ACLGroupModel, ACLGroupUsersModel, UserACL
+from lib.models.supabase.acl import ACLGroupUsersModel, UserACL
 
 
 class UserProfileModel(SupabaseModel):
@@ -261,17 +261,17 @@ class OrganizationUsersModel(SupabaseModel):
             for acl_group_id, acl in groups_with_levels.items():
                 await org_user.connect_with_acl_group(supabase, acl_group_id, acl)
 
-        # Connect by default with "All users" group as ro
-        all_users_group = await ACLGroupModel.fetch_from_supabase(
-            supabase, {"name": "All users", "organization_id": self.organization_id}
-        )
-        if (
-            groups_with_levels is None
-            or all_users_group.id not in groups_with_levels.keys()
-        ) and not (await self.in_acl_group(supabase, all_users_group.id)):
-            await org_user.connect_with_acl_group(
-                supabase, all_users_group.id, UserACL.ro
-            )
+        # # Connect by default with "All users" group as ro
+        # all_users_group = await ACLGroupModel.fetch_from_supabase(
+        #     supabase, {"name": "All users", "organization_id": self.organization_id}
+        # )
+        # if (
+        #     groups_with_levels is None
+        #     or all_users_group.id not in groups_with_levels.keys()
+        # ) and not (await self.in_acl_group(supabase, all_users_group.id)):
+        #     await org_user.connect_with_acl_group(
+        #         supabase, all_users_group.id, UserACL.ro
+        #     )
 
         return org_user
 
@@ -279,6 +279,7 @@ class OrganizationUsersModel(SupabaseModel):
 class OrganizationsModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "organizations"
     id: Optional[UUID] = Field(default=None)
+    default_acl_group_id: Optional[UUID] = Field(default=None)
     name: Optional[str] = Field(default=None)
     website: Optional[str] = Field(default=None)
     logo: Optional[str] = Field(default=None)
@@ -297,54 +298,50 @@ class OrganizationsModel(SupabaseModel):
             return json.dumps(v)
         return v
 
-    async def create_acl_groups(
-        self, supabase: AsyncClient, groups: List[Tuple[str, str]] = None
-    ):
-        """Create ACL groups with given names and descriptions."""
-        if groups is None:
-            groups = [
-                ("All users", "All users within this organization"),
-            ]
+    # async def create_acl_groups(
+    #     self, supabase: AsyncClient, groups: List[Tuple[str, str]] = None
+    # ):
+    #     """Create ACL groups with given names and descriptions."""
 
-        acl_groups = [
-            ACLGroupModel(name=name, description=description, organization_id=self.id)
-            for name, description in groups
-        ]
-        await ACLGroupModel.upsert_to_supabase(supabase, acl_groups)
+    #     acl_groups = [
+    #         ACLGroupModel(name=name, description=description, organization_id=self.id)
+    #         for name, description in groups
+    #     ]
+    #     await ACLGroupModel.upsert_to_supabase(supabase, acl_groups)
 
-    async def create(self, supabase: AsyncClient) -> "OrganizationsModel":
-        """Create a new organization and set up initial ACL groups and admin user."""
-        # Create the organization
-        organization = await self.save_to_supabase(supabase, self)
+    # async def create(self, supabase: AsyncClient) -> "OrganizationsModel":
+    #     """Create a new organization and set up initial ACL groups and admin user."""
+    #     # Create the organization
+    #     organization = await self.save_to_supabase(supabase, self)
 
-        # Create initial ACL groups
-        await organization.create_acl_groups(supabase)
+    #     # # Create initial ACL groups
+    #     # await organization.create_acl_groups(supabase)
 
-        # Fetch the "All users" ACL group
-        all_users_group = await ACLGroupModel.fetch_from_supabase(
-            supabase, {"name": "All users", "organization_id": organization.id}
-        )
+    #     # Fetch the "All users" ACL group
+    #     # all_users_group = await ACLGroupModel.fetch_from_supabase(
+    #     #     supabase, {"name": "All users", "organization_id": organization.id}
+    #     # )
 
-        # Fetch auth_id from Supabase session
-        session = await supabase.auth.get_session()
-        auth_id = session.user.id
+    #     # Fetch auth_id from Supabase session
+    #     # session = await supabase.auth.get_session()
+    #     # auth_id = session.user.id
 
-        # Fetch user_id from UserProfileModel
-        user_profile = await UserProfileModel.fetch_from_supabase(
-            supabase, {"auth_id": auth_id}
-        )
-        user_id = user_profile.id
+    #     # # Fetch user_id from UserProfileModel
+    #     # user_profile = await UserProfileModel.fetch_from_supabase(
+    #     #     supabase, {"auth_id": auth_id}
+    #     # )
+    #     # user_id = user_profile.id
 
-        # Create an OrganizationUsersModel for the current user and assign as admin
-        org_user = OrganizationUsersModel(
-            auth_id=auth_id,
-            user_id=user_id,
-            organization_id=organization.id,
-            is_admin=True,
-        )
-        await org_user.create(supabase, {all_users_group.id: UserACL.adm})
+    #     # Create an OrganizationUsersModel for the current user and assign as admin
+    #     # org_user = OrganizationUsersModel(
+    #     #     auth_id=auth_id,
+    #     #     user_id=user_id,
+    #     #     organization_id=organization.id,
+    #     #     is_admin=True,
+    #     # )
+    #     # await org_user.create(supabase, {all_users_group.id: UserACL.adm})
 
-        # Connect the user with the "All users" ACL group
-        # await org_user.connect_with_acl_group(supabase, all_users_group.id, UserACL.adm)
+    #     # Connect the user with the "All users" ACL group
+    #     # await org_user.connect_with_acl_group(supabase, all_users_group.id, UserACL.adm)
 
-        return organization
+    #     return organization

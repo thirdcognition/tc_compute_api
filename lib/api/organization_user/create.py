@@ -3,10 +3,9 @@ from supabase.client import AsyncClient
 from supabase_auth.types import UserResponse, AdminUserAttributes
 from uuid import UUID
 from pydantic import BaseModel
-from postgrest import APIResponse
 
 from app.core.supabase import get_supabase_service_client
-from lib.models.supabase.organization import OrganizationUsersModel
+from lib.models.supabase.organization import OrganizationUsersModel, OrganizationsModel
 from lib.models.user import UserProfileModel
 
 
@@ -34,46 +33,58 @@ async def create_organization_user(
         ValueError: If neither email nor auth_id is provided.
         ValueError: If the user is already a member of the organization.
     """
-    print(f"{request_data=}")
+
+    if not await OrganizationsModel.exists_in_supabase(supabase, organization_id):
+        raise ValueError(f"Invalid organization id: {organization_id}")
+
+    service_client: AsyncClient = None
+    auth_id = None
+    user_profile = None
     # Check if the user already exists
     if request_data.email is not None:
-        # Check existence directly with the class method using email
         if await UserProfileModel.exists_in_supabase(
             supabase, request_data.email, id_column="email"
         ):
-            # Fetch and create a UserProfileModel instance only if it exists
             user_profile = await UserProfileModel.fetch_from_supabase(
-                supabase, request_data.email, id_column="email"
+                supabase, value=request_data.email, id_column="email"
             )
             auth_id = user_profile.auth_id
+        else:
+            service_client: AsyncClient = (
+                service_client or await get_supabase_service_client()
+            )
+            user_data = await service_client.rpc(
+                "get_user_id_by_email", {"email": request_data.email}
+            ).execute()
+            if len(user_data.data) > 0:
+                auth_id = user_data.data[0]["id"]
+
     elif request_data.auth_id is not None:
         # Check existence directly with the class method using auth_id
         if await UserProfileModel.exists_in_supabase(
             supabase, request_data.auth_id, id_column="auth_id"
         ):
-            # Fetch and create a UserProfileModel instance only if it exists
-            user_profile = await UserProfileModel.fetch_from_supabase(
-                supabase, request_data.auth_id, id_column="auth_id"
+            user_profile: UserProfileModel = await UserProfileModel.fetch_from_supabase(
+                supabase, value=request_data.auth_id, id_column="auth_id"
             )
+            auth_id = request_data.auth_id
         else:
-            # Fetch user data from auth.users table if it doesn't exist in UserProfile
-            user_data: APIResponse = (
-                await supabase.table("auth.users")
-                .select("*")
-                .eq("id", request_data.auth_id)
-                .execute()
+            service_client: AsyncClient = (
+                service_client or await get_supabase_service_client()
+            )
+            user_data = await service_client.auth.admin.get_user_by_id(
+                request_data.auth_id
             )
             auth_id = (
-                user_data[0]["auth_id"]
-                if (user_data.count and user_data.count > 0)
-                else None
+                user_data.user.id if (user_data.user and user_data.user.id) else None
             )
     else:
         raise ValueError("Either email or auth_id must be provided")
 
-    print(f"{user_profile=}")
-
     if auth_id:
+        # user_profile = await UserProfileModel.fetch_from_supabase(
+        #     supabase, request_data.auth_id, id_column="auth_id"
+        # )
         if await OrganizationUsersModel.exists_in_supabase(
             supabase,
             value={"auth_id": auth_id, "organization_id": organization_id},
@@ -87,12 +98,14 @@ async def create_organization_user(
                 auth_id=auth_id,
                 organization_id=organization_id,
                 is_admin=request_data.is_admin,
-                user_id=user_profile.id,
+                user_id=user_profile.id if user_profile else None,
             )
             await organization_user.create(supabase)
             return organization_user
     else:
-        service_client: AsyncClient = await get_supabase_service_client()
+        service_client: AsyncClient = (
+            service_client or await get_supabase_service_client()
+        )
         resp: UserResponse = await service_client.auth.admin.create_user(
             AdminUserAttributes(
                 email=request_data.email,

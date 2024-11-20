@@ -2,13 +2,13 @@ from typing import List
 from uuid import UUID
 from supabase import AsyncClient
 
-from lib.models.organization import Organization
+# from lib.models.organization import Organization
 from lib.models.supabase.organization import OrganizationsModel
 
 
 async def get_organization(
     supabase: AsyncClient, organization_id: UUID
-) -> Organization:
+) -> OrganizationsModel:
     """
     Retrieve an organization by its ID from Supabase.
 
@@ -25,10 +25,11 @@ async def get_organization(
     )
     if not organization_model:
         raise ValueError("Organization not found")
-    return Organization(supabase, organization_model)
+    return organization_model
+    # return Organization(supabase, organization_model)
 
 
-async def list_organizations(supabase: AsyncClient) -> List[Organization]:
+async def list_organizations(supabase: AsyncClient) -> List[OrganizationsModel]:
     """
     List all organizations from Supabase.
 
@@ -38,11 +39,17 @@ async def list_organizations(supabase: AsyncClient) -> List[Organization]:
     Returns:
         List[Organization]: A list of organizations.
     """
+
+    organization_models = await OrganizationsModel.fetch_existing_from_supabase(
+        supabase
+    )
+    return organization_models
     # Fetch all organizations using the model's method
-    organization_model = OrganizationsModel()
-    response = await supabase.table(organization_model.TABLE_NAME).select("*").execute()
-    organizations = [
-        Organization(supabase, OrganizationsModel(**org_data))
-        for org_data in response.data
-    ]
-    return organizations
+    # organization_model = OrganizationsModel()
+    # response = await supabase.table(organization_model.TABLE_NAME).select("*").execute()
+
+    # organizations = [
+    #     Organization(supabase, OrganizationsModel(**org_data))
+    #     for org_data in response.data
+    # ]
+    # return organizations

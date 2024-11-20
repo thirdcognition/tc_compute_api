@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from app.core.supabase import SupaClientDep
+from lib.helpers.routes import handle_exception
 from lib.llm_exec.journey_exec import get_journey_template_id_with_role
 from lib.models.supabase.journey import (
     JourneyModel,
@@ -64,8 +65,10 @@ async def api_match_with_journey_template(journey_data: MatchJourneyRequestData)
             journey_data.role_title, journey_data.role_description
         )
         return {"template_id": template_id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.get("/journey/from_template/{template_id}")
@@ -79,7 +82,7 @@ async def api_create_from_journey_template(
         journey_version: JourneyVersionModel = resp[1]
         return {"journey_id": journey.id, "journey_version": journey_version.id}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.get("/journey/copy/{version_id}")
@@ -87,12 +90,12 @@ async def api_create_copy_journey(
     version_id: str,
     supabase: SupaClientDep,
 ):
-    # try:
-    resp = await JourneyModel.copy_from(supabase, journey_version_id=version_id)
-    journey: JourneyModel = resp[0]
-    return {"journey_id": journey.id}
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail=str(e))
+    try:
+        resp = await JourneyModel.copy_from(supabase, journey_version_id=version_id)
+        journey: JourneyModel = resp[0]
+        return {"journey_id": journey.id}
+    except Exception as e:
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.post("/journey/")
@@ -103,8 +106,10 @@ async def api_create_journey(
     try:
         journey = await create_journey(supabase, request_data)
         return {"journey_id": journey.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.get("/journey/{journey_id}")
@@ -116,7 +121,7 @@ async def api_get_journey(
         journey = await get_journey(supabase, journey_id)
         return journey
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey not found", 404)
 
 
 @router.get("/journeys/")
@@ -127,7 +132,7 @@ async def api_list_journeys(
         journeys = await list_journeys(supabase)
         return journeys
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.put("/journey/{journey_id}")
@@ -140,8 +145,10 @@ async def api_update_journey(
         request_data.id = journey_id
         journey = await update_journey(supabase, request_data)
         return journey
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey not found", 404)
 
 
 @router.delete("/journey/{journey_id}")
@@ -153,7 +160,7 @@ async def api_delete_journey(
         await delete_journey(supabase, journey_id)
         return {"detail": "Journey deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey not found", 404)
 
 
 @router.post("/journey_version/")
@@ -164,8 +171,10 @@ async def api_create_journey_version(
     try:
         journey_version = await create_journey_version(supabase, request_data)
         return {"journey_version_id": journey_version.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.get("/journey_version/{version_id}")
@@ -177,7 +186,7 @@ async def api_get_journey_version(
         journey_version = await get_journey_version(supabase, version_id)
         return journey_version
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey version not found", 404)
 
 
 @router.get("/journey_versions/")
@@ -188,7 +197,7 @@ async def api_list_journey_versions(
         journey_versions = await list_journey_versions(supabase)
         return journey_versions
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.put("/journey_version/{version_id}")
@@ -201,8 +210,10 @@ async def api_update_journey_version(
         request_data.id = version_id
         journey_version = await update_journey_version(supabase, request_data)
         return journey_version
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey version not found", 404)
 
 
 @router.delete("/journey_version/{version_id}")
@@ -214,7 +225,7 @@ async def api_delete_journey_version(
         await delete_journey_version(supabase, version_id)
         return {"detail": "Journey version deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey version not found", 404)
 
 
 @router.post("/journey_item/")
@@ -225,8 +236,10 @@ async def api_create_journey_item(
     try:
         journey_item = await create_journey_item(supabase, request_data)
         return {"journey_item_id": journey_item.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.get("/journey_item/{item_id}")
@@ -238,7 +251,7 @@ async def api_get_journey_item(
         journey_item = await get_journey_item(supabase, item_id)
         return journey_item
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey item not found", 404)
 
 
 @router.get("/journey_items/")
@@ -249,7 +262,7 @@ async def api_list_journey_items(
         journey_items = await list_journey_items(supabase)
         return journey_items
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.put("/journey_item/{item_id}")
@@ -262,8 +275,10 @@ async def api_update_journey_item(
         request_data.id = item_id
         journey_item = await update_journey_item(supabase, request_data)
         return journey_item
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey item not found", 404)
 
 
 @router.delete("/journey_item/{item_id}")
@@ -275,7 +290,7 @@ async def api_delete_journey_item(
         await delete_journey_item(supabase, item_id)
         return {"detail": "Journey item deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey item not found", 404)
 
 
 @router.post("/journey_item_version/")
@@ -286,8 +301,10 @@ async def api_create_journey_item_version(
     try:
         journey_item_version = await create_journey_item_version(supabase, request_data)
         return {"journey_item_version_id": journey_item_version.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.get("/journey_item_version/{version_id}")
@@ -299,7 +316,7 @@ async def api_get_journey_item_version(
         journey_item_version = await get_journey_item_version(supabase, version_id)
         return journey_item_version
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey item version not found", 404)
 
 
 @router.get("/journey_item_versions/")
@@ -310,7 +327,7 @@ async def api_list_journey_item_versions(
         journey_item_versions = await list_journey_item_versions(supabase)
         return journey_item_versions
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.put("/journey_item_version/{version_id}")
@@ -323,8 +340,10 @@ async def api_update_journey_item_version(
         request_data.id = version_id
         journey_item_version = await update_journey_item_version(supabase, request_data)
         return journey_item_version
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey item version not found", 404)
 
 
 @router.delete("/journey_item_version/{version_id}")
@@ -336,7 +355,7 @@ async def api_delete_journey_item_version(
         await delete_journey_item_version(supabase, version_id)
         return {"detail": "Journey item version deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey item version not found", 404)
 
 
 @router.post("/journey_structure/")
@@ -347,8 +366,10 @@ async def api_create_journey_structure(
     try:
         journey_structure = await create_journey_structure(supabase, request_data)
         return {"journey_structure_id": journey_structure.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.get("/journey_structure/{structure_id}")
@@ -360,7 +381,7 @@ async def api_get_journey_structure(
         journey_structure = await get_journey_structure(supabase, structure_id)
         return journey_structure
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey structure not found", 404)
 
 
 @router.get("/journey_structures/")
@@ -371,7 +392,7 @@ async def api_list_journey_structures(
         journey_structures = await list_journey_structures(supabase)
         return journey_structures
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.put("/journey_structure/{structure_id}")
@@ -384,8 +405,10 @@ async def api_update_journey_structure(
         request_data.id = structure_id
         journey_structure = await update_journey_structure(supabase, request_data)
         return journey_structure
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey structure not found", 404)
 
 
 @router.delete("/journey_structure/{structure_id}")
@@ -397,7 +420,7 @@ async def api_delete_journey_structure(
         await delete_journey_structure(supabase, structure_id)
         return {"detail": "Journey structure deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey structure not found", 404)
 
 
 @router.post("/journey_structure_version/")
@@ -410,8 +433,10 @@ async def api_create_journey_structure_version(
             supabase, request_data
         )
         return {"journey_structure_version_id": journey_structure_version.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.get("/journey_structure_version/{version_id}")
@@ -425,7 +450,7 @@ async def api_get_journey_structure_version(
         )
         return journey_structure_version
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey structure version not found", 404)
 
 
 @router.get("/journey_structure_versions/")
@@ -436,7 +461,7 @@ async def api_list_journey_structure_versions(
         journey_structure_versions = await list_journey_structure_versions(supabase)
         return journey_structure_versions
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise handle_exception(e, "Internal Server Error")
 
 
 @router.put("/journey_structure_version/{version_id}")
@@ -451,8 +476,10 @@ async def api_update_journey_structure_version(
             supabase, request_data
         )
         return journey_structure_version
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey structure version not found", 404)
 
 
 @router.delete("/journey_structure_version/{version_id}")
@@ -464,4 +491,4 @@ async def api_delete_journey_structure_version(
         await delete_journey_structure_version(supabase, version_id)
         return {"detail": "Journey structure version deleted successfully"}
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise handle_exception(e, "Journey structure version not found", 404)

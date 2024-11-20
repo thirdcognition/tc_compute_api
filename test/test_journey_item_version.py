@@ -60,59 +60,61 @@ def journey_item_id(access_token, journey_id):
     return response.json()["journey_item_id"]
 
 
-def test_create_journey_item(access_token, journey_item_id):
-    assert journey_item_id is not None
-
-
-def test_get_journey_item(access_token, journey_item_id):
-    response = requests.get(
-        f"{BASE_URL}/journey_item/{journey_item_id}",
+@pytest.fixture(scope="module")
+def journey_item_version_id(access_token, journey_id, journey_item_id):
+    response = requests.post(
+        f"{BASE_URL}/journey_item_version/",
+        json={
+            "journey_id": journey_id,
+            "journey_item_id": journey_item_id,
+            "name": "Version 1",
+            "disabled": False,
+        },
         headers={"Authorization": f"Bearer {access_token}"},
     )
-    assert response.status_code == 200, f"Failed to get journey item: {response.text}"
+    response.raise_for_status()
+    return response.json()["journey_item_version_id"]
 
 
-def test_list_journey_items(access_token):
+def test_create_journey_item_version(access_token, journey_item_version_id):
+    assert journey_item_version_id is not None
+
+
+def test_get_journey_item_version(access_token, journey_item_version_id):
     response = requests.get(
-        f"{BASE_URL}/journey_items/",
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    assert response.status_code == 200, f"Failed to list journey items: {response.text}"
-
-
-def test_update_journey_item(access_token, journey_id, journey_item_id):
-    response = requests.put(
-        f"{BASE_URL}/journey_item/{journey_item_id}",
-        json={"journey_id": journey_id, "disabled": True},
+        f"{BASE_URL}/journey_item_version/{journey_item_version_id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert (
         response.status_code == 200
-    ), f"Failed to update journey item: {response.text}"
+    ), f"Failed to get journey item version: {response.text}"
+
+
+def test_list_journey_item_versions(access_token):
+    response = requests.get(
+        f"{BASE_URL}/journey_item_versions/",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert (
+        response.status_code == 200
+    ), f"Failed to list journey item versions: {response.text}"
+
+
+def test_update_journey_item_version(access_token, journey_id, journey_item_version_id):
+    response = requests.put(
+        f"{BASE_URL}/journey_item_version/{journey_item_version_id}",
+        json={"journey_id": journey_id, "name": "Updated Version 1", "disabled": True},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert (
+        response.status_code == 200
+    ), f"Failed to update journey item version: {response.text}"
 
     # Verify the update
     response = requests.get(
-        f"{BASE_URL}/journey_item/{journey_item_id}",
+        f"{BASE_URL}/journey_item_version/{journey_item_version_id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert (
         response.json()["disabled"] is True
-    ), "Journey item disabled status not updated correctly"
-
-
-def test_delete_journey_item(access_token, journey_item_id):
-    response = requests.delete(
-        f"{BASE_URL}/journey_item/{journey_item_id}",
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    assert (
-        response.status_code == 200
-    ), f"Failed to delete journey item: {response.text}"
-
-
-def test_delete_journey(access_token, journey_id):
-    response = requests.delete(
-        f"{BASE_URL}/journey/{journey_id}",
-        headers={"Authorization": f"Bearer {access_token}"},
-    )
-    assert response.status_code == 200, f"Failed to delete journey: {response.text}"
+    ), "Journey item version disabled status not updated correctly"

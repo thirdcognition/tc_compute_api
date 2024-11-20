@@ -24,7 +24,8 @@ Authorization: Bearer {{accessToken}}
 {"name": "test org", "website": "https://test.com"}
 
 ### Response
-@orgId = {{createOrganization.response.body.$.id}}
+# @orgId = {{createOrganization.response.body.$.id}}
+@orgId = 2f26ba37-3555-4fc8-a274-38afe6259311
 
 ### Get Organization request
 # @name getOrganization
@@ -45,7 +46,7 @@ Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
-{"website": "https://updated-test.com"}
+{"website": "https://updated-test.com", "disabled": false}
 
 ### Delete Organization request
 # @name deleteOrganization

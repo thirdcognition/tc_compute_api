@@ -21,10 +21,7 @@ Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
-{
-  "name": "New Journey",
-  "description": "Description of the new journey"
-}
+{}
 
 ### Response
 @journeyId = {{createJourney.response.body.$.journey_id}}
@@ -49,8 +46,7 @@ Accept: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "name": "Updated Journey",
-  "description": "Updated description of the journey"
+  "disabled": true
 }
 
 ### Delete Journey request

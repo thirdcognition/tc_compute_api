@@ -24,25 +24,40 @@ class SupabaseModel(BaseModel):
                 self.dirty = True
         super().__setattr__(name, value)
 
-    async def create(self, supabase: AsyncClient) -> "SupabaseModel":
+    async def create(self, supabase: AsyncClient) -> T:
         """Create a new record in the database."""
         return await self.save_to_supabase(supabase, self)
 
-    async def read(
-        self, supabase: AsyncClient, value: Any, id_column: str = "id"
-    ) -> Optional["SupabaseModel"]:
-        """Read a record from the database."""
-        return await self.fetch_from_supabase(supabase, value, id_column, instance=self)
+    async def read(self, supabase: AsyncClient, id_column=None) -> T:
+        """
+        Read a record from the database based on the instance's id or a specified field,
+        and then update the current instance with the values.
+        """
+        if id_column is not None:
+            return await self.fetch_from_supabase(
+                supabase, id_column=id_column, instance=self
+            )
 
-    async def update(self, supabase: AsyncClient) -> "SupabaseModel":
+        return await self.fetch_from_supabase(supabase, instance=self)
+
+    async def update(self, supabase: AsyncClient) -> T:
         """Update the record in the database if it has changed."""
         return await self.save_to_supabase(supabase, self)
 
-    async def delete(
-        self, supabase: AsyncClient, value: Any, id_column: str = "id"
-    ) -> bool:
-        """Delete a record from the database."""
+    async def delete(self, supabase: AsyncClient, id_column: str = "id") -> bool:
+        """Delete the record from the database."""
+        # Use the instance's id to delete itself
+        value = getattr(self, id_column, None)
+        if value is None:
+            raise ValueError(f"'{id_column}' is not set for this instance.")
         return await self.delete_from_supabase(supabase, value, id_column)
+
+    async def exists(self, supabase: AsyncClient, id_column: str = None) -> bool:
+        """Check if a record with the instance's id exists in the database."""
+        value = getattr(self, id_column, None)
+        if value is None:
+            raise ValueError(f"'{id_column}' is not set for this instance.")
+        return await self.exists_in_supabase(supabase, value, id_column)
 
     @classmethod
     async def upsert_to_supabase(
@@ -161,7 +176,7 @@ class SupabaseModel(BaseModel):
     async def fetch_from_supabase(
         cls: Type[T],
         supabase: AsyncClient,
-        value: Any = None,
+        value: Optional[Any] = None,
         id_column: str = "id",
         instance: Optional[T] = None,  # Optional instance parameter
     ) -> T:
@@ -169,8 +184,11 @@ class SupabaseModel(BaseModel):
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
         query = supabase.table(cls.TABLE_NAME).select("*")
-        if value is None:
-            raise ValueError(f"Value for '{id_column}' must be provided.")
+        if instance and value is None:
+            # If instance is set and value is not set, try to look for id_column value from instance
+            value = getattr(instance, id_column, None)
+            if value is None:
+                raise ValueError(f"'{id_column}' is not set for the provided instance.")
 
         if isinstance(value, dict):
             for key, val in value.items():
@@ -196,12 +214,12 @@ class SupabaseModel(BaseModel):
 
     @classmethod
     async def fetch_existing_from_supabase(
-        cls,
+        cls: Type[T],
         supabase: AsyncClient,
         filter: Any = None,
         values: List[Any] = None,
         id_column: str = "id",
-    ):
+    ) -> List[T]:
         # Ensure TABLE_NAME is set
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
@@ -253,16 +271,25 @@ class SupabaseModel(BaseModel):
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value: Any = None, id_column: str = "id"
+        cls: Type[T], supabase: AsyncClient, value: Any = None, id_column: str = "id"
     ) -> bool:
         # Ensure TABLE_NAME is set
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
+        selected_fields = []
         # Determine fields to select
-        selected_fields = [id_column]
-        if isinstance(value, dict):
+        if id_column is not None:
+            selected_fields = [id_column]
+
+        if isinstance(value, type(T)):
+            value = getattr(value, id_column)
+        elif isinstance(value, dict):
             selected_fields.extend(value.keys())
-        query = supabase.table(cls.TABLE_NAME).select(*selected_fields)
+
+        if len(selected_fields) > 0:
+            query = supabase.table(cls.TABLE_NAME).select(*selected_fields)
+        else:
+            query = supabase.table(cls.TABLE_NAME).select('"')
 
         # Adjust query based on whether value is a dict or a single value
         if value is None:
@@ -272,14 +299,15 @@ class SupabaseModel(BaseModel):
             for key, val in value.items():
                 query = query.eq(key, val)
         else:
-            query = query.eq(id_column, value)
+            query = query.eq(id_column or "id", value)
 
         response: APIResponse = await query.execute()
-        return bool(response.data)
+        # print(f"Response: {response}")
+        return len(response.data) > 0
 
     @classmethod
     async def delete_from_supabase(
-        cls, supabase: AsyncClient, value: Any = None, id_column: str = "id"
+        cls: Type[T], supabase: AsyncClient, value: Any = None, id_column: str = "id"
     ) -> bool:
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 

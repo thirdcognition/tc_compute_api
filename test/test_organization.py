@@ -83,14 +83,24 @@ def test_list_organizations(access_token):
 
 
 def test_update_organization(access_token, organization_id):
+    updated_website = "https://updated-test.com"
     response = requests.put(
         f"{BASE_URL}/organization/{organization_id}",
-        json={"website": "https://updated-test.com"},
+        json={"website": updated_website},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert (
         response.status_code == 200
     ), f"Failed to update organization: {response.text}"
+
+    # Verify the update
+    response = requests.get(
+        f"{BASE_URL}/organization/{organization_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert (
+        response.json()["website"] == updated_website
+    ), "Organization website not updated correctly"
 
 
 def test_get_organization_user(access_token, organization_id, user_id):
@@ -122,6 +132,15 @@ def test_update_organization_user(access_token, organization_id, user_id):
     assert (
         response.status_code == 200
     ), f"Failed to update organization user: {response.text}"
+
+    # Verify the update
+    response = requests.get(
+        f"{BASE_URL}/organization/{organization_id}/user/{user_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert (
+        response.json()["is_admin"] is True
+    ), "Organization user admin status not updated correctly"
 
 
 def test_delete_organization_user(access_token, organization_id, user_id):

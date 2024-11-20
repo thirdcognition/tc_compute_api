@@ -20,9 +20,7 @@ async def get_journey(supabase: AsyncClient, journey_id: UUID) -> JourneyModel:
 
 
 async def list_journeys(supabase: AsyncClient) -> List[JourneyModel]:
-    journey_model = JourneyModel()
-    response = await supabase.table(journey_model.TABLE_NAME).select("*").execute()
-    journeys = [JourneyModel(**journey_data) for journey_data in response.data]
+    journeys = await JourneyModel.fetch_existing_from_supabase(supabase)
     return journeys
 
 
@@ -38,13 +36,7 @@ async def get_journey_version(
 
 
 async def list_journey_versions(supabase: AsyncClient) -> List[JourneyVersionModel]:
-    journey_version_model = JourneyVersionModel()
-    response = (
-        await supabase.table(journey_version_model.TABLE_NAME).select("*").execute()
-    )
-    journey_versions = [
-        JourneyVersionModel(**version_data) for version_data in response.data
-    ]
+    journey_versions = await JourneyVersionModel.fetch_existing_from_supabase(supabase)
     return journey_versions
 
 
@@ -56,9 +48,7 @@ async def get_journey_item(supabase: AsyncClient, item_id: UUID) -> JourneyItemM
 
 
 async def list_journey_items(supabase: AsyncClient) -> List[JourneyItemModel]:
-    journey_item_model = JourneyItemModel()
-    response = await supabase.table(journey_item_model.TABLE_NAME).select("*").execute()
-    journey_items = [JourneyItemModel(**item_data) for item_data in response.data]
+    journey_items = await JourneyItemModel.fetch_existing_from_supabase(supabase)
     return journey_items
 
 
@@ -76,15 +66,9 @@ async def get_journey_item_version(
 async def list_journey_item_versions(
     supabase: AsyncClient,
 ) -> List[JourneyItemVersionModel]:
-    journey_item_version_model = JourneyItemVersionModel()
-    response = (
-        await supabase.table(journey_item_version_model.TABLE_NAME)
-        .select("*")
-        .execute()
+    journey_item_versions = await JourneyItemVersionModel.fetch_existing_from_supabase(
+        supabase
     )
-    journey_item_versions = [
-        JourneyItemVersionModel(**version_data) for version_data in response.data
-    ]
     return journey_item_versions
 
 
@@ -100,13 +84,9 @@ async def get_journey_structure(
 
 
 async def list_journey_structures(supabase: AsyncClient) -> List[JourneyStructureModel]:
-    journey_structure_model = JourneyStructureModel()
-    response = (
-        await supabase.table(journey_structure_model.TABLE_NAME).select("*").execute()
+    journey_structures = await JourneyStructureModel.fetch_existing_from_supabase(
+        supabase
     )
-    journey_structures = [
-        JourneyStructureModel(**structure_data) for structure_data in response.data
-    ]
     return journey_structures
 
 
@@ -124,13 +104,7 @@ async def get_journey_structure_version(
 async def list_journey_structure_versions(
     supabase: AsyncClient,
 ) -> List[JourneyStructureVersionModel]:
-    journey_structure_version_model = JourneyStructureVersionModel()
-    response = (
-        await supabase.table(journey_structure_version_model.TABLE_NAME)
-        .select("*")
-        .execute()
+    journey_structure_versions = (
+        await JourneyStructureVersionModel.fetch_existing_from_supabase(supabase)
     )
-    journey_structure_versions = [
-        JourneyStructureVersionModel(**version_data) for version_data in response.data
-    ]
     return journey_structure_versions

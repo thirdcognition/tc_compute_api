@@ -19,10 +19,30 @@ def access_token():
 
 
 @pytest.fixture(scope="module")
-def journey_id(access_token):
+def organization_id(access_token, request):
+    response = requests.post(
+        f"{BASE_URL}/organization/create",
+        json={"name": "test org", "website": "https://test.com"},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    response.raise_for_status()
+    org_id = response.json()["id"]
+
+    def teardown():
+        requests.delete(
+            f"{BASE_URL}/organization/{org_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+    request.addfinalizer(teardown)
+    return org_id
+
+
+@pytest.fixture(scope="module")
+def journey_id(access_token, organization_id):
     response = requests.post(
         f"{BASE_URL}/journey/",
-        json={"name": "New Journey", "description": "Description of the new journey"},
+        json={},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     response.raise_for_status()
@@ -33,7 +53,12 @@ def journey_id(access_token):
 def journey_version_id(access_token, journey_id):
     response = requests.post(
         f"{BASE_URL}/journey_version/",
-        json={"journey_id": journey_id, "version_name": "Version 1"},
+        json={
+            "journey_id": journey_id,
+            "name": "Version 1",
+            "description": "Initial version",
+            "disabled": False,
+        },
         headers={"Authorization": f"Bearer {access_token}"},
     )
     response.raise_for_status()
@@ -64,10 +89,15 @@ def test_list_journey_versions(access_token):
     ), f"Failed to list journey versions: {response.text}"
 
 
-def test_update_journey_version(access_token, journey_version_id):
+def test_update_journey_version(access_token, journey_version_id, journey_id):
     response = requests.put(
         f"{BASE_URL}/journey_version/{journey_version_id}",
-        json={"version_name": "Updated Version 1"},
+        json={
+            "journey_id": journey_id,
+            "name": "Updated Version 1",
+            "description": "Updated description",
+            "disabled": True,
+        },
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert (

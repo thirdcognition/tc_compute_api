@@ -180,8 +180,8 @@ async def supabase_middleware(
     except HTTPException as e:
         return JSONResponse(status_code=e.status_code, content={"error": e.detail})
     except Exception as e:
-        raise e
-
+        logger.error(f"Error occurred while getting supabase client: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
     try:
         session = None
         if supabase_client:
@@ -191,19 +191,28 @@ async def supabase_middleware(
             return JSONResponse(
                 status_code=401, content={"error": "Invalid authentication credentials"}
             )
+    except AuthApiError as e:
+        logger.error(f"Error occurred while getting session: {str(e)}")
+        return JSONResponse(
+            status_code=401, content={"error": "Invalid authentication credentials"}
+        )
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        logger.error(f"Error occurred while getting session: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
 
     print(f"Properly authenticated user {session.user.id}")
 
-    if request.headers.get("content-type") == "application/json":
-        request_data = await request.json()
-        if "input" in request_data:
-            request_data["input"]["tokens"] = {
-                "access": session.access_token,
-                "refresh": session.refresh_token,
-            }
-            request._body = json.dumps(request_data).encode("utf-8")
+    try:
+        if request.headers.get("content-type") == "application/json":
+            request_data = await request.json()
+            if "input" in request_data:
+                request_data["input"]["tokens"] = {
+                    "access": session.access_token,
+                    "refresh": session.refresh_token,
+                }
+                request._body = json.dumps(request_data).encode("utf-8")
+    except json.JSONDecodeError:
+        return JSONResponse(status_code=400, content={"error": "Invalid JSON"})
 
     response = await call_next(request)
     # response.headers["Authorization"] = f"Bearer {session.access_token}"

@@ -19,10 +19,30 @@ def access_token():
 
 
 @pytest.fixture(scope="module")
-def journey_id(access_token):
+def organization_id(access_token, request):
+    response = requests.post(
+        f"{BASE_URL}/organization/create",
+        json={"name": "test org", "website": "https://test.com"},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    response.raise_for_status()
+    org_id = response.json()["id"]
+
+    def teardown():
+        requests.delete(
+            f"{BASE_URL}/organization/{org_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+    request.addfinalizer(teardown)
+    return org_id
+
+
+@pytest.fixture(scope="module")
+def journey_id(access_token, organization_id):
     response = requests.post(
         f"{BASE_URL}/journey/",
-        json={"name": "New Journey", "description": "Description of the new journey"},
+        json={"disabled": False},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     response.raise_for_status()
@@ -33,7 +53,7 @@ def journey_id(access_token):
 def journey_structure_id(access_token, journey_id):
     response = requests.post(
         f"{BASE_URL}/journey_structure/",
-        json={"journey_id": journey_id, "structure_name": "New Structure"},
+        json={"journey_id": journey_id, "disabled": False},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     response.raise_for_status()
@@ -64,15 +84,24 @@ def test_list_journey_structures(access_token):
     ), f"Failed to list journey structures: {response.text}"
 
 
-def test_update_journey_structure(access_token, journey_structure_id):
+def test_update_journey_structure(access_token, journey_id, journey_structure_id):
     response = requests.put(
         f"{BASE_URL}/journey_structure/{journey_structure_id}",
-        json={"structure_name": "Updated Structure"},
+        json={"journey_id": journey_id, "disabled": True},
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert (
         response.status_code == 200
     ), f"Failed to update journey structure: {response.text}"
+
+    # Verify the update
+    response = requests.get(
+        f"{BASE_URL}/journey_structure/{journey_structure_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert (
+        response.json()["disabled"] is True
+    ), "Journey structure disabled status not updated correctly"
 
 
 def test_delete_journey_structure(access_token, journey_structure_id):

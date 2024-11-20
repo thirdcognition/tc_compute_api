@@ -13,7 +13,7 @@ import uuid
 class JourneyModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "journey"
     id: Optional[UUID] = Field(default=None)
-    template_id: UUID
+    template_id: Optional[UUID] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -157,7 +157,7 @@ class JourneyVersionModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "journey_version"
     id: Optional[UUID] = Field(default=None)
     journey_id: UUID
-    template_id: UUID
+    template_id: Optional[UUID] = Field(default=None)
     name: str
     description: Optional[str] = Field(default=None)
     metadata: Optional[Json] = Field(default=None)
@@ -418,7 +418,9 @@ class JourneyStructureModel(SupabaseModel):
                         id=version_id,
                         journey_id=new_journey_id,
                         journey_item_id=item_map.get(structure_version.journey_item_id),
-                        version_id=item_map.get(structure_version.version_id),
+                        journey_item_version_id=item_map.get(
+                            structure_version.journey_item_version_id
+                        ),
                         version_of_id=structure_id,
                     )
                     journey_structure_versions.append(new_structure_version)
@@ -514,7 +516,7 @@ class JourneyStructureModel(SupabaseModel):
                 journey_item_id=journey_item_map.get(
                     template_structure.template_item_id
                 ),
-                version_id=journey_item_version_map.get(
+                journey_item_version_id=journey_item_version_map.get(
                     template_structure.template_item_id
                 ),
                 version_of_id=structure_id,
@@ -574,7 +576,7 @@ class JourneyStructureVersionModel(SupabaseModel):
     id: Optional[UUID] = Field(default=None)
     journey_id: UUID
     journey_item_id: UUID
-    version_id: UUID
+    journey_item_version_id: UUID
     parent_id: Optional[UUID] = Field(default=None)
     next_id: Optional[UUID] = Field(default=None)
     previous_id: Optional[UUID] = Field(default=None)

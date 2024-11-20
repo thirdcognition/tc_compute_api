@@ -1,23 +1,15 @@
-from typing import Dict, Optional
-from pydantic import BaseModel
+# from typing import Dict, Optional
+# from pydantic import BaseModel
 from supabase import AsyncClient
 
-from lib.models.organization import Organization
+# from lib.models.organization import Organization
 from lib.models.supabase.organization import OrganizationsModel
-
-
-class UpdateOrganizationRequestData(BaseModel):
-    id: Optional[str] = None
-    name: Optional[str] = None
-    website: Optional[str] = None
-    logo: Optional[str] = None
-    metadata: Optional[Dict] = None
 
 
 async def update_organization(
     supabase: AsyncClient,
-    request_data: UpdateOrganizationRequestData,
-) -> Organization:
+    request_data: OrganizationsModel,
+) -> OrganizationsModel:
     """
     Update an organization's details in Supabase.
 
@@ -48,4 +40,5 @@ async def update_organization(
 
     # Save the updated organization using update
     await organization_model.update(supabase)
-    return Organization(supabase, organization_model)
+    return organization_model
+    # return Organization(supabase, organization_model)

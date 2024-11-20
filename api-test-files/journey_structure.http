@@ -22,8 +22,7 @@ Accept: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "name": "New Journey",
-  "description": "Description of the new journey"
+  "disabled": false
 }
 
 ### Response
@@ -38,7 +37,7 @@ Authorization: Bearer {{accessToken}}
 
 {
   "journey_id": "{{journeyId}}",
-  "structure_name": "New Structure"
+  "disabled": false
 }
 
 ### Response
@@ -64,7 +63,8 @@ Accept: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "structure_name": "Updated Structure"
+  "journey_id": "{{journeyId}}",
+  "disabled": true
 }
 
 ### Delete Journey Structure request

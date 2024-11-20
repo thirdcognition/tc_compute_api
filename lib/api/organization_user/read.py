@@ -55,12 +55,7 @@ async def list_organization_users(
         List[OrganizationUsersModel]: A list of organization users.
     """
     # Fetch all organization users using the model's method
-    user_model = OrganizationUsersModel(organization_id=organization_id)
-    response = (
-        await supabase.table(user_model.TABLE_NAME)
-        .select("*")
-        .eq("organization_id", organization_id)
-        .execute()
+    users = await OrganizationUsersModel.fetch_existing_from_supabase(
+        supabase, filter={"organization_id": organization_id}
     )
-    users = [OrganizationUsersModel(**user_data) for user_data in response.data]
     return users
