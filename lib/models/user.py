@@ -1,6 +1,6 @@
 import asyncio
 from app.core.session_storage import SessionStorage, get_storage
-from lib.models.organization import Organization
+from lib.models.supabase.organization import OrganizationsModel  # Updated import
 from lib.models.supabase.organization import (
     OrganizationRoleModel,
     OrganizationTeamModel,
@@ -20,7 +20,7 @@ class User:
         self.supabase: AsyncClient = supabase
         self.model: UserData = user_data
         self.auth_id = UUID(auth_id)
-        self._organization_dict: Dict[UUID, Organization] = {}
+        self._organization_dict: Dict[UUID, OrganizationsModel] = {}  # Updated type
         self._initialize_task: Optional[asyncio.Task] = None
 
     @property
@@ -40,7 +40,7 @@ class User:
 
     async def connect_to_organization(
         self,
-        organization: Organization,
+        organization: OrganizationsModel,  # Updated type
         set_as_admin: bool = None,
         update_existing: bool = False,
     ) -> None:
@@ -101,7 +101,11 @@ class User:
         return self.model.profile
 
     @property
-    def organization(self) -> Optional[Organization]:
+    def organization_user(self) -> Optional[OrganizationUsersModel]:
+        return self.model.as_user[self.active_conversation_id]
+
+    @property
+    def organization(self) -> Optional[OrganizationsModel]:  # Updated type
         return self.get_organization_by_id(self.active_organization_id)
 
     @property
@@ -118,14 +122,14 @@ class User:
 
     async def _init_organizations(
         self, refresh: bool = False
-    ) -> Dict[UUID, Organization]:
+    ) -> Dict[UUID, OrganizationsModel]:  # Updated type
         """
-        Create or refresh Organization instances from the items stored in self.organizations.
+        Create or refresh OrganizationsModel instances from the items stored in self.organizations.
 
         :param refresh: Whether to refresh the data from Supabase, defaults to False
         :type refresh: bool, optional
-        :return: The dictionary of Organization instances, keyed by organization ID
-        :rtype: Dict[UUID, Organization]
+        :return: The dictionary of OrganizationsModel instances, keyed by organization ID
+        :rtype: Dict[UUID, OrganizationsModel]
         """
         if refresh or not self._organization_dict:
             if not self.model.organizations:
@@ -133,12 +137,9 @@ class User:
             if not self._organization_dict:
                 self._organization_dict = {}
 
-            # Create new instances for organizations that don't exist in the dictionary
+            # Use existing OrganizationsModel instances
             for organization in self.model.organizations:
-                if organization.id not in self._organization_dict:
-                    self._organization_dict[organization.id] = Organization(
-                        self.supabase, organization
-                    )
+                self._organization_dict[organization.id] = organization
 
             # Remove instances for organizations that no longer exist
             for organization_id in list(self._organization_dict.keys()):
@@ -148,26 +149,45 @@ class User:
                 ):
                     del self._organization_dict[organization_id]
 
-            # Refresh data for existing instances
-            for organization in self.model.organizations:
-                self._organization_dict[organization.id].refresh_model(organization)
         return self._organization_dict
 
     async def get_organization_by_id(
         self, organization_id: UUID
-    ) -> Optional[Organization]:
+    ) -> Optional[OrganizationsModel]:  # Updated type
         """
-        Get an Organization instance by its ID.
+        Get an OrganizationsModel instance by its ID.
 
         :param organization_id: The ID of the organization
         :type organization_id: UUID
-        :return: The Organization instance, or None if not found
-        :rtype: Optional[Organization]
+        :return: The OrganizationsModel instance, or None if not found
+        :rtype: Optional[OrganizationsModel]
         """
         if not self._organization_dict:
             await self._init_organizations()
 
         return self._organization_dict.get(organization_id)
+
+    async def fetch_acl_groups(self, refresh: bool = False) -> None:
+        """
+        Fetch the ACL groups for the user.
+
+        :param refresh: Whether to refresh the data from Supabase, defaults to False
+        :type refresh: bool, optional
+        """
+        await self.model.fetch_acl_groups(refresh)
+
+    async def has_access_to_item(self, item_id: UUID, item_type: str) -> bool:
+        """
+        Check if the user has access to a specific item.
+
+        :param item_id: The ID of the item
+        :type item_id: UUID
+        :param item_type: The type of the item
+        :type item_type: str
+        :return: True if the user has access, False otherwise
+        :rtype: bool
+        """
+        return await self.model.has_access_to_item(item_id, item_type)
 
 
 async def get_current_user(supabase: AsyncClient) -> User:

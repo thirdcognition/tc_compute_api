@@ -1,6 +1,7 @@
 import { SupabaseModel, Enum } from "./supabaseModel";
 import { v4 as uuidv4 } from "uuid";
 
+// Define ACL Enum
 class ACLEnum extends Enum {
     constructor() {
         super();
@@ -11,6 +12,7 @@ class ACLEnum extends Enum {
     }
 }
 
+// Define UserACL Enum
 class UserACLEnum extends Enum {
     constructor() {
         super();
@@ -24,6 +26,7 @@ class UserACLEnum extends Enum {
 export const ACL = new ACLEnum();
 export const UserACL = new UserACLEnum();
 
+// Define ACLGroupModel
 export class ACLGroupModel extends SupabaseModel {
     static TABLE_NAME = "acl_group";
 
@@ -38,7 +41,7 @@ export class ACLGroupModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             id: {
@@ -99,6 +102,7 @@ export class ACLGroupModel extends SupabaseModel {
     }
 }
 
+// Define ACLGroupItemsModel
 export class ACLGroupItemsModel extends SupabaseModel {
     static TABLE_NAME = "acl_group_items";
 
@@ -114,7 +118,7 @@ export class ACLGroupItemsModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             aclGroupId: {
@@ -222,6 +226,7 @@ export class ACLGroupItemsModel extends SupabaseModel {
     }
 }
 
+// Define ACLGroupUsersModel
 export class ACLGroupUsersModel extends SupabaseModel {
     static TABLE_NAME = "acl_group_users";
 
@@ -236,7 +241,7 @@ export class ACLGroupUsersModel extends SupabaseModel {
             disabledAt = null,
             createdAt = null,
             updatedAt = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             authId: {
@@ -343,10 +348,11 @@ export class ACLGroupUsersModel extends SupabaseModel {
     }
 }
 
+// Define ACLGroupUsersWithItems
 export class ACLGroupUsersWithItems {
     constructor(args) {
         const {
-            organizationId,
+            organizationId = null,
             aclGroupId,
             itemId,
             itemType,

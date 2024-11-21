@@ -1,18 +1,19 @@
 import { SupabaseModel } from "./supabaseModel";
 import { v4 as uuidv4 } from "uuid";
 
+// Define ContextQuery Model
 export class ContextQuery extends SupabaseModel {
     static TABLE_NAME = "context_query";
 
     constructor(args) {
         super();
         const {
-            id,
+            id = null,
             params = null,
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             id: {
@@ -55,13 +56,14 @@ export class ContextQuery extends SupabaseModel {
     }
 }
 
+// Define ContextQueryResponse Model
 export class ContextQueryResponse extends SupabaseModel {
     static TABLE_NAME = "context_query_response";
 
     constructor(args) {
         super();
         const {
-            id,
+            id = null,
             queryId = null,
             responseData = null,
             disabled = false,
@@ -69,7 +71,7 @@ export class ContextQueryResponse extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             id: {
@@ -130,19 +132,20 @@ export class ContextQueryResponse extends SupabaseModel {
     }
 }
 
+// Define ContextQueryResult Model
 export class ContextQueryResult extends SupabaseModel {
     static TABLE_NAME = "context_query_result";
 
     constructor(args) {
         super();
         const {
-            id,
+            id = null,
             queryId = null,
             resultData = null,
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             id: {

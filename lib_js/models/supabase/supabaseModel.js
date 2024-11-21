@@ -130,16 +130,45 @@ class SupabaseModel {
         return await this.saveToSupabase(supabase, this);
     }
 
-    async read(supabase, value, idColumn = "id") {
-        return await this.fetchFromSupabase(supabase, value, idColumn, this);
+    async read(supabase, idColumn = "id") {
+        const value = this.attributes[idColumn]?.value;
+        if (value === undefined) {
+            throw new Error(`'${idColumn}' is not set for this instance.`);
+        }
+        return await this.constructor.fetchFromSupabase(
+            supabase,
+            value,
+            idColumn,
+            this
+        );
     }
 
     async update(supabase) {
         return await this.saveToSupabase(supabase, this);
     }
 
-    async delete(supabase, value, idColumn = "id") {
-        return await this.deleteFromSupabase(supabase, value, idColumn);
+    async delete(supabase, idColumn = "id") {
+        const value = this.attributes[idColumn]?.value;
+        if (value === undefined) {
+            throw new Error(`'${idColumn}' is not set for this instance.`);
+        }
+        return await this.constructor.deleteFromSupabase(
+            supabase,
+            value,
+            idColumn
+        );
+    }
+
+    async exists(supabase, idColumn = "id") {
+        const value = this.attributes[idColumn]?.value;
+        if (value === undefined) {
+            throw new Error(`'${idColumn}' is not set for this instance.`);
+        }
+        return await this.constructor.existsInSupabase(
+            supabase,
+            value,
+            idColumn
+        );
     }
 
     static async upsertToSupabase(
@@ -158,6 +187,14 @@ class SupabaseModel {
                     excludeNone: true,
                     excludeUnset: true
                 });
+
+                // Convert enum types to strings
+                for (const key in data) {
+                    const value = data[key];
+                    if (value instanceof Enum) {
+                        data[key] = value.name;
+                    }
+                }
 
                 upsertData.push(data);
             }
@@ -214,6 +251,14 @@ class SupabaseModel {
                 excludeNone: true,
                 excludeUnset: true
             });
+
+            // Convert enum types to strings
+            for (const key in data) {
+                const value = data[key];
+                if (value instanceof Enum) {
+                    data[key] = value.name;
+                }
+            }
 
             if (!this.TABLE_NAME)
                 throw new Error("TABLE_NAME must be set for the model.");
@@ -287,6 +332,7 @@ class SupabaseModel {
             } else {
                 instance.fromDbData(data);
             }
+            instance.dirty = false;
             return instance;
         }
 
@@ -382,8 +428,8 @@ class SupabaseModel {
             query = query.eq(idColumn, value);
         }
 
-        await query.execute();
-        return true;
+        const response = await query.execute();
+        return response.data.length > 0;
     }
 
     modelDump(options = {}) {

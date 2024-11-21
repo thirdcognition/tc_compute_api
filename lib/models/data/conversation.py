@@ -1,6 +1,5 @@
 import asyncio
 from typing import List, Optional
-from postgrest import APIResponse
 from datetime import datetime, timezone
 
 from lib.models.supabase.llm_conversation import (
@@ -105,16 +104,15 @@ class LlmConversationData:
         :type refresh: bool, optional
         """
         if not self.conversations or refresh:
-            response: APIResponse = (
-                await self.user.supabase.table("llm_conversation")
-                .select("*")
-                .eq("owner_id", str(self.user.auth_id))
-                .eq("organization_id", str(self.user.active_organization_id))
-                .execute()
+            self.conversations = (
+                await LlmConversationModel.fetch_existing_from_supabase(
+                    self.user.supabase,
+                    filter={
+                        "owner_id": str(self.user.auth_id),
+                        "organization_id": str(self.user.active_organization_id),
+                    },
+                )
             )
-            self.conversations = [
-                LlmConversationModel(**data) for data in response.data
-            ]
 
     async def fetch_messages(self, refresh: bool = False) -> None:
         """
@@ -124,16 +122,15 @@ class LlmConversationData:
         :type refresh: bool, optional
         """
         if not self.messages or refresh:
-            response: APIResponse = (
-                await self.user.supabase.table("llm_conversation_message")
-                .select("*")
-                .eq("owner_id", str(self.user.auth_id))
-                .eq("organization_id", str(self.user.active_organization_id))
-                .execute()
+            self.messages = (
+                await LlmConversationMessageModel.fetch_existing_from_supabase(
+                    self.user.supabase,
+                    filter={
+                        "owner_id": str(self.user.auth_id),
+                        "organization_id": str(self.user.active_organization_id),
+                    },
+                )
             )
-            self.messages = [
-                LlmConversationMessageModel(**data) for data in response.data
-            ]
 
     async def fetch_message_history(self, refresh: bool = False) -> None:
         """
@@ -143,16 +140,15 @@ class LlmConversationData:
         :type refresh: bool, optional
         """
         if not self.message_history or refresh:
-            response: APIResponse = (
-                await self.user.supabase.table("llm_conversation_message_history")
-                .select("*")
-                .eq("owner_id", str(self.user.auth_id))
-                .eq("organization_id", str(self.user.active_organization_id))
-                .execute()
+            self.message_history = (
+                await LlmConversationMessageHistoryModel.fetch_existing_from_supabase(
+                    self.user.supabase,
+                    filter={
+                        "owner_id": str(self.user.auth_id),
+                        "organization_id": str(self.user.active_organization_id),
+                    },
+                )
             )
-            self.message_history = [
-                LlmConversationMessageHistoryModel(**data) for data in response.data
-            ]
 
     async def fetch_threads(self, refresh: bool = False) -> None:
         """
@@ -162,16 +158,15 @@ class LlmConversationData:
         :type refresh: bool, optional
         """
         if not self.threads or refresh:
-            response: APIResponse = (
-                await self.user.supabase.table("llm_conversation_thread")
-                .select("*")
-                .eq("owner_id", str(self.user.auth_id))
-                .eq("organization_id", str(self.user.active_organization_id))
-                .execute()
+            self.threads = (
+                await LlmConversationThreadModel.fetch_existing_from_supabase(
+                    self.user.supabase,
+                    filter={
+                        "owner_id": str(self.user.auth_id),
+                        "organization_id": str(self.user.active_organization_id),
+                    },
+                )
             )
-            self.threads = [
-                LlmConversationThreadModel(**data) for data in response.data
-            ]
 
     async def new_message(
         self,

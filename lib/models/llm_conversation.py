@@ -64,13 +64,9 @@ class LlmConversation:
         :return: The conversation history.
         :rtype: List[LlmConversationMessageHistoryModel]
         """
-        response = (
-            await self.supabase.table("llm_conversation_message_history")
-            .select("*")
-            .eq("conversation_id", str(conversation_id))
-            .execute()
+        return await LlmConversationMessageHistoryModel.fetch_existing_from_supabase(
+            self.supabase, filter={"conversation_id": str(conversation_id)}
         )
-        return [LlmConversationMessageHistoryModel(**data) for data in response.data]
 
     async def get_messages_with_history(
         self, conversation_id: UUID
@@ -102,13 +98,9 @@ class LlmConversation:
             if history_item.message_id is not None
         }
 
-        response = (
-            await self.supabase.table("llm_conversation_message")
-            .select("*")
-            .eq("conversation_id", str(conversation_id))
-            .execute()
+        messages = await LlmConversationMessageModel.fetch_existing_from_supabase(
+            self.supabase, filter={"conversation_id": str(conversation_id)}
         )
-        messages = [LlmConversationMessageModel(**data) for data in response.data]
 
         messages_with_history = []
         for message in messages:

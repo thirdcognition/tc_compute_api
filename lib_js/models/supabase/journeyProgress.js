@@ -1,6 +1,7 @@
 import { SupabaseModel } from "./supabaseModel";
 import { v4 as uuidv4 } from "uuid";
 
+// Define JourneyProgressModel
 export class JourneyProgressModel extends SupabaseModel {
     static TABLE_NAME = "journey_progress";
 
@@ -15,7 +16,7 @@ export class JourneyProgressModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null,
             startedAt = null,
             completedAt = null
         } = args;
@@ -90,6 +91,7 @@ export class JourneyProgressModel extends SupabaseModel {
     }
 }
 
+// Define JourneyProgressLLMConversationMessagesModel
 export class JourneyProgressLLMConversationMessagesModel extends SupabaseModel {
     static TABLE_NAME = "journey_progress_llm_conversation_messages";
 
@@ -102,7 +104,7 @@ export class JourneyProgressLLMConversationMessagesModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             journeyItemProgressId: {
@@ -206,6 +208,7 @@ export class JourneyProgressLLMConversationMessagesModel extends SupabaseModel {
     }
 }
 
+// Define JourneyProgressLLMConversationsModel
 export class JourneyProgressLLMConversationsModel extends SupabaseModel {
     static TABLE_NAME = "journey_progress_llm_conversations";
 
@@ -217,7 +220,7 @@ export class JourneyProgressLLMConversationsModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             progressId: {
@@ -307,6 +310,7 @@ export class JourneyProgressLLMConversationsModel extends SupabaseModel {
     }
 }
 
+// Define JourneyItemProgressModel
 export class JourneyItemProgressModel extends SupabaseModel {
     static TABLE_NAME = "journey_item_progress";
 
@@ -321,7 +325,7 @@ export class JourneyItemProgressModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null,
             startedAt = null,
             completedAt = null
         } = args;

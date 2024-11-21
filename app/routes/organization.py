@@ -8,7 +8,6 @@ from lib.api.organization.update import (
     update_organization,
 )
 from lib.api.organization.delete import delete_organization
-from lib.models.organization import Organization
 from lib.models.supabase.organization import OrganizationsModel
 
 router = APIRouter()
@@ -20,7 +19,7 @@ async def api_create_organization(
     supabase: SupaClientDep,
 ) -> OrganizationsModel:
     try:
-        org: Organization = await create_organization(supabase, organization)
+        org: OrganizationsModel = await create_organization(supabase, organization)
         return org
     except Exception as e:
         if "organization already exists" in str(e):
@@ -34,7 +33,7 @@ async def api_get_organization(
     supabase: SupaClientDep,
 ) -> OrganizationsModel:
     try:
-        org: Organization = await get_organization(supabase, organization_id)
+        org: OrganizationsModel = await get_organization(supabase, organization_id)
         return org
     except Exception as e:
         raise handle_exception(e, "Organization not found", 404)
@@ -60,7 +59,7 @@ async def api_bulk_update_organizations(
     updated_organizations = []
     for org_data in organizations_data:
         try:
-            org: Organization = await update_organization(supabase, org_data)
+            org: OrganizationsModel = await update_organization(supabase, org_data)
             updated_organizations.append(org)
         except Exception as e:
             raise handle_exception(
@@ -75,7 +74,7 @@ async def api_update_organization_from_data(
     supabase: SupaClientDep,
 ) -> OrganizationsModel:
     try:
-        org: Organization = await update_organization(supabase, organization_data)
+        org: OrganizationsModel = await update_organization(supabase, organization_data)
         return org
     except Exception as e:
         raise handle_exception(e, "Failed to update organization")
@@ -89,7 +88,7 @@ async def api_update_organization(
 ) -> OrganizationsModel:
     try:
         organization_data.id = organization_id
-        org: Organization = await update_organization(supabase, organization_data)
+        org: OrganizationsModel = await update_organization(supabase, organization_data)
         return org
     except Exception as e:
         raise handle_exception(e, "Failed to update organization")

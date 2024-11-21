@@ -1,6 +1,7 @@
 import { SupabaseModel, Enum } from "./supabaseModel";
 import { v4 as uuidv4 } from "uuid";
 
+// Define SourceTypeEnum
 class SourceTypeEnum extends Enum {
     constructor() {
         super();
@@ -18,20 +19,21 @@ class SourceTypeEnum extends Enum {
 
 export const SourceType = new SourceTypeEnum();
 
+// Define SourceModel
 export class SourceModel extends SupabaseModel {
     static TABLE_NAME = "source";
 
     constructor(args) {
         super();
         const {
-            id,
+            id = null,
             type = null,
             disabled = false,
             disabledAt = null,
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null,
             currentVersionId = null,
             updatedBy = null
         } = args;
@@ -100,13 +102,14 @@ export class SourceModel extends SupabaseModel {
     }
 }
 
+// Define SourceChunkModel
 export class SourceChunkModel extends SupabaseModel {
     static TABLE_NAME = "source_chunk";
 
     constructor(args) {
         super();
         const {
-            id,
+            id = null,
             sourceId = null,
             sourceVersionId = null,
             chunkNextId = null,
@@ -115,7 +118,7 @@ export class SourceChunkModel extends SupabaseModel {
             metadata = null,
             createdAt = null,
             updatedAt = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             id: {
@@ -182,6 +185,7 @@ export class SourceChunkModel extends SupabaseModel {
     }
 }
 
+// Define SourceRelationshipModel
 export class SourceRelationshipModel extends SupabaseModel {
     static TABLE_NAME = "source_relationship";
 
@@ -197,7 +201,7 @@ export class SourceRelationshipModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             sourceVersionId: {
@@ -306,13 +310,14 @@ export class SourceRelationshipModel extends SupabaseModel {
     }
 }
 
+// Define SourceVersionModel
 export class SourceVersionModel extends SupabaseModel {
     static TABLE_NAME = "source_version";
 
     constructor(args) {
         super();
         const {
-            id,
+            id = null,
             title = null,
             lang = null,
             contentHash = null,
@@ -323,7 +328,7 @@ export class SourceVersionModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null,
             versionOfId = null
         } = args;
         this.attributes = {

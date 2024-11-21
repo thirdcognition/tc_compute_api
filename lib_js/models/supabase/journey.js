@@ -1,6 +1,7 @@
 import { SupabaseModel, Enum } from "./supabaseModel";
 import { v4 as uuidv4 } from "uuid";
 
+// Define JourneyItemType Enum
 class JourneyItemTypeEnum extends Enum {
     constructor() {
         super();
@@ -14,6 +15,7 @@ class JourneyItemTypeEnum extends Enum {
 
 export const JourneyItemType = new JourneyItemTypeEnum();
 
+// Define JourneyModel
 export class JourneyModel extends SupabaseModel {
     static TABLE_NAME = "journey";
 
@@ -21,13 +23,13 @@ export class JourneyModel extends SupabaseModel {
         super();
         const {
             id = null,
-            templateId,
+            templateId = null,
             disabled = false,
             disabledAt = null,
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId = null, // Made optional
+            organizationId = null,
             currentVersionId = null,
             updatedBy = null
         } = args;
@@ -41,7 +43,7 @@ export class JourneyModel extends SupabaseModel {
             templateId: {
                 value: templateId,
                 type: "uuid",
-                required: true,
+                required: false,
                 dbColumn: "template_id"
             },
             disabled: {
@@ -181,6 +183,7 @@ export class JourneyModel extends SupabaseModel {
     }
 }
 
+// Define JourneyVersionModel
 export class JourneyVersionModel extends SupabaseModel {
     static TABLE_NAME = "journey_version";
 
@@ -189,14 +192,14 @@ export class JourneyVersionModel extends SupabaseModel {
         const {
             id = null,
             journeyId,
-            templateId,
+            templateId = null,
             name,
             description = null,
             metadata = null,
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId = null, // Made optional
+            organizationId = null,
             versionOfId = null
         } = args;
         this.attributes = {
@@ -284,6 +287,7 @@ export class JourneyVersionModel extends SupabaseModel {
     }
 }
 
+// Define JourneyItemModel
 export class JourneyItemModel extends SupabaseModel {
     static TABLE_NAME = "journey_item";
 
@@ -292,12 +296,13 @@ export class JourneyItemModel extends SupabaseModel {
         const {
             id = null,
             journeyId,
+            templateItemId = null,
             disabled = false,
             disabledAt = null,
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId = null, // Made optional
+            organizationId = null,
             currentVersionId = null,
             updatedBy = null
         } = args;
@@ -313,6 +318,12 @@ export class JourneyItemModel extends SupabaseModel {
                 type: "uuid",
                 required: true,
                 dbColumn: "journey_id"
+            },
+            templateItemId: {
+                value: templateItemId,
+                type: "uuid",
+                required: false,
+                dbColumn: "template_item_id"
             },
             disabled: {
                 value: disabled,
@@ -434,6 +445,7 @@ export class JourneyItemModel extends SupabaseModel {
     }
 }
 
+// Define JourneyItemVersionModel
 export class JourneyItemVersionModel extends SupabaseModel {
     static TABLE_NAME = "journey_item_version";
 
@@ -452,7 +464,7 @@ export class JourneyItemVersionModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId = null, // Made optional
+            organizationId = null,
             versionOfId = null
         } = args;
         this.attributes = {
@@ -544,6 +556,7 @@ export class JourneyItemVersionModel extends SupabaseModel {
     }
 }
 
+// Define JourneyStructureModel
 export class JourneyStructureModel extends SupabaseModel {
     static TABLE_NAME = "journey_structure";
 
@@ -557,7 +570,7 @@ export class JourneyStructureModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId = null, // Made optional
+            organizationId = null,
             currentVersionId = null,
             updatedBy = null
         } = args;
@@ -745,6 +758,7 @@ export class JourneyStructureModel extends SupabaseModel {
     }
 }
 
+// Define JourneyStructureVersionModel
 export class JourneyStructureVersionModel extends SupabaseModel {
     static TABLE_NAME = "journey_structure_version";
 
@@ -763,7 +777,7 @@ export class JourneyStructureVersionModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId = null, // Made optional
+            organizationId = null,
             versionOfId = null
         } = args;
         this.attributes = {

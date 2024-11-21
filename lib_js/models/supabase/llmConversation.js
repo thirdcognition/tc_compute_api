@@ -1,6 +1,7 @@
 import { SupabaseModel } from "./supabaseModel";
 import { v4 as uuidv4 } from "uuid";
 
+// Define LlmConversationModel
 export class LlmConversationModel extends SupabaseModel {
     static TABLE_NAME = "llm_conversation";
 
@@ -15,7 +16,7 @@ export class LlmConversationModel extends SupabaseModel {
             metadata = null,
             createdAt = null,
             ownerId = null,
-            organizationId,
+            organizationId = null,
             state = null
         } = args;
         this.attributes = {
@@ -83,6 +84,7 @@ export class LlmConversationModel extends SupabaseModel {
     }
 }
 
+// Define LlmConversationMessageModel
 export class LlmConversationMessageModel extends SupabaseModel {
     static TABLE_NAME = "llm_conversation_message";
 
@@ -96,7 +98,7 @@ export class LlmConversationMessageModel extends SupabaseModel {
             model = null,
             createdAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             id: {
@@ -151,13 +153,14 @@ export class LlmConversationMessageModel extends SupabaseModel {
     }
 }
 
+// Define LlmConversationMessageHistoryModel
 export class LlmConversationMessageHistoryModel extends SupabaseModel {
     static TABLE_NAME = "llm_conversation_message_history";
 
     constructor(args) {
         super();
         const {
-            organizationId,
+            organizationId = null,
             conversationId,
             sessionId = null,
             queryId = null,
@@ -289,6 +292,7 @@ export class LlmConversationMessageHistoryModel extends SupabaseModel {
     }
 }
 
+// Define LlmConversationThreadModel
 export class LlmConversationThreadModel extends SupabaseModel {
     static TABLE_NAME = "llm_conversation_thread";
 
@@ -299,7 +303,7 @@ export class LlmConversationThreadModel extends SupabaseModel {
             parentMessageId,
             createdAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             conversationId: {

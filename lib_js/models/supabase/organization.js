@@ -1,6 +1,8 @@
 import { SupabaseModel } from "./supabaseModel";
+import { ACLGroupUsersModel } from "./acl"; // Import ACLGroupUsersModel
 import { v4 as uuidv4 } from "uuid";
 
+// Define UserProfileModel
 export class UserProfileModel extends SupabaseModel {
     static TABLE_NAME = "user_profile";
 
@@ -97,6 +99,7 @@ export class UserProfileModel extends SupabaseModel {
     }
 }
 
+// Define OrganizationRoleModel
 export class OrganizationRoleModel extends SupabaseModel {
     static TABLE_NAME = "organization_role";
 
@@ -112,7 +115,7 @@ export class OrganizationRoleModel extends SupabaseModel {
             disabledAt = null,
             createdAt = null,
             updatedAt = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             id: {
@@ -179,6 +182,7 @@ export class OrganizationRoleModel extends SupabaseModel {
     }
 }
 
+// Define OrganizationTeamModel
 export class OrganizationTeamModel extends SupabaseModel {
     static TABLE_NAME = "organization_team";
 
@@ -193,7 +197,7 @@ export class OrganizationTeamModel extends SupabaseModel {
             createdAt = null,
             updatedAt = null,
             ownerId = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             id: {
@@ -254,6 +258,7 @@ export class OrganizationTeamModel extends SupabaseModel {
     }
 }
 
+// Define OrganizationTeamMembersModel
 export class OrganizationTeamMembersModel extends SupabaseModel {
     static TABLE_NAME = "organization_team_members";
 
@@ -268,7 +273,7 @@ export class OrganizationTeamMembersModel extends SupabaseModel {
             disabledAt = null,
             createdAt = null,
             updatedAt = null,
-            organizationId
+            organizationId = null
         } = args;
         this.attributes = {
             authId: {
@@ -381,6 +386,7 @@ export class OrganizationTeamMembersModel extends SupabaseModel {
     }
 }
 
+// Define OrganizationUsersModel
 export class OrganizationUsersModel extends SupabaseModel {
     static TABLE_NAME = "organization_users";
 
@@ -389,7 +395,7 @@ export class OrganizationUsersModel extends SupabaseModel {
         const {
             authId = null,
             userId = null,
-            organizationId,
+            organizationId = null,
             metadata = null,
             isAdmin = false,
             disabled = false,
@@ -506,8 +512,59 @@ export class OrganizationUsersModel extends SupabaseModel {
         }
         return super.deleteFromSupabase(supabase, value, idColumn);
     }
+
+    async inAclGroup(supabase, aclGroupId) {
+        return await ACLGroupUsersModel.existsInSupabase(supabase, {
+            userId: this.attributes.userId.value,
+            aclGroupId
+        });
+    }
+
+    async connectWithAclGroup(supabase, aclGroupId, acl) {
+        // Attempt to fetch the existing relationship
+        const existingAclGroupUser = await ACLGroupUsersModel.fetchFromSupabase(
+            supabase,
+            { userId: this.attributes.userId.value, aclGroupId }
+        );
+
+        if (existingAclGroupUser) {
+            // If the relationship exists, update the ACL level
+            existingAclGroupUser.attributes.acl.value = acl;
+            await existingAclGroupUser.update();
+        } else {
+            // Otherwise, create a new ACL group user relationship
+            const aclGroupUser = new ACLGroupUsersModel({
+                userId: this.attributes.userId.value,
+                authId: this.attributes.authId.value,
+                aclGroupId,
+                acl,
+                organizationId: this.attributes.organizationId.value
+            });
+            await ACLGroupUsersModel.saveToSupabase(supabase, aclGroupUser);
+        }
+    }
+
+    async disconnectWithAclGroup(supabase, aclGroupId) {
+        await ACLGroupUsersModel.deleteFromSupabase(supabase, {
+            userId: this.attributes.userId.value,
+            aclGroupId
+        });
+    }
+
+    async create(supabase, groupsWithLevels = null) {
+        const orgUser = await this.saveToSupabase(supabase, this);
+
+        if (groupsWithLevels) {
+            for (const [aclGroupId, acl] of Object.entries(groupsWithLevels)) {
+                await orgUser.connectWithAclGroup(supabase, aclGroupId, acl);
+            }
+        }
+
+        return orgUser;
+    }
 }
 
+// Define OrganizationsModel
 export class OrganizationsModel extends SupabaseModel {
     static TABLE_NAME = "organizations";
 
@@ -515,6 +572,7 @@ export class OrganizationsModel extends SupabaseModel {
         super();
         const {
             id = null,
+            defaultAclGroupId = null,
             name = null,
             website = null,
             logo = null,
@@ -531,6 +589,12 @@ export class OrganizationsModel extends SupabaseModel {
                 type: "uuid",
                 required: false,
                 dbColumn: "id"
+            },
+            defaultAclGroupId: {
+                value: defaultAclGroupId,
+                type: "uuid",
+                required: false,
+                dbColumn: "default_acl_group_id"
             },
             name: {
                 value: name,

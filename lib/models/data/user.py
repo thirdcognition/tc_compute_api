@@ -1,6 +1,5 @@
 import asyncio
 from typing import Dict, List, Optional
-from lib.models.organization import Organization
 from lib.models.supabase.organization import (
     OrganizationRoleModel,
     OrganizationTeamModel,
@@ -8,6 +7,12 @@ from lib.models.supabase.organization import (
     OrganizationUsersModel,
     OrganizationsModel,
     UserProfileModel,
+)
+from lib.models.supabase.acl import (
+    ACLGroupUsersModel,
+    ACLGroupUsersWithItems,
+    ACLGroupModel,
+    UserACL,
 )
 from uuid import UUID
 from postgrest import APIResponse
@@ -46,7 +51,10 @@ class UserData:
         ] = None
         # The user's relationship with the organizations they are a part of, organized by organization ID. Initialized as None and fetched when needed.
         self.as_user: Optional[Dict[UUID, OrganizationUsersModel]] = None
-        self._organization_dict: Optional[Dict[UUID, Organization]] = None
+        # The ACL groups the user is a part of. Initialized as None and fetched when needed.
+        self.user_in_acl_group: Optional[List[ACLGroupUsersModel]] = None
+        # The ACL group models the user is a part of. Initialized as None and fetched when needed.
+        self.acl_group: Optional[List[ACLGroupModel]] = None
 
     async def save_all_to_supabase(self, supabase: AsyncClient):
         """
@@ -138,15 +146,9 @@ class UserData:
         :rtype: Optional[UserProfile]
         """
         if not self.profile or refresh:
-            response: APIResponse = (
-                await self.supabase.table("user_profile")
-                .select("*")
-                .eq("auth_id", str(self.auth_id))
-                .execute()
+            self.profile = await UserProfileModel.fetch_from_supabase(
+                self.supabase, value={"auth_id": str(self.auth_id)}
             )
-            # Assuming that there is only one profile per auth_id, we can directly assign the first item of the list
-            if response.count > 0:
-                self.profile = UserProfileModel(**response.data[0])
         return self.profile if self.profile else None
 
     async def fetch_organizations(
@@ -192,15 +194,12 @@ class UserData:
             if self.organizations:
                 self.teams = {}
                 for organization in self.organizations:
-                    response: APIResponse = (
-                        await self.supabase.table("organization_teams")
-                        .select("*")
-                        .eq("organization_id", str(organization.id))
-                        .execute()
+                    self.teams[
+                        organization.id
+                    ] = await OrganizationTeamModel.fetch_existing_from_supabase(
+                        self.supabase,
+                        filter={"organization_id": str(organization.id)},
                     )
-                    self.teams[organization.id] = [
-                        OrganizationTeamModel(**data) for data in response.data
-                    ]
         return self.teams
 
     async def fetch_roles(
@@ -223,15 +222,12 @@ class UserData:
             if self.organizations:
                 self.roles = {}
                 for organization in self.organizations:
-                    response: APIResponse = (
-                        await self.supabase.table("organization_roles")
-                        .select("*")
-                        .eq("organization_id", str(organization.id))
-                        .execute()
+                    self.roles[
+                        organization.id
+                    ] = await OrganizationRoleModel.fetch_existing_from_supabase(
+                        self.supabase,
+                        filter={"organization_id": str(organization.id)},
                     )
-                    self.roles[organization.id] = [
-                        OrganizationRoleModel(**data) for data in response.data
-                    ]
         return self.roles
 
     async def fetch_memberships(
@@ -246,20 +242,17 @@ class UserData:
         :rtype: Dict[UUID, List[OrganizationTeamMembers]]
         """
         if not self.memberships or refresh:
-            response: APIResponse = (
-                await self.supabase.table("organization_team_members")
-                .select("*")
-                .eq("auth_id", str(self.auth_id))
-                .execute()
-            )
             self.memberships = {}
-            for data in response.data:
-                organization_id = data["organization_id"]
+            memberships = (
+                await OrganizationTeamMembersModel.fetch_existing_from_supabase(
+                    self.supabase, filter={"auth_id": str(self.auth_id)}
+                )
+            )
+            for membership in memberships:
+                organization_id = membership.organization_id
                 if organization_id not in self.memberships:
                     self.memberships[organization_id] = []
-                self.memberships[organization_id].append(
-                    OrganizationTeamMembersModel(**data)
-                )
+                self.memberships[organization_id].append(membership)
         return self.memberships
 
     async def fetch_as_user(
@@ -274,17 +267,102 @@ class UserData:
         :rtype: Dict[UUID, List[OrganizationUsers]]
         """
         if not self.as_user or refresh:
-            response: APIResponse = (
-                await self.supabase.table("organization_users")
-                .select("*")
-                .eq("auth_id", str(self.auth_id))
-                .execute()
-            )
             self.as_user = {}
-            for data in response.data:
-                organization_id = data["organization_id"]
-                self.as_user[organization_id] = OrganizationUsersModel(**data)
+            users = await OrganizationUsersModel.fetch_existing_from_supabase(
+                self.supabase, filter={"auth_id": str(self.auth_id)}
+            )
+            for user in users:
+                organization_id = user.organization_id
+                self.as_user[organization_id] = user
         return self.as_user
+
+    async def fetch_acl(self, refresh: bool = False) -> List[ACLGroupUsersModel]:
+        """
+        Fetch the ACL groups the user is a part of from Supabase.
+
+        :param refresh: Whether to refresh the data from Supabase, defaults to False
+        :type refresh: bool, optional
+        :return: The list of ACL groups the user is a part of
+        :rtype: List[ACLGroupUsersModel]
+        """
+        if not self.user_in_acl_group or refresh:
+            self.user_in_acl_group = (
+                await ACLGroupUsersModel.fetch_existing_from_supabase(
+                    self.supabase, filter={"auth_id": str(self.auth_id)}
+                )
+            )
+            acl_group_ids = [group.acl_group_id for group in self.user_in_acl_group]
+            self.acl_group = await ACLGroupModel.fetch_existing_from_supabase(
+                self.supabase, values=acl_group_ids, id_column="id"
+            )
+        return self.user_in_acl_group
+
+    async def in_acl_group(self, acl_group_id: UUID) -> bool:
+        """
+        Check if the user is in a specific ACL group.
+
+        :param acl_group_id: The ID of the ACL group
+        :type acl_group_id: UUID
+        :return: True if the user is in the specified ACL group, False otherwise
+        :rtype: bool
+        """
+        if not self.user_in_acl_group:
+            await self.fetch_acl()
+        return any(
+            group.acl_group_id == acl_group_id for group in self.user_in_acl_group
+        )
+
+    async def has_access_to_item(self, item_id: UUID, item_type: str) -> bool:
+        """
+        Check if the user has access to a specific item based on their ACL groups.
+
+        :param item_id: The ID of the item
+        :type item_id: UUID
+        :param item_type: The type of the item
+        :type item_type: str
+        :return: True if the user has access to the item, False otherwise
+        :rtype: bool
+        """
+        return await ACLGroupUsersWithItems.exists_in_supabase(
+            self.supabase,
+            value={
+                "auth_id": str(self.auth_id),
+                "item_id": str(item_id),
+                "item_type": item_type,
+            },
+        )
+
+    async def connect_with_acl_group(
+        self, organization_id: UUID, acl_group_id: UUID, acl: UserACL
+    ) -> None:
+        """
+        Connect the user to an ACL group with specified ACL level.
+
+        :param acl_group_id: The ID of the ACL group
+        :type acl_group_id: UUID
+        :param acl: The ACL level
+        :type acl: UserACL
+        """
+        await self.as_user[organization_id].connect_with_acl_group(
+            self.supabase, acl_group_id, acl
+        )
+        await self.fetch_acl(refresh=True)
+
+    async def disconnect_from_acl_group(
+        self, organization_id: UUID, acl_group_id: UUID
+    ) -> None:
+        """
+        Connect the user to an ACL group with specified ACL level.
+
+        :param acl_group_id: The ID of the ACL group
+        :type acl_group_id: UUID
+        :param acl: The ACL level
+        :type acl: UserACL
+        """
+        await self.as_user[organization_id].disconnect_with_acl_group(
+            self.supabase, acl_group_id
+        )
+        await self.fetch_acl(refresh=True)
 
     async def get_teams_by_organization(
         self, organization_id: UUID

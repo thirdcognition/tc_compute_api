@@ -1,6 +1,6 @@
 from lib.models.supabase.supabase_model import SupabaseModel
 from uuid import UUID
-from pydantic import BaseModel, Field
+from pydantic import Field
 from datetime import datetime
 from typing import ClassVar, Optional
 from enum import Enum
@@ -147,7 +147,8 @@ class ACLGroupUsersModel(SupabaseModel):
         )
 
 
-class ACLGroupUsersWithItems(BaseModel):
+class ACLGroupUsersWithItems(SupabaseModel):
+    TABLE_NAME: ClassVar[str] = "acl_group_users_with_items"
     organization_id: Optional[UUID] = Field(default=None)
     acl_group_id: UUID
     item_id: UUID
