@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from supabase import AuthApiError
 from supabase.client import AsyncClient
 from supabase_auth.types import Session
 from app.core.session_storage import get_storage, get_supabase_client
@@ -42,7 +43,8 @@ async def api_login(login_request: LoginRequestData) -> Session:
         get_storage(access_token=session.access_token, supabase_client=supabase)
         print(f"session: {session=}")
         return session
-
+    except AuthApiError as ae:
+        raise handle_exception(ae, "Invalid login", 401)
     except ValidationError as ve:
         raise handle_exception(ve, "Organization not found", 422)
     except Exception as e:

@@ -323,9 +323,15 @@ class SupabaseModel(BaseModel):
         else:
             query = query.eq(id_column, value)
 
-        await query.execute()
+        # Execute the query and check if any rows were affected.
+        response = await query.execute()
 
-        return True
+        # Check the response to determine if a row was deleted.
+        if hasattr(response, "data") and len(response.data) > 0:
+            print(response.data)
+            return True
+
+        return False
 
     def _model_dump(self, **kwargs) -> Dict[str, Any]:
         """Custom dump method to ensure TABLE_NAME is always excluded."""

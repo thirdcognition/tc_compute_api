@@ -3,7 +3,7 @@ from supabase import AsyncClient
 from lib.models.supabase.organization import OrganizationsModel
 
 
-async def delete_organization(supabase: AsyncClient, organization_id: UUID) -> None:
+async def delete_organization(supabase: AsyncClient, organization_id: UUID):
     """
     Delete an organization from Supabase.
 
@@ -21,4 +21,4 @@ async def delete_organization(supabase: AsyncClient, organization_id: UUID) -> N
         raise ValueError("Organization not found")
 
     # Delete the organization using the model's method
-    await OrganizationsModel.delete_from_supabase(supabase, organization_id)
+    return await OrganizationsModel.delete_from_supabase(supabase, organization_id)

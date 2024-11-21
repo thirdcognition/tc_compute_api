@@ -19,13 +19,13 @@ async def api_create_organization(
     organization: OrganizationsModel,
     supabase: SupaClientDep,
 ) -> OrganizationsModel:
-    # try:
-    org: Organization = await create_organization(supabase, organization)
-    return org
-    # except ValueError as e:
-    #     if "organization already exists" in str(e):
-    #         raise HTTPException(status_code=409, detail="Organization already exists")
-    #     raise handle_exception(e, "Failed to create organization")
+    try:
+        org: Organization = await create_organization(supabase, organization)
+        return org
+    except Exception as e:
+        if "organization already exists" in str(e):
+            raise handle_exception(e, "Failed to create organization", 409)
+        raise handle_exception(e, "Failed to create organization")
 
 
 @router.get("/organization/{organization_id}")
@@ -99,9 +99,12 @@ async def api_update_organization(
 async def api_delete_organization(
     organization_id: str,
     supabase: SupaClientDep,
-) -> None:
+):
     try:
-        await delete_organization(supabase, organization_id)
+        if await delete_organization(supabase, organization_id):
+            return {"detail": "Organization deleted successfully"}
+        else:
+            return {"detail": "Failed to delete organization"}
     except Exception as e:
         raise handle_exception(e, "Failed to delete organization", 404)
 
@@ -110,8 +113,11 @@ async def api_delete_organization(
 async def api_delete_organization_from_data(
     organization_data: OrganizationsModel,
     supabase: SupaClientDep,
-) -> None:
+):
     try:
-        await delete_organization(supabase, organization_data.id)
+        if await delete_organization(supabase, organization_data.id):
+            return {"detail": "Organization deleted successfully"}
+        else:
+            return {"detail": "Failed to delete organization"}
     except Exception as e:
         raise handle_exception(e, "Failed to delete organization", 404)

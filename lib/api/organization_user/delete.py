@@ -7,7 +7,7 @@ async def delete_organization_user(
     supabase: AsyncClient,
     organization_id: UUID,
     user_id: UUID,
-) -> None:
+) -> bool:
     """
     Delete an organization user from Supabase.
 
@@ -34,7 +34,7 @@ async def delete_organization_user(
         raise ValueError("User not found")
 
     # Delete the user using the model's method
-    await OrganizationUsersModel.delete_from_supabase(
+    return await OrganizationUsersModel.delete_from_supabase(
         supabase,
         value={"organization_id": organization_id, "user_id": user_id},
         id_column="user_id",

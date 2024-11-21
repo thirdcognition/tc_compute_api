@@ -122,7 +122,10 @@ async def api_delete_organization_user(
     supabase: SupaClientDep,
 ) -> None:
     try:
-        await delete_organization_user(supabase, organization_id, user_id)
+        if await delete_organization_user(supabase, organization_id, user_id):
+            return {"detail": "Organization user deleted successfully"}
+        else:
+            return {"detail": "Failed to delete organization user"}
     except Exception as e:
         raise handle_exception(e, "Failed to delete organization user", 404)
 
@@ -134,6 +137,9 @@ async def api_delete_organization_user_from_data(
     supabase: SupaClientDep,
 ) -> None:
     try:
-        await delete_organization_user(supabase, organization_id, user_data.user_id)
+        if await delete_organization_user(supabase, organization_id, user_data.user_id):
+            return {"detail": "Organization user deleted successfully"}
+        else:
+            return {"detail": "Failed to delete organization user"}
     except Exception as e:
         raise handle_exception(e, "Failed to delete organization user", 404)

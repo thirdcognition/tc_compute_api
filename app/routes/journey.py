@@ -157,8 +157,9 @@ async def api_delete_journey(
     supabase: SupaClientDep,
 ):
     try:
-        await delete_journey(supabase, journey_id)
-        return {"detail": "Journey deleted successfully"}
+        if await delete_journey(supabase, journey_id):
+            return {"detail": "Journey deleted successfully"}
+        return {"detail": "Failed to delete"}
     except Exception as e:
         raise handle_exception(e, "Journey not found", 404)
 
@@ -222,8 +223,9 @@ async def api_delete_journey_version(
     supabase: SupaClientDep,
 ):
     try:
-        await delete_journey_version(supabase, version_id)
-        return {"detail": "Journey version deleted successfully"}
+        if await delete_journey_version(supabase, version_id):
+            return {"detail": "Journey version deleted successfully"}
+        return {"detail": "Failed to delete"}
     except Exception as e:
         raise handle_exception(e, "Journey version not found", 404)
 
@@ -287,8 +289,9 @@ async def api_delete_journey_item(
     supabase: SupaClientDep,
 ):
     try:
-        await delete_journey_item(supabase, item_id)
-        return {"detail": "Journey item deleted successfully"}
+        if await delete_journey_item(supabase, item_id):
+            return {"detail": "Journey item deleted successfully"}
+        return {"detail": "Failed to delete"}
     except Exception as e:
         raise handle_exception(e, "Journey item not found", 404)
 
@@ -352,8 +355,9 @@ async def api_delete_journey_item_version(
     supabase: SupaClientDep,
 ):
     try:
-        await delete_journey_item_version(supabase, version_id)
-        return {"detail": "Journey item version deleted successfully"}
+        if await delete_journey_item_version(supabase, version_id):
+            return {"detail": "Journey item version deleted successfully"}
+        return {"detail": "Failed to delete"}
     except Exception as e:
         raise handle_exception(e, "Journey item version not found", 404)
 
@@ -417,8 +421,9 @@ async def api_delete_journey_structure(
     supabase: SupaClientDep,
 ):
     try:
-        await delete_journey_structure(supabase, structure_id)
-        return {"detail": "Journey structure deleted successfully"}
+        if await delete_journey_structure(supabase, structure_id):
+            return {"detail": "Journey structure deleted successfully"}
+        return {"detail": "Failed to delete"}
     except Exception as e:
         raise handle_exception(e, "Journey structure not found", 404)
 
@@ -488,7 +493,8 @@ async def api_delete_journey_structure_version(
     supabase: SupaClientDep,
 ):
     try:
-        await delete_journey_structure_version(supabase, version_id)
-        return {"detail": "Journey structure version deleted successfully"}
+        if await delete_journey_structure_version(supabase, version_id):
+            return {"detail": "Journey structure version deleted successfully"}
+        return {"detail": "Failed to delete"}
     except Exception as e:
         raise handle_exception(e, "Journey structure version not found", 404)

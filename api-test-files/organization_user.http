@@ -1,6 +1,7 @@
 @host = http://127.0.0.1
 @port = 4000
 @email = user1@example.com
+@email2 = user5@example.com
 @password = password123
 
 ### Login request
@@ -14,8 +15,22 @@ Accept: application/json
 ### Response
 @accessToken = {{login.response.body.$.access_token}}
 
+### Login request 2
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email2}}", "password": "{{password}}"}
+
 ### Response
-@orgId = 2f26ba37-3555-4fc8-a274-38afe6259311
+@accessToken = {{login.response.body.$.access_token}}
+
+### Response
+@orgId1 = 2f26ba37-3555-4fc8-a274-38afe6259311
+@orgId2 = 817066b5-eda1-49ad-a483-f2fa15e4d7ed
+
+@orgId = {{orgId1}}
 
 ### Create Organization User request
 # @name createOrganizationUser
