@@ -1,26 +1,47 @@
 // Import the validate function from the uuid package
 import { validate as validateUUID } from "uuid";
+import { v4 as uuidv4 } from "uuid";
+import { throwApiError } from "../../helpers/errors.js";
 
-class SupabaseModel {
+export class SupabaseModel {
     static TABLE_NAME = "";
+    static TABLE_FIELDS = {};
 
-    constructor() {
+    constructor(args) {
         this.attributes = {}; // Combined object for data, dataTypes, and dbColumn
         this.dirty = true;
+        for (const [key, field] of Object.entries(
+            this.constructor.TABLE_FIELDS
+        )) {
+            this.attributes[key] =
+                args[key] !== undefined
+                    ? args[key]
+                    : field.type === "uuid" && field.required
+                      ? uuidv4()
+                      : null;
+        }
 
         return new Proxy(this, {
             get(target, prop) {
-                if (
-                    prop === "dirty" ||
-                    prop === "attributes" ||
-                    prop === "TABLE_NAME"
-                ) {
+                // console.trace("get", prop);
+                if (prop === "TABLE_NAME" || prop === "TABLE_FIELDS") {
+                    return target.constructor[prop];
+                }
+                if (prop === "dirty" || prop === "attributes") {
                     return target[prop];
                 }
                 if (prop in target.attributes) {
                     return target.getAttribute(prop);
                 }
-                throw new Error(`${prop} is not a valid attribute`);
+                // Allow access to function properties via the prototype if they exist
+                if (prop in target.constructor.prototype) {
+                    return target.constructor.prototype[prop];
+                }
+                // Allow access to static methods on the constructor
+                if (prop in target.constructor) {
+                    return target.constructor[prop];
+                }
+                // throw new Error(`${prop} is not a valid attribute`);
             },
             set(target, prop, value) {
                 if (prop in target.attributes) {
@@ -60,26 +81,30 @@ class SupabaseModel {
 
     getAttribute(name) {
         if (name in this.attributes) {
-            return this.attributes[name].value;
+            return this.attributes[name];
         }
         return undefined;
     }
 
     setAttribute(name, value) {
-        if (this.validateAttribute(name, value)) {
-            this.attributes[name].value = value;
-        } else {
-            throw new Error(`Invalid value ${value} for attribute ${name}`);
+        if (this.attributes[name] !== value) {
+            if (this.constructor.validateAttribute(name, value)) {
+                this.dirty = true;
+                this.attributes[name] = value;
+            } else {
+                throw new Error(`Invalid value ${value} for attribute ${name}`);
+            }
         }
     }
 
-    validateAttribute(name, value) {
-        const attribute = this.attributes[name];
-        if (!attribute) {
+    static validateAttribute(name, value) {
+        const config = this.TABLE_FIELDS[name];
+
+        if (!config) {
             return true; // No type defined, assume valid
         }
 
-        const { type, required } = attribute;
+        const { type, required } = config;
         // Explicitly allow null values unless required
         const isValueNull = value === null;
         if (isValueNull) {
@@ -127,11 +152,12 @@ class SupabaseModel {
     }
 
     async create(supabase) {
+        // await supabase.getSession();
         return await this.saveToSupabase(supabase, this);
     }
 
     async read(supabase, idColumn = "id") {
-        const value = this.attributes[idColumn]?.value;
+        const value = this.attributes[idColumn];
         if (value === undefined) {
             throw new Error(`'${idColumn}' is not set for this instance.`);
         }
@@ -148,7 +174,7 @@ class SupabaseModel {
     }
 
     async delete(supabase, idColumn = "id") {
-        const value = this.attributes[idColumn]?.value;
+        const value = this.attributes[idColumn];
         if (value === undefined) {
             throw new Error(`'${idColumn}' is not set for this instance.`);
         }
@@ -160,7 +186,7 @@ class SupabaseModel {
     }
 
     async exists(supabase, idColumn = "id") {
-        const value = this.attributes[idColumn]?.value;
+        const value = this.attributes[idColumn];
         if (value === undefined) {
             throw new Error(`'${idColumn}' is not set for this instance.`);
         }
@@ -207,9 +233,11 @@ class SupabaseModel {
                     upsertData.map((instance) => this.mapToDbColumns(instance)),
                     { onConflict }
                 )
-                .execute();
+                .select();
             const idToUpdatedData = {};
-
+            if (response.error) {
+                throwApiError(response);
+            }
             if (Array.isArray(idColumn)) {
                 for (const item of response.data) {
                     const idKeys = idColumn.map((field) => item[field]);
@@ -225,10 +253,10 @@ class SupabaseModel {
                 let instanceId;
                 if (Array.isArray(idColumn)) {
                     instanceId = idColumn.map(
-                        (field) => instance.attributes[field]?.value
+                        (field) => instance.attributes[field]
                     );
                 } else {
-                    instanceId = instance.attributes[idColumn]?.value;
+                    instanceId = instance.attributes[idColumn];
                 }
 
                 if (
@@ -264,34 +292,42 @@ class SupabaseModel {
                 throw new Error("TABLE_NAME must be set for the model.");
 
             let response;
+
+            onConflict = this.replaceKeysWithDbColumns(onConflict);
+
             if (onConflict.length === 1) {
                 response = await supabase
                     .from(this.TABLE_NAME)
                     .upsert(this.mapToDbColumns(data), { onConflict })
-                    .execute();
+                    .select();
             } else {
                 let query = supabase.from(this.TABLE_NAME).select("*");
                 for (const key of onConflict) {
                     query = query.eq(key, data[key]);
                 }
-                response = await query.execute();
-                if (response.data.length > 0) {
+                response = await query.select();
+                if (response.data && response.data.length > 0) {
                     query = supabase
                         .from(this.TABLE_NAME)
                         .update(this.mapToDbColumns(data));
                     for (const key of onConflict) {
                         query = query.eq(key, data[key]);
                     }
-                    response = await query.execute();
+                    response = await query.select();
                 } else {
                     response = await supabase
                         .from(this.TABLE_NAME)
                         .insert(this.mapToDbColumns(data))
-                        .execute();
+                        .select();
                 }
             }
 
-            if (response.data.length > 0) {
+            if (response.error) {
+                console.error(response, data);
+                throwApiError(response);
+            }
+
+            if (response.data && response.data.length > 0) {
                 instance.updateFromDbData(response.data[0]);
             }
         }
@@ -308,23 +344,27 @@ class SupabaseModel {
         if (!this.TABLE_NAME)
             throw new Error("TABLE_NAME must be set for the model.");
 
-        let query = supabase.from(this.TABLE_NAME).select("*");
         if (value === null || value === undefined) {
             throw new Error(`Value for '\${idColumn}' must be provided.`);
         }
+        let query = supabase.from(this.TABLE_NAME).select("*");
 
         if (typeof value === "object") {
             for (const key in value) {
-                const dbColumn = this.attributes[key]?.dbColumn || key;
+                const dbColumn = this.TABLE_FIELDS[key]?.dbColumn || key;
                 query = query.eq(dbColumn, value[key]);
             }
         } else {
-            const dbColumn = this.attributes[idColumn]?.dbColumn || idColumn;
+            const dbColumn = this.TABLE_FIELDS[idColumn]?.dbColumn || idColumn;
             query = query.eq(dbColumn, value);
         }
 
-        const response = await query.execute();
-        const data = response.data.length > 0 ? response.data[0] : null;
+        const response = await query.select();
+        if (response.error) {
+            throwApiError(response);
+        }
+        const data =
+            response.data && response.data.length > 0 ? response.data[0] : null;
 
         if (data !== null) {
             if (!instance) {
@@ -353,12 +393,12 @@ class SupabaseModel {
         if (filter !== null) {
             if (typeof filter === "object") {
                 for (const key in filter) {
-                    const dbColumn = this.attributes[key]?.dbColumn || key;
+                    const dbColumn = this.TABLE_FIELDS[key]?.dbColumn || key;
                     query = query.eq(dbColumn, filter[key]);
                 }
             } else {
                 const dbColumn =
-                    this.attributes[idColumn]?.dbColumn || idColumn;
+                    this.TABLE_FIELDS[idColumn]?.dbColumn || idColumn;
                 query = query.eq(dbColumn, filter);
             }
         }
@@ -367,19 +407,23 @@ class SupabaseModel {
             for (const value of values) {
                 if (typeof value === "object") {
                     for (const key in value) {
-                        const dbColumn = this.attributes[key]?.dbColumn || key;
+                        const dbColumn =
+                            this.TABLE_FIELDS[key]?.dbColumn || key;
                         query = query.in(dbColumn, value[key]);
                     }
                 } else {
                     const dbColumn =
-                        this.attributes[idColumn]?.dbColumn || idColumn;
+                        this.TABLE_FIELDS[idColumn]?.dbColumn || idColumn;
                     query = query.in(dbColumn, value);
                 }
             }
         }
 
-        const response = await query.execute();
-        if (response.data.length === 0) {
+        const response = await query.select();
+        if (response.error) {
+            throwApiError(response);
+        }
+        if (!response.data || response.data.length === 0) {
             return [];
         }
 
@@ -406,8 +450,11 @@ class SupabaseModel {
             query = query.eq(idColumn, value);
         }
 
-        const response = await query.execute();
-        return response.data.length > 0;
+        const response = await query.select();
+        if (response.error) {
+            throwApiError(response);
+        }
+        return response.data && response.data.length > 0;
     }
 
     static async deleteFromSupabase(supabase, value = null, idColumn = "id") {
@@ -428,14 +475,17 @@ class SupabaseModel {
             query = query.eq(idColumn, value);
         }
 
-        const response = await query.execute();
-        return response.data.length > 0;
+        const response = await query.select();
+        if (response.error) {
+            throwApiError(response);
+        }
+        return response.data && response.data.length > 0;
     }
 
     modelDump(options = {}) {
         const data = {};
         for (const key in this.attributes) {
-            data[this.attributes[key].dbColumn] = this.attributes[key].value;
+            data[this.TABLE_FIELDS[key].dbColumn] = this.attributes[key];
         }
         if (options.excludeNone) {
             for (const key in data) {
@@ -457,8 +507,8 @@ class SupabaseModel {
     updateFromDbData(dbData) {
         for (const dbColumn in dbData) {
             const attributeName = this.mapFromDbColumns(dbColumn);
-            if (attributeName in this.attributes) {
-                this.attributes[attributeName].value = dbData[dbColumn];
+            if (attributeName in this.TABLE_FIELDS) {
+                this.attributes[attributeName] = dbData[dbColumn];
             }
         }
         this.dirty = false;
@@ -468,7 +518,7 @@ class SupabaseModel {
         // Create an object to hold mapped attribute names and their values
         const attributes = {};
         for (const dbColumn in dbData) {
-            const attributeName = this.prototype.mapFromDbColumns(dbColumn);
+            const attributeName = this.mapFromDbColumns(dbColumn);
             attributes[attributeName] = dbData[dbColumn];
         }
 
@@ -478,18 +528,22 @@ class SupabaseModel {
         return instance;
     }
 
-    mapToDbColumns(data) {
+    static replaceKeysWithDbColumns(keys) {
+        return keys.map((key) => this.TABLE_FIELDS[key]?.dbColumn || key);
+    }
+
+    static mapToDbColumns(data) {
         const mappedData = {};
         for (const key in data) {
-            const dbColumn = this.attributes[key]?.dbColumn || key;
+            const dbColumn = this.TABLE_FIELDS[key]?.dbColumn || key;
             mappedData[dbColumn] = data[key];
         }
         return mappedData;
     }
 
-    mapFromDbColumns(dbColumn) {
-        for (const key in this.attributes) {
-            if (this.attributes[key].dbColumn === dbColumn) {
+    static mapFromDbColumns(dbColumn) {
+        for (const key in this.TABLE_FIELDS) {
+            if (this.TABLE_FIELDS[key].dbColumn === dbColumn) {
                 return key;
             }
         }
@@ -503,5 +557,3 @@ export class Enum {
         return Object.values(this).includes(value);
     }
 }
-
-export default SupabaseModel;

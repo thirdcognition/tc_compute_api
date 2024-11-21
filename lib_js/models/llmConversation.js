@@ -1,9 +1,9 @@
-import { LlmConversationData } from "./data/conversationData";
+import { LlmConversationData } from "./data/conversationData.js";
 import {
     LlmConversationModel,
     LlmConversationMessageModel,
     LlmConversationMessageHistoryModel
-} from "./supabase/llmConversation";
+} from "./supabase/llmConversation.js";
 
 class LlmConversation {
     constructor(supabase, authId, organizationId) {

@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
-import { UserData } from "./data/userData";
-import { OrganizationUsersModel } from "./supabase/organization";
+import { UserData } from "./data/userData.js";
+import { OrganizationUsersModel } from "./supabase/organization.js";
 
 class User {
     constructor(supabase, authId, userData = null) {

@@ -1,5 +1,4 @@
-import { SupabaseModel, Enum } from "./supabaseModel";
-import { v4 as uuidv4 } from "uuid";
+import { SupabaseModel, Enum } from "./supabaseModel.js";
 
 // Define SourceTypeEnum
 class SourceTypeEnum extends Enum {
@@ -22,250 +21,92 @@ export const SourceType = new SourceTypeEnum();
 // Define SourceModel
 export class SourceModel extends SupabaseModel {
     static TABLE_NAME = "source";
-
-    constructor(args) {
-        super();
-        const {
-            id = null,
-            type = null,
-            disabled = false,
-            disabledAt = null,
-            createdAt = null,
-            updatedAt = null,
-            ownerId = null,
-            organizationId = null,
-            currentVersionId = null,
-            updatedBy = null
-        } = args;
-        this.attributes = {
-            id: {
-                value: id || uuidv4(),
-                type: "uuid",
-                required: true,
-                dbColumn: "id"
-            },
-            type: {
-                value: type,
-                type: SourceType,
-                required: false,
-                dbColumn: "type"
-            },
-            disabled: {
-                value: disabled,
-                type: "boolean",
-                required: false,
-                dbColumn: "disabled"
-            },
-            disabledAt: {
-                value: disabledAt,
-                type: "date",
-                required: false,
-                dbColumn: "disabled_at"
-            },
-            createdAt: {
-                value: createdAt,
-                type: "date",
-                required: false,
-                dbColumn: "created_at"
-            },
-            updatedAt: {
-                value: updatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "updated_at"
-            },
-            ownerId: {
-                value: ownerId,
-                type: "uuid",
-                required: false,
-                dbColumn: "owner_id"
-            },
-            organizationId: {
-                value: organizationId,
-                type: "uuid",
-                required: false,
-                dbColumn: "organization_id"
-            },
-            currentVersionId: {
-                value: currentVersionId,
-                type: "uuid",
-                required: false,
-                dbColumn: "current_version_id"
-            },
-            updatedBy: {
-                value: updatedBy,
-                type: "uuid",
-                required: false,
-                dbColumn: "updated_by"
-            }
-        };
-    }
+    static TABLE_FIELDS = {
+        id: { type: "uuid", required: true, dbColumn: "id" },
+        type: { type: SourceType, required: false, dbColumn: "type" },
+        disabled: { type: "boolean", required: false, dbColumn: "disabled" },
+        disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
+        createdAt: { type: "date", required: false, dbColumn: "created_at" },
+        updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
+        ownerId: { type: "uuid", required: false, dbColumn: "owner_id" },
+        organizationId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "organization_id"
+        },
+        currentVersionId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "current_version_id"
+        },
+        updatedBy: { type: "uuid", required: false, dbColumn: "updated_by" }
+    };
 }
 
 // Define SourceChunkModel
 export class SourceChunkModel extends SupabaseModel {
     static TABLE_NAME = "source_chunk";
-
-    constructor(args) {
-        super();
-        const {
-            id = null,
-            sourceId = null,
-            sourceVersionId = null,
-            chunkNextId = null,
-            chunkPrevId = null,
-            data = null,
-            metadata = null,
-            createdAt = null,
-            updatedAt = null,
-            organizationId = null
-        } = args;
-        this.attributes = {
-            id: {
-                value: id || uuidv4(),
-                type: "uuid",
-                required: true,
-                dbColumn: "id"
-            },
-            sourceId: {
-                value: sourceId,
-                type: "uuid",
-                required: false,
-                dbColumn: "source_id"
-            },
-            sourceVersionId: {
-                value: sourceVersionId,
-                type: "uuid",
-                required: false,
-                dbColumn: "source_version_id"
-            },
-            chunkNextId: {
-                value: chunkNextId,
-                type: "uuid",
-                required: false,
-                dbColumn: "chunk_next_id"
-            },
-            chunkPrevId: {
-                value: chunkPrevId,
-                type: "uuid",
-                required: false,
-                dbColumn: "chunk_prev_id"
-            },
-            data: {
-                value: data,
-                type: "json",
-                required: false,
-                dbColumn: "data"
-            },
-            metadata: {
-                value: metadata,
-                type: "json",
-                required: false,
-                dbColumn: "metadata"
-            },
-            createdAt: {
-                value: createdAt,
-                type: "date",
-                required: false,
-                dbColumn: "created_at"
-            },
-            updatedAt: {
-                value: updatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "updated_at"
-            },
-            organizationId: {
-                value: organizationId,
-                type: "uuid",
-                required: false,
-                dbColumn: "organization_id"
-            }
-        };
-    }
+    static TABLE_FIELDS = {
+        id: { type: "uuid", required: true, dbColumn: "id" },
+        sourceId: { type: "uuid", required: false, dbColumn: "source_id" },
+        sourceVersionId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "source_version_id"
+        },
+        chunkNextId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "chunk_next_id"
+        },
+        chunkPrevId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "chunk_prev_id"
+        },
+        data: { type: "json", required: false, dbColumn: "data" },
+        metadata: { type: "json", required: false, dbColumn: "metadata" },
+        createdAt: { type: "date", required: false, dbColumn: "created_at" },
+        updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
+        organizationId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "organization_id"
+        }
+    };
 }
 
 // Define SourceRelationshipModel
 export class SourceRelationshipModel extends SupabaseModel {
     static TABLE_NAME = "source_relationship";
-
-    constructor(args) {
-        super();
-        const {
-            sourceVersionId,
-            relatedSourceVersionId,
-            relationshipType = null,
-            metadata = null,
-            disabled = false,
-            disabledAt = null,
-            createdAt = null,
-            updatedAt = null,
-            ownerId = null,
-            organizationId = null
-        } = args;
-        this.attributes = {
-            sourceVersionId: {
-                value: sourceVersionId,
-                type: "uuid",
-                required: true,
-                dbColumn: "source_version_id"
-            },
-            relatedSourceVersionId: {
-                value: relatedSourceVersionId,
-                type: "uuid",
-                required: true,
-                dbColumn: "related_source_version_id"
-            },
-            relationshipType: {
-                value: relationshipType,
-                type: "string",
-                required: false,
-                dbColumn: "relationship_type"
-            },
-            metadata: {
-                value: metadata,
-                type: "json",
-                required: false,
-                dbColumn: "metadata"
-            },
-            disabled: {
-                value: disabled,
-                type: "boolean",
-                required: false,
-                dbColumn: "disabled"
-            },
-            disabledAt: {
-                value: disabledAt,
-                type: "date",
-                required: false,
-                dbColumn: "disabled_at"
-            },
-            createdAt: {
-                value: createdAt,
-                type: "date",
-                required: false,
-                dbColumn: "created_at"
-            },
-            updatedAt: {
-                value: updatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "updated_at"
-            },
-            ownerId: {
-                value: ownerId,
-                type: "uuid",
-                required: false,
-                dbColumn: "owner_id"
-            },
-            organizationId: {
-                value: organizationId,
-                type: "uuid",
-                required: false,
-                dbColumn: "organization_id"
-            }
-        };
-    }
+    static TABLE_FIELDS = {
+        sourceVersionId: {
+            type: "uuid",
+            required: true,
+            dbColumn: "source_version_id"
+        },
+        relatedSourceVersionId: {
+            type: "uuid",
+            required: true,
+            dbColumn: "related_source_version_id"
+        },
+        relationshipType: {
+            type: "string",
+            required: false,
+            dbColumn: "relationship_type"
+        },
+        metadata: { type: "json", required: false, dbColumn: "metadata" },
+        disabled: { type: "boolean", required: false, dbColumn: "disabled" },
+        disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
+        createdAt: { type: "date", required: false, dbColumn: "created_at" },
+        updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
+        ownerId: { type: "uuid", required: false, dbColumn: "owner_id" },
+        organizationId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "organization_id"
+        }
+    };
 
     static async saveToSupabase(supabase, instance, onConflict = null) {
         return super.saveToSupabase(supabase, instance, onConflict);
@@ -313,103 +154,31 @@ export class SourceRelationshipModel extends SupabaseModel {
 // Define SourceVersionModel
 export class SourceVersionModel extends SupabaseModel {
     static TABLE_NAME = "source_version";
-
-    constructor(args) {
-        super();
-        const {
-            id = null,
-            title = null,
-            lang = null,
-            contentHash = null,
-            data = null,
-            metadata = null,
-            disabled = false,
-            disabledAt = null,
-            createdAt = null,
-            updatedAt = null,
-            ownerId = null,
-            organizationId = null,
-            versionOfId = null
-        } = args;
-        this.attributes = {
-            id: {
-                value: id || uuidv4(),
-                type: "uuid",
-                required: true,
-                dbColumn: "id"
-            },
-            title: {
-                value: title,
-                type: "string",
-                required: false,
-                dbColumn: "title"
-            },
-            lang: {
-                value: lang,
-                type: "string",
-                required: false,
-                dbColumn: "lang"
-            },
-            contentHash: {
-                value: contentHash,
-                type: "string",
-                required: false,
-                dbColumn: "content_hash"
-            },
-            data: {
-                value: data,
-                type: "json",
-                required: false,
-                dbColumn: "data"
-            },
-            metadata: {
-                value: metadata,
-                type: "json",
-                required: false,
-                dbColumn: "metadata"
-            },
-            disabled: {
-                value: disabled,
-                type: "boolean",
-                required: false,
-                dbColumn: "disabled"
-            },
-            disabledAt: {
-                value: disabledAt,
-                type: "date",
-                required: false,
-                dbColumn: "disabled_at"
-            },
-            createdAt: {
-                value: createdAt,
-                type: "date",
-                required: false,
-                dbColumn: "created_at"
-            },
-            updatedAt: {
-                value: updatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "updated_at"
-            },
-            ownerId: {
-                value: ownerId,
-                type: "uuid",
-                required: false,
-                dbColumn: "owner_id"
-            },
-            organizationId: {
-                value: organizationId,
-                type: "uuid",
-                required: false,
-                dbColumn: "organization_id"
-            },
-            versionOfId: {
-                value: versionOfId,
-                type: "uuid",
-                required: false,
-                dbColumn: "version_of_id"
-            }
-        };
-    }
+    static TABLE_FIELDS = {
+        id: { type: "uuid", required: true, dbColumn: "id" },
+        title: { type: "string", required: false, dbColumn: "title" },
+        lang: { type: "string", required: false, dbColumn: "lang" },
+        contentHash: {
+            type: "string",
+            required: false,
+            dbColumn: "content_hash"
+        },
+        data: { type: "json", required: false, dbColumn: "data" },
+        metadata: { type: "json", required: false, dbColumn: "metadata" },
+        disabled: { type: "boolean", required: false, dbColumn: "disabled" },
+        disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
+        createdAt: { type: "date", required: false, dbColumn: "created_at" },
+        updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
+        ownerId: { type: "uuid", required: false, dbColumn: "owner_id" },
+        organizationId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "organization_id"
+        },
+        versionOfId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "version_of_id"
+        }
+    };
 }

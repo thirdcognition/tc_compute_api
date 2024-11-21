@@ -1,5 +1,4 @@
-import { SupabaseModel, Enum } from "./supabaseModel";
-import { v4 as uuidv4 } from "uuid";
+import { SupabaseModel, Enum } from "./supabaseModel.js";
 
 // Define ACL Enum
 class ACLEnum extends Enum {
@@ -29,155 +28,46 @@ export const UserACL = new UserACLEnum();
 // Define ACLGroupModel
 export class ACLGroupModel extends SupabaseModel {
     static TABLE_NAME = "acl_group";
-
-    constructor(args) {
-        super();
-        const {
-            id = null,
-            name,
-            description = null,
-            disabled = false,
-            disabledAt = null,
-            createdAt = null,
-            updatedAt = null,
-            ownerId = null,
-            organizationId = null
-        } = args;
-        this.attributes = {
-            id: {
-                value: id || uuidv4(),
-                type: "uuid",
-                required: false,
-                dbColumn: "id"
-            },
-            name: {
-                value: name,
-                type: "string",
-                required: true,
-                dbColumn: "name"
-            },
-            description: {
-                value: description,
-                type: "string",
-                required: false,
-                dbColumn: "description"
-            },
-            disabled: {
-                value: disabled,
-                type: "boolean",
-                required: false,
-                dbColumn: "disabled"
-            },
-            disabledAt: {
-                value: disabledAt,
-                type: "date",
-                required: false,
-                dbColumn: "disabled_at"
-            },
-            createdAt: {
-                value: createdAt,
-                type: "date",
-                required: false,
-                dbColumn: "created_at"
-            },
-            updatedAt: {
-                value: updatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "updated_at"
-            },
-            ownerId: {
-                value: ownerId,
-                type: "uuid",
-                required: false,
-                dbColumn: "owner_id"
-            },
-            organizationId: {
-                value: organizationId,
-                type: "uuid",
-                required: false,
-                dbColumn: "organization_id"
-            }
-        };
-    }
+    static TABLE_FIELDS = {
+        id: { type: "uuid", required: false, dbColumn: "id" },
+        name: { type: "string", required: true, dbColumn: "name" },
+        description: {
+            type: "string",
+            required: false,
+            dbColumn: "description"
+        },
+        disabled: { type: "boolean", required: false, dbColumn: "disabled" },
+        disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
+        createdAt: { type: "date", required: false, dbColumn: "created_at" },
+        updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
+        ownerId: { type: "uuid", required: false, dbColumn: "owner_id" },
+        organizationId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "organization_id"
+        }
+    };
 }
 
 // Define ACLGroupItemsModel
 export class ACLGroupItemsModel extends SupabaseModel {
     static TABLE_NAME = "acl_group_items";
-
-    constructor(args) {
-        super();
-        const {
-            aclGroupId,
-            acl = ACL.PRIVATE,
-            itemId,
-            itemType,
-            disabled = false,
-            disabledAt = null,
-            createdAt = null,
-            updatedAt = null,
-            ownerId = null,
-            organizationId = null
-        } = args;
-        this.attributes = {
-            aclGroupId: {
-                value: aclGroupId,
-                type: "uuid",
-                required: true,
-                dbColumn: "acl_group_id"
-            },
-            acl: { value: acl, type: ACL, required: false, dbColumn: "acl" },
-            itemId: {
-                value: itemId,
-                type: "uuid",
-                required: true,
-                dbColumn: "item_id"
-            },
-            itemType: {
-                value: itemType,
-                type: "string",
-                required: true,
-                dbColumn: "item_type"
-            },
-            disabled: {
-                value: disabled,
-                type: "boolean",
-                required: false,
-                dbColumn: "disabled"
-            },
-            disabledAt: {
-                value: disabledAt,
-                type: "date",
-                required: false,
-                dbColumn: "disabled_at"
-            },
-            createdAt: {
-                value: createdAt,
-                type: "date",
-                required: false,
-                dbColumn: "created_at"
-            },
-            updatedAt: {
-                value: updatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "updated_at"
-            },
-            ownerId: {
-                value: ownerId,
-                type: "uuid",
-                required: false,
-                dbColumn: "owner_id"
-            },
-            organizationId: {
-                value: organizationId,
-                type: "uuid",
-                required: false,
-                dbColumn: "organization_id"
-            }
-        };
-    }
+    static TABLE_FIELDS = {
+        aclGroupId: { type: "uuid", required: true, dbColumn: "acl_group_id" },
+        acl: { type: ACL, required: false, dbColumn: "acl" },
+        itemId: { type: "uuid", required: true, dbColumn: "item_id" },
+        itemType: { type: "string", required: true, dbColumn: "item_type" },
+        disabled: { type: "boolean", required: false, dbColumn: "disabled" },
+        disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
+        createdAt: { type: "date", required: false, dbColumn: "created_at" },
+        updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
+        ownerId: { type: "uuid", required: false, dbColumn: "owner_id" },
+        organizationId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "organization_id"
+        }
+    };
 
     static async saveToSupabase(
         supabase,
@@ -229,77 +119,21 @@ export class ACLGroupItemsModel extends SupabaseModel {
 // Define ACLGroupUsersModel
 export class ACLGroupUsersModel extends SupabaseModel {
     static TABLE_NAME = "acl_group_users";
-
-    constructor(args) {
-        super();
-        const {
-            authId,
-            userId,
-            aclGroupId,
-            acl = UserACL.RO,
-            disabled = false,
-            disabledAt = null,
-            createdAt = null,
-            updatedAt = null,
-            organizationId = null
-        } = args;
-        this.attributes = {
-            authId: {
-                value: authId,
-                type: "uuid",
-                required: true,
-                dbColumn: "auth_id"
-            },
-            userId: {
-                value: userId,
-                type: "uuid",
-                required: true,
-                dbColumn: "user_id"
-            },
-            aclGroupId: {
-                value: aclGroupId,
-                type: "uuid",
-                required: true,
-                dbColumn: "acl_group_id"
-            },
-            acl: {
-                value: acl,
-                type: UserACL,
-                required: false,
-                dbColumn: "acl"
-            },
-            disabled: {
-                value: disabled,
-                type: "boolean",
-                required: false,
-                dbColumn: "disabled"
-            },
-            disabledAt: {
-                value: disabledAt,
-                type: "date",
-                required: false,
-                dbColumn: "disabled_at"
-            },
-            createdAt: {
-                value: createdAt,
-                type: "date",
-                required: false,
-                dbColumn: "created_at"
-            },
-            updatedAt: {
-                value: updatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "updated_at"
-            },
-            organizationId: {
-                value: organizationId,
-                type: "uuid",
-                required: false,
-                dbColumn: "organization_id"
-            }
-        };
-    }
+    static TABLE_FIELDS = {
+        authId: { type: "uuid", required: true, dbColumn: "auth_id" },
+        userId: { type: "uuid", required: true, dbColumn: "user_id" },
+        aclGroupId: { type: "uuid", required: true, dbColumn: "acl_group_id" },
+        acl: { type: UserACL, required: false, dbColumn: "acl" },
+        disabled: { type: "boolean", required: false, dbColumn: "disabled" },
+        disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
+        createdAt: { type: "date", required: false, dbColumn: "created_at" },
+        updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
+        organizationId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "organization_id"
+        }
+    };
 
     static async saveToSupabase(
         supabase,
@@ -349,109 +183,50 @@ export class ACLGroupUsersModel extends SupabaseModel {
 }
 
 // Define ACLGroupUsersWithItems
-export class ACLGroupUsersWithItems {
-    constructor(args) {
-        const {
-            organizationId = null,
-            aclGroupId,
-            itemId,
-            itemType,
-            itemAcl,
-            itemCreatedAt = null,
-            itemDisabled,
-            itemDisabledAt = null,
-            authId,
-            userAcl,
-            userId,
-            userCreatedAt = null,
-            userDisabled,
-            userDisabledAt = null
-        } = args;
-        this.attributes = {
-            organizationId: {
-                value: organizationId,
-                type: "uuid",
-                required: false,
-                dbColumn: "organization_id"
-            },
-            aclGroupId: {
-                value: aclGroupId,
-                type: "uuid",
-                required: true,
-                dbColumn: "acl_group_id"
-            },
-            itemId: {
-                value: itemId,
-                type: "uuid",
-                required: true,
-                dbColumn: "item_id"
-            },
-            itemType: {
-                value: itemType,
-                type: "string",
-                required: true,
-                dbColumn: "item_type"
-            },
-            itemAcl: {
-                value: itemAcl,
-                type: ACL,
-                required: true,
-                dbColumn: "item_acl"
-            },
-            itemCreatedAt: {
-                value: itemCreatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "item_created_at"
-            },
-            itemDisabled: {
-                value: itemDisabled,
-                type: "boolean",
-                required: true,
-                dbColumn: "item_disabled"
-            },
-            itemDisabledAt: {
-                value: itemDisabledAt,
-                type: "date",
-                required: false,
-                dbColumn: "item_disabled_at"
-            },
-            authId: {
-                value: authId,
-                type: "uuid",
-                required: true,
-                dbColumn: "auth_id"
-            },
-            userAcl: {
-                value: userAcl,
-                type: UserACL,
-                required: true,
-                dbColumn: "user_acl"
-            },
-            userId: {
-                value: userId,
-                type: "uuid",
-                required: true,
-                dbColumn: "user_id"
-            },
-            userCreatedAt: {
-                value: userCreatedAt,
-                type: "date",
-                required: false,
-                dbColumn: "user_created_at"
-            },
-            userDisabled: {
-                value: userDisabled,
-                type: "boolean",
-                required: true,
-                dbColumn: "user_disabled"
-            },
-            userDisabledAt: {
-                value: userDisabledAt,
-                type: "date",
-                required: false,
-                dbColumn: "user_disabled_at"
-            }
-        };
-    }
+export class ACLGroupUsersWithItems extends SupabaseModel {
+    static TABLE_NAME = "acl_group_users_with_items";
+    static TABLE_FIELDS = {
+        organizationId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "organization_id"
+        },
+        aclGroupId: { type: "uuid", required: true, dbColumn: "acl_group_id" },
+        itemId: { type: "uuid", required: true, dbColumn: "item_id" },
+        itemType: { type: "string", required: true, dbColumn: "item_type" },
+        itemAcl: { type: ACL, required: true, dbColumn: "item_acl" },
+        itemCreatedAt: {
+            type: "date",
+            required: false,
+            dbColumn: "item_created_at"
+        },
+        itemDisabled: {
+            type: "boolean",
+            required: true,
+            dbColumn: "item_disabled"
+        },
+        itemDisabledAt: {
+            type: "date",
+            required: false,
+            dbColumn: "item_disabled_at"
+        },
+        authId: { type: "uuid", required: true, dbColumn: "auth_id" },
+        userAcl: { type: UserACL, required: true, dbColumn: "user_acl" },
+        userId: { type: "uuid", required: true, dbColumn: "user_id" },
+        userCreatedAt: {
+            type: "date",
+            required: false,
+            dbColumn: "user_created_at"
+        },
+        userDisabled: {
+            type: "boolean",
+            required: true,
+            dbColumn: "user_disabled"
+        },
+        userDisabledAt: {
+            type: "date",
+            required: false,
+            dbColumn: "user_disabled_at"
+        }
+    };
 }
