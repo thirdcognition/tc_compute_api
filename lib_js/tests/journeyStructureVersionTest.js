@@ -74,6 +74,7 @@ describe("Journey Structure Version Model Tests", function () {
             journeyId: newJourney.id,
             journeyItemId: newJourneyItem.id, // Correctly use the journey item's ID
             journeyItemVersionId: newJourneyItemVersion.id, // Correctly use journeyItemVersionId
+            versionOfId: newJourneyStructure.id,
             disabled: false
         });
         newJourneyStructureVersion =
@@ -83,8 +84,8 @@ describe("Journey Structure Version Model Tests", function () {
             "Journey structure version should be created"
         );
         assert.strictEqual(
-            newJourneyStructureVersion.journeyItemId,
-            newJourneyItem.id,
+            newJourneyStructureVersion.versionOfId,
+            newJourneyStructure.id,
             "Journey structure version journeyItemId should match"
         );
     });

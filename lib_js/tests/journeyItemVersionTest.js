@@ -50,7 +50,7 @@ describe("Journey Item Version Model Tests", function () {
         newJourneyItemVersion = new JourneyItemVersionModel({
             organizationId: newOrg.id,
             journeyId: newJourney.id,
-            journeyItemId: newJourneyItem.id,
+            versionOfId: newJourneyItem.id,
             name: "Version 1",
             disabled: false
         });
@@ -60,9 +60,9 @@ describe("Journey Item Version Model Tests", function () {
             "Journey item version should be created"
         );
         assert.strictEqual(
-            newJourneyItemVersion.journeyItemId,
+            newJourneyItemVersion.versionOfId,
             newJourneyItem.id,
-            "Journey item version journeyItemId should match"
+            "Journey item version versionOfId should match"
         );
     });
 

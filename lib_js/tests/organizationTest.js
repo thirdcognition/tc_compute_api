@@ -69,7 +69,7 @@ describe("Organizations Model Tests", function () {
         );
         assert(fetchedUser !== null, "Fetched user should not be null");
         assert.strictEqual(
-            fetchedUser.auth_id,
+            fetchedUser.authId,
             session.user.id,
             "Fetched user auth_id should match"
         );
