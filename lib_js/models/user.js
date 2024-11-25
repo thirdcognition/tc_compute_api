@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { UserData } from "./data/userData.js";
 import { OrganizationUsersModel } from "./supabase/organization.js";
 
@@ -6,7 +5,7 @@ class User {
     constructor(supabase, authId, userData = null) {
         this.supabase = supabase;
         this.model = userData;
-        this.authId = uuidv4(authId);
+        this.authId = authId;
         this._organizationDict = {};
         this._initializeTask = null;
     }
@@ -24,7 +23,7 @@ class User {
 
     async _initialize() {
         if (this.model === null) {
-            this.model = new UserData(this.authId);
+            this.model = new UserData(this.supabase, this.authId);
         }
         await this.model.fetchUserProfile();
         await this.model.fetchOrganizations();

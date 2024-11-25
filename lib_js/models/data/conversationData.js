@@ -3,9 +3,9 @@ import {
     LlmConversationMessageModel,
     LlmConversationMessageHistoryModel,
     LlmConversationThreadModel
-} from "../supabase/llmConversation";
+} from "../supabase/llmConversation.js";
 
-class LlmConversationData {
+export class LlmConversationData {
     constructor(
         user,
         conversations = null,
@@ -137,5 +137,3 @@ class LlmConversationData {
         }
     }
 }
-
-export default LlmConversationData;

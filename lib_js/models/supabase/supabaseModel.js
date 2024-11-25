@@ -13,9 +13,15 @@ export class SupabaseModel {
         for (const [key, field] of Object.entries(
             this.constructor.TABLE_FIELDS
         )) {
-            this.attributes[key] =
-                args[key] !== undefined
+            const val =
+                key in args
                     ? args[key]
+                    : this.constructor.mapKeyToDbColumn(key) in args
+                      ? args[this.constructor.mapKeyToDbColumn(key)]
+                      : undefined;
+            this.attributes[key] =
+                val !== undefined
+                    ? val
                     : field.type === "uuid" && field.required
                       ? uuidv4()
                       : null;
@@ -33,6 +39,10 @@ export class SupabaseModel {
                 if (prop in target.attributes) {
                     return target.getAttribute(prop);
                 }
+                const asDbColumn = target.constructor.mapKeyToDbColumn(prop);
+                if (asDbColumn in target.attributes) {
+                    return target.getAttribute(asDbColumn);
+                }
                 // Allow access to function properties via the prototype if they exist
                 if (prop in target.constructor.prototype) {
                     return target.constructor.prototype[prop];
@@ -46,6 +56,11 @@ export class SupabaseModel {
             set(target, prop, value) {
                 if (prop in target.attributes) {
                     target.setAttribute(prop, value);
+                    return true;
+                }
+                const asDbColumn = target.constructor.mapKeyToDbColumn(prop);
+                if (asDbColumn in target.attributes) {
+                    target.setAttribute(asDbColumn, value);
                     return true;
                 } else if (prop === "attributes") {
                     for (const key in value) {
@@ -360,6 +375,7 @@ export class SupabaseModel {
         }
 
         const response = await query.select();
+
         if (response.error) {
             throwApiError(response);
         }
@@ -506,7 +522,7 @@ export class SupabaseModel {
 
     updateFromDbData(dbData) {
         for (const dbColumn in dbData) {
-            const attributeName = this.mapFromDbColumns(dbColumn);
+            const attributeName = this.mapDbColumnToKey(dbColumn);
             if (attributeName in this.TABLE_FIELDS) {
                 this.attributes[attributeName] = dbData[dbColumn];
             }
@@ -518,7 +534,7 @@ export class SupabaseModel {
         // Create an object to hold mapped attribute names and their values
         const attributes = {};
         for (const dbColumn in dbData) {
-            const attributeName = this.mapFromDbColumns(dbColumn);
+            const attributeName = this.mapDbColumnToKey(dbColumn);
             attributes[attributeName] = dbData[dbColumn];
         }
 
@@ -541,7 +557,14 @@ export class SupabaseModel {
         return mappedData;
     }
 
-    static mapFromDbColumns(dbColumn) {
+    static mapKeyToDbColumn(key) {
+        if (key in this.TABLE_FIELDS) {
+            return this.TABLE_FIELDS[key].dbColumn;
+        }
+        return key;
+    }
+
+    static mapDbColumnToKey(dbColumn) {
         for (const key in this.TABLE_FIELDS) {
             if (this.TABLE_FIELDS[key].dbColumn === dbColumn) {
                 return key;

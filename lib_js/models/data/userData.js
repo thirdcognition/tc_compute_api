@@ -5,14 +5,24 @@ import {
     OrganizationRoleModel,
     OrganizationTeamMembersModel,
     OrganizationUsersModel
-} from "../supabase/organization";
+} from "../supabase/organization.js";
 import {
     ACLGroupUsersModel,
     ACLGroupUsersWithItems,
     ACLGroupModel
-} from "../supabase/acl";
+} from "../supabase/acl.js";
+import { createUser } from "../../tc_api/createUser.js";
 
-class UserData {
+export class UserOrganizationRequestData {
+    constructor(email = null, authId = null, metadata = null, isAdmin = false) {
+        this.email = email;
+        this.authId = authId;
+        this.metadata = metadata;
+        this.isAdmin = isAdmin;
+    }
+}
+
+export class UserData {
     constructor(supabase, authId, userData = null) {
         this.authId = authId;
         this.supabase = supabase;
@@ -24,6 +34,99 @@ class UserData {
         this.asUser = null;
         this.userInAclGroup = null;
         this.aclGroup = null;
+    }
+
+    static async createOrganizationUser(
+        supabase,
+        organizationId,
+        requestData,
+        apiConfig
+    ) {
+        if (!(requestData instanceof UserOrganizationRequestData)) {
+            throw new Error(
+                "requestData must be an instance of UserOrganizationRequestData"
+            );
+        }
+
+        let authId = null;
+        let userProfile = null;
+
+        if (requestData.email) {
+            const userExists = await UserProfileModel.existsInSupabase(
+                supabase,
+                requestData.email,
+                "email"
+            );
+
+            if (userExists) {
+                userProfile = await UserProfileModel.fetchFromSupabase(
+                    supabase,
+                    requestData.email,
+                    "email"
+                );
+                authId = userProfile.authId;
+            } else {
+                const userData = await createUser(
+                    organizationId,
+                    requestData,
+                    apiConfig
+                );
+                authId = userData.id;
+            }
+        } else if (requestData.authId) {
+            const userExists = await UserProfileModel.existsInSupabase(
+                supabase,
+                requestData.authId,
+                "auth_id"
+            );
+
+            if (userExists) {
+                userProfile = await UserProfileModel.fetchFromSupabase(
+                    supabase,
+                    requestData.authId,
+                    "auth_id"
+                );
+                authId = requestData.authId;
+            } else {
+                const userData = await createUser(
+                    organizationId,
+                    requestData,
+                    apiConfig
+                );
+                authId = userData.id;
+            }
+        } else {
+            throw new Error("Either email or authId must be provided");
+        }
+
+        if (authId) {
+            const userExistsInOrg =
+                await OrganizationUsersModel.existsInSupabase(
+                    supabase,
+                    { auth_id: authId, organization_id: organizationId },
+                    "auth_id"
+                );
+
+            if (userExistsInOrg) {
+                throw new Error("User is already a member of the organization");
+            } else {
+                const organizationUser = new OrganizationUsersModel({
+                    authId: authId,
+                    organizationId: organizationId,
+                    isAdmin: requestData.isAdmin,
+                    userId: userProfile ? userProfile.id : null
+                });
+                await organizationUser.create(supabase);
+                return organizationUser;
+            }
+        } else {
+            const organizationUser = await createUser(
+                organizationId,
+                requestData,
+                apiConfig
+            );
+            return new OrganizationUsersModel(organizationUser);
+        }
     }
 
     async saveAllToSupabase() {
@@ -112,9 +215,9 @@ class UserData {
                 .from("organization_users")
                 .select("organization_id, organizations(*)")
                 .eq("auth_id", this.authId)
-                .execute();
+                .select();
             this.organizations = response.data.map(
-                (data) => new OrganizationsModel(data.organizations)
+                (data) => new OrganizationsModel(data)
             );
         }
         return this.organizations;
@@ -129,7 +232,7 @@ class UserData {
                     this.teams[organization.id] =
                         await OrganizationTeamModel.fetchExistingFromSupabase(
                             this.supabase,
-                            { organization_id: organization.id }
+                            { organizationId: organization.id }
                         );
                 }
             }
@@ -163,7 +266,7 @@ class UserData {
                     { auth_id: this.authId }
                 );
             for (const membership of memberships) {
-                const organizationId = membership.organization_id;
+                const organizationId = membership.organizationId;
                 if (!this.memberships[organizationId]) {
                     this.memberships[organizationId] = [];
                 }
@@ -182,7 +285,7 @@ class UserData {
                     { auth_id: this.authId }
                 );
             for (const user of users) {
-                this.asUser[user.organization_id] = user;
+                this.asUser[user.organizationId] = user;
             }
         }
         return this.asUser;
@@ -196,7 +299,7 @@ class UserData {
                     { auth_id: this.authId }
                 );
             const aclGroupIds = this.userInAclGroup.map(
-                (group) => group.acl_group_id
+                (group) => group.aclGroupId
             );
             this.aclGroup = await ACLGroupModel.fetchExistingFromSupabase(
                 this.supabase,
@@ -209,15 +312,15 @@ class UserData {
     async inAclGroup(aclGroupId) {
         if (!this.userInAclGroup) await this.fetchAcl();
         return this.userInAclGroup.some(
-            (group) => group.acl_group_id === aclGroupId
+            (group) => group.aclGroupId === aclGroupId
         );
     }
 
     async hasAccessToItem(itemId, itemType) {
         return await ACLGroupUsersWithItems.existsInSupabase(this.supabase, {
-            auth_id: this.authId,
-            item_id: itemId,
-            item_type: itemType
+            authId: this.authId,
+            itemId: itemId,
+            itemType: itemType
         });
     }
 
@@ -268,17 +371,15 @@ class UserData {
             this.organizations.some(
                 (organization) =>
                     organization.id === organizationId &&
-                    organization.owner_id === this.authId
+                    organization.ownerId === this.authId
             )
         ) {
             return true;
         }
 
         if (this.asUser[organizationId]) {
-            return this.asUser[organizationId].is_admin;
+            return this.asUser[organizationId].isAdmin;
         }
         return false;
     }
 }
-
-export default UserData;

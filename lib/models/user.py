@@ -34,7 +34,7 @@ class User:
 
     async def _initialize(self) -> None:
         if self.model is None:
-            self.model = UserData(auth_id=self.auth_id)
+            self.model = UserData(self.supabase, auth_id=self.auth_id)
         await self.model.fetch_user_profile()
         await self.model.fetch_organizations()
 
