@@ -11,7 +11,6 @@ import {
     ACLGroupUsersWithItems,
     ACLGroupModel
 } from "../supabase/acl.js";
-import { createUser } from "../../tc_api/createUser.js";
 
 export class UserOrganizationRequestData {
     constructor(email = null, authId = null, metadata = null, isAdmin = false) {
@@ -34,99 +33,6 @@ export class UserData {
         this.asUser = null;
         this.userInAclGroup = null;
         this.aclGroup = null;
-    }
-
-    static async createOrganizationUser(
-        supabase,
-        organizationId,
-        requestData,
-        apiConfig
-    ) {
-        if (!(requestData instanceof UserOrganizationRequestData)) {
-            throw new Error(
-                "requestData must be an instance of UserOrganizationRequestData"
-            );
-        }
-
-        let authId = null;
-        let userProfile = null;
-
-        if (requestData.email) {
-            const userExists = await UserProfileModel.existsInSupabase(
-                supabase,
-                requestData.email,
-                "email"
-            );
-
-            if (userExists) {
-                userProfile = await UserProfileModel.fetchFromSupabase(
-                    supabase,
-                    requestData.email,
-                    "email"
-                );
-                authId = userProfile.authId;
-            } else {
-                const userData = await createUser(
-                    organizationId,
-                    requestData,
-                    apiConfig
-                );
-                authId = userData.id;
-            }
-        } else if (requestData.authId) {
-            const userExists = await UserProfileModel.existsInSupabase(
-                supabase,
-                requestData.authId,
-                "auth_id"
-            );
-
-            if (userExists) {
-                userProfile = await UserProfileModel.fetchFromSupabase(
-                    supabase,
-                    requestData.authId,
-                    "auth_id"
-                );
-                authId = requestData.authId;
-            } else {
-                const userData = await createUser(
-                    organizationId,
-                    requestData,
-                    apiConfig
-                );
-                authId = userData.id;
-            }
-        } else {
-            throw new Error("Either email or authId must be provided");
-        }
-
-        if (authId) {
-            const userExistsInOrg =
-                await OrganizationUsersModel.existsInSupabase(
-                    supabase,
-                    { auth_id: authId, organization_id: organizationId },
-                    "auth_id"
-                );
-
-            if (userExistsInOrg) {
-                throw new Error("User is already a member of the organization");
-            } else {
-                const organizationUser = new OrganizationUsersModel({
-                    authId: authId,
-                    organizationId: organizationId,
-                    isAdmin: requestData.isAdmin,
-                    userId: userProfile ? userProfile.id : null
-                });
-                await organizationUser.create(supabase);
-                return organizationUser;
-            }
-        } else {
-            const organizationUser = await createUser(
-                organizationId,
-                requestData,
-                apiConfig
-            );
-            return new OrganizationUsersModel(organizationUser);
-        }
     }
 
     async saveAllToSupabase() {

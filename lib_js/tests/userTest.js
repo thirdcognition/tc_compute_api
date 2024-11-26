@@ -1,12 +1,10 @@
 import { createSupabaseClient } from "../supabaseClient.js";
-import {
-    UserData,
-    UserOrganizationRequestData
-} from "../models/data/userData.js";
+import { UserOrganizationRequestData } from "../models/data/userData.js";
 import { OrganizationsModel } from "../models/supabase/organization.js";
 import { User } from "../models/user.js";
 import { authenticate } from "./authTest.js";
 import { ApiConfig } from "../helpers/ApiHelper.js";
+import { createOrganizationUser } from "../tc_api/createUser.js";
 import assert from "assert";
 import dotenv from "dotenv";
 
@@ -37,7 +35,7 @@ describe("User Model Tests", function () {
     });
 
     it("should create a new user and verify model details", async function () {
-        // Create a new organization user using UserData
+        // Create a new organization user using createOrganizationUser
         const requestData = new UserOrganizationRequestData(
             "user2@example.com",
             null,
@@ -50,7 +48,7 @@ describe("User Model Tests", function () {
             session.access_token,
             session.refresh_token
         );
-        newUser = await UserData.createOrganizationUser(
+        newUser = await createOrganizationUser(
             supabase,
             newOrg.id,
             requestData,
