@@ -35,6 +35,20 @@ export interface User {
     // Methods acting as setters
     setActiveOrganization(organizationId: string): Promise<void>;
     setActiveConversation(conversationId: string): Promise<void>;
+
+    // Methods
+    initialize(): Promise<void>;
+    connectToOrganization(
+        organization: OrganizationsModel,
+        setAsAdmin?: boolean | null,
+        updateExisting?: boolean
+    ): Promise<void>;
+    _initOrganizations(
+        refresh?: boolean
+    ): Promise<Record<string, OrganizationsModel>>;
+    getOrganizationById(organizationId: string): Promise<OrganizationsModel>;
+    fetchAclGroups(refresh?: boolean): Promise<void>;
+    hasAccessToItem(itemId: string, itemType: string): Promise<boolean>;
 }
 
 export interface GetCurrentUserParams {

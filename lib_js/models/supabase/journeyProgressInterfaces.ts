@@ -1,4 +1,6 @@
-export interface JourneyProgress {
+import { SupabaseModel } from "./SupabaseModelInterface";
+
+export interface JourneyProgress extends SupabaseModel<JourneyProgress> {
     id?: string;
     journeyId: string;
     journeyVersionId: string;
@@ -12,7 +14,8 @@ export interface JourneyProgress {
     completedAt?: Date;
 }
 
-export interface JourneyProgressLLMConversationMessages {
+export interface JourneyProgressLLMConversationMessages
+    extends SupabaseModel<JourneyProgressLLMConversationMessages> {
     journeyItemProgressId: string;
     messageId: string;
     conversationId: string;
@@ -22,7 +25,8 @@ export interface JourneyProgressLLMConversationMessages {
     organizationId?: string;
 }
 
-export interface JourneyProgressLLMConversations {
+export interface JourneyProgressLLMConversations
+    extends SupabaseModel<JourneyProgressLLMConversations> {
     progressId: string;
     conversationId: string;
     createdAt?: Date;
@@ -31,7 +35,8 @@ export interface JourneyProgressLLMConversations {
     organizationId?: string;
 }
 
-export interface JourneyItemProgress {
+export interface JourneyItemProgress
+    extends SupabaseModel<JourneyItemProgress> {
     id?: string;
     journeyProgressId: string;
     journeyItemId: string;

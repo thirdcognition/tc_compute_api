@@ -1,4 +1,6 @@
-export interface ACLGroup {
+import { SupabaseModel } from "./SupabaseModelInterface";
+
+export interface ACLGroup extends SupabaseModel<ACLGroup> {
     id?: string;
     name: string;
     description?: string;
@@ -10,7 +12,7 @@ export interface ACLGroup {
     organizationId?: string;
 }
 
-export interface ACLGroupItems {
+export interface ACLGroupItems extends SupabaseModel<ACLGroupItems> {
     aclGroupId: string;
     acl?: string; // Assuming ACL is a string enum
     itemId: string;
@@ -23,7 +25,7 @@ export interface ACLGroupItems {
     organizationId?: string;
 }
 
-export interface ACLGroupUsers {
+export interface ACLGroupUsers extends SupabaseModel<ACLGroupUsers> {
     authId: string;
     userId: string;
     aclGroupId: string;

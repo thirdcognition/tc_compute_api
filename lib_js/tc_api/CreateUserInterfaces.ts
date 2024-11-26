@@ -16,3 +16,17 @@ export interface CreateOrganizationUserParams {
     requestData: UserOrganizationRequestData;
     apiConfig: ApiConfig;
 }
+
+export interface ConvertToCreateOrganizationUserRequestDataParams {
+    email: string;
+    authId: string;
+    metadata: Record<string, unknown>; // JSON object
+    isAdmin: boolean;
+}
+
+export type CreateOrganizationUserRequestData = {
+    email: string;
+    auth_id: string;
+    metadata: Record<string, unknown>; // JSON object
+    is_admin: boolean;
+};

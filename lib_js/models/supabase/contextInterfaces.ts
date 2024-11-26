@@ -1,4 +1,6 @@
-export interface ContextQuery {
+import { SupabaseModel } from "./SupabaseModelInterface";
+
+export interface ContextQuery extends SupabaseModel<ContextQuery> {
     id: string;
     params?: object;
     createdAt?: Date;
@@ -7,7 +9,8 @@ export interface ContextQuery {
     organizationId?: string;
 }
 
-export interface ContextQueryResponse {
+export interface ContextQueryResponse
+    extends SupabaseModel<ContextQueryResponse> {
     id: string;
     queryId?: string;
     responseData?: object;
@@ -19,7 +22,7 @@ export interface ContextQueryResponse {
     organizationId?: string;
 }
 
-export interface ContextQueryResult {
+export interface ContextQueryResult extends SupabaseModel<ContextQueryResult> {
     id: string;
     queryId?: string;
     resultData?: object;

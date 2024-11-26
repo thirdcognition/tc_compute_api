@@ -1,4 +1,6 @@
-export interface Source {
+import { SupabaseModel } from "./SupabaseModelInterface";
+
+export interface Source extends SupabaseModel<Source> {
     id: string;
     type?: string; // Assuming SourceType is a string enum
     disabled?: boolean;
@@ -11,7 +13,7 @@ export interface Source {
     updatedBy?: string;
 }
 
-export interface SourceChunk {
+export interface SourceChunk extends SupabaseModel<SourceChunk> {
     id: string;
     sourceId?: string;
     sourceVersionId?: string;
@@ -24,7 +26,7 @@ export interface SourceChunk {
     organizationId?: string;
 }
 
-export interface SourceRelationship {
+export interface SourceRelationship extends SupabaseModel<SourceRelationship> {
     sourceVersionId: string;
     relatedSourceVersionId: string;
     relationshipType?: string;
@@ -37,7 +39,7 @@ export interface SourceRelationship {
     organizationId?: string;
 }
 
-export interface SourceVersion {
+export interface SourceVersion extends SupabaseModel<SourceVersion> {
     id: string;
     title?: string;
     lang?: string;

@@ -1,4 +1,7 @@
-export interface UserProfile {
+import { SupabaseClient } from "@supabase/supabase-js";
+import { SupabaseModel } from "./SupabaseModelInterface";
+
+export interface UserProfile extends SupabaseModel<UserProfile> {
     id?: string;
     authId?: string;
     email?: string;
@@ -13,7 +16,7 @@ export interface UserProfile {
     activeConversationId?: string;
 }
 
-export interface OrganizationRole {
+export interface OrganizationRole extends SupabaseModel<OrganizationRole> {
     id?: string;
     name: string;
     description?: string;
@@ -26,7 +29,7 @@ export interface OrganizationRole {
     organizationId?: string;
 }
 
-export interface OrganizationTeam {
+export interface OrganizationTeam extends SupabaseModel<OrganizationTeam> {
     id?: string;
     name: string;
     metadata?: object;
@@ -38,7 +41,8 @@ export interface OrganizationTeam {
     organizationId?: string;
 }
 
-export interface OrganizationTeamMembers {
+export interface OrganizationTeamMembers
+    extends SupabaseModel<OrganizationTeamMembers> {
     authId: string;
     userId: string;
     teamId: string;
@@ -50,7 +54,7 @@ export interface OrganizationTeamMembers {
     organizationId?: string;
 }
 
-export interface OrganizationUsers {
+export interface OrganizationUsers extends SupabaseModel<OrganizationUsers> {
     authId?: string;
     userId?: string;
     organizationId?: string;
@@ -60,9 +64,20 @@ export interface OrganizationUsers {
     disabledAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
+
+    inAclGroup(supabase: SupabaseClient, aclGroupId: string): Promise<boolean>;
+    connectWithAclGroup(
+        supabase: SupabaseClient,
+        aclGroupId: string,
+        acl: string
+    ): Promise<void>;
+    disconnectWithAclGroup(
+        supabase: SupabaseClient,
+        aclGroupId: string
+    ): Promise<void>;
 }
 
-export interface Organizations {
+export interface Organizations extends SupabaseModel<Organizations> {
     id?: string;
     defaultAclGroupId?: string;
     name?: string;
