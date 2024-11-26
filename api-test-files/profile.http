@@ -1,0 +1,52 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = user1@example.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}
+
+### Response
+@accessToken = {{login.response.body.$.access_token}}
+@authId = {{login.response.body.$.user.id}}
+
+### Update Current User Profile request
+# @name updateUserProfile
+PUT {{host}}:{{port}}/user/ HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{"name": "Updated User One"}
+
+### Get Current User Profile request
+# @name getUserProfile
+GET {{host}}:{{port}}/user/ HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Update User Profile request
+# @name updateUserProfile
+PUT {{host}}:{{port}}/user/{{authId}} HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{"name": "Updated User Two"}
+
+### Get User Profile request
+# @name getUserProfile
+GET {{host}}:{{port}}/user/{{authId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+# ### Delete User Profile request
+# # @name deleteUserProfile
+# DELETE {{host}}:{{port}}/user/{{authId}} HTTP/1.1
+# Accept: application/json
+# Authorization: Bearer {{accessToken}}
