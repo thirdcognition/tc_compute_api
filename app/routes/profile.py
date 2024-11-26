@@ -25,8 +25,9 @@ async def api_get_user_profile_by_id(
     user_id: str = None,
     supabase: SupaClientDep = SupaClientDep,
 ) -> UserProfileModel:
+    print(f"{user_id=}")
     try:
-        return await get_user_profile(supabase, user_id)
+        return await get_user_profile(supabase, user_id=user_id)
     except Exception as e:
         raise handle_exception(e, "User profile not found", 404)
 

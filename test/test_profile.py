@@ -20,18 +20,19 @@ def access_token():
 
 @pytest.fixture(scope="module")
 def user_id(access_token):
-    # Assuming the user_id is returned in the login response
-    response = requests.post(
-        f"{BASE_URL}/auth/login", json={"email": EMAIL, "password": PASSWORD}
+    # Get current user profile to retrieve user_id
+    response = requests.get(
+        f"{BASE_URL}/user",
+        headers={"Authorization": f"Bearer {access_token}"},
     )
     response.raise_for_status()
-    return response.json()["user"]["id"]
+    return response.json()["id"]
 
 
 def test_update_user_profile(access_token, user_id):
     # Update current user profile
     response = requests.put(
-        f"{BASE_URL}/user/",
+        f"{BASE_URL}/user",
         json={"name": "Updated User One"},
         headers={"Authorization": f"Bearer {access_token}"},
     )
@@ -41,12 +42,14 @@ def test_update_user_profile(access_token, user_id):
 
     # Verify the update
     response = requests.get(
-        f"{BASE_URL}/user/",
+        f"{BASE_URL}/user",
         headers={"Authorization": f"Bearer {access_token}"},
     )
     assert (
-        response.json()["name"] == "Updated User One"
+        "name" in response.json() and response.json()["name"] == "Updated User One"
     ), "User name not updated correctly"
+
+    print(f"{user_id=}")
 
     # Update user profile with user_id
     response = requests.put(
@@ -63,6 +66,7 @@ def test_update_user_profile(access_token, user_id):
         f"{BASE_URL}/user/{user_id}",
         headers={"Authorization": f"Bearer {access_token}"},
     )
+
     assert (
         response.json()["name"] == "Updated User Two"
     ), "User name not updated correctly with user_id"

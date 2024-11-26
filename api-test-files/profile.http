@@ -17,7 +17,7 @@ Accept: application/json
 
 ### Update Current User Profile request
 # @name updateUserProfile
-PUT {{host}}:{{port}}/user/ HTTP/1.1
+PUT {{host}}:{{port}}/user HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{accessToken}}
@@ -26,13 +26,17 @@ Authorization: Bearer {{accessToken}}
 
 ### Get Current User Profile request
 # @name getUserProfile
-GET {{host}}:{{port}}/user/ HTTP/1.1
+GET {{host}}:{{port}}/user HTTP/1.1
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
+### Response
+
+@userId = {{getUserProfile.response.body.$.id}}
+
 ### Update User Profile request
-# @name updateUserProfile
-PUT {{host}}:{{port}}/user/{{authId}} HTTP/1.1
+# @name updateUserProfile2
+PUT {{host}}:{{port}}/user/{{userId}} HTTP/1.1
 Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{accessToken}}
@@ -40,8 +44,8 @@ Authorization: Bearer {{accessToken}}
 {"name": "Updated User Two"}
 
 ### Get User Profile request
-# @name getUserProfile
-GET {{host}}:{{port}}/user/{{authId}} HTTP/1.1
+# @name getUserProfile2
+GET {{host}}:{{port}}/user/{{userId}} HTTP/1.1
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
