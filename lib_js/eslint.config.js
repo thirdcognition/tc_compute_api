@@ -1,6 +1,7 @@
 import globals from "globals";
 import pluginJs from "@eslint/js";
 import prettierConfigRecommended from "eslint-plugin-prettier/recommended";
+import tseslint from "typescript-eslint";
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -17,6 +18,7 @@ export default [
         }
     },
     pluginJs.configs.recommended,
+    ...tseslint.configs.recommended,
     // pluginReactHooks.configs.flat.recommended,
     prettierConfigRecommended,
     {
