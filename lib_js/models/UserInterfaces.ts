@@ -3,6 +3,12 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UserData } from "./data/UserDataInterfaces";
 import { OrganizationsModel } from "./supabase/organization";
+import {
+    UserProfile,
+    OrganizationUsers,
+    OrganizationTeam,
+    OrganizationRole
+} from "./supabase/organizationInterfaces";
 
 export interface User {
     supabase: SupabaseClient;
@@ -10,6 +16,25 @@ export interface User {
     authId: string;
     _organizationDict: Record<string, OrganizationsModel>;
     _initializeTask: Promise<void> | null;
+
+    // Getters
+    readonly isInitialized: boolean;
+    readonly userId: string;
+    readonly accountDisabled: boolean;
+    readonly activeOrganizationId: string;
+    readonly activeConversationId: string;
+    readonly organizationAccessDisabled: boolean;
+    readonly isAdmin: boolean;
+    readonly profile: UserProfile;
+    readonly organizationUser: OrganizationUsers;
+    readonly organization: OrganizationsModel;
+    readonly teams: OrganizationTeam[];
+    readonly roles: OrganizationRole[];
+    readonly memberships: OrganizationUsers[];
+
+    // Methods acting as setters
+    setActiveOrganization(organizationId: string): Promise<void>;
+    setActiveConversation(conversationId: string): Promise<void>;
 }
 
 export interface GetCurrentUserParams {
