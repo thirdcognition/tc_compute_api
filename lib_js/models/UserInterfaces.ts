@@ -52,6 +52,12 @@ export interface User {
 
     listen(callback: (model: User, ...args: unknown[]) => boolean | void): this;
     notifyListeners(...args: unknown[]): void;
+
+    // New Getters
+    getOrganization(): Promise<Organizations>;
+    getTeams(): Promise<OrganizationTeam[]>;
+    getRoles(): Promise<OrganizationRole[]>;
+    getMemberships(): Promise<OrganizationUsers[]>;
 }
 
 export interface GetCurrentUserParams {

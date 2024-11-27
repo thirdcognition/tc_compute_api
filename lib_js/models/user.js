@@ -119,19 +119,27 @@ class User {
     }
 
     get organization() {
-        return this.getOrganizationById(this.activeOrganizationId);
+        return this._organizationDict[this.activeOrganizationId];
     }
 
-    get teams() {
-        return this.model.getTeamsByOrganization(this.activeOrganizationId);
+    async getOrganization() {
+        return await this.getOrganizationById(this.activeOrganizationId);
     }
 
-    get roles() {
-        return this.model.getRolesByOrganization(this.activeOrganizationId);
+    async getTeams() {
+        return await this.model.getTeamsByOrganization(
+            this.activeOrganizationId
+        );
     }
 
-    get memberships() {
-        return this.model.getMembershipsByOrganization(this.userId);
+    async getRoles() {
+        return await this.model.getRolesByOrganization(
+            this.activeOrganizationId
+        );
+    }
+
+    async getMemberships() {
+        return await this.model.getMembershipsByOrganization(this.userId);
     }
 
     async _initOrganizations(refresh = false) {
