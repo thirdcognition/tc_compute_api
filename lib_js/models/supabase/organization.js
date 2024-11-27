@@ -6,6 +6,7 @@ export class UserProfileModel extends SupabaseModel {
     static TABLE_NAME = "user_profile";
     static TABLE_FIELDS = {
         id: { type: "uuid", required: false, dbColumn: "id" },
+
         authId: { type: "uuid", required: false, dbColumn: "auth_id" },
         email: { type: "string", required: false, dbColumn: "email" },
         name: { type: "string", required: false, dbColumn: "name" },
@@ -280,6 +281,11 @@ export class OrganizationsModel extends SupabaseModel {
             type: "uuid",
             required: false,
             dbColumn: "default_acl_group_id"
+        },
+        defaultBucketId: {
+            type: "string",
+            required: false,
+            dbColumn: "default_bucket_id"
         },
         name: { type: "string", required: false, dbColumn: "name" },
         website: { type: "string", required: false, dbColumn: "website" },

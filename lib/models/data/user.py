@@ -287,8 +287,8 @@ class UserData:
         """
         if not self.organizations or refresh:
             response: APIResponse = (
-                await self.supabase.from_("organization_users")
-                .select("organization_id, organizations(*)")
+                await self.supabase.from_("organizations")
+                .select("*, organization_users(auth_id)")
                 .eq("auth_id", str(self.auth_id))
                 .execute()
             )

@@ -118,10 +118,9 @@ export class UserData {
     async fetchOrganizations(refresh = false) {
         if (!this.organizations || refresh) {
             const response = await this.supabase
-                .from("organization_users")
-                .select("organization_id, organizations(*)")
-                .eq("auth_id", this.authId)
-                .select();
+                .from("organizations")
+                .select("*, organization_users(auth_id)")
+                .eq("organization_users.auth_id", this.authId);
             this.organizations = response.data.map(
                 (data) => new OrganizationsModel(data)
             );

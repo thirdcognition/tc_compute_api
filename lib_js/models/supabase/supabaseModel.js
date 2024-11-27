@@ -320,7 +320,7 @@ export class SupabaseModel {
                 for (const key of onConflict) {
                     query = query.eq(key, data[key]);
                 }
-                response = await query.select();
+                response = await query; //await query.select();
                 if (response.data && response.data.length > 0) {
                     query = supabase
                         .from(this.TABLE_NAME)
@@ -374,7 +374,7 @@ export class SupabaseModel {
             query = query.eq(dbColumn, value);
         }
 
-        const response = await query.select();
+        const response = await query; //.select();
 
         if (response.error) {
             throwApiError(response);
@@ -435,7 +435,7 @@ export class SupabaseModel {
             }
         }
 
-        const response = await query.select();
+        const response = await query; //.select();
         if (response.error) {
             throwApiError(response);
         }
@@ -466,7 +466,7 @@ export class SupabaseModel {
             query = query.eq(idColumn, value);
         }
 
-        const response = await query.select();
+        const response = await query; //.select();
         if (response.error) {
             throwApiError(response);
         }
@@ -491,7 +491,7 @@ export class SupabaseModel {
             query = query.eq(idColumn, value);
         }
 
-        const response = await query.select();
+        const response = await query; //.select();
         if (response.error) {
             throwApiError(response);
         }

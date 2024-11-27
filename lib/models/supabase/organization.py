@@ -280,6 +280,7 @@ class OrganizationsModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "organizations"
     id: Optional[UUID] = Field(default=None)
     default_acl_group_id: Optional[UUID] = Field(default=None)
+    default_bucket_id: Optional[str] = Field(default=None)
     name: Optional[str] = Field(default=None)
     website: Optional[str] = Field(default=None)
     logo: Optional[str] = Field(default=None)
