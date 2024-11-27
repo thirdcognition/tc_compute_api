@@ -144,7 +144,10 @@ class User {
 
     async _initOrganizations(refresh = false) {
         if (refresh || !this._organizationDict) {
-            if (!this.model.organizations) {
+            if (
+                !this.model.organizations ||
+                this.model.organizations.length === 0
+            ) {
                 await this.model.fetchOrganizations();
             }
             if (!this._organizationDict) {
@@ -169,8 +172,11 @@ class User {
     }
 
     async getOrganizationById(organizationId) {
-        if (!this._organizationDict) {
-            await this._initOrganizations();
+        if (
+            Object.keys(this._organizationDict || {}).length === 0 ||
+            !this._organizationDict[organizationId]
+        ) {
+            await this._initOrganizations(true);
         }
         return this._organizationDict[organizationId];
     }
