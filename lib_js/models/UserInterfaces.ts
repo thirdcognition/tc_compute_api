@@ -2,8 +2,8 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 import { UserData } from "./data/UserDataInterfaces";
-import { OrganizationsModel } from "./supabase/organization";
 import {
+    Organizations,
     UserProfile,
     OrganizationUsers,
     OrganizationTeam,
@@ -14,7 +14,7 @@ export interface User {
     supabase: SupabaseClient;
     model: UserData | null;
     authId: string;
-    _organizationDict: Record<string, OrganizationsModel>;
+    _organizationDict: Record<string, Organizations>;
     _initializeTask: Promise<void> | null;
 
     // Getters
@@ -27,7 +27,7 @@ export interface User {
     readonly isAdmin: boolean;
     readonly profile: UserProfile;
     readonly organizationUser: OrganizationUsers;
-    readonly organization: OrganizationsModel;
+    readonly organization: Organizations;
     readonly teams: OrganizationTeam[];
     readonly roles: OrganizationRole[];
     readonly memberships: OrganizationUsers[];
@@ -39,14 +39,14 @@ export interface User {
     // Methods
     initialize(): Promise<void>;
     connectToOrganization(
-        organization: OrganizationsModel,
+        organization: Organizations,
         setAsAdmin?: boolean | null,
         updateExisting?: boolean
     ): Promise<void>;
     _initOrganizations(
         refresh?: boolean
-    ): Promise<Record<string, OrganizationsModel>>;
-    getOrganizationById(organizationId: string): Promise<OrganizationsModel>;
+    ): Promise<Record<string, Organizations>>;
+    getOrganizationById(organizationId: string): Promise<Organizations>;
     fetchAclGroups(refresh?: boolean): Promise<void>;
     hasAccessToItem(itemId: string, itemType: string): Promise<boolean>;
 

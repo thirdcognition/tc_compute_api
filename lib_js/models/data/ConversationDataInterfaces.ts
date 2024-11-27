@@ -2,18 +2,18 @@
 
 import { UserData } from "./UserDataInterfaces";
 import {
-    LlmConversationModel,
-    LlmConversationMessageModel,
-    LlmConversationMessageHistoryModel,
-    LlmConversationThreadModel
-} from "../supabase/llmConversation";
+    LlmConversation,
+    LlmConversationMessage,
+    LlmConversationMessageHistory,
+    LlmConversationThread
+} from "../supabase/llmConversationInterfaces";
 
 export interface LlmConversationData {
     user: UserData;
-    conversations: LlmConversationModel[] | null;
-    messages: LlmConversationMessageModel[] | null;
-    messageHistory: LlmConversationMessageHistoryModel[] | null;
-    threads: LlmConversationThreadModel[] | null;
+    conversations: LlmConversation[] | null;
+    messages: LlmConversationMessage[] | null;
+    messageHistory: LlmConversationMessageHistory[] | null;
+    threads: LlmConversationThread[] | null;
 
     // Methods
     saveAllToSupabase(): Promise<void>;

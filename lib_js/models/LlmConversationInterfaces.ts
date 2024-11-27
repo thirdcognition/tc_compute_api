@@ -3,9 +3,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { LlmConversationData } from "./data/ConversationDataInterfaces";
 import {
-    LlmConversationMessageHistoryModel,
-    LlmConversationMessageModel
-} from "./supabase/llmConversation";
+    LlmConversationMessageHistory,
+    LlmConversationMessage
+} from "./supabase/llmConversationInterfaces";
 
 export interface LlmConversation {
     supabase: SupabaseClient;
@@ -19,14 +19,14 @@ export interface LlmConversation {
     ): Promise<void>;
     getConversationHistory(
         conversationId: string
-    ): Promise<LlmConversationMessageHistoryModel[]>;
+    ): Promise<LlmConversationMessageHistory[]>;
     getMessagesWithHistory(
         conversationId: string
     ): Promise<
         [
-            LlmConversationMessageModel,
-            LlmConversationMessageModel | null,
-            LlmConversationMessageModel | null
+            LlmConversationMessage,
+            LlmConversationMessage | null,
+            LlmConversationMessage | null
         ][]
     >;
 
