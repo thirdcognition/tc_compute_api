@@ -29,4 +29,9 @@ export interface LlmConversation {
             LlmConversationMessageModel | null
         ][]
     >;
+
+    listen(
+        callback: (model: LlmConversation, ...args: unknown[]) => boolean | void
+    ): this;
+    notifyListeners(...args: unknown[]): void;
 }

@@ -26,4 +26,13 @@ export interface LlmConversationData {
         initialMessage?: string | null,
         initialResponse?: string | null
     ): Promise<void>;
+
+    // New methods
+    listen(
+        callback: (
+            model: LlmConversationData,
+            ...args: unknown[]
+        ) => boolean | void
+    ): this;
+    notifyListeners(...args: unknown[]): void;
 }

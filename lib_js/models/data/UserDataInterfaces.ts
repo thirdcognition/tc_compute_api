@@ -69,4 +69,9 @@ export interface UserData {
     ): Promise<OrganizationTeamMembersModel[]>;
     inOrganization(organizationId: string): Promise<boolean>;
     isAdminInOrganization(organizationId: string): Promise<boolean>;
+
+    listen(
+        callback: (model: UserData, ...args: unknown[]) => boolean | void
+    ): this;
+    notifyListeners(...args: unknown[]): void;
 }

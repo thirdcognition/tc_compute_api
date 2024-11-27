@@ -49,6 +49,9 @@ export interface User {
     getOrganizationById(organizationId: string): Promise<OrganizationsModel>;
     fetchAclGroups(refresh?: boolean): Promise<void>;
     hasAccessToItem(itemId: string, itemType: string): Promise<boolean>;
+
+    listen(callback: (model: User, ...args: unknown[]) => boolean | void): this;
+    notifyListeners(...args: unknown[]): void;
 }
 
 export interface GetCurrentUserParams {
