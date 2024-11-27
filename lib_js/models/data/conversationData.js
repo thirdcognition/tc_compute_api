@@ -13,13 +13,29 @@ export class LlmConversationData {
         messageHistory = null,
         threads = null
     ) {
+        this.listeners = [];
+        this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
         this.user = user;
         this.conversations = conversations;
         this.messages = messages;
         this.messageHistory = messageHistory;
         this.threads = threads;
     }
+    listen(callback) {
+        if (
+            typeof callback === "function" &&
+            this.listeners.indexOf(callback) === -1
+        ) {
+            this.listeners.push(callback);
+        }
+        return this;
+    }
 
+    notifyListeners(...args) {
+        this.listeners = this.listeners.filter(
+            (listener) => listener(this, ...args) !== false
+        );
+    }
     async saveAllToSupabase() {
         const supabase = this.user.supabase;
         const upsertTasks = [];
@@ -56,53 +72,61 @@ export class LlmConversationData {
 
     async fetchConversations(refresh = false) {
         if (!this.conversations || refresh) {
-            this.conversations =
+            this.conversations = (
                 await LlmConversationModel.fetchExistingFromSupabase(
                     this.user.supabase,
                     {
                         owner_id: String(this.user.authId),
                         organization_id: String(this.user.activeOrganizationId)
                     }
-                );
+                )
+            ).listen(this.boundNotifyListeners);
+            this.notifyListeners();
         }
     }
 
     async fetchMessages(refresh = false) {
         if (!this.messages || refresh) {
-            this.messages =
+            this.messages = (
                 await LlmConversationMessageModel.fetchExistingFromSupabase(
                     this.user.supabase,
                     {
                         owner_id: String(this.user.authId),
                         organization_id: String(this.user.activeOrganizationId)
                     }
-                );
+                )
+            ).listen(this.boundNotifyListeners);
+            this.notifyListeners();
         }
     }
 
     async fetchMessageHistory(refresh = false) {
         if (!this.messageHistory || refresh) {
-            this.messageHistory =
+            this.messageHistory = (
                 await LlmConversationMessageHistoryModel.fetchExistingFromSupabase(
                     this.user.supabase,
                     {
                         owner_id: String(this.user.authId),
                         organization_id: String(this.user.activeOrganizationId)
                     }
-                );
+                )
+            ).listen(this.boundNotifyListeners);
+            this.notifyListeners();
         }
     }
 
     async fetchThreads(refresh = false) {
         if (!this.threads || refresh) {
-            this.threads =
+            this.threads = (
                 await LlmConversationThreadModel.fetchExistingFromSupabase(
                     this.user.supabase,
                     {
                         owner_id: String(this.user.authId),
                         organization_id: String(this.user.activeOrganizationId)
                     }
-                );
+                )
+            ).listen(this.boundNotifyListeners);
+            this.notifyListeners();
         }
     }
 
@@ -120,7 +144,7 @@ export class LlmConversationData {
                 conversationId: conversation.id,
                 ownerId: this.user.authId,
                 organizationId: this.user.activeOrganizationId
-            });
+            }).listen(this.boundNotifyListeners);
             await message.create(this.user.supabase);
         }
 
@@ -132,8 +156,9 @@ export class LlmConversationData {
                 conversationId: conversation.id,
                 ownerId: this.user.authId,
                 organizationId: this.user.activeOrganizationId
-            });
+            }).listen(this.boundNotifyListeners);
             await response.create(this.user.supabase);
         }
+        this.notifyListeners();
     }
 }

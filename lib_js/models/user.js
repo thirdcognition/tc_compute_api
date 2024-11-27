@@ -3,13 +3,29 @@ import { OrganizationUsersModel } from "./supabase/organization.js";
 
 class User {
     constructor(supabase, authId, userData = null) {
+        this.listeners = [];
+        this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
         this.supabase = supabase;
         this.model = userData;
         this.authId = authId;
         this._organizationDict = {};
         this._initializeTask = null;
     }
+    listen(callback) {
+        if (
+            typeof callback === "function" &&
+            this.listeners.indexOf(callback) === -1
+        ) {
+            this.listeners.push(callback);
+        }
+        return this;
+    }
 
+    notifyListeners(...args) {
+        this.listeners = this.listeners.filter(
+            (listener) => listener(this, ...args) !== false
+        );
+    }
     get isInitialized() {
         return this._initializeTask !== null && this._initializeTask.done;
     }
@@ -23,7 +39,9 @@ class User {
 
     async _initialize() {
         if (this.model === null) {
-            this.model = new UserData(this.supabase, this.authId);
+            this.model = new UserData(this.supabase, this.authId).listen(
+                this.boundNotifyListeners
+            );
         }
         await this.model.fetchUserProfile();
         await this.model.fetchOrganizations();
@@ -51,7 +69,7 @@ class User {
                 this.model.authId,
                 organization.id,
                 setAsAdmin
-            );
+            ).listen(this.model.boundNotifyListeners);
         }
         this.model.saveAllToSupabase(this.supabase);
     }

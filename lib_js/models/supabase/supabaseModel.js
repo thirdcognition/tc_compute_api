@@ -10,6 +10,8 @@ export class SupabaseModel {
     constructor(args) {
         this.attributes = {}; // Combined object for data, dataTypes, and dbColumn
         this.dirty = true;
+        this.listeners = []; // Array to store listener callbacks
+        this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
         for (const [key, field] of Object.entries(
             this.constructor.TABLE_FIELDS
         )) {
@@ -29,11 +31,22 @@ export class SupabaseModel {
 
         return new Proxy(this, {
             get(target, prop) {
-                // console.trace("get", prop);
+                // console.log("get", prop);
+                if (
+                    prop === "constructor" ||
+                    prop === "prototype" ||
+                    typeof target[prop] === "function"
+                ) {
+                    return target[prop];
+                }
                 if (prop === "TABLE_NAME" || prop === "TABLE_FIELDS") {
                     return target.constructor[prop];
                 }
-                if (prop === "dirty" || prop === "attributes") {
+                if (
+                    prop === "dirty" ||
+                    prop === "attributes" ||
+                    prop === "listeners"
+                ) {
                     return target[prop];
                 }
                 if (prop in target.attributes) {
@@ -76,7 +89,7 @@ export class SupabaseModel {
                         }
                     }
                     target[prop] = value;
-                } else if (prop === "dirty") {
+                } else if (prop === "dirty" || prop === "listeners") {
                     target[prop] = value;
                 } else {
                     throw new Error(`${prop} is not a valid attribute`);
@@ -94,6 +107,22 @@ export class SupabaseModel {
         });
     }
 
+    listen(callback) {
+        if (
+            typeof callback === "function" &&
+            this.listeners.indexOf(callback) === -1
+        ) {
+            this.listeners.push(callback);
+        }
+        return this;
+    }
+
+    notifyListeners(...args) {
+        this.listeners = this.listeners.filter(
+            (listener) => listener(this, ...args) !== false
+        );
+    }
+
     getAttribute(name) {
         if (name in this.attributes) {
             return this.attributes[name];
@@ -106,6 +135,7 @@ export class SupabaseModel {
             if (this.constructor.validateAttribute(name, value)) {
                 this.dirty = true;
                 this.attributes[name] = value;
+                this.notifyListeners(); // Notify listeners on attribute set
             } else {
                 throw new Error(`Invalid value ${value} for attribute ${name}`);
             }
@@ -528,6 +558,7 @@ export class SupabaseModel {
             }
         }
         this.dirty = false;
+        this.notifyListeners(); // Notify listeners on update from DB data
     }
 
     static fromDbData(dbData) {

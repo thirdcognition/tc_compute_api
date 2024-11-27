@@ -7,18 +7,34 @@ import {
 
 class LlmConversation {
     constructor(supabase, authId, organizationId) {
+        this.listeners = [];
+        this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
         this.supabase = supabase;
         this.conversationData = new LlmConversationData(
             supabase,
             authId,
             organizationId
-        );
+        ).listen(this.boundNotifyListeners);
+    }
+    listen(callback) {
+        if (
+            typeof callback === "function" &&
+            this.listeners.indexOf(callback) === -1
+        ) {
+            this.listeners.push(callback);
+        }
+        return this;
     }
 
+    notifyListeners(...args) {
+        this.listeners = this.listeners.filter(
+            (listener) => listener(this, ...args) !== false
+        );
+    }
     async newMessage(model, initialMessage = null, initialResponse = null) {
         const conversation = new LlmConversationModel({
             startTime: new Date().toISOString()
-        });
+        }).listen(this.boundNotifyListeners);
         await conversation.create(this.supabase);
 
         if (initialMessage !== null) {
@@ -27,7 +43,7 @@ class LlmConversation {
                 model: model,
                 type: "human",
                 conversationId: conversation.id
-            });
+            }).listen(this.boundNotifyListeners);
             await message.create(this.supabase);
         }
 
@@ -37,7 +53,7 @@ class LlmConversation {
                 model: model,
                 type: "ai",
                 conversationId: conversation.id
-            });
+            }).listen(this.boundNotifyListeners);
             await response.create(this.supabase);
         }
     }

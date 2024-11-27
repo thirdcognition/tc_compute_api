@@ -23,6 +23,8 @@ export class UserOrganizationRequestData {
 
 export class UserData {
     constructor(supabase, authId, userData = null) {
+        this.listeners = [];
+        this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
         this.authId = authId;
         this.supabase = supabase;
         this.profile = userData;
@@ -33,6 +35,22 @@ export class UserData {
         this.asUser = null;
         this.userInAclGroup = null;
         this.aclGroup = null;
+    }
+
+    listen(callback) {
+        if (
+            typeof callback === "function" &&
+            this.listeners.indexOf(callback) === -1
+        ) {
+            this.listeners.push(callback);
+        }
+        return this;
+    }
+
+    notifyListeners(...args) {
+        this.listeners = this.listeners.filter(
+            (listener) => listener(this, ...args) !== false
+        );
     }
 
     async saveAllToSupabase() {
@@ -111,6 +129,7 @@ export class UserData {
                 this.supabase,
                 { auth_id: this.authId }
             );
+            this.profile.listen(this.boundNotifyListeners);
         }
         return this.profile || null;
     }
@@ -121,8 +140,8 @@ export class UserData {
                 .from("organizations")
                 .select("*, organization_users(auth_id)")
                 .eq("organization_users.auth_id", this.authId);
-            this.organizations = response.data.map(
-                (data) => new OrganizationsModel(data)
+            this.organizations = response.data.map((data) =>
+                new OrganizationsModel(data).listen(this.boundNotifyListeners)
             );
         }
         return this.organizations;
@@ -134,11 +153,12 @@ export class UserData {
             if (this.organizations) {
                 this.teams = {};
                 for (const organization of this.organizations) {
-                    this.teams[organization.id] =
+                    this.teams[organization.id] = (
                         await OrganizationTeamModel.fetchExistingFromSupabase(
                             this.supabase,
                             { organizationId: organization.id }
-                        );
+                        )
+                    ).listen(this.boundNotifyListeners);
                 }
             }
         }
@@ -151,11 +171,12 @@ export class UserData {
             if (this.organizations) {
                 this.roles = {};
                 for (const organization of this.organizations) {
-                    this.roles[organization.id] =
+                    this.roles[organization.id] = (
                         await OrganizationRoleModel.fetchExistingFromSupabase(
                             this.supabase,
                             { organization_id: organization.id }
-                        );
+                        )
+                    ).listen(this.boundNotifyListeners);
                 }
             }
         }
@@ -165,11 +186,12 @@ export class UserData {
     async fetchMemberships(refresh = false) {
         if (!this.memberships || refresh) {
             this.memberships = {};
-            const memberships =
+            const memberships = (
                 await OrganizationTeamMembersModel.fetchExistingFromSupabase(
                     this.supabase,
                     { auth_id: this.authId }
-                );
+                )
+            ).listen(this.boundNotifyListeners);
             for (const membership of memberships) {
                 const organizationId = membership.organizationId;
                 if (!this.memberships[organizationId]) {
@@ -184,11 +206,12 @@ export class UserData {
     async fetchAsUser(refresh = false) {
         if (!this.asUser || refresh) {
             this.asUser = {};
-            const users =
+            const users = (
                 await OrganizationUsersModel.fetchExistingFromSupabase(
                     this.supabase,
                     { auth_id: this.authId }
-                );
+                )
+            ).listen(this.boundNotifyListeners);
             for (const user of users) {
                 this.asUser[user.organizationId] = user;
             }
@@ -198,18 +221,20 @@ export class UserData {
 
     async fetchAcl(refresh = false) {
         if (!this.userInAclGroup || refresh) {
-            this.userInAclGroup =
+            this.userInAclGroup = (
                 await ACLGroupUsersModel.fetchExistingFromSupabase(
                     this.supabase,
                     { auth_id: this.authId }
-                );
+                )
+            ).listen(this.boundNotifyListeners);
             const aclGroupIds = this.userInAclGroup.map(
                 (group) => group.aclGroupId
             );
-            this.aclGroup = await ACLGroupModel.fetchExistingFromSupabase(
-                this.supabase,
-                { id: aclGroupIds }
-            );
+            this.aclGroup = (
+                await ACLGroupModel.fetchExistingFromSupabase(this.supabase, {
+                    id: aclGroupIds
+                })
+            ).listen(this.boundNotifyListeners);
         }
         return this.userInAclGroup;
     }
