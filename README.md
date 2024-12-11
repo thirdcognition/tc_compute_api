@@ -55,6 +55,49 @@ We also expose port 8080 with the `-p 8080:8080` option.
 docker run -e OPENAI_API_KEY=$OPENAI_API_KEY -p 8080:8080 my-langserve-app
 ```
 
+## Redis Setup for Celery
+
+To run Celery, you need a Redis instance. You can easily set up a local Redis container using Docker. This is necessary because Celery uses Redis as a message broker and backend.
+
+### Installing Redis with Docker
+
+To install and run Redis locally, execute the following command:
+
+```shell
+docker run --name tc-redis -d -p 6379:6379 redis
+```
+
+This command will pull the Redis image from Docker Hub and run it in a detached mode, exposing it on the default port 6379, which matches the default configuration in the project.
+
+## Configuring Google TTS and API Keys
+
+To use Google TTS and other services, you need to configure your API keys in a `.env` file.
+
+### Setting Up the .env File
+
+1. Create a `.env` file in the root directory of the project.
+2. Add your API keys and other sensitive information to the `.env` file. For example:
+
+    ```plaintext
+    GEMINI_API_KEY=your_gemini_api_key_here
+    ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+    OPENAI_API_KEY=your_openai_api_key_here
+    ```
+
+### Setting Up Google TTS
+
+To use Google's Multispeaker TTS model, follow these steps:
+
+1. Enable the Cloud Text-to-Speech API on your Google Cloud project:
+   - Go to [Google Cloud Console](https://console.cloud.google.com/apis/dashboard).
+   - Select your project or create a new one.
+   - Click "+ ENABLE APIS AND SERVICES" and search for "text-to-speech".
+   - Enable the "Cloud Text-to-Speech API".
+
+2. Add the Cloud Text-to-Speech API permission to your API key:
+   - Go to [Google Cloud Credentials](https://console.cloud.google.com/apis/credentials).
+   - Select your API key and add the Cloud Text-to-Speech API under API Restrictions.
+
 ## Testing
 
 ### Running Tests with Poetry

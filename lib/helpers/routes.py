@@ -3,7 +3,7 @@ from postgrest import APIError
 from pydantic import ValidationError
 from supabase import AuthApiError
 
-from lib.load_env import IN_PRODUCTION
+from lib.models.config.default_env import IN_PRODUCTION
 
 
 def handle_exception(e: Exception, default_message: str, status_code: int = None):

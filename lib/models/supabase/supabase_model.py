@@ -6,7 +6,7 @@ from pydantic.fields import FieldInfo
 from supabase.client import AsyncClient
 from postgrest import APIResponse
 
-from lib.load_env import logger
+from lib.models.config.logging import logger
 
 T = TypeVar("T", bound="SupabaseModel")
 

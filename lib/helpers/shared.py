@@ -7,7 +7,8 @@ from pydantic import BaseModel
 import yaml
 from langchain_core.messages import BaseMessage
 from langchain_core.documents import Document
-from lib.load_env import DEBUGMODE
+
+from lib.models.config.default_env import DEBUGMODE
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))

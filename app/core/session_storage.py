@@ -7,7 +7,8 @@ from supabase import ClientOptions
 
 from typing import Dict, Any, Optional
 
-from lib.load_env import SETTINGS, logger
+from lib.load_env import SETTINGS
+from lib.models.config.logging import logger
 
 
 async def get_supabase_client(access_token: str | None = None) -> AsyncClient:

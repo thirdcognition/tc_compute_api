@@ -2,11 +2,49 @@
 
 SERVER_PORT=${SERVER_PORT:-8080}
 
+# Function to handle cleanup on script exit
+cleanup() {
+    echo "Stopping Uvicorn..."
+    kill "$UVICORN_PID"
+
+    echo "Stopping Celery worker..."
+    kill "$CELERY_WORKER_PID"
+
+    echo "Stopping Flower..."
+    kill "$FLOWER_PID"
+
+    wait
+    echo "Shutdown complete."
+}
+
+# Trap SIGINT and call cleanup()
+trap cleanup SIGINT
+
 # Check if running inside Docker
 if [ -f /.dockerenv ]; then
     echo "Running inside Docker, starting server without reload."
-    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT"
+    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" &
+    UVICORN_PID=$!
+
+    echo "Starting Celery worker"
+    celery -A app.core.celery_app worker &
+    CELERY_WORKER_PID=$!
+
+    echo "Starting Flower on port $FLOWER_PORT"
+    flower -A app.core.celery_app &
+    FLOWER_PID=$!
 else
     echo "Not running inside Docker, starting server with reload."
-    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload
+    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload &
+    UVICORN_PID=$!
+
+    echo "Starting Celery worker"
+    celery -A app.core.celery_app worker &
+    CELERY_WORKER_PID=$!
+
+    echo "Starting Flower on port $FLOWER_PORT"
+    celery -A app.core.celery_app flower &
+    FLOWER_PID=$!
 fi
+
+wait

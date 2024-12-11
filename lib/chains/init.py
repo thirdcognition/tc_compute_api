@@ -18,9 +18,10 @@ from langchain_core.embeddings import Embeddings
 from lib.chains.base import BaseChain
 from lib.chains.chain import Chain
 from lib.load_env import (
-    DEBUGMODE,
-    DEVMODE,
     SETTINGS,
+)
+from lib.models.config.default_env import DEBUGMODE, DEVMODE
+from lib.models.config.llm_settings import (
     EmbeddingModelSettings,
     EmbeddingProviderSettings,
     ProviderModelSettings,
