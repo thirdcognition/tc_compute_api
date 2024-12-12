@@ -1,8 +1,8 @@
 import json
 from uuid import UUID
-from pydantic import Field, Json, field_validator
+from pydantic import Field, field_validator
 from datetime import datetime
-from typing import ClassVar, List, Optional
+from typing import ClassVar, Dict, List, Optional
 from supabase.client import AsyncClient
 
 from lib.models.supabase.supabase_model import SupabaseModel
@@ -15,7 +15,7 @@ class LlmConversationModel(SupabaseModel):
     end_time: Optional[datetime] = Field(default=None)
     title: Optional[str] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
     organization_id: Optional[UUID] = Field(default=None)

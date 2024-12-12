@@ -5,7 +5,7 @@ from typing import ClassVar, Optional, List, Dict
 from lib.models.structures.journey_template import JourneyItemType, JourneyTemplateModel
 from lib.models.supabase.supabase_model import SupabaseModel
 from uuid import UUID
-from pydantic import Field, Json, field_validator
+from pydantic import Field, field_validator
 from supabase.client import AsyncClient
 import uuid
 
@@ -160,7 +160,7 @@ class JourneyVersionModel(SupabaseModel):
     template_id: Optional[UUID] = Field(default=None)
     name: str
     description: Optional[str] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
@@ -337,8 +337,8 @@ class JourneyItemVersionModel(SupabaseModel):
     journey_id: UUID
     name: str
     type: Optional[JourneyItemType] = Field(default=None)
-    data: Optional[Json] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    data: Optional[Dict] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)

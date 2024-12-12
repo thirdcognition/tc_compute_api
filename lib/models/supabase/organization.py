@@ -1,7 +1,7 @@
 import json
-from typing import ClassVar, Optional
+from typing import ClassVar, Dict, Optional
 from uuid import UUID
-from pydantic import Field, Json, field_validator
+from pydantic import Field, field_validator
 from pydantic.types import PositiveInt
 from datetime import datetime
 from supabase.client import AsyncClient
@@ -17,7 +17,7 @@ class UserProfileModel(SupabaseModel):
     email: Optional[str] = Field(default=None)
     name: Optional[str] = Field(default=None)
     profile_picture: Optional[str] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -40,7 +40,7 @@ class OrganizationRoleModel(SupabaseModel):
     name: str
     description: Optional[str] = Field(default=None)
     seniority: PositiveInt
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -60,7 +60,7 @@ class OrganizationTeamModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "organization_team"
     id: Optional[UUID] = Field(default=None)
     name: str
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -145,7 +145,7 @@ class OrganizationUsersModel(SupabaseModel):
     auth_id: Optional[UUID] = Field(default=None)
     user_id: Optional[UUID] = Field(default=None)
     organization_id: Optional[UUID] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     is_admin: bool = Field(default=False)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
@@ -284,7 +284,7 @@ class OrganizationsModel(SupabaseModel):
     name: Optional[str] = Field(default=None)
     website: Optional[str] = Field(default=None)
     logo: Optional[str] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)

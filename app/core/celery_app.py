@@ -5,6 +5,7 @@ from celery import Celery, Task
 from typing import Any, Callable, Coroutine, ParamSpec, TypeVar
 from asgiref import sync
 
+from lib.helpers.panel import PublicPanelRequestData, create_public_panel
 from lib.load_env import SETTINGS
 
 _P = ParamSpec("_P")
@@ -79,3 +80,15 @@ async def test_task(self: Task):
     """
     await asyncio.sleep(10)  # Simulate a delay of 10 seconds
     return "Test task executed successfully!"
+
+
+@async_task(celery_app, bind=True)
+async def create_public_panel_task(self: Task, access_token, request_data_json):
+    """
+    A simple asynchronous test task for Celery that takes 10 seconds to complete.
+
+    Returns:
+        str: A message indicating the task was executed.
+    """
+    request_data = PublicPanelRequestData.model_validate_json(request_data_json)
+    return await create_public_panel(access_token, request_data, self.request)

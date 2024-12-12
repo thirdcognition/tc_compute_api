@@ -32,3 +32,16 @@ async def get_panel_audio(supabase: AsyncClient, audio_id: UUID) -> PanelAudio:
     if not audio:
         raise ValueError("Panel audio not found")
     return audio
+
+
+# New functions to list transcripts and audios
+async def list_panel_transcripts(
+    supabase: AsyncClient,
+) -> List[PanelTranscript]:
+    return await PanelTranscript.fetch_existing_from_supabase(supabase)
+
+
+async def list_panel_audios(
+    supabase: AsyncClient,
+) -> List[PanelAudio]:
+    return await PanelAudio.fetch_existing_from_supabase(supabase)

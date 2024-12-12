@@ -1,9 +1,9 @@
 import json
 from datetime import datetime
-from typing import ClassVar, Optional
+from typing import ClassVar, Dict, Optional
 from lib.models.supabase.supabase_model import SupabaseModel
 from uuid import UUID
-from pydantic import Field, Json, field_validator
+from pydantic import Field, field_validator
 from supabase.client import AsyncClient
 
 
@@ -13,7 +13,7 @@ class JourneyProgressModel(SupabaseModel):
     journey_id: UUID
     journey_version_id: UUID
     assigned_at: Optional[datetime] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
@@ -181,7 +181,7 @@ class JourneyItemProgressModel(SupabaseModel):
     journey_progress_id: UUID
     journey_item_id: UUID
     journey_item_version_id: UUID
-    data: Optional[Json] = Field(default=None)
+    data: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)

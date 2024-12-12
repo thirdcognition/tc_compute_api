@@ -23,7 +23,7 @@ Authorization: Bearer {{accessToken}}
 
 {
   "input_source": "https://en.wikipedia.org/wiki/Lorem_ipsum",
-  "tts_model": "geminimulti",
+  "tts_model": "gemini",
   "longform": false,
   "bucket_name": "public_panels"
 }

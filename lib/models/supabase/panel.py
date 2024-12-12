@@ -1,7 +1,7 @@
 from datetime import datetime, time
-from typing import ClassVar, Optional, List
+from typing import ClassVar, Dict, Optional, List
 from uuid import UUID
-from pydantic import Field, Json
+from pydantic import Field
 from lib.models.supabase.supabase_model import SupabaseModel
 from lib.models.supabase.public_panel import ProcessState
 
@@ -17,7 +17,7 @@ class PanelAudio(SupabaseModel):
     bucket_id: Optional[str] = Field(default=None)
     process_state: Optional[ProcessState] = Field(default=None)
     process_fail_message: Optional[str] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
@@ -33,7 +33,7 @@ class PanelDiscussion(SupabaseModel):
     tags: Optional[List[str]] = Field(default=None)
     file: Optional[str] = Field(default=None)
     bucket_id: Optional[str] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
@@ -49,10 +49,10 @@ class PanelTranscript(SupabaseModel):
     title: Optional[str] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
     type: Optional[str] = Field(default=None)
-    transcript: Optional[Json] = Field(default=None)
+    transcript: Optional[Dict] = Field(default=None)
     process_state: Optional[ProcessState] = Field(default=None)
     process_fail_message: Optional[str] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
@@ -69,7 +69,7 @@ class PanelTranscriptOrder(SupabaseModel):
     public_transcript_id: Optional[UUID] = Field(default=None)
     before_id: Optional[UUID] = Field(default=None)
     after_id: Optional[UUID] = Field(default=None)
-    data: Optional[Json] = Field(default=None)
+    data: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -84,7 +84,7 @@ class PanelTranscriptSourceReference(SupabaseModel):
     transcript_id: UUID
     source_version_id: UUID
     type: Optional[str] = Field(default=None)
-    data: Optional[Json] = Field(default=None)
+    data: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>User Input Form</title>
+        <!-- Tailwind CSS CDN -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+            rel="stylesheet"
+        />
+        <!-- React Bootstrap CSS -->
+        <link
+            rel="stylesheet"
+            href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        />
+    </head>
+    <body class="font-sans m-5">
+        <div id="root"></div>
+
+        <!-- React and ReactDOM CDN -->
+        <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+        <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+        <!-- React Bootstrap JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap/1.6.1/react-bootstrap.min.js"></script>
+        <!-- React Icons CDN -->
+        <script src="https://unpkg.com/react-icons@4.2.0/dist/react-icons.min.js"></script>
+
+        <!-- Custom JS Components -->
+        <script type="module" src="./js/App.js"></script>
+        <script type="module" src="./js/LoginForm.js"></script>
+        <script type="module" src="./js/AddShow.js"></script>
+        <script type="module" src="./js/PanelDetails.js"></script>
+
+        <script type="module">
+            import App from "./js/App.js";
+            import LoginForm from "./js/LoginForm.js";
+            import AddShow from "./js/AddShow.js";
+            import PanelDetails from "./js/PanelDetails.js";
+
+            ReactDOM.render(
+                React.createElement(App),
+                document.getElementById("root")
+            );
+        </script>
+    </body>
+</html>

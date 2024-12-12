@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import ClassVar, Optional
+from typing import ClassVar, Dict, Optional
 from uuid import UUID
-from pydantic import field_validator, Field, Json
+from pydantic import field_validator, Field
 from enum import Enum
 import json
 from supabase.client import AsyncClient
@@ -41,8 +41,8 @@ class SourceChunkModel(SupabaseModel):
     source_version_id: Optional[UUID] = Field(default=None)
     chunk_next_id: Optional[UUID] = Field(default=None)
     chunk_prev_id: Optional[UUID] = Field(default=None)
-    data: Optional[Json] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    data: Optional[Dict] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     organization_id: Optional[UUID] = Field(default=None)
@@ -61,7 +61,7 @@ class SourceRelationshipModel(SupabaseModel):
     source_version_id: UUID
     related_source_version_id: UUID
     relationship_type: Optional[str] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -126,8 +126,8 @@ class SourceVersionModel(SupabaseModel):
     title: Optional[str] = Field(default=None)
     lang: Optional[str] = Field(default=None)
     content_hash: Optional[str] = Field(default=None)
-    data: Optional[Json] = Field(default=None)
-    metadata: Optional[Json] = Field(default=None)
+    data: Optional[Dict] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)

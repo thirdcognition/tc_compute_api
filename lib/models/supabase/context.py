@@ -1,15 +1,15 @@
 import json
 from datetime import datetime
-from typing import ClassVar, Optional
+from typing import ClassVar, Dict, Optional
 from lib.models.supabase.supabase_model import SupabaseModel
 from uuid import UUID
-from pydantic import Field, Json, field_validator
+from pydantic import Field, field_validator
 
 
 class ContextQuery(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "context_query"
     id: UUID
-    params: Optional[Json] = Field(default=None)
+    params: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
@@ -28,7 +28,7 @@ class ContextQueryResponse(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "context_query_response"
     id: UUID
     query_id: Optional[UUID] = Field(default=None)
-    response_data: Optional[Json] = Field(default=None)
+    response_data: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -49,7 +49,7 @@ class ContextQueryResult(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "context_query_result"
     id: UUID
     query_id: Optional[UUID] = Field(default=None)
-    result_data: Optional[Json] = Field(default=None)
+    result_data: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
