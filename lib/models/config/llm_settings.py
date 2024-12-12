@@ -45,7 +45,14 @@ class ModelDefaults(BaseSettings):
 
 class ProviderSettings(BaseSettings):
     type: Literal[
-        "OLLAMA", "GROQ", "BEDROCK", "OPENAI", "ANTHROPIC", "AZURE", "AZURE_ML"
+        "OLLAMA",
+        "GROQ",
+        "BEDROCK",
+        "OPENAI",
+        "ANTHROPIC",
+        "AZURE",
+        "AZURE_ML",
+        "GEMINI",
     ]
     class_model: Optional[Any] = None
     url: Optional[str] = None

@@ -41,6 +41,8 @@ def setup_llm(SETTINGS: Settings):
             provider_settings.api_version = os.getenv("AZURE_OPENAI_API_VERSION", "")
         elif provider == "AZURE_ML":
             provider_settings.api_key = os.getenv("AZUREML_APIKEY", "")
+        elif provider == "GEMINI":
+            provider_settings.api_key = os.getenv(f"{provider}_API_KEY", "")
 
         for type in LLM_MODELS:
             type_model = os.getenv(f"{provider}_{type.upper()}_MODEL", "")

@@ -1,6 +1,14 @@
-from celery import Celery
 import aiohttp
+import asyncio
+from functools import wraps
+from celery import Celery, Task
+from typing import Any, Callable, Coroutine, ParamSpec, TypeVar
+from asgiref import sync
+
 from lib.load_env import SETTINGS
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 # from lib.models.config.logging import logger
 
@@ -45,3 +53,29 @@ async def check_task_status(task_id: str) -> str:
                 data = await response.json()
                 return data.get("state", "Unknown")
             return "Error"
+
+
+def async_task(app: Celery, *args: Any, **kwargs: Any):
+    def _decorator(func: Callable[_P, Coroutine[Any, Any, _R]]) -> Task:
+        sync_call = sync.AsyncToSync(func)
+
+        @app.task(*args, **kwargs)
+        @wraps(func)
+        def _decorated(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            return sync_call(*args, **kwargs)
+
+        return _decorated
+
+    return _decorator
+
+
+@async_task(app, bind=True)
+async def test_task(self: Task):
+    """
+    A simple asynchronous test task for Celery that takes 10 seconds to complete.
+
+    Returns:
+        str: A message indicating the task was executed.
+    """
+    await asyncio.sleep(10)  # Simulate a delay of 10 seconds
+    return "Test task executed successfully!"

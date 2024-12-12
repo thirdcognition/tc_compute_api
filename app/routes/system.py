@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.core.celery_app import check_task_status
+from app.core.celery_app import check_task_status, test_task
 
 router = APIRouter()
 
@@ -19,3 +19,15 @@ async def get_task_status(task_id: str):
     if status == "Error":
         raise HTTPException(status_code=404, detail="Task not found")
     return {"task_id": task_id, "status": status}
+
+
+@router.post("/system/start_test_task")
+async def start_test_task():
+    """
+    Endpoint to start the test task.
+
+    Returns:
+        str: The ID of the started task.
+    """
+    task = test_task.delay()
+    return {"task_id": task.id}

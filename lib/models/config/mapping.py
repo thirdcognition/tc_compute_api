@@ -12,6 +12,7 @@ from langchain_openai import ChatOpenAI
 from langchain_aws import ChatBedrock
 from langchain_groq import ChatGroq
 from langchain_community.chat_models.ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 LLM_MODEL_MAP: dict[str, BaseLLM] = {
     "OLLAMA": ChatOllama,
@@ -21,6 +22,7 @@ LLM_MODEL_MAP: dict[str, BaseLLM] = {
     "ANTHROPIC": ChatAnthropic,
     "AZURE": AzureChatOpenAI,
     "AZURE_ML": AzureMLChatOnlineEndpoint,
+    "GEMINI": ChatGoogleGenerativeAI,  # Added Google Gemini
 }
 
 # from langchain_core.embeddings import Embeddings

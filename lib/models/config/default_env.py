@@ -2,8 +2,9 @@ import os
 from dotenv import load_dotenv
 from langchain.globals import set_debug, set_verbose
 
-load_dotenv(os.path.join(os.path.dirname(__file__), "../", ".env"))
-print("Loading env: ", os.path.join(os.path.dirname(__file__), "../", ".env"))
+env_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../", ".env"))
+load_dotenv(env_file)
+print("Loading env: ", env_file)
 
 DEBUGMODE = os.getenv("LLM_DEBUG", "True") == "True" or False
 DEVMODE = os.getenv("LLM_DEV", "True") == "True" or False
