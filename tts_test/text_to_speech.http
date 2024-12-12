@@ -1,0 +1,5 @@
+### Text-to-Speech API Request
+POST https://texttospeech.googleapis.com/v1/text:synthesize?key=[google-api-key]
+Content-Type: application/json
+
+< ./request.json
