@@ -16,7 +16,7 @@ class ProcessState(str, Enum):
 
 class PublicPanelAudio(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "public_panel_audio"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     public_panel_id: UUID
     public_transcript_id: UUID
     title: Optional[str] = Field(default=None)
@@ -34,7 +34,7 @@ class PublicPanelAudio(SupabaseModel):
 
 class PublicPanelDiscussion(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "public_panel_discussion"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     title: Optional[str] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
     metadata: Optional[Json] = Field(default=None)
@@ -46,7 +46,7 @@ class PublicPanelDiscussion(SupabaseModel):
 
 class PublicPanelTranscript(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "public_panel_transcript"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     public_panel_id: UUID
     title: Optional[str] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
@@ -65,7 +65,7 @@ class PublicPanelTranscript(SupabaseModel):
 
 class PublicPanelTranscriptSourceReference(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "public_panel_transcript_source_reference"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     public_transcript_id: UUID
     source_version_id: UUID
     type: Optional[str] = Field(default=None)

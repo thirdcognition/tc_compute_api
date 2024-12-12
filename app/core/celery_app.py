@@ -13,7 +13,7 @@ _R = TypeVar("_R")
 # from lib.models.config.logging import logger
 
 # Initialize Celery with Redis settings from SETTINGS
-app = Celery(
+celery_app = Celery(
     "tc_compute_api",
     broker=SETTINGS.redis_broker_url,
     backend=SETTINGS.redis_backend_url,
@@ -21,7 +21,7 @@ app = Celery(
 )
 
 # Update Celery configuration with Celery and Flower host and port
-app.conf.update(
+celery_app.conf.update(
     result_expires=3600,
     broker_transport_options={
         "visibility_timeout": 3600,
@@ -33,7 +33,7 @@ app.conf.update(
 )
 
 if __name__ == "__main__":
-    app.start()
+    celery_app.start()
 
 
 async def check_task_status(task_id: str) -> str:
@@ -69,7 +69,7 @@ def async_task(app: Celery, *args: Any, **kwargs: Any):
     return _decorator
 
 
-@async_task(app, bind=True)
+@async_task(celery_app, bind=True)
 async def test_task(self: Task):
     """
     A simple asynchronous test task for Celery that takes 10 seconds to complete.

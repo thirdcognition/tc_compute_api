@@ -1,0 +1,39 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = user1@example.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}
+
+### Response
+@accessToken = {{login.response.body.$.access_token}}
+
+### Create Public Panel request
+# @name createPublicPanel
+POST {{host}}:{{port}}/public_panel/ HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "input_source": "https://en.wikipedia.org/wiki/Lorem_ipsum",
+  "tts_model": "geminimulti",
+  "longform": false,
+  "bucket_name": "public_panels"
+}
+
+### Response
+@panelId = {{createPublicPanel.response.body.$.panel_id}}
+@taskId = {{createPublicPanel.response.body.$.task_id}}
+
+### Check Task Status request
+# @name checkTaskStatus
+GET {{host}}:{{port}}/system/task_status/{{taskId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

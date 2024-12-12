@@ -8,7 +8,7 @@ from lib.models.supabase.public_panel import ProcessState
 
 class PanelAudio(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "panel_audio"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     panel_id: UUID
     transcript_id: UUID
     title: Optional[str] = Field(default=None)
@@ -28,7 +28,7 @@ class PanelAudio(SupabaseModel):
 
 class PanelDiscussion(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "panel_discussion"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     title: Optional[str] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
     file: Optional[str] = Field(default=None)
@@ -44,7 +44,7 @@ class PanelDiscussion(SupabaseModel):
 
 class PanelTranscript(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "panel_transcript"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     panel_id: UUID
     title: Optional[str] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
@@ -63,7 +63,7 @@ class PanelTranscript(SupabaseModel):
 
 class PanelTranscriptOrder(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "panel_transcript_order"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     panel_id: UUID
     transcript_id: Optional[UUID] = Field(default=None)
     public_transcript_id: Optional[UUID] = Field(default=None)
@@ -80,7 +80,7 @@ class PanelTranscriptOrder(SupabaseModel):
 
 class PanelTranscriptSourceReference(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "panel_transcript_source_reference"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     transcript_id: UUID
     source_version_id: UUID
     type: Optional[str] = Field(default=None)
