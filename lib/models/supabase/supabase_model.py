@@ -3,7 +3,7 @@ import json
 from typing import Any, ClassVar, Dict, Iterable, List, Optional, Type, TypeVar, Union
 from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
-from supabase.client import AsyncClient
+from supabase.client import AsyncClient, Client
 from postgrest import APIResponse
 
 from lib.models.config.logging import logger
@@ -28,6 +28,10 @@ class SupabaseModel(BaseModel):
         """Create a new record in the database."""
         return await self.save_to_supabase(supabase, self)
 
+    def create_sync(self, supabase: Client) -> T:
+        """Create a new record in the database (synchronous)."""
+        return self.save_to_supabase_sync(supabase, self)
+
     async def read(self, supabase: AsyncClient, id_column=None) -> T:
         """
         Read a record from the database based on the instance's id or a specified field,
@@ -40,17 +44,39 @@ class SupabaseModel(BaseModel):
 
         return await self.fetch_from_supabase(supabase, instance=self)
 
+    def read_sync(self, supabase: Client, id_column=None) -> T:
+        """
+        Read a record from the database based on the instance's id or a specified field,
+        and then update the current instance with the values (synchronous).
+        """
+        if id_column is not None:
+            return self.fetch_from_supabase_sync(
+                supabase, id_column=id_column, instance=self
+            )
+
+        return self.fetch_from_supabase_sync(supabase, instance=self)
+
     async def update(self, supabase: AsyncClient) -> T:
         """Update the record in the database if it has changed."""
         return await self.save_to_supabase(supabase, self)
 
+    def update_sync(self, supabase: Client) -> T:
+        """Update the record in the database if it has changed (synchronous)."""
+        return self.save_to_supabase_sync(supabase, self)
+
     async def delete(self, supabase: AsyncClient, id_column: str = "id") -> bool:
         """Delete the record from the database."""
-        # Use the instance's id to delete itself
         value = getattr(self, id_column, None)
         if value is None:
             raise ValueError(f"'{id_column}' is not set for this instance.")
         return await self.delete_from_supabase(supabase, value, id_column)
+
+    def delete_sync(self, supabase: Client, id_column: str = "id") -> bool:
+        """Delete the record from the database (synchronous)."""
+        value = getattr(self, id_column, None)
+        if value is None:
+            raise ValueError(f"'{id_column}' is not set for this instance.")
+        return self.delete_from_supabase_sync(supabase, value, id_column)
 
     async def exists(self, supabase: AsyncClient, id_column: str = None) -> bool:
         """Check if a record with the instance's id exists in the database."""
@@ -58,6 +84,13 @@ class SupabaseModel(BaseModel):
         if value is None:
             raise ValueError(f"'{id_column}' is not set for this instance.")
         return await self.exists_in_supabase(supabase, value, id_column)
+
+    def exists_sync(self, supabase: Client, id_column: str = None) -> bool:
+        """Check if a record with the instance's id exists in the database (synchronous)."""
+        value = getattr(self, id_column, None)
+        if value is None:
+            raise ValueError(f"'{id_column}' is not set for this instance.")
+        return self.exists_in_supabase_sync(supabase, value, id_column)
 
     @classmethod
     async def upsert_to_supabase(
@@ -68,11 +101,9 @@ class SupabaseModel(BaseModel):
         id_column: Union[str, List[str]] = "id",
     ) -> List[T]:
         """Upsert multiple records in the database."""
-        # Ensure TABLE_NAME is set
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
         upsert_data = []
-        # Collect data from each instance, ensuring to convert enums to strings
         for instance in instances:
             if instance.dirty:
                 data = instance._model_dump(exclude_none=True, exclude_unset=True)
@@ -81,7 +112,6 @@ class SupabaseModel(BaseModel):
                         data[key] = value.name
                 upsert_data.append(data)
 
-        # Perform a batch upsert if there is any data to upsert
         if upsert_data:
             response = (
                 await supabase.table(cls.TABLE_NAME)
@@ -89,26 +119,20 @@ class SupabaseModel(BaseModel):
                 .execute()
             )
 
-            # Map response data to instances by their IDs
             id_to_updated_data = {}
             if isinstance(id_column, list):
-                # For composite keys, use tuples as dictionary keys
                 for item in response.data:
                     id_keys = tuple(item[field] for field in id_column)
                     id_to_updated_data[id_keys] = item
             else:
-                # For single key case
                 id_to_updated_data = {item[id_column]: item for item in response.data}
 
-                # Update local instances using response data
                 for instance in instances:
                     if isinstance(id_column, list):
-                        # Build the tuple key for the current instance
                         instance_id = tuple(
                             instance.model_fields.get(field) for field in id_column
                         )
                     else:
-                        # Single key case
                         instance_id = instance.model_fields.get(id_column)
 
                     if (
@@ -120,7 +144,63 @@ class SupabaseModel(BaseModel):
                         for key, value in updated_data.items():
                             instance._set_attribute(key, value)
 
-                # Mark all instances as not dirty
+                for instance in instances:
+                    instance.dirty = False
+
+        return instances
+
+    @classmethod
+    def upsert_to_supabase_sync(
+        cls: Type[T],
+        supabase: Client,
+        instances: Iterable[T],
+        on_conflict: List[str] = ["id"],
+        id_column: Union[str, List[str]] = "id",
+    ) -> List[T]:
+        """Upsert multiple records in the database (synchronous)."""
+        assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
+
+        upsert_data = []
+        for instance in instances:
+            if instance.dirty:
+                data = instance._model_dump(exclude_none=True, exclude_unset=True)
+                for key, value in data.items():
+                    if isinstance(value, enum.Enum):
+                        data[key] = value.name
+                upsert_data.append(data)
+
+        if upsert_data:
+            response = (
+                supabase.table(cls.TABLE_NAME)
+                .upsert(upsert_data, on_conflict=on_conflict)
+                .execute()
+            )
+
+            id_to_updated_data = {}
+            if isinstance(id_column, list):
+                for item in response.data:
+                    id_keys = tuple(item[field] for field in id_column)
+                    id_to_updated_data[id_keys] = item
+            else:
+                id_to_updated_data = {item[id_column]: item for item in response.data}
+
+                for instance in instances:
+                    if isinstance(id_column, list):
+                        instance_id = tuple(
+                            instance.model_fields.get(field) for field in id_column
+                        )
+                    else:
+                        instance_id = instance.model_fields.get(id_column)
+
+                    if (
+                        instance.dirty
+                        and instance_id
+                        and instance_id in id_to_updated_data
+                    ):
+                        updated_data = id_to_updated_data[instance_id]
+                        for key, value in updated_data.items():
+                            instance._set_attribute(key, value)
+
                 for instance in instances:
                     instance.dirty = False
 
@@ -135,12 +215,10 @@ class SupabaseModel(BaseModel):
     ) -> T:
         if instance.dirty:
             data = instance._model_dump(exclude_none=True, exclude_unset=True)
-            # Convert enum types to strings
             for key, value in data.items():
                 if isinstance(value, enum.Enum):
                     data[key] = value.name
 
-            # Ensure TABLE_NAME is set
             assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
             if len(on_conflict) == 1:
@@ -164,7 +242,47 @@ class SupabaseModel(BaseModel):
                         await supabase.table(cls.TABLE_NAME).insert(data).execute()
                     )
 
-            # Update the instance with the data from the response
+            if response.data:
+                for key, value in response.data[0].items():
+                    instance._set_attribute(key, value)
+                instance.dirty = False
+
+        return instance
+
+    @classmethod
+    def save_to_supabase_sync(
+        cls: Type[T],
+        supabase: Client,
+        instance: T,
+        on_conflict: List[str] = ["id"],
+    ) -> T:
+        if instance.dirty:
+            data = instance._model_dump(exclude_none=True, exclude_unset=True)
+            for key, value in data.items():
+                if isinstance(value, enum.Enum):
+                    data[key] = value.name
+
+            assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
+
+            if len(on_conflict) == 1:
+                response = (
+                    supabase.table(cls.TABLE_NAME)
+                    .upsert(data, on_conflict=on_conflict)
+                    .execute()
+                )
+            else:
+                query = supabase.table(cls.TABLE_NAME).select("*")
+                for key in on_conflict:
+                    query = query.eq(key, data[key])
+                response: APIResponse = query.execute()
+                if response.data:
+                    query = supabase.table(cls.TABLE_NAME).update(data)
+                    for key in on_conflict:
+                        query = query.eq(key, data[key])
+                    response = query.execute()
+                else:
+                    response = supabase.table(cls.TABLE_NAME).insert(data).execute()
+
             if response.data:
                 for key, value in response.data[0].items():
                     instance._set_attribute(key, value)
@@ -178,14 +296,12 @@ class SupabaseModel(BaseModel):
         supabase: AsyncClient,
         value: Optional[Any] = None,
         id_column: str = "id",
-        instance: Optional[T] = None,  # Optional instance parameter
+        instance: Optional[T] = None,
     ) -> T:
-        # Ensure TABLE_NAME is set
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
         query = supabase.table(cls.TABLE_NAME).select("*")
         if instance and value is None:
-            # If instance is set and value is not set, try to look for id_column value from instance
             value = getattr(instance, id_column, None)
             if value is None:
                 raise ValueError(f"'{id_column}' is not set for the provided instance.")
@@ -201,7 +317,43 @@ class SupabaseModel(BaseModel):
 
         if data is not None:
             if not instance:
-                # Directly pass the data to the class constructor
+                instance = cls(**data)
+            else:
+                for key, val in data.items():
+                    instance._set_attribute(key, val)
+
+            instance.dirty = False
+            return instance
+
+        return None
+
+    @classmethod
+    def fetch_from_supabase_sync(
+        cls: Type[T],
+        supabase: Client,
+        value: Optional[Any] = None,
+        id_column: str = "id",
+        instance: Optional[T] = None,
+    ) -> T:
+        assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
+
+        query = supabase.table(cls.TABLE_NAME).select("*")
+        if instance and value is None:
+            value = getattr(instance, id_column, None)
+            if value is None:
+                raise ValueError(f"'{id_column}' is not set for the provided instance.")
+
+        if isinstance(value, dict):
+            for key, val in value.items():
+                query = query.eq(key, val)
+        else:
+            query = query.eq(id_column, value)
+
+        response: APIResponse = query.execute()
+        data: Optional[Dict[str, Any]] = response.data[0] if response.data else None
+
+        if data is not None:
+            if not instance:
                 instance = cls(**data)
             else:
                 for key, val in data.items():
@@ -220,7 +372,6 @@ class SupabaseModel(BaseModel):
         values: List[Any] = None,
         id_column: str = "id",
     ) -> List[T]:
-        # Ensure TABLE_NAME is set
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
         query = supabase.table(cls.TABLE_NAME).select("*")
@@ -246,21 +397,51 @@ class SupabaseModel(BaseModel):
 
         return [cls(**data) for data in response.data]
 
+    @classmethod
+    def fetch_existing_from_supabase_sync(
+        cls: Type[T],
+        supabase: Client,
+        filter: Any = None,
+        values: List[Any] = None,
+        id_column: str = "id",
+    ) -> List[T]:
+        assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
+
+        query = supabase.table(cls.TABLE_NAME).select("*")
+
+        if filter is not None:
+            if isinstance(filter, dict):
+                for key, item in filter.items():
+                    query = query.eq(key, item)
+            else:
+                query.eq(id_column, filter)
+
+        if values is not None:
+            for value in values:
+                if isinstance(value, dict):
+                    for key, item in value.items():
+                        query.in_(key, item)
+                else:
+                    query.in_(id_column, value)
+
+        response: APIResponse = query.execute()
+        if not response.data:
+            return []
+
+        return [cls(**data) for data in response.data]
+
     def _set_attribute(self, key: str, value: Any):
         if key in self.model_fields:
             field_info: FieldInfo = self.model_fields[key]
 
-            # Check if the attribute type is an enum
             if isinstance(field_info.annotation, enum.EnumMeta):
                 try:
                     value = field_info.annotation(value)
                 except ValueError:
-                    # Log the inability to match the enum value
                     logger.warning(
                         f"Value '{value}' for '{key}' is not a valid {field_info.annotation}. Using default value if defined."
                     )
 
-                    # Use the default value if it's defined, otherwise set to None
                     value = (
                         field_info.get_default()
                         if field_info.default is not None
@@ -273,11 +454,9 @@ class SupabaseModel(BaseModel):
     async def exists_in_supabase(
         cls: Type[T], supabase: AsyncClient, value: Any = None, id_column: str = "id"
     ) -> bool:
-        # Ensure TABLE_NAME is set
         assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
 
         selected_fields = []
-        # Determine fields to select
         if id_column is not None:
             selected_fields = [id_column]
 
@@ -291,9 +470,7 @@ class SupabaseModel(BaseModel):
         else:
             query = supabase.table(cls.TABLE_NAME).select('"')
 
-        # Adjust query based on whether value is a dict or a single value
         if value is None:
-            # When value is None, use the id_column's current instance value
             raise ValueError("Value must be provided when using class method.")
         elif isinstance(value, dict):
             for key, val in value.items():
@@ -302,7 +479,37 @@ class SupabaseModel(BaseModel):
             query = query.eq(id_column or "id", value)
 
         response: APIResponse = await query.execute()
-        # print(f"Response: {response}")
+        return len(response.data) > 0
+
+    @classmethod
+    def exists_in_supabase_sync(
+        cls: Type[T], supabase: Client, value: Any = None, id_column: str = "id"
+    ) -> bool:
+        assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
+
+        selected_fields = []
+        if id_column is not None:
+            selected_fields = [id_column]
+
+        if isinstance(value, type(T)):
+            value = getattr(value, id_column)
+        elif isinstance(value, dict):
+            selected_fields.extend(value.keys())
+
+        if len(selected_fields) > 0:
+            query = supabase.table(cls.TABLE_NAME).select(*selected_fields)
+        else:
+            query = supabase.table(cls.TABLE_NAME).select('"')
+
+        if value is None:
+            raise ValueError("Value must be provided when using class method.")
+        elif isinstance(value, dict):
+            for key, val in value.items():
+                query = query.eq(key, val)
+        else:
+            query = query.eq(id_column or "id", value)
+
+        response: APIResponse = query.execute()
         return len(response.data) > 0
 
     @classmethod
@@ -323,10 +530,34 @@ class SupabaseModel(BaseModel):
         else:
             query = query.eq(id_column, value)
 
-        # Execute the query and check if any rows were affected.
         response = await query.execute()
 
-        # Check the response to determine if a row was deleted.
+        if hasattr(response, "data") and len(response.data) > 0:
+            print(response.data)
+            return True
+
+        return False
+
+    @classmethod
+    def delete_from_supabase_sync(
+        cls: Type[T], supabase: Client, value: Any = None, id_column: str = "id"
+    ) -> bool:
+        assert cls.TABLE_NAME, "TABLE_NAME must be set for the model."
+
+        query = supabase.table(cls.TABLE_NAME).delete()
+
+        if value is None:
+            raise ValueError(
+                f"Value must be provided to delete an item based on '{id_column}'."
+            )
+        elif isinstance(value, dict):
+            for key, val in value.items():
+                query = query.eq(key, val)
+        else:
+            query = query.eq(id_column, value)
+
+        response = query.execute()
+
         if hasattr(response, "data") and len(response.data) > 0:
             print(response.data)
             return True

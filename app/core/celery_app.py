@@ -5,7 +5,6 @@ from celery import Celery, Task
 from typing import Any, Callable, Coroutine, ParamSpec, TypeVar
 from asgiref import sync
 
-from lib.helpers.panel import PublicPanelRequestData, create_public_panel
 from lib.load_env import SETTINGS
 
 _P = ParamSpec("_P")
@@ -18,6 +17,7 @@ celery_app = Celery(
     "tc_compute_api",
     broker=SETTINGS.redis_broker_url,
     backend=SETTINGS.redis_backend_url,
+    include=["lib.helpers.panel"],
     # log=logger,
 )
 
@@ -50,15 +50,66 @@ async def check_task_status(task_id: str) -> str:
     flower_url = f"http://{SETTINGS.flower_host}:{SETTINGS.flower_port}"
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{flower_url}/api/task/info/{task_id}") as response:
+            print(response)
             if response.status == 200:
                 data = await response.json()
                 return data.get("state", "Unknown")
             return "Error"
 
 
+# def ensure_event_loop(func):
+#     def wrapper(*args, **kwargs):
+#         try:
+#             try:
+#                 loop = asyncio.get_event_loop()
+#             except RuntimeError:
+#                 loop = asyncio.new_event_loop()
+#                 asyncio.set_event_loop(loop)
+
+#             return loop.run_until_complete(asyncio.ensure_future(func(*args, **kwargs)))
+
+#         finally:
+#             # Properly close the loop
+#             loop.close()
+
+#     # This ensures the resulting function after decorating retains important properties
+#     wrapper.__name__ = func.__name__
+#     wrapper.__doc__ = func.__doc__
+
+#     return wrapper
+
+
+# def async_task(app: Celery, *args: Any, **kwargs: Any):
+#     def _decorator(func: Callable[_P, Coroutine[Any, Any, _R]]) -> Task:
+#         sync_call = sync.AsyncToSync(func)
+
+#         @app.task(*args, **kwargs)
+#         @wraps(func)
+#         def _decorated(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+#             return sync_call(*args, **kwargs)
+
+#         return _decorated
+
+#     return _decorator
+
+
 def async_task(app: Celery, *args: Any, **kwargs: Any):
     def _decorator(func: Callable[_P, Coroutine[Any, Any, _R]]) -> Task:
-        sync_call = sync.AsyncToSync(func)
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            if loop.is_running():
+                return await func(*args, **kwargs)
+            else:
+                return await loop.run_until_complete(
+                    asyncio.ensure_future(func(*args, **kwargs))
+                )
+
+        sync_call = sync.AsyncToSync(wrapper)
 
         @app.task(*args, **kwargs)
         @wraps(func)
@@ -80,15 +131,3 @@ async def test_task(self: Task):
     """
     await asyncio.sleep(10)  # Simulate a delay of 10 seconds
     return "Test task executed successfully!"
-
-
-@async_task(celery_app, bind=True)
-async def create_public_panel_task(self: Task, access_token, request_data_json):
-    """
-    A simple asynchronous test task for Celery that takes 10 seconds to complete.
-
-    Returns:
-        str: A message indicating the task was executed.
-    """
-    request_data = PublicPanelRequestData.model_validate_json(request_data_json)
-    return await create_public_panel(access_token, request_data, self.request)

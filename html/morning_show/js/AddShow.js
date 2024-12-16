@@ -1,5 +1,5 @@
 const { Form, Button } = ReactBootstrap;
-const { useState } = React;
+const { useState, useEffect } = React;
 
 function AddShow({
     title,
@@ -13,6 +13,8 @@ function AddShow({
     setSelectedPanel
 }) {
     const [linkFields, setLinkFields] = useState(links);
+    const [taskId, setTaskId] = useState(null);
+    const [taskStatus, setTaskStatus] = useState(null);
 
     const handleLinkChange = (index, value) => {
         const newLinkFields = [...linkFields];
@@ -23,6 +25,34 @@ function AddShow({
 
     const addLinkField = () => {
         setLinkFields([...linkFields, ""]);
+    };
+
+    const pollTaskStatus = async (id) => {
+        try {
+            const response = await fetch(
+                `http://${window.location.hostname}:4000/system/task_status/${id}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
+            );
+            const result = await response.json();
+            setTaskStatus(result.status);
+            if (result.status.toLower() === "completed") {
+                alert("Task completed successfully!");
+                fetchPanels(accessToken); // Update panel list after task completion
+                setSelectedPanel(result.panel_id); // Automatically switch to the new panel
+            } else if (result.status.toLowerCase() === "failure") {
+                alert("Task failed!");
+            } else {
+                setTimeout(() => pollTaskStatus(id), 5000); // Poll every 5 seconds
+            }
+        } catch (error) {
+            console.error("Error polling task status:", error);
+        }
     };
 
     const handleFormSubmit = async (e) => {
@@ -50,9 +80,10 @@ function AddShow({
             );
             const result = await response.json();
             console.log("Panel created:", result);
-            alert("Panel created successfully!");
-            fetchPanels(accessToken); // Update panel list after creation
-            setSelectedPanel(result); // Automatically switch to the new panel
+            setTaskId(result.task_id);
+            setTimeout(() => {
+                pollTaskStatus(result.task_id); // Start polling for task status
+            }, 1000);
         } catch (error) {
             console.error("Error:", error);
             alert("Failed to create panel.");

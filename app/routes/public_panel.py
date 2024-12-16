@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
-from app.core.celery_app import create_public_panel_task
 from app.core.supabase import SupaClientDep, AccessTokenDep
 from lib.helpers.routes import handle_exception
 from lib.api.public_panel.read import (
@@ -16,7 +15,7 @@ from lib.api.public_panel.update import (
     update_public_panel_transcript,
     update_public_panel_audio,
 )
-from lib.helpers.panel import PublicPanelRequestData
+from lib.helpers.panel import PublicPanelRequestData, create_public_panel_task
 from lib.models.supabase.public_panel import (
     PublicPanelDiscussion,
     PublicPanelTranscript,

@@ -32,6 +32,16 @@ function PanelDetails({ panel, accessToken }) {
         })
             .then((response) => response.json())
             .then((data) => {
+                const currentHost = window.location.host;
+                data.transcript_url = data.transcript_url.replace(
+                    "http://127.0.0.1",
+                    "http://" + currentHost.replace(":4000", "")
+                );
+                data.audio_url = data.audio_url.replace(
+                    "http://127.0.0.1",
+                    "http://" + currentHost.replace(":4000", "")
+                );
+                console.log(data);
                 setDetails((prevDetails) => ({
                     ...prevDetails,
                     transcriptUrl: data.transcript_url || "",
