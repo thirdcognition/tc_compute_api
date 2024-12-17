@@ -6,42 +6,65 @@
         <title>Create My Morning show</title>
         <!-- Tailwind CSS CDN -->
         <link
-            href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+            href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css"
             rel="stylesheet"
         />
         <!-- React Bootstrap CSS -->
         <link
             rel="stylesheet"
-            href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+            href="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap/2.10.7/react-bootstrap.min.css"
         />
     </head>
     <body class="font-sans m-5">
         <div id="root"></div>
 
         <!-- React and ReactDOM CDN -->
-        <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-        <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+        <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
         <!-- React Bootstrap JS -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap/1.6.1/react-bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-bootstrap/2.10.7/react-bootstrap.min.js"></script>
         <!-- React Icons CDN -->
-        <script src="https://unpkg.com/react-icons@4.2.0/dist/react-icons.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/react-icons@4.10.0/dist/react-icons.min.js"></script>
+        <!-- React Router DOM CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/react-router-dom@6.14.1/umd/react-router-dom.min.js"></script>
+        <!-- Babel Standalone -->
+        <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js"></script>
 
         <!-- Custom JS Components -->
-        <script type="module" src="./js/App.js"></script>
-        <script type="module" src="./js/LoginForm.js"></script>
-        <script type="module" src="./js/AddShow.js"></script>
-        <script type="module" src="./js/PanelDetails.js"></script>
+        <script type="text/babel" src="/html/morning_show/js/App.js"></script>
+        <script
+            type="text/babel"
+            src="/html/morning_show/js/LoginForm.js"
+        ></script>
+        <script
+            type="text/babel"
+            src="/html/morning_show/js/options.js"
+        ></script>
+        <script
+            type="text/babel"
+            src="/html/morning_show/js/PanelEdit.js"
+        ></script>
+        <script
+            type="text/babel"
+            src="/html/morning_show/js/PanelDetails.js"
+        ></script>
+        <script
+            type="text/babel"
+            src="/html/morning_show/js/PanelDetailDisplay.js"
+        ></script>
+        <script
+            type="text/babel"
+            src="/html/morning_show/js/TranscriptDetailDisplay.js"
+        ></script>
+        <script
+            type="text/babel"
+            src="/html/morning_show/js/AudioDetailDisplay.js"
+        ></script>
 
-        <script type="module">
-            import App from "./js/App.js";
-            import LoginForm from "./js/LoginForm.js";
-            import AddShow from "./js/AddShow.js";
-            import PanelDetails from "./js/PanelDetails.js";
+        <script type="text/babel" data-presets="env,react">
+            import App from "/html/morning_show/js/App.js";
 
-            ReactDOM.render(
-                React.createElement(App),
-                document.getElementById("root")
-            );
+            ReactDOM.render(<App />, document.getElementById("root"));
         </script>
     </body>
 </html>

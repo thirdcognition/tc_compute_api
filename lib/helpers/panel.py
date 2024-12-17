@@ -18,12 +18,17 @@ from lib.models.supabase.public_panel import (
 )
 from pydantic import BaseModel
 
+# Load custom_config from environment variables with defaults
 custom_config = {
-    "word_count": 200,
-    "conversation_style": ["casual", "humorous"],
-    "podcast_name": "Morning Show",
-    "podcast_tagline": "Your Personal Morning Podcast",
-    "creativity": 0.7,
+    "word_count": int(os.getenv("panel_defaults_word_count", 200)),
+    "conversation_style": os.getenv(
+        "panel_defaults_conversation_style", "casual,humorous"
+    ).split(","),
+    "podcast_name": os.getenv("panel_defaults_podcast_name", "Morning Show"),
+    "podcast_tagline": os.getenv(
+        "panel_defaults_podcast_tagline", "Your Personal Morning Podcast"
+    ),
+    "creativity": float(os.getenv("panel_defaults_creativity", 0.7)),
 }
 
 
@@ -48,13 +53,29 @@ def create_public_panel(
     task_request: Request = None,
 ) -> UUID:
     service_client: Client = get_sync_supabase_service_client()
-    panel_discussion: PublicPanelDiscussion = PublicPanelDiscussion(
-        title=request_data.title,
-        metadata={"task_id": task_request.id},
-    )
-    panel_discussion.create_sync(supabase=service_client)
 
-    return panel_discussion.id
+    # Initialize metadata with task_id if available
+    metadata = {"task_id": task_request.id} if task_request else {}
+
+    # Add additional fields to metadata if they are defined
+    if request_data.conversation_config:
+        metadata["conversation_config"] = request_data.conversation_config
+    if request_data.tts_model:
+        metadata["tts_model"] = request_data.tts_model
+    if request_data.input_source:
+        metadata["urls"] = request_data.input_source
+    if request_data.longform is not None:
+        metadata["longform"] = request_data.longform
+    if request_data.input_text:
+        metadata["input_text"] = request_data.input_text
+
+    panel: PublicPanelDiscussion = PublicPanelDiscussion(
+        title=request_data.title,
+        metadata=metadata,
+    )
+    panel.create_sync(supabase=service_client)
+
+    return panel.id
 
 
 def create_public_panel_transcript(
@@ -62,7 +83,23 @@ def create_public_panel_transcript(
 ) -> UUID:
     supabase: Client = get_sync_supabase_service_client()
 
-    conversation_config = request_data.conversation_config or custom_config
+    # Retrieve panel metadata
+    panel = PublicPanelDiscussion.get_sync(supabase, request_data.panel_id)
+    metadata = panel.metadata or {}
+
+    # Use values from metadata if not defined in request_data
+    conversation_config = request_data.conversation_config or metadata.get(
+        "conversation_config", custom_config
+    )
+    conversation_config["podcast_name"] = custom_config["podcast_name"]
+    conversation_config["podcast_tagline"] = custom_config["podcast_tagline"]
+    input_source = request_data.input_source or metadata.get("urls", "")
+    longform = (
+        request_data.longform
+        if request_data.longform is not None
+        else metadata.get("longform", False)
+    )
+    input_text = request_data.input_text or metadata.get("input_text", "")
 
     bucket_transcript_file: str = f"panel_{request_data.panel_id}_transcript.txt"
 
@@ -73,20 +110,17 @@ def create_public_panel_transcript(
         process_state=ProcessState.processing,
         file=bucket_transcript_file,
         type="segment",
+        metadata={"conversation_config": conversation_config},
     )
     panel_transcript.create_sync(supabase=supabase)
 
     try:
         transcript_file: str = generate_podcast(
-            urls=(
-                request_data.input_source
-                if isinstance(request_data.input_source, list)
-                else [request_data.input_source]
-            ),
+            urls=(input_source if isinstance(input_source, list) else [input_source]),
             transcript_only=True,
-            longform=request_data.longform,
+            longform=longform,
             conversation_config=conversation_config,
-            text=request_data.input_text,
+            text=input_text,
         )
     except Exception as e:
         panel_transcript.process_state = ProcessState.failed
@@ -105,11 +139,9 @@ def create_public_panel_transcript(
 
 
 @celery_app.task
-def create_public_panel_transcription_task(
-    access_token, panel_id: UUID, request_data_json
-):
+def create_public_panel_transcription_task(access_token, request_data_json):
     request_data = PublicPanelRequestData.model_validate_json(request_data_json)
-    return create_public_panel_transcript(access_token, panel_id, request_data)
+    return create_public_panel_transcript(access_token, request_data)
 
 
 @celery_app.task(bind=True)
@@ -137,7 +169,17 @@ def create_public_panel_audio(
 
     supabase: Client = get_sync_supabase_service_client()
 
-    conversation_config = request_data.conversation_config or custom_config
+    # Retrieve panel metadata
+    panel = PublicPanelDiscussion.get_sync(supabase, panel_id)
+    metadata = panel.metadata or {}
+
+    # Use values from metadata if not defined in request_data
+    conversation_config = request_data.conversation_config or metadata.get(
+        "conversation_config", custom_config
+    )
+    conversation_config["podcast_name"] = custom_config["podcast_name"]
+    conversation_config["podcast_tagline"] = custom_config["podcast_tagline"]
+    tts_model = request_data.tts_model or metadata.get("tts_model", "geminimulti")
 
     response = supabase.storage.from_(request_data.bucket_name).download(
         bucket_transcript_file
@@ -154,13 +196,14 @@ def create_public_panel_audio(
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
         file=bucket_audio_file,
+        metadata={"conversation_config": conversation_config},
     )
     panel_audio.create_sync(supabase=supabase)
 
     try:
         audio_file: str = generate_podcast(
             transcript_file=transcript_file,
-            tts_model=request_data.tts_model,
+            tts_model=tts_model,
             conversation_config=conversation_config,
         )
     except Exception as e:

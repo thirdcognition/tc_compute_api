@@ -4,16 +4,14 @@ from supabase import AsyncClient
 from lib.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
 
 
-async def get_panel_discussion(
-    supabase: AsyncClient, discussion_id: UUID
-) -> PanelDiscussion:
+async def get_panel(supabase: AsyncClient, discussion_id: UUID) -> PanelDiscussion:
     discussion = await PanelDiscussion.fetch_from_supabase(supabase, discussion_id)
     if not discussion:
         raise ValueError("Panel discussion not found")
     return discussion
 
 
-async def list_panel_discussions(supabase: AsyncClient) -> List[PanelDiscussion]:
+async def list_panels(supabase: AsyncClient) -> List[PanelDiscussion]:
     discussions = await PanelDiscussion.fetch_existing_from_supabase(supabase)
     return discussions
 

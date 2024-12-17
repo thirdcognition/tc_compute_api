@@ -3,7 +3,7 @@ from supabase import AsyncClient
 from lib.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
 
 
-async def delete_panel_discussion(supabase: AsyncClient, discussion_id: UUID) -> bool:
+async def delete_panel(supabase: AsyncClient, discussion_id: UUID) -> bool:
     if not await PanelDiscussion.exists_in_supabase(supabase, discussion_id):
         raise ValueError("Panel discussion not found")
     return await PanelDiscussion.delete_from_supabase(supabase, discussion_id)

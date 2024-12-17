@@ -1,5 +1,5 @@
 from langchain.globals import set_debug
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from app.routes.auth import router as auth_router
 from app.routes.organization import router as organization_router
@@ -28,6 +28,11 @@ async def redirect_root_to_docs():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/morning_show/{path_name:path}")
+async def serve_morning_show(path_name: str):
+    return FileResponse("html/morning_show/index.html")
 
 
 # Include routers

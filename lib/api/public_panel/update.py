@@ -6,7 +6,7 @@ from lib.models.supabase.public_panel import (
 )
 
 
-async def update_public_panel_discussion(
+async def update_public_panel(
     supabase: AsyncClient, request_data: PublicPanelDiscussion
 ) -> PublicPanelDiscussion:
     return await request_data.update(supabase)

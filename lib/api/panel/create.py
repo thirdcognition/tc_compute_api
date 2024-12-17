@@ -2,7 +2,7 @@ from supabase import AsyncClient
 from lib.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
 
 
-async def create_panel_discussion(
+async def create_panel(
     supabase: AsyncClient, request_data: PanelDiscussion
 ) -> PanelDiscussion:
     await request_data.create(supabase)

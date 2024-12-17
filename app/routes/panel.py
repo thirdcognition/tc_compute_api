@@ -3,15 +3,15 @@ from pydantic import ValidationError
 from app.core.supabase import SupaClientDep
 from lib.helpers.routes import handle_exception
 from lib.api.panel.read import (
-    get_panel_discussion,
-    list_panel_discussions,
+    get_panel,
+    list_panels,
     get_panel_transcript,
     get_panel_audio,
     list_panel_transcripts,
     list_panel_audios,
 )
 from lib.api.panel.update import (
-    update_panel_discussion,
+    update_panel,
     update_panel_transcript,
     update_panel_audio,
 )
@@ -20,24 +20,24 @@ from lib.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAud
 router = APIRouter()
 
 
-@router.get("/panel/discussion/{discussion_id}")
-async def api_get_panel_discussion(
+@router.get("/panel/{discussion_id}")
+async def api_get_panel(
     discussion_id: str,
     supabase: SupaClientDep,
 ):
     try:
-        discussion = await get_panel_discussion(supabase, discussion_id)
+        discussion = await get_panel(supabase, discussion_id)
         return discussion
     except Exception as e:
         raise handle_exception(e, "Panel discussion not found", 404)
 
 
 @router.get("/panel/discussions/")
-async def api_list_panel_discussions(
+async def api_list_panels(
     supabase: SupaClientDep,
 ):
     try:
-        discussions = await list_panel_discussions(supabase)
+        discussions = await list_panels(supabase)
         return discussions
     except Exception as e:
         raise handle_exception(e, "Internal Server Error")
@@ -65,15 +65,15 @@ async def api_list_panel_audios(
         raise handle_exception(e, "Internal Server Error")
 
 
-@router.put("/panel/discussion/{discussion_id}")
-async def api_update_panel_discussion(
+@router.put("/panel/{discussion_id}")
+async def api_update_panel(
     discussion_id: str,
     request_data: PanelDiscussion,
     supabase: SupaClientDep,
 ):
     try:
         request_data.id = discussion_id
-        discussion = await update_panel_discussion(supabase, request_data)
+        discussion = await update_panel(supabase, request_data)
         return discussion
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))

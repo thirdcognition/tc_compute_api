@@ -1,0 +1,571 @@
+const { Form, Button, Spinner } = ReactBootstrap;
+const { useState, useEffect } = React;
+const { useHistory } = ReactRouterDOM; // Import useHistory
+import DiscussionForm from "./DiscussionForm.js";
+import PanelDetailDisplay from "./PanelDetailDisplay.js";
+import ConversationConfig from "./ConversationConfig.js";
+import TranscriptDetailDisplay from "./TranscriptDetailDisplay.js";
+import TextToSpeechConfig from "./TextToSpeechConfig.js";
+import { defaultTtsModelOptions } from "./options.js";
+
+function PanelEdit({
+    title,
+    setTitle,
+    links,
+    setLinks,
+    inputText,
+    setInputText,
+    accessToken,
+    fetchPanels,
+    setSelectedPanel,
+    initialPanelId // PanelId might be passed as a parameter
+}) {
+    const history = useHistory(); // Initialize useHistory
+    const [linkFields, setLinkFields] = useState(links);
+    const [taskId, setTaskId] = useState(null);
+    const [taskStatus, setTaskStatus] = useState("idle"); // Initialize to "idle"
+    const [isPolling, setIsPolling] = useState(false);
+    const [existingTranscript, setExistingTranscript] = useState(null);
+    const [existingAudio, setExistingAudio] = useState(null);
+    const [transcriptId, setTranscriptId] = useState(null); // New state for transcriptId
+    const [panelId, setPanelId] = useState(initialPanelId || null); // Manage panelId internally
+    const [transcriptCreated, setTranscriptCreated] = useState(false);
+
+    // New state variables for storing fetched data
+    const [discussionData, setDiscussionData] = useState(null);
+    const [transcriptData, setTranscriptData] = useState(null);
+    const [transcriptUrls, setTranscriptUrls] = useState({});
+    const [audioUrls, setAudioUrls] = useState({});
+
+    // Updated state variables for conversation config
+    const [wordCount, setWordCount] = useState(200);
+    const [creativity, setCreativity] = useState(1);
+    const [conversationStyle, setConversationStyle] = useState([
+        "engaging",
+        "fast-paced",
+        "enthusiastic"
+    ]);
+    const [rolesPerson1, setRolesPerson1] = useState("main summarizer");
+    const [rolesPerson2, setRolesPerson2] = useState("questioner/clarifier");
+    const [dialogueStructure, setDialogueStructure] = useState([
+        "Introduction",
+        "Main Content Summary",
+        "Conclusion"
+    ]);
+    const [engagementTechniques, setEngagementTechniques] = useState([
+        "rhetorical questions",
+        "anecdotes",
+        "analogies",
+        "humor"
+    ]);
+    const [userInstructions, setUserInstructions] = useState("");
+    const [ttsModel, setTtsModel] = useState("elevenlabs");
+    const [defaultVoiceQuestion, setDefaultVoiceQuestion] = useState("");
+    const [defaultVoiceAnswer, setDefaultVoiceAnswer] = useState("");
+    const [outputLanguage, setOutputLanguage] = useState("English");
+
+    useEffect(() => {
+        const selectedModel = defaultTtsModelOptions.find(
+            (model) => model.value === ttsModel
+        );
+        if (selectedModel) {
+            setDefaultVoiceQuestion(selectedModel.defaultVoices.question);
+            setDefaultVoiceAnswer(selectedModel.defaultVoices.answer);
+        }
+    }, [ttsModel]);
+
+    useEffect(() => {
+        if (panelId) {
+            refreshPanelData(panelId);
+        }
+    }, [panelId, accessToken]);
+
+    const refreshPanelData = async (panelId) => {
+        try {
+            // Fetch updated discussion data
+            const discussionResponse = await fetch(
+                `http://${window.location.hostname}:4000/public_panel/${panelId}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
+            );
+            const discussionData = await discussionResponse.json();
+            setDiscussionData(discussionData); // Save discussion data to state
+            setTitle(discussionData.title);
+            setInputText(discussionData.input_text);
+            setLinkFields(discussionData.input_source);
+
+            // Fetch updated transcripts
+            const transcriptResponse = await fetch(
+                `http://${window.location.hostname}:4000/public_panel/${panelId}/transcripts`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
+            );
+            const transcriptData = await transcriptResponse.json();
+            setTranscriptData(transcriptData); // Save transcript data to state
+            setExistingTranscript(transcriptData);
+
+            // Fetch updated audios
+            const audioResponse = await fetch(
+                `http://${window.location.hostname}:4000/public_panel/${panelId}/audios`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
+            );
+            const audioData = await audioResponse.json();
+            setExistingAudio(audioData);
+
+            // Fetch files for transcript and audio URLs
+            const filesResponse = await fetch(
+                `/public_panel/${panelId}/files`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
+            );
+            const filesData = await filesResponse.json();
+            const currentHost = window.location.host;
+            const updatedTranscriptUrls = filesData.transcript_urls
+                ? Object.fromEntries(
+                      Object.entries(filesData.transcript_urls).map(
+                          ([id, url]) => [
+                              id,
+                              url.replace(
+                                  "http://127.0.0.1",
+                                  "http://" + currentHost.replace(":4000", "")
+                              )
+                          ]
+                      )
+                  )
+                : {};
+            const updatedAudioUrls = filesData.audio_urls
+                ? Object.fromEntries(
+                      Object.entries(filesData.audio_urls).map(([id, url]) => [
+                          id,
+                          url.replace(
+                              "http://127.0.0.1",
+                              "http://" + currentHost.replace(":4000", "")
+                          )
+                      ])
+                  )
+                : {};
+            setTranscriptUrls(updatedTranscriptUrls);
+            setAudioUrls(updatedAudioUrls);
+        } catch (error) {
+            console.error("Error refreshing panel data:", error);
+        }
+    };
+
+    const handleLinkChange = (index, value) => {
+        const newLinkFields = [...linkFields];
+        newLinkFields[index] = value;
+        setLinkFields(newLinkFields);
+        setLinks(newLinkFields);
+    };
+
+    const addLinkField = () => {
+        setLinkFields([...linkFields, ""]);
+    };
+
+    const pollTaskStatus = async (id, type) => {
+        try {
+            setIsPolling(true);
+            const response = await fetch(
+                `http://${window.location.hostname}:4000/system/task_status/${id}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    }
+                }
+            );
+            const result = await response.json();
+            setTaskStatus(result.status);
+            if (result.status.toLowerCase() === "success") {
+                fetchPanels(accessToken);
+                refreshPanelData(panelId); // Refresh panel data to fetch transcriptId
+                setIsPolling(false);
+                setTaskStatus("idle"); // Reset to "idle" after success
+            } else if (result.status.toLowerCase() === "failure") {
+                setIsPolling(false);
+                setTaskStatus("idle"); // Reset to "idle" after failure
+            } else {
+                setTimeout(() => pollTaskStatus(id, type), 5000);
+            }
+        } catch (error) {
+            console.error("Error polling task status:", error);
+            setIsPolling(false);
+            setTaskStatus("idle"); // Reset to "idle" on error
+        }
+    };
+
+    const createPanel = async () => {
+        const linksArray = links.filter((link) => link.trim() !== "");
+        try {
+            const response = await fetch(
+                `http://${window.location.hostname}:4000/public_panel/discussion`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        input_text: inputText,
+                        input_source: linksArray
+                    })
+                }
+            );
+            const result = await response.json();
+            console.log("Panel created:", result);
+            setSelectedPanel(result.panel_id); // Set the selected panel
+            setPanelId(result.panel_id); // Ensure panelId is set
+            refreshPanelData(result.panel_id);
+            history.push(`/panel/${result.panel_id}/edit`); // Redirect to panel/[panel_id]/edit
+            return result.panel_id;
+        } catch (error) {
+            console.error("Error creating panel:", error);
+            alert("Failed to create panel.");
+            return null;
+        }
+    };
+
+    const createTranscript = async (panelId) => {
+        const linksArray = links.filter((link) => link.trim() !== "");
+        try {
+            const response = await fetch(
+                `http://${window.location.hostname}:4000/public_panel/transcript`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        input_source: linksArray,
+                        input_text: inputText,
+                        conversation_config: {
+                            word_count: wordCount,
+                            creativity: creativity,
+                            conversation_style: conversationStyle,
+                            roles_person1: rolesPerson1,
+                            roles_person2: rolesPerson2,
+                            dialogue_structure: dialogueStructure,
+                            engagement_techniques: engagementTechniques,
+                            user_instructions: userInstructions,
+                            output_language: outputLanguage
+                        },
+                        longform: false,
+                        bucket_name: "public_panels",
+                        panel_id: panelId
+                    })
+                }
+            );
+            const result = await response.json();
+            console.log("Transcript created:", result);
+            setTaskId(result.task_id);
+            setTranscriptCreated(true);
+            setTimeout(() => {
+                pollTaskStatus(result.task_id, "transcript");
+            }, 1000);
+            return result.transcript_id;
+        } catch (error) {
+            console.error("Error creating transcript:", error);
+            alert("Failed to create transcript.");
+            return null;
+        }
+    };
+
+    const createAudio = async (panelId, transcriptId) => {
+        const linksArray = links.filter((link) => link.trim() !== "");
+        try {
+            const response = await fetch(
+                `http://${window.location.hostname}:4000/public_panel/audio`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        input_source: linksArray,
+                        input_text: inputText,
+                        tts_model: ttsModel,
+                        text_to_speech: {
+                            tts_model: ttsModel,
+                            elevenlabs: {
+                                default_voices: {
+                                    question: defaultVoiceQuestion,
+                                    answer: defaultVoiceAnswer
+                                },
+                                model: "eleven_multilingual_v2"
+                            },
+                            gemini: {
+                                default_voices: {
+                                    question: defaultVoiceQuestion,
+                                    answer: defaultVoiceAnswer
+                                }
+                            }
+                        },
+                        longform: false,
+                        bucket_name: "public_panels",
+                        panel_id: panelId,
+                        transcript_id: transcriptId
+                    })
+                }
+            );
+            const result = await response.json();
+            console.log("Audio created:", result);
+            setTaskId(result.task_id);
+            setTimeout(() => {
+                pollTaskStatus(result.task_id, "audio");
+            }, 1000);
+            history.push(`/panel/${panelId}`); // Redirect to panel/[panel_id]
+        } catch (error) {
+            console.error("Error creating audio:", error);
+            alert("Failed to create audio.");
+        }
+    };
+
+    const handlePanelSubmit = async (e) => {
+        e.preventDefault();
+        const panelId = await createPanel();
+        if (panelId) {
+            refreshPanelData(panelId);
+        }
+    };
+
+    const handleTranscriptSubmit = async (e) => {
+        e.preventDefault();
+        if (panelId) {
+            // Ensure panelId is checked
+            const transcriptId = await createTranscript(panelId);
+            if (transcriptId) {
+                refreshPanelData(panelId);
+            }
+        }
+    };
+
+    const handleAudioSubmit = async (e) => {
+        e.preventDefault();
+        if (panelId && transcriptId) {
+            // Ensure transcriptId is used
+            await createAudio(panelId, transcriptId);
+            refreshPanelData(panelId);
+        }
+    };
+
+    const getStatusBarStyle = () => {
+        switch (taskStatus.toLowerCase()) {
+            case "success":
+                return "bg-green-500";
+            case "failure":
+                return "bg-red-500";
+            case "idle":
+                return "bg-gray-300";
+            default:
+                return "bg-yellow-500"; // For any other status
+        }
+    };
+
+    const getStatusSymbol = () => {
+        switch (taskStatus.toLowerCase()) {
+            case "success":
+                return "✔️"; // UML symbol for success
+            case "failure":
+                return "❌"; // UML symbol for failure
+            case "idle":
+                return ""; // UML symbol for ok state
+            default:
+                return ""; // No symbol for other statuses
+        }
+    };
+
+    return React.createElement(
+        "div",
+        { className: "space-y-4" },
+        React.createElement(
+            "div",
+            { className: `status-bar p-2 text-white ${getStatusBarStyle()}` },
+            React.createElement(
+                "div",
+                { className: "flex items-center justify-center" },
+                isPolling &&
+                    React.createElement(
+                        Spinner,
+                        {
+                            animation: "border",
+                            role: "status",
+                            className: "mr-2"
+                        },
+                        React.createElement(
+                            "span",
+                            { className: "sr-only" },
+                            "Building..."
+                        )
+                    ),
+                React.createElement(
+                    "div",
+                    { className: "status-text" },
+                    `${getStatusSymbol()} Status: ${taskStatus}`
+                )
+            )
+        ),
+        !panelId &&
+            React.createElement(
+                "div",
+                { className: "panel-container border p-3 mb-4 rounded" },
+                React.createElement(
+                    "h3",
+                    { className: "font-bold mb-3" },
+                    "Create Panel"
+                ),
+                React.createElement(
+                    Form,
+                    { onSubmit: handlePanelSubmit },
+                    React.createElement(DiscussionForm, {
+                        title,
+                        setTitle,
+                        links,
+                        setLinks,
+                        inputText,
+                        setInputText
+                    }),
+                    React.createElement(
+                        Button,
+                        {
+                            variant: "primary",
+                            type: "submit",
+                            className: "w-full py-2",
+                            disabled:
+                                taskStatus === "idle"
+                                    ? false
+                                    : taskStatus !== "failure" &&
+                                      taskStatus !== "success"
+                        },
+                        "Create Panel"
+                    )
+                )
+            ),
+        panelId &&
+            discussionData &&
+            React.createElement(PanelDetailDisplay, {
+                panel: discussionData // Pass the entire discussionData
+            }),
+        !transcriptCreated &&
+            React.createElement(
+                "div",
+                { className: "transcript-container border p-3 mb-4 rounded" },
+                React.createElement(
+                    "h3",
+                    { className: "font-bold mb-3" },
+                    "Create Transcript"
+                ),
+                React.createElement(
+                    Form,
+                    { onSubmit: handleTranscriptSubmit },
+                    React.createElement(ConversationConfig, {
+                        wordCount,
+                        setWordCount,
+                        creativity,
+                        setCreativity,
+                        conversationStyle,
+                        setConversationStyle,
+                        rolesPerson1,
+                        setRolesPerson1,
+                        rolesPerson2,
+                        setRolesPerson2,
+                        dialogueStructure,
+                        setDialogueStructure,
+                        engagementTechniques,
+                        setEngagementTechniques,
+                        userInstructions,
+                        setUserInstructions,
+                        outputLanguage,
+                        setOutputLanguage
+                    }),
+                    React.createElement(
+                        Button,
+                        {
+                            variant: "primary",
+                            type: "submit",
+                            className: "w-full py-2 mt-3",
+                            disabled:
+                                !panelId ||
+                                (taskStatus !== "idle" &&
+                                    taskStatus !== "failure" &&
+                                    taskStatus !== "success") // Disable if panelId is not defined
+                        },
+                        "Create Transcript"
+                    )
+                )
+            ),
+        transcriptCreated &&
+            transcriptData &&
+            React.createElement(TranscriptDetailDisplay, {
+                transcript: transcriptData, // Pass the entire transcriptData
+                accessToken,
+                transcriptUrls,
+                existingAudio,
+                audioUrls
+            }),
+        React.createElement(
+            "div",
+            { className: "audio-container border p-3 mb-4 rounded" },
+            React.createElement(
+                "h3",
+                { className: "font-bold mb-3" },
+                "Create Audio"
+            ),
+            React.createElement(
+                Form,
+                { onSubmit: handleAudioSubmit }, // Ensure this is linked to handleAudioSubmit
+                React.createElement(TextToSpeechConfig, {
+                    ttsModel,
+                    setTtsModel,
+                    defaultVoiceQuestion,
+                    setDefaultVoiceQuestion,
+                    defaultVoiceAnswer,
+                    setDefaultVoiceAnswer
+                }),
+                React.createElement(
+                    Button,
+                    {
+                        variant: "primary",
+                        type: "submit",
+                        className: "w-full py-2 mt-3",
+                        disabled:
+                            !transcriptId ||
+                            (taskStatus !== "idle" &&
+                                taskStatus !== "failure" &&
+                                taskStatus !== "success") // Disable if transcriptId is not defined
+                    },
+                    "Create Audio"
+                )
+            )
+        )
+    );
+}
+
+export default PanelEdit;

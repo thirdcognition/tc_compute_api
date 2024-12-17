@@ -7,9 +7,7 @@ from lib.models.supabase.public_panel import (
 )
 
 
-async def delete_public_panel_discussion(
-    supabase: AsyncClient, discussion_id: UUID
-) -> bool:
+async def delete_public_panel(supabase: AsyncClient, discussion_id: UUID) -> bool:
     discussion = PublicPanelDiscussion(id=discussion_id)
     return await discussion.delete(supabase)
 

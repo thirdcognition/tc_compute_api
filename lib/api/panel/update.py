@@ -2,7 +2,7 @@ from supabase import AsyncClient
 from lib.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
 
 
-async def update_panel_discussion(
+async def update_panel(
     supabase: AsyncClient, request_data: PanelDiscussion
 ) -> PanelDiscussion:
     existing_discussion = await PanelDiscussion.fetch_from_supabase(
