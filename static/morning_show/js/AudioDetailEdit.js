@@ -1,9 +1,9 @@
-// TextToSpeechConfig.js
+// AudioDetailEdit.js
 const { useState } = React;
 const { Form, Button } = ReactBootstrap;
 import { defaultTtsModelOptions } from "./options.js";
 
-function TextToSpeechConfig({
+function AudioDetailEdit({
     ttsModel,
     setTtsModel,
     defaultVoiceQuestion,
@@ -18,7 +18,7 @@ function TextToSpeechConfig({
         null,
         React.createElement(
             Form.Group,
-            { controlId: "ttsModel" },
+            { controlId: "ttsModel", className: "mb-3" }, // Added margin-bottom class
             React.createElement(
                 Form.Label,
                 { className: "font-semibold" },
@@ -49,13 +49,13 @@ function TextToSpeechConfig({
             Button,
             {
                 onClick: () => setShowDetails(!showDetails),
-                className: "w-full py-2 mb-4 flex items-center" // Updated button styling to match
+                className: "w-full py-2 mb-4 flex items-center"
             },
             React.createElement(
                 "span",
                 { className: "mr-2" },
                 showDetails ? "▼" : "▶"
-            ), // UML caret symbols with spacing
+            ),
             React.createElement(
                 "span",
                 null,
@@ -103,4 +103,4 @@ function TextToSpeechConfig({
     );
 }
 
-export default TextToSpeechConfig;
+export default AudioDetailEdit;

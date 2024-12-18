@@ -1,11 +1,11 @@
 const { Form, Button, Spinner } = ReactBootstrap;
 const { useState, useEffect } = React;
-const { useHistory } = ReactRouterDOM; // Import useHistory
-import DiscussionForm from "./DiscussionForm.js";
+const { Redirect } = ReactRouterDOM; // Import Link
+import PanelDetailEdit from "./PanelDetailEdit.js";
 import PanelDetailDisplay from "./PanelDetailDisplay.js";
-import ConversationConfig from "./ConversationConfig.js";
+import TranscriptDetailEdit from "./TranscriptDetailEdit.js";
 import TranscriptDetailDisplay from "./TranscriptDetailDisplay.js";
-import TextToSpeechConfig from "./TextToSpeechConfig.js";
+import AudioDetailEdit from "./AudioDetailEdit.js";
 import { defaultTtsModelOptions } from "./options.js";
 
 function PanelEdit({
@@ -20,7 +20,6 @@ function PanelEdit({
     setSelectedPanel,
     initialPanelId // PanelId might be passed as a parameter
 }) {
-    const history = useHistory(); // Initialize useHistory
     const [linkFields, setLinkFields] = useState(links);
     const [taskId, setTaskId] = useState(null);
     const [taskStatus, setTaskStatus] = useState("idle"); // Initialize to "idle"
@@ -30,6 +29,7 @@ function PanelEdit({
     const [transcriptId, setTranscriptId] = useState(null); // New state for transcriptId
     const [panelId, setPanelId] = useState(initialPanelId || null); // Manage panelId internally
     const [transcriptCreated, setTranscriptCreated] = useState(false);
+    const [redirectToPanel, setRedirectToPanel] = useState(false); // New state for redirection
 
     // New state variables for storing fetched data
     const [discussionData, setDiscussionData] = useState(null);
@@ -75,10 +75,27 @@ function PanelEdit({
     }, [ttsModel]);
 
     useEffect(() => {
+        if (initialPanelId) {
+            setPanelId(initialPanelId);
+        } else {
+            setPanelId(null); // Reset panelId for new panels
+            setTranscriptId(null); // Reset transcriptId for new panels
+            setTranscriptData(null); // Reset transcriptData for new panels
+            setTranscriptCreated(null);
+        }
+    }, [initialPanelId]);
+
+    useEffect(() => {
         if (panelId) {
             refreshPanelData(panelId);
         }
     }, [panelId, accessToken]);
+
+    useEffect(() => {
+        if (transcriptData && transcriptData.length === 1) {
+            setTranscriptId(transcriptData[0].id);
+        }
+    }, [transcriptData]);
 
     const refreshPanelData = async (panelId) => {
         try {
@@ -111,8 +128,11 @@ function PanelEdit({
                 }
             );
             const transcriptData = await transcriptResponse.json();
-            setTranscriptData(transcriptData); // Save transcript data to state
-            setExistingTranscript(transcriptData);
+            if (transcriptData.length > 0) {
+                setTranscriptCreated(true);
+                setTranscriptData(transcriptData); // Save transcript data to state
+                setExistingTranscript(transcriptData);
+            }
 
             // Fetch updated audios
             const audioResponse = await fetch(
@@ -234,11 +254,10 @@ function PanelEdit({
                 }
             );
             const result = await response.json();
-            console.log("Panel created:", result);
             setSelectedPanel(result.panel_id); // Set the selected panel
             setPanelId(result.panel_id); // Ensure panelId is set
             refreshPanelData(result.panel_id);
-            history.push(`/panel/${result.panel_id}/edit`); // Redirect to panel/[panel_id]/edit
+            setRedirectToPanel(true); // Set redirect after panel creation
             return result.panel_id;
         } catch (error) {
             console.error("Error creating panel:", error);
@@ -281,7 +300,6 @@ function PanelEdit({
                 }
             );
             const result = await response.json();
-            console.log("Transcript created:", result);
             setTaskId(result.task_id);
             setTranscriptCreated(true);
             setTimeout(() => {
@@ -312,19 +330,20 @@ function PanelEdit({
                         input_source: linksArray,
                         input_text: inputText,
                         tts_model: ttsModel,
-                        text_to_speech: {
-                            tts_model: ttsModel,
-                            elevenlabs: {
-                                default_voices: {
-                                    question: defaultVoiceQuestion,
-                                    answer: defaultVoiceAnswer
+                        conversation_config: {
+                            text_to_speech: {
+                                elevenlabs: {
+                                    default_voices: {
+                                        question: defaultVoiceQuestion,
+                                        answer: defaultVoiceAnswer
+                                    },
+                                    model: "eleven_multilingual_v2"
                                 },
-                                model: "eleven_multilingual_v2"
-                            },
-                            gemini: {
-                                default_voices: {
-                                    question: defaultVoiceQuestion,
-                                    answer: defaultVoiceAnswer
+                                gemini: {
+                                    default_voices: {
+                                        question: defaultVoiceQuestion,
+                                        answer: defaultVoiceAnswer
+                                    }
                                 }
                             }
                         },
@@ -336,12 +355,11 @@ function PanelEdit({
                 }
             );
             const result = await response.json();
-            console.log("Audio created:", result);
             setTaskId(result.task_id);
             setTimeout(() => {
                 pollTaskStatus(result.task_id, "audio");
             }, 1000);
-            history.push(`/panel/${panelId}`); // Redirect to panel/[panel_id]
+            // setRedirectToPanel(false); // Set redirect after audio creation
         } catch (error) {
             console.error("Error creating audio:", error);
             alert("Failed to create audio.");
@@ -402,9 +420,14 @@ function PanelEdit({
         }
     };
 
+    if (redirectToPanel) {
+        return React.createElement(Redirect, { to: `/panel/${panelId}` });
+    }
+
     return React.createElement(
         "div",
         { className: "space-y-4" },
+
         React.createElement(
             "div",
             { className: `status-bar p-2 text-white ${getStatusBarStyle()}` },
@@ -444,7 +467,7 @@ function PanelEdit({
                 React.createElement(
                     Form,
                     { onSubmit: handlePanelSubmit },
-                    React.createElement(DiscussionForm, {
+                    React.createElement(PanelDetailEdit, {
                         title,
                         setTitle,
                         links,
@@ -473,98 +496,157 @@ function PanelEdit({
             React.createElement(PanelDetailDisplay, {
                 panel: discussionData // Pass the entire discussionData
             }),
-        !transcriptCreated &&
-            React.createElement(
-                "div",
-                { className: "transcript-container border p-3 mb-4 rounded" },
-                React.createElement(
-                    "h3",
-                    { className: "font-bold mb-3" },
-                    "Create Transcript"
-                ),
-                React.createElement(
-                    Form,
-                    { onSubmit: handleTranscriptSubmit },
-                    React.createElement(ConversationConfig, {
-                        wordCount,
-                        setWordCount,
-                        creativity,
-                        setCreativity,
-                        conversationStyle,
-                        setConversationStyle,
-                        rolesPerson1,
-                        setRolesPerson1,
-                        rolesPerson2,
-                        setRolesPerson2,
-                        dialogueStructure,
-                        setDialogueStructure,
-                        engagementTechniques,
-                        setEngagementTechniques,
-                        userInstructions,
-                        setUserInstructions,
-                        outputLanguage,
-                        setOutputLanguage
-                    }),
-                    React.createElement(
-                        Button,
-                        {
-                            variant: "primary",
-                            type: "submit",
-                            className: "w-full py-2 mt-3",
-                            disabled:
-                                !panelId ||
-                                (taskStatus !== "idle" &&
-                                    taskStatus !== "failure" &&
-                                    taskStatus !== "success") // Disable if panelId is not defined
-                        },
-                        "Create Transcript"
-                    )
-                )
+        transcriptData &&
+            transcriptData.map((transcript) =>
+                React.createElement(TranscriptDetailDisplay, {
+                    transcript: transcript, // Pass the entire transcriptData
+                    accessToken,
+                    transcriptUrls,
+                    existingAudio,
+                    audioUrls
+                })
             ),
-        transcriptCreated &&
-            transcriptData &&
-            React.createElement(TranscriptDetailDisplay, {
-                transcript: transcriptData, // Pass the entire transcriptData
-                accessToken,
-                transcriptUrls,
-                existingAudio,
-                audioUrls
-            }),
-        React.createElement(
-            "div",
-            { className: "audio-container border p-3 mb-4 rounded" },
-            React.createElement(
-                "h3",
-                { className: "font-bold mb-3" },
-                "Create Audio"
-            ),
-            React.createElement(
-                Form,
-                { onSubmit: handleAudioSubmit }, // Ensure this is linked to handleAudioSubmit
-                React.createElement(TextToSpeechConfig, {
-                    ttsModel,
-                    setTtsModel,
-                    defaultVoiceQuestion,
-                    setDefaultVoiceQuestion,
-                    defaultVoiceAnswer,
-                    setDefaultVoiceAnswer
-                }),
-                React.createElement(
-                    Button,
-                    {
-                        variant: "primary",
-                        type: "submit",
-                        className: "w-full py-2 mt-3",
-                        disabled:
-                            !transcriptId ||
-                            (taskStatus !== "idle" &&
-                                taskStatus !== "failure" &&
-                                taskStatus !== "success") // Disable if transcriptId is not defined
-                    },
-                    "Create Audio"
-                )
-            )
-        )
+        taskStatus !== "idle" &&
+            taskStatus !== "success" &&
+            taskStatus !== "failure"
+            ? null
+            : React.createElement(
+                  "div",
+                  {
+                      className: `transcript-edit-container border p-3 mb-4 rounded`
+                  },
+                  React.createElement(
+                      "h3",
+                      { className: "font-bold mb-3" },
+                      "Create new Transcript"
+                  ),
+                  React.createElement(
+                      Form,
+                      { onSubmit: handleTranscriptSubmit },
+                      React.createElement(TranscriptDetailEdit, {
+                          wordCount,
+                          setWordCount,
+                          creativity,
+                          setCreativity,
+                          conversationStyle,
+                          setConversationStyle,
+                          rolesPerson1,
+                          setRolesPerson1,
+                          rolesPerson2,
+                          setRolesPerson2,
+                          dialogueStructure,
+                          setDialogueStructure,
+                          engagementTechniques,
+                          setEngagementTechniques,
+                          userInstructions,
+                          setUserInstructions,
+                          outputLanguage,
+                          setOutputLanguage
+                      }),
+                      React.createElement(
+                          Button,
+                          {
+                              variant: "primary",
+                              type: "submit",
+                              className: "w-full py-2 mt-3",
+                              disabled:
+                                  !panelId ||
+                                  (taskStatus !== "idle" &&
+                                      taskStatus !== "failure" &&
+                                      taskStatus !== "success") // Disable if panelId is not defined
+                          },
+                          "Create Transcript"
+                      )
+                  )
+              ),
+        taskStatus !== "idle" &&
+            taskStatus !== "success" &&
+            taskStatus !== "failure"
+            ? React.createElement(
+                  "div",
+                  {
+                      className: "processing-container border p-3 mb-4 rounded"
+                  },
+                  React.createElement(
+                      "h3",
+                      { className: "font-bold mb-3" },
+                      "Processing..."
+                  ),
+                  React.createElement(
+                      "p",
+                      null,
+                      "Please wait while the task is being processed."
+                  )
+              )
+            : React.createElement(
+                  "div",
+                  { className: "audio-container border p-3 mb-4 rounded" },
+                  React.createElement(
+                      "h3",
+                      { className: "font-bold mb-3" },
+                      "Create Audio"
+                  ),
+                  React.createElement(
+                      Form,
+                      { onSubmit: handleAudioSubmit }, // Ensure this is linked to handleAudioSubmit
+                      React.createElement(
+                          "div",
+                          { className: "mt-3" },
+                          transcriptData &&
+                              transcriptData.length > 1 &&
+                              React.createElement(
+                                  "label",
+                                  { htmlFor: "transcriptSelect" },
+                                  "Select Transcript"
+                              ),
+                          transcriptData &&
+                              transcriptData.length > 1 &&
+                              React.createElement(
+                                  "select",
+                                  {
+                                      id: "transcriptSelect",
+                                      value: transcriptId || "",
+                                      onChange: (e) =>
+                                          setTranscriptId(e.target.value),
+                                      className: "form-select"
+                                  },
+                                  transcriptData.map((transcript) =>
+                                      React.createElement(
+                                          "option",
+                                          {
+                                              key: transcript.id,
+                                              value: transcript.id
+                                          },
+                                          transcript.title
+                                      )
+                                  )
+                              )
+                      ),
+                      React.createElement(AudioDetailEdit, {
+                          ttsModel,
+                          setTtsModel,
+                          defaultVoiceQuestion,
+                          setDefaultVoiceQuestion,
+                          defaultVoiceAnswer,
+                          setDefaultVoiceAnswer
+                      }),
+
+                      React.createElement(
+                          Button,
+                          {
+                              variant: "primary",
+                              type: "submit",
+                              className: "w-full py-2 mt-3",
+                              disabled:
+                                  !transcriptData ||
+                                  (taskStatus !== "idle" &&
+                                      taskStatus !== "failure" &&
+                                      taskStatus !== "success") // Disable if transcriptId is not defined
+                          },
+                          "Create Audio"
+                      )
+                  )
+              )
     );
 }
 

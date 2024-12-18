@@ -23,10 +23,27 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
         }
     };
 
+    const handleDownload = async () => {
+        try {
+            const response = await fetch(audioUrl);
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${audio.title || "audio"}.mp3`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Download failed", error);
+        }
+    };
+
     return React.createElement(
         "div",
         { className: "audio-detail-display border p-3 mb-4 rounded" },
-        React.createElement("h4", { className: "font-bold mb-2" }, audio.title),
+        React.createElement("h6", { className: "font-bold mb-2" }, audio.title),
         React.createElement(
             "p",
             { className: "mb-2 flex items-center" },
@@ -71,10 +88,9 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
                 className: "h-8"
             }),
             React.createElement(
-                "a",
+                "button",
                 {
-                    href: audioUrl,
-                    download: `${audio.title || "audio"}.mp3`,
+                    onClick: handleDownload,
                     className: "ml-2"
                 },
                 "⇩" // UML symbol for download

@@ -94,7 +94,12 @@ function AppContent() {
     async function fetchPanels(accessToken) {
         try {
             const panelsData = await fetchPublicPanels(accessToken);
-            setPanels(Array.isArray(panelsData) ? panelsData : []);
+            const sortedPanels = Array.isArray(panelsData)
+                ? panelsData.sort(
+                      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                  )
+                : [];
+            setPanels(sortedPanels);
         } catch (error) {
             console.error("Error fetching panels:", error);
             setPanels([]);
@@ -172,8 +177,10 @@ function AppContent() {
         resetState();
         setSelectedPanel(panel);
         if (panel === "new") {
+            setRouteId(null); // Reset routeId when navigating to /new
             history.push("/new");
         } else if (panel && panel.id) {
+            setRouteId(panel.id); // Set routeId for existing panels
             history.push(`/panel/${panel.id}`);
         }
     };
@@ -336,16 +343,6 @@ function AppContent() {
                     ),
                     React.createElement(
                         Route,
-                        { path: "/panel/:id" },
-                        accessToken
-                            ? React.createElement(PanelDetailsWrapper, {
-                                  panels,
-                                  accessToken
-                              })
-                            : React.createElement(Redirect, { to: "/login" })
-                    ),
-                    React.createElement(
-                        Route,
                         { path: "/panel/:id/edit" }, // New route for editing
                         accessToken
                             ? React.createElement(PanelEdit, {
@@ -359,6 +356,16 @@ function AppContent() {
                                   fetchPanels,
                                   setSelectedPanel,
                                   initialPanelId: routeId // Pass the panelId
+                              })
+                            : React.createElement(Redirect, { to: "/login" })
+                    ),
+                    React.createElement(
+                        Route,
+                        { path: "/panel/:id" },
+                        accessToken
+                            ? React.createElement(PanelDetailsWrapper, {
+                                  panels,
+                                  accessToken
                               })
                             : React.createElement(Redirect, { to: "/login" })
                     ),

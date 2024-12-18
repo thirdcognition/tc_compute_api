@@ -1,7 +1,7 @@
 const { useState } = React;
 const { Form, Button } = ReactBootstrap;
 
-function DiscussionForm({
+function PanelDetailEdit({
     title,
     setTitle,
     links,
@@ -95,4 +95,4 @@ function DiscussionForm({
     );
 }
 
-export default DiscussionForm;
+export default PanelDetailEdit;

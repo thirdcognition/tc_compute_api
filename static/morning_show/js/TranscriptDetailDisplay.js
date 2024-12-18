@@ -80,7 +80,7 @@ const TranscriptDetailDisplay = ({
         "div",
         { className: "transcript-detail-display border p-3 mb-4 rounded" },
         React.createElement(
-            "h3",
+            "h5",
             { className: "font-bold mb-2" },
             transcript.title
         ),
@@ -220,15 +220,16 @@ const TranscriptDetailDisplay = ({
                 { className: "mt-4" },
                 renderTranscript(transcriptContent)
             ),
-        audios
-            .filter((audio) => audio.public_transcript_id === transcript.id)
-            .map((audio) =>
-                React.createElement(AudioDetailDisplay, {
-                    key: audio.id,
-                    audio,
-                    audioUrl: audioUrls[audio.id]
-                })
-            )
+        audios &&
+            audios
+                .filter((audio) => audio.public_transcript_id === transcript.id)
+                .map((audio) =>
+                    React.createElement(AudioDetailDisplay, {
+                        key: audio.id,
+                        audio,
+                        audioUrl: audioUrls[audio.id]
+                    })
+                )
     );
 };
 

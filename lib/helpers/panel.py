@@ -84,15 +84,20 @@ def create_public_panel_transcript(
     supabase: Client = get_sync_supabase_service_client()
 
     # Retrieve panel metadata
-    panel = PublicPanelDiscussion.get_sync(supabase, request_data.panel_id)
+    panel = PublicPanelDiscussion.fetch_from_supabase_sync(
+        supabase, request_data.panel_id
+    )
     metadata = panel.metadata or {}
 
-    # Use values from metadata if not defined in request_data
-    conversation_config = request_data.conversation_config or metadata.get(
-        "conversation_config", custom_config
-    )
-    conversation_config["podcast_name"] = custom_config["podcast_name"]
-    conversation_config["podcast_tagline"] = custom_config["podcast_tagline"]
+    # Load base conversation_config from PublicPanelDiscussion metadata
+    base_conversation_config = metadata.get("conversation_config", {})
+    # Extend with conversation_config from request_data and apply custom_config defaults
+    conversation_config = {
+        **custom_config,
+        **base_conversation_config,
+        **(request_data.conversation_config or {}),
+    }
+
     input_source = request_data.input_source or metadata.get("urls", "")
     longform = (
         request_data.longform
@@ -101,18 +106,59 @@ def create_public_panel_transcript(
     )
     input_text = request_data.input_text or metadata.get("input_text", "")
 
-    bucket_transcript_file: str = f"panel_{request_data.panel_id}_transcript.txt"
+    # Construct title
+    title_elements = [
+        panel.title,
+        conversation_config.get("output_language"),
+        (
+            f"{conversation_config.get('word_count')} words"
+            if conversation_config.get("word_count")
+            else None
+        ),
+        (
+            f"Creativity: {conversation_config.get('creativity')}"
+            if conversation_config.get("creativity")
+            else None
+        ),
+        (
+            f"Roles: {conversation_config.get('roles_person1')}, {conversation_config.get('roles_person2')}"
+            if conversation_config.get("roles_person1")
+            and conversation_config.get("roles_person2")
+            else None
+        ),
+        (
+            f"Structure: {', '.join(conversation_config.get('dialogue_structure', []))}"
+            if conversation_config.get("dialogue_structure")
+            else None
+        ),
+        (
+            f"Techniques: {', '.join(conversation_config.get('engagement_techniques', []))}"
+            if conversation_config.get("engagement_techniques")
+            else None
+        ),
+        (
+            f"[{', '.join(conversation_config.get('conversation_style', []))}]"
+            if conversation_config.get("conversation_style")
+            else None
+        ),
+    ]
+    title = " - ".join(filter(None, title_elements))
 
     panel_transcript: PublicPanelTranscript = PublicPanelTranscript(
         public_panel_id=request_data.panel_id,
-        title="Panel Transcript",
+        title=title,
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
-        file=bucket_transcript_file,
         type="segment",
         metadata={"conversation_config": conversation_config},
     )
     panel_transcript.create_sync(supabase=supabase)
+
+    bucket_transcript_file: str = (
+        f"panel_{request_data.panel_id}_{panel_transcript.id}_transcript.txt"
+    )
+    panel_transcript.file = bucket_transcript_file
+    panel_transcript.update_sync(supabase=supabase)
 
     try:
         transcript_file: str = generate_podcast(
@@ -164,22 +210,43 @@ def create_public_panel_audio(
     panel_id: UUID = request_data.panel_id
     transcript_id: UUID = request_data.transcript_id
 
-    bucket_transcript_file: str = f"panel_{panel_id}_transcript.txt"
-    bucket_audio_file: str = f"panel_{panel_id}_audio.mp3"
+    bucket_transcript_file: str = f"panel_{panel_id}_{transcript_id}_transcript.txt"
 
     supabase: Client = get_sync_supabase_service_client()
 
     # Retrieve panel metadata
-    panel = PublicPanelDiscussion.get_sync(supabase, panel_id)
-    metadata = panel.metadata or {}
+    panel = PublicPanelDiscussion.fetch_from_supabase_sync(supabase, panel_id)
+    transcript = PublicPanelTranscript.fetch_from_supabase_sync(supabase, transcript_id)
+    metadata = transcript.metadata or {}
 
-    # Use values from metadata if not defined in request_data
-    conversation_config = request_data.conversation_config or metadata.get(
-        "conversation_config", custom_config
-    )
-    conversation_config["podcast_name"] = custom_config["podcast_name"]
-    conversation_config["podcast_tagline"] = custom_config["podcast_tagline"]
+    # Load base conversation_config from PublicPanelTranscript metadata
+    base_conversation_config = metadata.get("conversation_config", {})
+    # Extend with conversation_config from request_data and apply custom_config defaults
+    conversation_config = {
+        **custom_config,
+        **base_conversation_config,
+        **(request_data.conversation_config or {}),
+    }
+
     tts_model = request_data.tts_model or metadata.get("tts_model", "geminimulti")
+
+    # Construct title
+    default_voices = (
+        conversation_config.get("text_to_speech", {})
+        .get(tts_model, {})
+        .get("default_voices", {})
+    )
+    title_elements = [
+        panel.title,
+        conversation_config.get("output_language"),
+        f"TTS Model: {tts_model}",
+        (
+            f"Voices: {default_voices.get('question')} (Q), {default_voices.get('answer')} (A)"
+            if default_voices.get("question") and default_voices.get("answer")
+            else None
+        ),
+    ]
+    title = " - ".join(filter(None, title_elements))
 
     response = supabase.storage.from_(request_data.bucket_name).download(
         bucket_transcript_file
@@ -192,13 +259,16 @@ def create_public_panel_audio(
     panel_audio: PublicPanelAudio = PublicPanelAudio(
         public_panel_id=panel_id,
         public_transcript_id=transcript_id,
-        title="Panel Audio",
+        title=title,
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
-        file=bucket_audio_file,
         metadata={"conversation_config": conversation_config},
     )
     panel_audio.create_sync(supabase=supabase)
+    bucket_audio_file: str = (
+        f"panel_{panel_id}_{transcript_id}_{panel_audio.id}_audio.mp3"
+    )
+    panel_audio.file = bucket_audio_file
 
     try:
         audio_file: str = generate_podcast(
@@ -225,7 +295,7 @@ def create_public_panel_audio(
 
 
 @celery_app.task
-def create_public_panel_audio_task(self: Task, access_token, request_data_json):
+def create_public_panel_audio_task(access_token, request_data_json):
     request_data = PublicPanelRequestData.model_validate_json(request_data_json)
     return create_public_panel_audio(access_token, request_data)
 

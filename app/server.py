@@ -17,7 +17,7 @@ app = init_app()
 set_debug(True)
 
 # Mount the static files directory
-app.mount("/html", StaticFiles(directory="html", html=True), name="html")
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 
 @app.get("/")

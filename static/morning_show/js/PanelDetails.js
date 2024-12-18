@@ -1,10 +1,9 @@
 import PanelDetailDisplay from "./PanelDetailDisplay.js";
 import TranscriptDetailDisplay from "./TranscriptDetailDisplay.js";
 const { Card } = ReactBootstrap;
-const { useHistory } = ReactRouterDOM; // Correctly import useHistory
+const { Redirect, Link } = ReactRouterDOM; // Import Redirect
 
 function PanelDetails({ panel, accessToken }) {
-    const history = useHistory(); // Initialize useHistory
     const [details, setDetails] = React.useState({
         audioProcessState: "",
         audioFailMessage: "",
@@ -15,6 +14,7 @@ function PanelDetails({ panel, accessToken }) {
     const [audios, setAudios] = React.useState([]);
     const [transcriptUrls, setTranscriptUrls] = React.useState({});
     const [audioUrls, setAudioUrls] = React.useState({});
+    const [redirectToEdit, setRedirectToEdit] = React.useState(false); // New state for redirection
 
     React.useEffect(() => {
         // Reset details, transcripts, and audios when panel changes
@@ -81,15 +81,15 @@ function PanelDetails({ panel, accessToken }) {
             .then((response) => response.json())
             .then((data) => {
                 setAudios(data);
-                if (data.length > 0) {
+                if (data.length === 0) {
+                    setRedirectToEdit(true); // Set redirect if no audios
+                } else {
                     const audio = data[0];
                     setDetails((prevDetails) => ({
                         ...prevDetails,
                         audioProcessState: audio.process_state || "",
                         audioFailMessage: audio.process_fail_message || ""
                     }));
-                } else {
-                    history.push(`/panel/${panel.id}/edit`);
                 }
             })
             .catch((error) => console.error("Error fetching audios:", error));
@@ -106,7 +106,9 @@ function PanelDetails({ panel, accessToken }) {
             .then((response) => response.json())
             .then((data) => {
                 setTranscripts(data);
-                if (data.length > 0) {
+                if (data.length === 0) {
+                    setRedirectToEdit(true); // Set redirect if no transcripts
+                } else {
                     const transcript = data[0];
                     setDetails((prevDetails) => ({
                         ...prevDetails,
@@ -114,8 +116,6 @@ function PanelDetails({ panel, accessToken }) {
                         transcriptFailMessage:
                             transcript.process_fail_message || ""
                     }));
-                } else {
-                    history.push(`/panel/${panel.id}/edit`);
                 }
             })
             .catch((error) =>
@@ -123,16 +123,26 @@ function PanelDetails({ panel, accessToken }) {
             );
     }, [panel, accessToken]);
 
-    // Redirect to edit if either transcripts or audios are missing
-    // React.useEffect(() => {
-    //     if (transcripts.length === 0 || audios.length === 0) {
-    //         history.push(`/panel/${panel.id}/edit`);
-    //     }
-    // }, [transcripts, audios, history, panel.id]);
+    if (redirectToEdit) {
+        return React.createElement(Redirect, { to: `/panel/${panel.id}/edit` });
+    }
 
     return React.createElement(
         "div",
         { style: { maxHeight: "100vh", overflowY: "auto" } },
+        React.createElement(
+            "div",
+            { className: "flex justify-between items-center" },
+            React.createElement(
+                Link,
+                {
+                    to: `/panel/${panel.id}/edit`,
+                    className:
+                        "btn btn-primary w-full py-2 mb-4 flex items-center"
+                },
+                "Edit Show"
+            )
+        ),
         React.createElement(
             Card,
             { className: "mb-3 shadow-lg" },

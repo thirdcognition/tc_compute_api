@@ -1,4 +1,4 @@
-// ConversationConfig.js
+// TranscriptDetailEdit.js
 const { useState } = React;
 const { Form, Button } = ReactBootstrap;
 import {
@@ -10,7 +10,7 @@ import {
     outputLanguageOptions
 } from "./options.js";
 
-function ConversationConfig({
+function TranscriptDetailEdit({
     wordCount,
     setWordCount,
     creativity,
@@ -340,4 +340,4 @@ function ConversationConfig({
     );
 }
 
-export default ConversationConfig;
+export default TranscriptDetailEdit;

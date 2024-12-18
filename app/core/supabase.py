@@ -203,7 +203,7 @@ async def supabase_middleware(
         and request.headers.get("access-control-request-method")
         or request.url.path == "/auth/login"
         or request.url.path == "/health"
-        or request.url.path.startswith("/html")
+        or request.url.path.startswith("/static")
         or request.url.path.startswith("/morning_show")
     ):
         return await call_next(request)
