@@ -21,8 +21,8 @@ app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 
 @app.get("/")
-async def redirect_root_to_docs():
-    return RedirectResponse("/docs")
+async def redirect_root_to_morning_show():
+    return RedirectResponse("/morning_show")
 
 
 @app.get("/health")

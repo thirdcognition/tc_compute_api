@@ -8,6 +8,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     curl \
     software-properties-common \
     ffmpeg libsm6 libxext6 \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
