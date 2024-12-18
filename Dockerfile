@@ -4,10 +4,11 @@ COPY . .
 COPY app app
 COPY lib lib
 COPY file_repository file_repository
+COPY static static
 # RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
 # Use an ARG to set a default port value
-ARG DEFAULT_PORT=4000
+ARG DEFAULT_PORT=6000
 
 # Set the ENV variable, which can be overridden by the user when running the container
 ENV SERVER_PORT=${DEFAULT_PORT}
