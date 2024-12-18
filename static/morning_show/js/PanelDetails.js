@@ -29,6 +29,10 @@ function PanelDetails({ panel, accessToken }) {
         setTranscriptUrls({});
         setAudioUrls({});
 
+        const protocol = window.location.protocol;
+        const host = window.location.hostname;
+        const port = window.location.port ? `:${window.location.port}` : "";
+
         fetch(`/public_panel/${panel.id}/files`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`
@@ -36,16 +40,14 @@ function PanelDetails({ panel, accessToken }) {
         })
             .then((response) => response.json())
             .then((data) => {
-                const currentHost = window.location.host;
                 const updatedTranscriptUrls = data.transcript_urls
                     ? Object.fromEntries(
                           Object.entries(data.transcript_urls).map(
                               ([id, url]) => [
                                   id,
                                   url.replace(
-                                      "http://127.0.0.1",
-                                      "http://" +
-                                          currentHost.replace(":4000", "")
+                                      "http://127.0.0.1:4000",
+                                      `${protocol}//${host}${port}`
                                   )
                               ]
                           )
@@ -56,8 +58,8 @@ function PanelDetails({ panel, accessToken }) {
                           Object.entries(data.audio_urls).map(([id, url]) => [
                               id,
                               url.replace(
-                                  "http://127.0.0.1",
-                                  "http://" + currentHost.replace(":4000", "")
+                                  "http://127.0.0.1:4000",
+                                  `${protocol}//${host}${port}`
                               )
                           ])
                       )
@@ -70,14 +72,11 @@ function PanelDetails({ panel, accessToken }) {
             );
 
         // Fetch audios
-        fetch(
-            `http://${window.location.hostname}:4000/public_panel/${panel.id}/audios`,
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
+        fetch(`${protocol}//${host}${port}/public_panel/${panel.id}/audios`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
             }
-        )
+        })
             .then((response) => response.json())
             .then((data) => {
                 setAudios(data);
@@ -96,7 +95,7 @@ function PanelDetails({ panel, accessToken }) {
 
         // Fetch transcripts
         fetch(
-            `http://${window.location.hostname}:4000/public_panel/${panel.id}/transcripts`,
+            `${protocol}//${host}${port}/public_panel/${panel.id}/transcripts`,
             {
                 headers: {
                     Authorization: `Bearer ${accessToken}`

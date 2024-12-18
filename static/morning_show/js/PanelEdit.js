@@ -99,9 +99,13 @@ function PanelEdit({
 
     const refreshPanelData = async (panelId) => {
         try {
+            const protocol = window.location.protocol;
+            const host = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : "";
+
             // Fetch updated discussion data
             const discussionResponse = await fetch(
-                `http://${window.location.hostname}:4000/public_panel/${panelId}`,
+                `${protocol}//${host}${port}/public_panel/${panelId}`,
                 {
                     method: "GET",
                     headers: {
@@ -118,7 +122,7 @@ function PanelEdit({
 
             // Fetch updated transcripts
             const transcriptResponse = await fetch(
-                `http://${window.location.hostname}:4000/public_panel/${panelId}/transcripts`,
+                `${protocol}//${host}${port}/public_panel/${panelId}/transcripts`,
                 {
                     method: "GET",
                     headers: {
@@ -136,7 +140,7 @@ function PanelEdit({
 
             // Fetch updated audios
             const audioResponse = await fetch(
-                `http://${window.location.hostname}:4000/public_panel/${panelId}/audios`,
+                `${protocol}//${host}${port}/public_panel/${panelId}/audios`,
                 {
                     method: "GET",
                     headers: {
@@ -158,15 +162,14 @@ function PanelEdit({
                 }
             );
             const filesData = await filesResponse.json();
-            const currentHost = window.location.host;
             const updatedTranscriptUrls = filesData.transcript_urls
                 ? Object.fromEntries(
                       Object.entries(filesData.transcript_urls).map(
                           ([id, url]) => [
                               id,
                               url.replace(
-                                  "http://127.0.0.1",
-                                  "http://" + currentHost.replace(":4000", "")
+                                  "http://127.0.0.1:4000",
+                                  `${protocol}//${host}${port}`
                               )
                           ]
                       )
@@ -177,8 +180,8 @@ function PanelEdit({
                       Object.entries(filesData.audio_urls).map(([id, url]) => [
                           id,
                           url.replace(
-                              "http://127.0.0.1",
-                              "http://" + currentHost.replace(":4000", "")
+                              "http://127.0.0.1:4000",
+                              `${protocol}//${host}${port}`
                           )
                       ])
                   )
@@ -204,8 +207,11 @@ function PanelEdit({
     const pollTaskStatus = async (id, type) => {
         try {
             setIsPolling(true);
+            const protocol = window.location.protocol;
+            const host = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : "";
             const response = await fetch(
-                `http://${window.location.hostname}:4000/system/task_status/${id}`,
+                `${protocol}//${host}${port}/system/task_status/${id}`,
                 {
                     method: "GET",
                     headers: {
@@ -237,8 +243,11 @@ function PanelEdit({
     const createPanel = async () => {
         const linksArray = links.filter((link) => link.trim() !== "");
         try {
+            const protocol = window.location.protocol;
+            const host = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : "";
             const response = await fetch(
-                `http://${window.location.hostname}:4000/public_panel/discussion`,
+                `${protocol}//${host}${port}/public_panel/discussion`,
                 {
                     method: "POST",
                     headers: {
@@ -269,8 +278,11 @@ function PanelEdit({
     const createTranscript = async (panelId) => {
         const linksArray = links.filter((link) => link.trim() !== "");
         try {
+            const protocol = window.location.protocol;
+            const host = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : "";
             const response = await fetch(
-                `http://${window.location.hostname}:4000/public_panel/transcript`,
+                `${protocol}//${host}${port}/public_panel/transcript`,
                 {
                     method: "POST",
                     headers: {
@@ -316,8 +328,11 @@ function PanelEdit({
     const createAudio = async (panelId, transcriptId) => {
         const linksArray = links.filter((link) => link.trim() !== "");
         try {
+            const protocol = window.location.protocol;
+            const host = window.location.hostname;
+            const port = window.location.port ? `:${window.location.port}` : "";
             const response = await fetch(
-                `http://${window.location.hostname}:4000/public_panel/audio`,
+                `${protocol}//${host}${port}/public_panel/audio`,
                 {
                     method: "POST",
                     headers: {

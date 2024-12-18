@@ -109,8 +109,9 @@ function AppContent() {
     async function login(event) {
         event.preventDefault();
         try {
+            const port = window.location.port ? `:${window.location.port}` : "";
             const response = await fetch(
-                `http://${window.location.hostname}:4000/auth/login`,
+                `${window.location.protocol}//${window.location.hostname}${port}/auth/login`,
                 {
                     method: "POST",
                     headers: {
@@ -140,8 +141,9 @@ function AppContent() {
     }
 
     async function fetchData(endpoint, accessToken) {
+        const port = window.location.port ? `:${window.location.port}` : "";
         const response = await fetch(
-            `http://${window.location.hostname}:4000${endpoint}`,
+            `${window.location.protocol}//${window.location.hostname}${port}${endpoint}`,
             {
                 method: "GET",
                 headers: {
