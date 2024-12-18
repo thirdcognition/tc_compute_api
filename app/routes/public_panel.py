@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
 from app.core.supabase import SupaClientDep, AccessTokenDep
-from lib.helpers.routes import handle_exception
-from lib.api.public_panel.read import (
+from source.helpers.routes import handle_exception
+from source.api.public_panel.read import (
     get_public_panel,
     list_public_panels,
     get_public_panel_transcript,
@@ -12,19 +12,19 @@ from lib.api.public_panel.read import (
     list_public_panel_transcripts_w_id,
     list_public_panel_audios_w_id,
 )
-from lib.api.public_panel.update import (
+from source.api.public_panel.update import (
     update_public_panel,
     update_public_panel_transcript,
     update_public_panel_audio,
 )
-from lib.helpers.panel import (
+from source.helpers.panel import (
     PublicPanelRequestData,
     create_public_panel_task,
     create_public_panel_transcription_task,
     create_public_panel_audio_task,
     create_public_panel,  # Import the function
 )
-from lib.models.supabase.public_panel import (
+from source.models.supabase.public_panel import (
     PublicPanelDiscussion,
     PublicPanelTranscript,
     PublicPanelAudio,

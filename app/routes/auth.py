@@ -5,7 +5,7 @@ from supabase_auth.types import Session
 from app.core.session_storage import get_storage, get_supabase_client
 from pydantic import BaseModel, EmailStr, ValidationError
 
-from lib.helpers.routes import handle_exception
+from source.helpers.routes import handle_exception
 
 router = APIRouter()
 

@@ -12,8 +12,8 @@ from fastapi.security import OAuth2PasswordBearer
 
 from supabase_auth.errors import AuthApiError
 
-from lib.load_env import SETTINGS
-from lib.models.config.logging import logger
+from source.load_env import SETTINGS
+from source.models.config.logging import logger
 
 get_oauth2: OAuth2PasswordBearer = OAuth2PasswordBearer(
     tokenUrl="please login by supabase-js to get token"

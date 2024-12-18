@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.supabase import supabase_middleware
-from lib.load_env import SETTINGS
+from source.load_env import SETTINGS
 
 
 def init_app() -> FastAPI:

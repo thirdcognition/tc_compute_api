@@ -5,19 +5,19 @@ from celery import Celery, Task
 from typing import Any, Callable, Coroutine, ParamSpec, TypeVar
 from asgiref import sync
 
-from lib.load_env import SETTINGS
+from source.load_env import SETTINGS
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
-# from lib.models.config.logging import logger
+# from source.models.config.logging import logger
 
 # Initialize Celery with Redis settings from SETTINGS
 celery_app = Celery(
     "tc_compute_api",
     broker=SETTINGS.redis_broker_url,
     backend=SETTINGS.redis_backend_url,
-    include=["lib.helpers.panel"],
+    include=["source.helpers.panel"],
     # log=logger,
 )
 

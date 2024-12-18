@@ -10,7 +10,7 @@ from app.routes.system import router as system_router
 from app.routes.public_panel import router as public_panel_router
 from app.routes.panel import router as panel_router
 from app.core.init_app import init_app
-from lib.load_env import SETTINGS
+from source.load_env import SETTINGS
 
 app = init_app()
 

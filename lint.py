@@ -44,7 +44,7 @@ def run_autopep8(directories):
 
 def main(*args):
     # Define default directories
-    default_directories = ["app", "lib"]
+    default_directories = ["app", "source"]
 
     # Use provided arguments or default directories
     directories = args if args else default_directories

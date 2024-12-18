@@ -2,7 +2,7 @@ FROM markushaverinen/tc_poc_base_dev:latest
 
 COPY . .
 COPY app app
-COPY lib lib
+COPY source source
 COPY file_repository file_repository
 COPY static static
 # RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt

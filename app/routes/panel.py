@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
 from app.core.supabase import SupaClientDep
-from lib.helpers.routes import handle_exception
-from lib.api.panel.read import (
+from source.helpers.routes import handle_exception
+from source.api.panel.read import (
     get_panel,
     list_panels,
     get_panel_transcript,
@@ -10,12 +10,12 @@ from lib.api.panel.read import (
     list_panel_transcripts,
     list_panel_audios,
 )
-from lib.api.panel.update import (
+from source.api.panel.update import (
     update_panel,
     update_panel_transcript,
     update_panel_audio,
 )
-from lib.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
+from source.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
 
 router = APIRouter()
 

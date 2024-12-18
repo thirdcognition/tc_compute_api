@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ValidationError
 from app.core.supabase import SupaClientDep
-from lib.helpers.routes import handle_exception
-from lib.llm_exec.journey_exec import get_journey_template_id_with_role
-from lib.models.supabase.journey import (
+from source.helpers.routes import handle_exception
+from source.llm_exec.journey_exec import get_journey_template_id_with_role
+from source.models.supabase.journey import (
     JourneyModel,
     JourneyVersionModel,
     JourneyItemModel,
@@ -11,7 +11,7 @@ from lib.models.supabase.journey import (
     JourneyStructureModel,
     JourneyStructureVersionModel,
 )
-from lib.api.journey.create import (
+from source.api.journey.create import (
     create_journey,
     create_journey_version,
     create_journey_item,
@@ -19,7 +19,7 @@ from lib.api.journey.create import (
     create_journey_structure,
     create_journey_structure_version,
 )
-from lib.api.journey.read import (
+from source.api.journey.read import (
     get_journey,
     list_journeys,
     get_journey_version,
@@ -33,7 +33,7 @@ from lib.api.journey.read import (
     get_journey_structure_version,
     list_journey_structure_versions,
 )
-from lib.api.journey.update import (
+from source.api.journey.update import (
     update_journey,
     update_journey_version,
     update_journey_item,
@@ -41,7 +41,7 @@ from lib.api.journey.update import (
     update_journey_structure,
     update_journey_structure_version,
 )
-from lib.api.journey.delete import (
+from source.api.journey.delete import (
     delete_journey,
     delete_journey_version,
     delete_journey_item,

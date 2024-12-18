@@ -10,10 +10,10 @@ repos:
     rev: 23.9.1
     hooks:
       - id: black
-        args: [--include, "app/.*", "--include", "lib/.*"]
+        args: [--include, "app/.*", "--include", "source/.*"]
 
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
       - id: flake8
-        args: [--filename, "app/.*", "--filename", "lib/.*"]
+        args: [--filename, "app/.*", "--filename", "source/.*"]

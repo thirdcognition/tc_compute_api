@@ -1,20 +1,20 @@
 from fastapi import APIRouter, HTTPException
 from app.core.supabase import SupaClientDep
 from app.routes.journey import handle_exception
-from lib.api.organization_user.create import (
+from source.api.organization_user.create import (
     CreateOrganizationUserRequestData,
     create_organization_user,
 )
-from lib.api.organization_user.read import (
+from source.api.organization_user.read import (
     get_organization_user,
     list_organization_users,
 )
-from lib.api.organization_user.update import (
+from source.api.organization_user.update import (
     UpdateOrganizationUserRequestData,
     update_organization_user,
 )
-from lib.api.organization_user.delete import delete_organization_user
-from lib.models.supabase.organization import OrganizationUsersModel
+from source.api.organization_user.delete import delete_organization_user
+from source.models.supabase.organization import OrganizationUsersModel
 
 router = APIRouter()
 

@@ -2,13 +2,13 @@ from typing import List
 from fastapi import APIRouter
 from app.core.supabase import SupaClientDep
 from app.routes.journey import handle_exception
-from lib.api.organization.create import create_organization
-from lib.api.organization.read import get_organization, list_organizations
-from lib.api.organization.update import (
+from source.api.organization.create import create_organization
+from source.api.organization.read import get_organization, list_organizations
+from source.api.organization.update import (
     update_organization,
 )
-from lib.api.organization.delete import delete_organization
-from lib.models.supabase.organization import OrganizationsModel
+from source.api.organization.delete import delete_organization
+from source.models.supabase.organization import OrganizationsModel
 
 router = APIRouter()
 

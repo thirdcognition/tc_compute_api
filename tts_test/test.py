@@ -5,7 +5,7 @@ Make sure to be working in a virtual environment.
 import os
 from google.cloud import texttospeech_v1beta1 as texttospeech
 
-from lib.models.config.default_settings import Settings
+from source.models.config.default_settings import Settings
 
 SETTINGS = Settings()
 
