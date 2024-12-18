@@ -31,7 +31,7 @@ if [ -f /.dockerenv ]; then
     CELERY_WORKER_PID=$!
 
     echo "Starting Flower on port $FLOWER_PORT"
-    flower -A app.core.celery_app &
+    celery -A app.core.celery_app flower &
     FLOWER_PID=$!
 else
     echo "Not running inside Docker, starting server with reload."
