@@ -32,7 +32,7 @@ async def health_check():
 
 @app.get("/morning_show/{path_name:path}")
 async def serve_morning_show(path_name: str):
-    return FileResponse("html/morning_show/index.html")
+    return FileResponse("static/morning_show/index.html")
 
 
 # Include routers

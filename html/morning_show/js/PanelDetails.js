@@ -88,6 +88,8 @@ function PanelDetails({ panel, accessToken }) {
                         audioProcessState: audio.process_state || "",
                         audioFailMessage: audio.process_fail_message || ""
                     }));
+                } else {
+                    history.push(`/panel/${panel.id}/edit`);
                 }
             })
             .catch((error) => console.error("Error fetching audios:", error));
@@ -112,6 +114,8 @@ function PanelDetails({ panel, accessToken }) {
                         transcriptFailMessage:
                             transcript.process_fail_message || ""
                     }));
+                } else {
+                    history.push(`/panel/${panel.id}/edit`);
                 }
             })
             .catch((error) =>
@@ -120,11 +124,11 @@ function PanelDetails({ panel, accessToken }) {
     }, [panel, accessToken]);
 
     // Redirect to edit if either transcripts or audios are missing
-    React.useEffect(() => {
-        if (transcripts.length === 0 || audios.length === 0) {
-            history.push(`/panel/${panel.id}/edit`);
-        }
-    }, [transcripts, audios, history, panel.id]);
+    // React.useEffect(() => {
+    //     if (transcripts.length === 0 || audios.length === 0) {
+    //         history.push(`/panel/${panel.id}/edit`);
+    //     }
+    // }, [transcripts, audios, history, panel.id]);
 
     return React.createElement(
         "div",
