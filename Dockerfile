@@ -1,4 +1,4 @@
-FROM markushaverinen/tc_base:latest
+FROM markushaverinen/tc_poc_base_dev:latest
 
 COPY . .
 COPY app app
