@@ -201,6 +201,7 @@ async def supabase_middleware(
     if (
         request.method == "OPTIONS"
         and request.headers.get("access-control-request-method")
+        or request.url.path == "/"
         or request.url.path == "/auth/login"
         or request.url.path == "/health"
         or request.url.path.startswith("/static")
