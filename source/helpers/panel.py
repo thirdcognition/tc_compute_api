@@ -86,7 +86,7 @@ def parse_since_value(since_value):
     return total_timedelta
 
 
-def fetch_news_links(config: GoogleNewsConfig) -> List[str]:
+def fetch_news_links(config: GoogleNewsConfig) -> List[Tuple[str, str]]:
     gn = GoogleNews(lang=config.lang, country=config.country)
     time_span = parse_since_value(config.since)
 
@@ -108,12 +108,20 @@ def fetch_news_links(config: GoogleNewsConfig) -> List[str]:
     # Initialize the GoogleNewsResolver
     resolver = GoogleNewsResolver()
 
-    # Resolve each URL
+    # Resolve each URL and fetch content
     resolved_links = []
-    for entry in news["entries"][: config.articles]:
+    entries_iter = iter(news["entries"])
+    resolved_count = 0
+
+    while resolved_count < config.articles:
         try:
-            resolved_url = resolver.resolve_url(entry.link)
-            resolved_links.append(resolved_url)
+            entry = next(entries_iter)
+            resolved_url, content = resolver.resolve_url(entry.link)
+            resolved_links.append((resolved_url, content))
+            resolved_count += 1
+        except StopIteration:
+            print("No more entries to process.")
+            break
         except Exception as e:
             print(f"Failed to resolve {entry.link}: {e}")
 
@@ -178,7 +186,7 @@ def create_public_panel_transcript(
     }
 
     # Fetch news links from GoogleNewsConfig instances
-    print(f"{metadata=}")
+    # print(f"{metadata=}")
     google_news_configs_json = metadata.get("google_news", []) + (
         request_data.google_news or []
     )
@@ -190,17 +198,20 @@ def create_public_panel_transcript(
         GoogleNewsConfig.model_validate(config) for config in google_news_configs_json
     ]
 
-    print(f"{google_news_configs=}")
+    # print(f"{google_news_configs=}")
 
-    news_links = set()
+    article_contents = []
     for config in google_news_configs:
         # if isinstance(
         #     config, GoogleNewsConfig
         # ):  # Ensure config is a GoogleNewsConfig instance
-        news_links.update(fetch_news_links(config))
+        for page, content in fetch_news_links(config):
+            article_contents.append(content)
+            print(f"{page=}")
+            # print(f"\n\nArticle: {page=}\n\n{content}\n\n\n")
 
-    # Combine news_links with input_source or urls
-    combined_sources = set(news_links)
+    # Combine input_source with metadata urls
+    combined_sources = set()
     if request_data.input_source:
         combined_sources.update(
             request_data.input_source
@@ -216,7 +227,7 @@ def create_public_panel_transcript(
 
     input_source = list(combined_sources)
 
-    print(f"{input_source=}")
+    # print(f"{input_source=}")
 
     longform = (
         request_data.longform
@@ -224,6 +235,9 @@ def create_public_panel_transcript(
         else metadata.get("longform", False)
     )
     input_text = request_data.input_text or metadata.get("input_text", "")
+
+    # Concatenate article contents to input_text
+    input_text += "\n\n" + "\n\n".join(article_contents)
 
     # Construct title
     title_elements = [

@@ -28,7 +28,9 @@ function TranscriptDetailEdit({
     userInstructions,
     setUserInstructions,
     outputLanguage,
-    setOutputLanguage
+    setOutputLanguage,
+    longForm,
+    setLongForm
 }) {
     const [showDetails, setShowDetails] = useState(false);
 
@@ -72,6 +74,30 @@ function TranscriptDetailEdit({
                 className: "w-full"
             }),
             React.createElement("div", null, `${creativity}`)
+        ),
+        React.createElement(
+            Form.Group,
+            { controlId: "longForm", className: "mb-4" },
+            React.createElement(
+                "div",
+                {
+                    style: {
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: "10px"
+                    }
+                },
+                React.createElement(
+                    "label",
+                    { style: { marginRight: "10px" } },
+                    React.createElement("input", {
+                        type: "checkbox",
+                        checked: longForm,
+                        onChange: (e) => setLongForm(e.target.checked)
+                    }),
+                    " Long Form"
+                )
+            )
         ),
         React.createElement(
             Button,

@@ -36,7 +36,22 @@ function PanelDetailEdit({
     };
 
     const addNewsConfigField = () => {
-        setNewsConfigFields([...newsConfigFields, { type: "topic" }]);
+        setNewsConfigFields([
+            ...newsConfigFields,
+            { type: "topic", lang: "en", country: "US" }
+        ]);
+    };
+
+    const convertHoursToTimeFormat = (hours) => {
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        const months = Math.floor(days / 30);
+        const remainingDays = days % 30;
+        let result = "";
+        if (months > 0) result += `${months}m `;
+        if (remainingDays > 0) result += `${remainingDays}d `;
+        if (remainingHours > 0) result += `${remainingHours}h`;
+        return result.trim();
     };
 
     return React.createElement(
@@ -132,6 +147,11 @@ function PanelDetailEdit({
                             "option",
                             { value: "topic" },
                             "Topic"
+                        ),
+                        React.createElement(
+                            "option",
+                            { value: "top_topics" },
+                            "Top Topics"
                         )
                     ),
                     config.type === "search" &&
@@ -152,13 +172,15 @@ function PanelDetailEdit({
                     config.type === "location" &&
                         React.createElement(Form.Control, {
                             type: "text",
-                            placeholder: "Enter location...",
+                            placeholder: "Enter locations as CSV...",
                             value: config.location || "",
                             onChange: (e) =>
                                 handleNewsConfigChange(
                                     index,
                                     "location",
                                     e.target.value
+                                        .split(",")
+                                        .map((loc) => loc.trim())
                                 ),
                             style: { marginBottom: "10px" },
                             className:
@@ -169,12 +191,16 @@ function PanelDetailEdit({
                             Form.Control,
                             {
                                 as: "select",
-                                value: config.topic || "",
+                                multiple: true,
+                                value: config.topic || [],
                                 onChange: (e) =>
                                     handleNewsConfigChange(
                                         index,
                                         "topic",
-                                        e.target.value
+                                        Array.from(
+                                            e.target.selectedOptions,
+                                            (option) => option.value
+                                        )
                                     ),
                                 style: { marginBottom: "10px" },
                                 className:
@@ -222,17 +248,70 @@ function PanelDetailEdit({
                             )
                         ),
                     React.createElement(
+                        Form.Group,
+                        { controlId: `lang-${index}` },
+                        React.createElement(
+                            Form.Label,
+                            { className: "font-semibold" },
+                            "Language:"
+                        ),
+                        React.createElement(Form.Control, {
+                            type: "text",
+                            placeholder: "Enter language code...",
+                            value: config.lang || "en",
+                            onChange: (e) =>
+                                handleNewsConfigChange(
+                                    index,
+                                    "lang",
+                                    e.target.value
+                                ),
+                            style: { marginBottom: "10px" },
+                            className:
+                                "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        })
+                    ),
+                    React.createElement(
+                        Form.Group,
+                        { controlId: `country-${index}` },
+                        React.createElement(
+                            Form.Label,
+                            { className: "font-semibold" },
+                            "Country:"
+                        ),
+                        React.createElement(Form.Control, {
+                            type: "text",
+                            placeholder: "Enter country code...",
+                            value: config.country || "US",
+                            onChange: (e) =>
+                                handleNewsConfigChange(
+                                    index,
+                                    "country",
+                                    e.target.value
+                                ),
+                            style: { marginBottom: "10px" },
+                            className:
+                                "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        })
+                    ),
+                    React.createElement(
                         "div",
                         {
                             style: {
                                 display: "flex",
-                                alignItems: "center",
-                                marginBottom: "10px"
+                                alignItems: "flex-start",
+                                marginBottom: "10px",
+                                flexDirection: "column",
+                                width: "100%"
                             }
                         },
                         React.createElement(
                             "label",
-                            { style: { marginRight: "10px" } },
+                            {
+                                style: {
+                                    marginBottom: "5px",
+                                    alignSelf: "flex-start"
+                                }
+                            },
                             React.createElement("input", {
                                 type: "checkbox",
                                 checked:
@@ -254,62 +333,35 @@ function PanelDetailEdit({
                                 {
                                     style: {
                                         display: "flex",
-                                        alignItems: "center"
+                                        alignItems: "flex-start",
+                                        width: "100%"
                                     }
                                 },
+                                React.createElement(Form.Control, {
+                                    type: "range",
+                                    min: "0",
+                                    max: "1440", // 2 months in hours
+                                    value: config.releasedWithin || "0",
+                                    onChange: (e) =>
+                                        handleNewsConfigChange(
+                                            index,
+                                            "releasedWithin",
+                                            e.target.value
+                                        ),
+                                    className:
+                                        "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50",
+                                    style: { marginRight: "10px", flexGrow: 1 }
+                                }),
                                 React.createElement(
-                                    "label",
-                                    { style: { marginRight: "5px" } },
-                                    "Days:"
-                                ),
-                                React.createElement(
-                                    Form.Control,
+                                    "span",
                                     {
-                                        as: "select",
-                                        value: config.days || "0",
-                                        onChange: (e) =>
-                                            handleNewsConfigChange(
-                                                index,
-                                                "days",
-                                                e.target.value
-                                            ),
-                                        className:
-                                            "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50",
-                                        style: { marginRight: "10px" }
+                                        style: {
+                                            width: "120px",
+                                            textAlign: "left"
+                                        }
                                     },
-                                    Array.from({ length: 31 }, (_, i) =>
-                                        React.createElement(
-                                            "option",
-                                            { key: i, value: i },
-                                            `${i} days`
-                                        )
-                                    )
-                                ),
-                                React.createElement(
-                                    "label",
-                                    { style: { marginRight: "5px" } },
-                                    "Hours:"
-                                ),
-                                React.createElement(
-                                    Form.Control,
-                                    {
-                                        as: "select",
-                                        value: config.hours || "0",
-                                        onChange: (e) =>
-                                            handleNewsConfigChange(
-                                                index,
-                                                "hours",
-                                                e.target.value
-                                            ),
-                                        className:
-                                            "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                    },
-                                    Array.from({ length: 24 }, (_, i) =>
-                                        React.createElement(
-                                            "option",
-                                            { key: i, value: i },
-                                            `${i} hours`
-                                        )
+                                    convertHoursToTimeFormat(
+                                        config.releasedWithin || 0
                                     )
                                 )
                             )
@@ -319,13 +371,20 @@ function PanelDetailEdit({
                         {
                             style: {
                                 display: "flex",
-                                alignItems: "center",
-                                marginBottom: "10px"
+                                alignItems: "flex-start",
+                                marginBottom: "10px",
+                                flexDirection: "column",
+                                width: "100%"
                             }
                         },
                         React.createElement(
                             "label",
-                            { style: { marginRight: "10px" } },
+                            {
+                                style: {
+                                    marginBottom: "5px",
+                                    alignSelf: "flex-start"
+                                }
+                            },
                             React.createElement("input", {
                                 type: "checkbox",
                                 checked:
@@ -347,35 +406,34 @@ function PanelDetailEdit({
                                 {
                                     style: {
                                         display: "flex",
-                                        alignItems: "center"
+                                        alignItems: "center",
+                                        width: "100%"
                                     }
                                 },
+                                React.createElement(Form.Control, {
+                                    type: "range",
+                                    min: "1",
+                                    max: "20",
+                                    value: config.articles || "1",
+                                    onChange: (e) =>
+                                        handleNewsConfigChange(
+                                            index,
+                                            "articles",
+                                            e.target.value
+                                        ),
+                                    className:
+                                        "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50",
+                                    style: { marginRight: "10px", flexGrow: 1 }
+                                }),
                                 React.createElement(
-                                    "label",
-                                    { style: { marginRight: "5px" } },
-                                    "Articles:"
-                                ),
-                                React.createElement(
-                                    Form.Control,
+                                    "span",
                                     {
-                                        as: "select",
-                                        value: config.articles || "1",
-                                        onChange: (e) =>
-                                            handleNewsConfigChange(
-                                                index,
-                                                "articles",
-                                                e.target.value
-                                            ),
-                                        className:
-                                            "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                        style: {
+                                            width: "120px",
+                                            textAlign: "left"
+                                        }
                                     },
-                                    Array.from({ length: 100 }, (_, i) =>
-                                        React.createElement(
-                                            "option",
-                                            { key: i, value: i + 1 },
-                                            `${i + 1}`
-                                        )
-                                    )
+                                    config.articles || 1
                                 )
                             )
                     )

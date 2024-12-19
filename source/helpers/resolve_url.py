@@ -1,4 +1,6 @@
+from typing import Tuple
 from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 
 
 class GoogleNewsResolver:
@@ -26,7 +28,7 @@ class GoogleNewsResolver:
             "non-specific-custom": "#AcceptCookiesButton, #acceptCookies, .cookie-accept, #cookie-accept, .gdpr-cookie--accept-all, button[class*='accept'], button[id*='accept'], button[class*='accept'], button[class*='agree'], button[id*='accept'], #cookiebanner button, button[class*='cookie'], button[name='agree'], button[data-action='acceptAll'], button[data-cookiebanner='accept_button'], button:has-text('Accept'), a:has-text('Accept'), span:has-text('Accept all cookies')",
         }
 
-    def resolve_url(self, url: str) -> str:
+    def resolve_url(self, url: str) -> Tuple[str, str]:
         page = self.browser.new_page()  # Use the incognito context to create a new page
         page.goto(url)
 
@@ -40,10 +42,32 @@ class GoogleNewsResolver:
                     print(f"Error clicking consent button: {e}")
                 break
 
-        # Get the final URL
+        # Get the final URL and page content
         final_url = page.url
+        content = page.content()
         page.close()
-        return final_url
+
+        if not content:
+            raise Exception("Content could not be loaded")
+
+        # Parse the content with BeautifulSoup
+        soup = BeautifulSoup(content, "html.parser")
+
+        # Remove scripts and styles
+        for script_or_style in soup(["script", "style"]):
+            script_or_style.decompose()
+
+        # Extract text and metadata
+        text = soup.get_text(separator="\n", strip=True)
+        metadata = {
+            meta.get("name", meta.get("property", "")): meta.get("content", "")
+            for meta in soup.find_all("meta")
+        }
+
+        # Combine text and metadata
+        human_readable_content = f"Metadata: {metadata}\n\nContent:\n{text}"
+
+        return final_url, human_readable_content
 
     def close(self):
         self.browser.close()

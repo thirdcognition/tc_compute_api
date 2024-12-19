@@ -29,6 +29,7 @@ function PanelEdit({
     const [panelId, setPanelId] = useState(initialPanelId || null); // Manage panelId internally
     const [transcriptCreated, setTranscriptCreated] = useState(false);
     const [redirectToPanel, setRedirectToPanel] = useState(false); // New state for redirection
+    const [longForm, setLongForm] = useState(true); // New state for longForm
 
     // New state variables for storing fetched data
     const [discussionData, setDiscussionData] = useState(null);
@@ -116,9 +117,11 @@ function PanelEdit({
             const discussionData = await discussionResponse.json();
             setDiscussionData(discussionData); // Save discussion data to state
             setTitle(discussionData.title);
-            setInputText(discussionData.input_text);
-            setLinkFields(discussionData.input_source);
-            setGoogleNewsConfigs(discussionData.google_news || []); // Update googleNewsConfigs
+            if (discussionData.metadata) {
+                setInputText(discussionData.metadata.input_text);
+                setLinkFields(discussionData.metadata.input_source);
+                setGoogleNewsConfigs(discussionData.metadata.google_news || []); // Update googleNewsConfigs
+            }
 
             // Fetch updated transcripts
             const transcriptResponse = await fetch(
@@ -276,7 +279,8 @@ function PanelEdit({
                         title: title,
                         input_text: inputText,
                         input_source: linksArray,
-                        google_news: googleNewsArray
+                        google_news: googleNewsArray,
+                        longform: longForm // Include longForm in the request
                     })
                 }
             );
@@ -296,6 +300,31 @@ function PanelEdit({
 
     const createTranscript = async (panelId) => {
         const linksArray = links.filter((link) => link.trim() !== "");
+        const googleNewsArray =
+            googleNewsConfigs.length > 0
+                ? googleNewsConfigs
+                : discussionData
+                  ? discussionData.metadata.google_news
+                  : [];
+        const articleCount = Math.max(
+            (googleNewsArray.reduce(
+                (val, config) => val + config.articles,
+                0
+            ) || 0) + (linksArray || []).length,
+            1
+        );
+        const maxNumChunks = Math.max(
+            Math.ceil((wordCount * 5) / 8192),
+            articleCount
+        );
+        const minChunkSize = Math.max(
+            Math.min(300, wordCount),
+            Math.floor(wordCount / articleCount)
+        );
+        const targetWordCount =
+            (wordCount / articleCount) * 3 < 8192
+                ? wordCount / articleCount
+                : Math.ceil(8192 / 3);
         try {
             const protocol = window.location.protocol;
             const host = window.location.hostname;
@@ -322,19 +351,17 @@ function PanelEdit({
                             dialogue_structure: dialogueStructure,
                             engagement_techniques: engagementTechniques,
                             user_instructions:
-                                (wordCount * 3 < 8192
-                                    ? `Use up to ${wordCount} words when generating the response. Make sure to fit your response into ${wordCount} words! `
-                                    : `Use up to ${Math.ceil(8192 / 3)} words when generating the response. Make sure to fit your response into ${Math.ceil(8192 / 3)} words!`) +
+                                `Use up to ${targetWordCount} words when generating the response. Make sure to fit your response into ${targetWordCount} words! ` +
                                 (outputLanguage !== "English"
                                     ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
                                     : "") +
                                 userInstructions,
                             output_language: outputLanguage,
-                            max_num_chunks: Math.ceil((wordCount * 5) / 8192)
-                            // min_chunk_size: Math.min(8192, wordCount * 5)
+                            max_num_chunks: maxNumChunks,
+                            min_chunk_size: minChunkSize
                         },
-                        // max_output_tokens: Math.min(wordCount * 5, 8192),
-                        longform: true,
+                        max_output_tokens: Math.min(wordCount * 5, 8192),
+                        longform: longForm, // Include longForm in the request
                         bucket_name: "public_panels",
                         panel_id: panelId
                     })
@@ -402,7 +429,7 @@ function PanelEdit({
             }, 1000);
             // setRedirectToPanel(false); // Set redirect after audio creation
         } catch (error) {
-            console.error("Error creating audio:", error);
+            console.error("Error creating audio.", error);
             alert("Failed to create audio.");
         }
     };
@@ -584,7 +611,9 @@ function PanelEdit({
                           userInstructions,
                           setUserInstructions,
                           outputLanguage,
-                          setOutputLanguage
+                          setOutputLanguage,
+                          longForm,
+                          setLongForm
                       }),
                       React.createElement(
                           Button,
