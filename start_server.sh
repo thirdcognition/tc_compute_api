@@ -22,6 +22,8 @@ trap cleanup SIGINT
 
 # Check if running inside Docker
 if [ -f /.dockerenv ]; then
+    playwright install
+
     echo "Running inside Docker, starting server without reload."
     uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" &
     UVICORN_PID=$!
