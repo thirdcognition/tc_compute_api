@@ -303,7 +303,9 @@ function PanelEdit({
         const googleNewsArray =
             googleNewsConfigs.length > 0
                 ? googleNewsConfigs
-                : discussionData
+                : discussionData &&
+                    discussionData.metadata &&
+                    discussionData.metadata.google_news
                   ? discussionData.metadata.google_news
                   : [];
         const articleCount = Math.max(
