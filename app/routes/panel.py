@@ -16,8 +16,20 @@ from source.api.panel.update import (
     update_panel_audio,
 )
 from source.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
+from source.helpers.panel import fetch_news_links, GoogleNewsConfig
 
 router = APIRouter()
+
+
+@router.post("/panel/news_links")
+async def api_fetch_news_links(
+    config: GoogleNewsConfig,
+):
+    try:
+        news_links = fetch_news_links(config)
+        return {"news_links": news_links}
+    except Exception as e:
+        raise handle_exception(e, "Failed to fetch news links")
 
 
 @router.get("/panel/{discussion_id}")

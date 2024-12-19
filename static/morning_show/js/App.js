@@ -24,9 +24,6 @@ function App() {
 }
 
 function AppContent() {
-    const [title, setTitle] = useState("");
-    const [links, setLinks] = useState([]);
-    const [inputText, setInputText] = useState("");
     const [panels, setPanels] = useState([]);
     const [selectedPanel, setSelectedPanel] = useState("new");
     const [email, setEmail] = useState("");
@@ -169,14 +166,7 @@ function AppContent() {
         return Array.isArray(panels) ? panels : [];
     }
 
-    const resetState = () => {
-        setTitle("");
-        setLinks([]);
-        setInputText("");
-    };
-
     const handlePanelChange = (panel) => {
-        resetState();
         setSelectedPanel(panel);
         if (panel === "new") {
             setRouteId(null); // Reset routeId when navigating to /new
@@ -331,12 +321,6 @@ function AppContent() {
                         { path: "/new" },
                         accessToken
                             ? React.createElement(PanelEdit, {
-                                  title,
-                                  setTitle,
-                                  links,
-                                  setLinks,
-                                  inputText,
-                                  setInputText,
                                   accessToken,
                                   fetchPanels,
                                   setSelectedPanel
@@ -348,12 +332,6 @@ function AppContent() {
                         { path: "/panel/:id/edit" }, // New route for editing
                         accessToken
                             ? React.createElement(PanelEdit, {
-                                  title,
-                                  setTitle,
-                                  links,
-                                  setLinks,
-                                  inputText,
-                                  setInputText,
                                   accessToken,
                                   fetchPanels,
                                   setSelectedPanel,

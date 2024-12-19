@@ -12,6 +12,7 @@ const PanelDetailDisplay = ({ panel }) => {
     const [showDetails, setShowDetails] = useState(false);
     const links = panel.links || [];
     const metadata = panel.metadata || {};
+    const googleNewsConfigs = metadata.google_news || [];
 
     return React.createElement(
         "div",
@@ -108,6 +109,64 @@ const PanelDetailDisplay = ({ panel }) => {
                         "p",
                         { className: "mb-2" },
                         `Longform: ${metadata.longform ? "Yes" : "No"}`
+                    ),
+                googleNewsConfigs.length > 0 &&
+                    React.createElement(
+                        "div",
+                        null,
+                        React.createElement(
+                            "strong",
+                            { className: "font-semibold" },
+                            "Google News Configurations:"
+                        ),
+                        googleNewsConfigs.map((config, index) =>
+                            React.createElement(
+                                "div",
+                                { key: index, className: "ml-4 mb-2" },
+                                config.lang &&
+                                    React.createElement(
+                                        "p",
+                                        null,
+                                        `Language: ${config.lang}`
+                                    ),
+                                config.country &&
+                                    React.createElement(
+                                        "p",
+                                        null,
+                                        `Country: ${config.country}`
+                                    ),
+                                config.topics &&
+                                    React.createElement(
+                                        "p",
+                                        null,
+                                        `Topics: ${Array.isArray(config.topics) ? config.topics.join(", ") : config.topics}`
+                                    ),
+                                config.query &&
+                                    React.createElement(
+                                        "p",
+                                        null,
+                                        `Query: ${config.query}`
+                                    ),
+                                config.location &&
+                                    React.createElement(
+                                        "p",
+                                        null,
+                                        `Location: ${Array.isArray(config.location) ? config.location.join(", ") : config.location}`
+                                    ),
+                                config.since &&
+                                    React.createElement(
+                                        "p",
+                                        null,
+                                        `Since: ${config.since}`
+                                    ),
+                                config.articles &&
+                                    React.createElement(
+                                        "p",
+                                        null,
+                                        `Articles: ${config.articles}`
+                                    )
+                            )
+                        )
                     )
             )
     );

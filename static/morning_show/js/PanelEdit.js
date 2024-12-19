@@ -9,18 +9,17 @@ import AudioDetailEdit from "./AudioDetailEdit.js";
 import { defaultTtsModelOptions } from "./options.js";
 
 function PanelEdit({
-    title,
-    setTitle,
-    links,
-    setLinks,
-    inputText,
-    setInputText,
     accessToken,
     fetchPanels,
     setSelectedPanel,
     initialPanelId // PanelId might be passed as a parameter
 }) {
+    const [title, setTitle] = useState("");
+    const [links, setLinks] = useState([]);
+    const [googleNewsConfigs, setGoogleNewsConfigs] = useState([]);
+    const [inputText, setInputText] = useState("");
     const [linkFields, setLinkFields] = useState(links);
+    const [newsConfigFields, setNewsConfigFields] = useState(googleNewsConfigs);
     const [taskId, setTaskId] = useState(null);
     const [taskStatus, setTaskStatus] = useState("idle"); // Initialize to "idle"
     const [isPolling, setIsPolling] = useState(false);
@@ -119,6 +118,7 @@ function PanelEdit({
             setTitle(discussionData.title);
             setInputText(discussionData.input_text);
             setLinkFields(discussionData.input_source);
+            setGoogleNewsConfigs(discussionData.google_news || []); // Update googleNewsConfigs
 
             // Fetch updated transcripts
             const transcriptResponse = await fetch(
@@ -200,8 +200,22 @@ function PanelEdit({
         setLinks(newLinkFields);
     };
 
+    const handleNewsConfigChange = (index, key, value) => {
+        const newNewsConfigFields = [...newsConfigFields];
+        if (!newNewsConfigFields[index]) {
+            newNewsConfigFields[index] = {};
+        }
+        newNewsConfigFields[index][key] = value;
+        setNewsConfigFields(newNewsConfigFields);
+        setGoogleNewsConfigs(newNewsConfigFields);
+    };
+
     const addLinkField = () => {
         setLinkFields([...linkFields, ""]);
+    };
+
+    const addNewsConfigField = () => {
+        setNewsConfigFields([...newsConfigFields, {}]);
     };
 
     const pollTaskStatus = async (id, type) => {
@@ -242,6 +256,9 @@ function PanelEdit({
 
     const createPanel = async () => {
         const linksArray = links.filter((link) => link.trim() !== "");
+        const googleNewsArray = googleNewsConfigs.filter(
+            (config) => Object.keys(config).length > 0
+        );
         try {
             const protocol = window.location.protocol;
             const host = window.location.hostname;
@@ -258,7 +275,8 @@ function PanelEdit({
                     body: JSON.stringify({
                         title: title,
                         input_text: inputText,
-                        input_source: linksArray
+                        input_source: linksArray,
+                        google_news: googleNewsArray
                     })
                 }
             );
@@ -495,6 +513,8 @@ function PanelEdit({
                         setTitle,
                         links,
                         setLinks,
+                        googleNewsConfigs,
+                        setGoogleNewsConfigs,
                         inputText,
                         setInputText
                     }),

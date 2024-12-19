@@ -1,6 +1,7 @@
 @host = http://127.0.0.1
 @port = 4000
-@email = user1@example.com
+# @email = user1@example.com
+@email = markus@thirdcognition.com
 @password = password123
 
 ### Login request
@@ -37,3 +38,18 @@ Authorization: Bearer {{accessToken}}
 GET {{host}}:{{port}}/system/task_status/{{taskId}} HTTP/1.1
 Accept: application/json
 Authorization: Bearer {{accessToken}}
+
+### Fetch News Links request
+# @name fetchNewsLinks
+POST {{host}}:{{port}}/panel/news_links HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "lang": "en",
+  "country": "US",
+  "topic": "technology",
+  "since": "1d",
+  "articles": 5
+}
