@@ -108,30 +108,6 @@ const PanelDetailDisplay = ({ panel }) => {
                         "p",
                         { className: "mb-2" },
                         `Longform: ${metadata.longform ? "Yes" : "No"}`
-                    ),
-                metadata.tts_model &&
-                    React.createElement(
-                        "p",
-                        { className: "mb-2" },
-                        `TTS Model: ${metadata.tts_model}`
-                    ),
-                metadata.conversation_config &&
-                    React.createElement(
-                        "div",
-                        null,
-                        React.createElement(
-                            "strong",
-                            { className: "font-semibold" },
-                            "Conversation Config:"
-                        ),
-                        Object.entries(metadata.conversation_config).map(
-                            ([key, value]) =>
-                                React.createElement(
-                                    "p",
-                                    { key: key, className: "ml-4" },
-                                    `${key}: ${Array.isArray(value) ? value.join(", ") : value}`
-                                )
-                        )
                     )
             )
     );

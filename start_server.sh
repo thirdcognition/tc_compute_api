@@ -34,6 +34,7 @@ if [ -f /.dockerenv ]; then
     celery -A app.core.celery_app flower &
     FLOWER_PID=$!
 else
+    docker start tc-redis
     echo "Not running inside Docker, starting server with reload."
     uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload &
     UVICORN_PID=$!

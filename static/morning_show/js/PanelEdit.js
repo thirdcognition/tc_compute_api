@@ -266,6 +266,7 @@ function PanelEdit({
             setSelectedPanel(result.panel_id); // Set the selected panel
             setPanelId(result.panel_id); // Ensure panelId is set
             refreshPanelData(result.panel_id);
+            fetchPanels(accessToken); // Refresh panel data in App.js
             setRedirectToPanel(true); // Set redirect after panel creation
             return result.panel_id;
         } catch (error) {
@@ -302,10 +303,20 @@ function PanelEdit({
                             roles_person2: rolesPerson2,
                             dialogue_structure: dialogueStructure,
                             engagement_techniques: engagementTechniques,
-                            user_instructions: userInstructions,
-                            output_language: outputLanguage
+                            user_instructions:
+                                (wordCount * 3 < 8192
+                                    ? `Use up to ${wordCount} words when generating the response. Make sure to fit your response into ${wordCount} words! `
+                                    : `Use up to ${Math.ceil(8192 / 3)} words when generating the response. Make sure to fit your response into ${Math.ceil(8192 / 3)} words!`) +
+                                (outputLanguage !== "English"
+                                    ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
+                                    : "") +
+                                userInstructions,
+                            output_language: outputLanguage,
+                            max_num_chunks: Math.ceil((wordCount * 5) / 8192)
+                            // min_chunk_size: Math.min(8192, wordCount * 5)
                         },
-                        longform: false,
+                        // max_output_tokens: Math.min(wordCount * 5, 8192),
+                        longform: true,
                         bucket_name: "public_panels",
                         panel_id: panelId
                     })
@@ -342,8 +353,6 @@ function PanelEdit({
                     },
                     body: JSON.stringify({
                         title: title,
-                        input_source: linksArray,
-                        input_text: inputText,
                         tts_model: ttsModel,
                         conversation_config: {
                             text_to_speech: {
@@ -362,7 +371,6 @@ function PanelEdit({
                                 }
                             }
                         },
-                        longform: false,
                         bucket_name: "public_panels",
                         panel_id: panelId,
                         transcript_id: transcriptId

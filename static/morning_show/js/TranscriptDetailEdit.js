@@ -41,13 +41,13 @@ function TranscriptDetailEdit({
             React.createElement(
                 Form.Label,
                 { className: "font-semibold" },
-                "Word Count (~1 min per 100 words):"
+                "Requested Word Count (~1 min per 100 words):"
             ),
             React.createElement(Form.Control, {
                 type: "range",
-                min: 100,
-                max: 2000,
-                step: 100,
+                min: 50,
+                max: 10000,
+                step: 50,
                 value: wordCount,
                 onChange: (e) => setWordCount(e.target.value),
                 className: "w-full"
@@ -65,7 +65,7 @@ function TranscriptDetailEdit({
             React.createElement(Form.Control, {
                 type: "range",
                 min: 0,
-                max: 1,
+                max: 2,
                 step: 0.1,
                 value: creativity,
                 onChange: (e) => setCreativity(e.target.value),

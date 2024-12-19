@@ -42,6 +42,7 @@ class PublicPanelRequestData(BaseModel):
     conversation_config: Optional[dict] = custom_config
     panel_id: Optional[UUID] = None
     transcript_id: Optional[UUID] = None
+    # max_output_tokens: Optional[int] = None
 
     def to_json(self):
         return json.dumps(self.model_dump(), default=str)
@@ -150,7 +151,10 @@ def create_public_panel_transcript(
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
         type="segment",
-        metadata={"conversation_config": conversation_config},
+        metadata={
+            "conversation_config": conversation_config,
+            # "max_output_tokens": request_data.max_output_tokens,
+        },
     )
     panel_transcript.create_sync(supabase=supabase)
 
@@ -161,6 +165,9 @@ def create_public_panel_transcript(
     panel_transcript.update_sync(supabase=supabase)
 
     try:
+        print(
+            f"Creating {longform=} transcript for {input_source=} with {conversation_config=}"
+        )
         transcript_file: str = generate_podcast(
             urls=(input_source if isinstance(input_source, list) else [input_source]),
             transcript_only=True,
