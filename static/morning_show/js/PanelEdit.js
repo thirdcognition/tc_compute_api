@@ -63,7 +63,7 @@ function PanelEdit({
     const [defaultVoiceQuestion, setDefaultVoiceQuestion] = useState("");
     const [defaultVoiceAnswer, setDefaultVoiceAnswer] = useState("");
     const [outputLanguage, setOutputLanguage] = useState("English");
-    const [updateCycle, setUpdateCycle] = useState(""); // New state for updateCycle
+    const [updateCycle, setUpdateCycle] = useState(0); // Default to 0 if not defined
 
     useEffect(() => {
         const selectedModel = defaultTtsModelOptions.find(
@@ -467,7 +467,7 @@ function PanelEdit({
     };
 
     const getStatusBarStyle = () => {
-        switch (taskStatus.toLowerCase()) {
+        switch ((taskStatus || "").toLowerCase()) {
             case "success":
                 return "bg-green-500";
             case "failure":

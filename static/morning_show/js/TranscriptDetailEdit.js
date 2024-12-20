@@ -36,9 +36,39 @@ function TranscriptDetailEdit({
 }) {
     const [showDetails, setShowDetails] = useState(false);
 
+    const formatUpdateCycle = (seconds) => {
+        if (seconds === 0) return "Not set";
+        const days = Math.floor(seconds / (24 * 3600));
+        const hours = (seconds % (24 * 3600)) / 3600;
+        return `${days}d ${hours}h`;
+    };
+
     return React.createElement(
         React.Fragment,
         null,
+        React.createElement(
+            Form.Group,
+            { controlId: "updateCycle", className: "mb-4" },
+            React.createElement(
+                Form.Label,
+                { className: "font-semibold" },
+                "Update Cycle:"
+            ),
+            React.createElement(Form.Control, {
+                type: "range",
+                min: 0,
+                max: 14 * 24 * 3600, // 2 weeks in seconds
+                step: 12 * 3600, // 12 hours in seconds
+                value: updateCycle,
+                onChange: (e) => setUpdateCycle(Number(e.target.value)),
+                className: "w-full"
+            }),
+            React.createElement(
+                "div",
+                { className: "mt-2" },
+                formatUpdateCycle(updateCycle)
+            )
+        ),
         React.createElement(
             Form.Group,
             { controlId: "wordCount", className: "mb-4" },
@@ -100,21 +130,6 @@ function TranscriptDetailEdit({
                     " Long Form"
                 )
             )
-        ),
-        React.createElement(
-            Form.Group,
-            { controlId: "updateCycle", className: "mb-4" }, // Added updateCycle input
-            React.createElement(
-                Form.Label,
-                { className: "font-semibold" },
-                "Update Cycle:"
-            ),
-            React.createElement(Form.Control, {
-                type: "text",
-                value: updateCycle,
-                onChange: (e) => setUpdateCycle(e.target.value),
-                className: "w-full"
-            })
         ),
         React.createElement(
             Button,

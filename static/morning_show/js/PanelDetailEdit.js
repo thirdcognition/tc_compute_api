@@ -25,12 +25,22 @@ function PanelDetailEdit({
         setLinkFields([...linkFields, ""]);
     };
 
+    const removeLinkField = (index) => {
+        const newLinkFields = linkFields.filter((_, i) => i !== index);
+        setLinkFields(newLinkFields);
+        setLinks(newLinkFields);
+    };
+
     const handleNewsConfigChange = (index, key, value) => {
         const newNewsConfigFields = [...newsConfigFields];
         if (!newNewsConfigFields[index]) {
             newNewsConfigFields[index] = {};
         }
-        newNewsConfigFields[index][key] = value;
+        if ((key === "lang" || key === "country") && value === "") {
+            newNewsConfigFields[index][key] = "";
+        } else {
+            newNewsConfigFields[index][key] = value;
+        }
         setNewsConfigFields(newNewsConfigFields);
         setGoogleNewsConfigs(newNewsConfigFields);
     };
@@ -40,6 +50,13 @@ function PanelDetailEdit({
             ...newsConfigFields,
             { type: "topic", lang: "en", country: "US" }
         ]);
+    };
+    const removeNewsConfigField = (index) => {
+        const newNewsConfigFields = newsConfigFields.filter(
+            (_, i) => i !== index
+        );
+        setNewsConfigFields(newNewsConfigFields);
+        setGoogleNewsConfigs(newNewsConfigFields);
     };
 
     const convertHoursToTimeFormat = (hours) => {
@@ -55,6 +72,13 @@ function PanelDetailEdit({
     };
 
     const convertTimeFormatToHours = (timeFormat) => {
+        if (typeof timeFormat !== "string") {
+            console.error(
+                "Expected a string for timeFormat, but received:",
+                timeFormat
+            );
+            return 0; // or handle the error as needed
+        }
         const timeParts = timeFormat.split(" ");
         let totalHours = 0;
         timeParts.forEach((part) => {
@@ -98,16 +122,37 @@ function PanelDetailEdit({
                 "Add links (one per item):"
             ),
             linkFields.map((link, index) =>
-                React.createElement(Form.Control, {
-                    key: index,
-                    type: "text",
-                    placeholder: "Enter URL here...",
-                    value: link,
-                    onChange: (e) => handleLinkChange(index, e.target.value),
-                    style: { marginBottom: "10px" },
-                    className:
-                        "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                })
+                React.createElement(
+                    "div",
+                    {
+                        key: index,
+                        style: {
+                            display: "flex",
+                            alignItems: "center",
+                            marginBottom: "10px"
+                        }
+                    },
+                    React.createElement(Form.Control, {
+                        type: "text",
+                        placeholder: "Enter URL here...",
+                        value: link,
+                        onChange: (e) =>
+                            handleLinkChange(index, e.target.value),
+                        className:
+                            "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50",
+                        style: { flexGrow: 1, marginRight: "10px" }
+                    }),
+                    React.createElement(
+                        Button,
+                        {
+                            variant: "danger",
+                            type: "button",
+                            onClick: () => removeLinkField(index),
+                            className: "py-2"
+                        },
+                        "Remove"
+                    )
+                )
             ),
             React.createElement(
                 Button,
@@ -131,8 +176,42 @@ function PanelDetailEdit({
             ),
             newsConfigFields.map((config, index) =>
                 React.createElement(
-                    React.Fragment,
-                    { key: index },
+                    "div",
+                    {
+                        key: index,
+                        style: {
+                            border: "1px solid #ccc",
+                            padding: "10px",
+                            marginBottom: "10px"
+                        }
+                    },
+                    React.createElement(
+                        "div",
+                        {
+                            style: {
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginBottom: "10px",
+                                width: "100%"
+                            }
+                        },
+                        React.createElement(
+                            "h5",
+                            null,
+                            `Config ${index + 1}: ${config.type || "N/A"}`
+                        ),
+                        React.createElement(
+                            Button,
+                            {
+                                variant: "danger",
+                                type: "button",
+                                onClick: () => removeNewsConfigField(index),
+                                className: "py-2"
+                            },
+                            "Remove Config"
+                        )
+                    ),
                     React.createElement(
                         Form.Control,
                         {
@@ -144,9 +223,9 @@ function PanelDetailEdit({
                                     "type",
                                     e.target.value
                                 ),
+
                             style: { marginBottom: "10px" },
-                            className:
-                                "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            className: `border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 ${!config.lang ? "border-red-500" : ""}`
                         },
                         React.createElement(
                             "option",
@@ -181,8 +260,7 @@ function PanelDetailEdit({
                                     e.target.value
                                 ),
                             style: { marginBottom: "10px" },
-                            className:
-                                "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            className: `border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 ${!config.country ? "border-red-500" : ""}`
                         }),
                     config.type === "location" &&
                         React.createElement(Form.Control, {
@@ -198,8 +276,7 @@ function PanelDetailEdit({
                                         .map((loc) => loc.trim())
                                 ),
                             style: { marginBottom: "10px" },
-                            className:
-                                "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            className: `border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 ${config.lang === "" ? "border-red-500" : ""}`
                         }),
                     config.type === "topic" &&
                         React.createElement(
@@ -273,7 +350,7 @@ function PanelDetailEdit({
                         React.createElement(Form.Control, {
                             type: "text",
                             placeholder: "Enter language code...",
-                            value: config.lang || "en",
+                            value: config.lang,
                             onChange: (e) =>
                                 handleNewsConfigChange(
                                     index,
@@ -281,8 +358,7 @@ function PanelDetailEdit({
                                     e.target.value
                                 ),
                             style: { marginBottom: "10px" },
-                            className:
-                                "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            className: `border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 ${config.country === "" ? "border-red-500" : ""}`
                         })
                     ),
                     React.createElement(
@@ -296,7 +372,7 @@ function PanelDetailEdit({
                         React.createElement(Form.Control, {
                             type: "text",
                             placeholder: "Enter country code...",
-                            value: config.country || "US",
+                            value: config.country,
                             onChange: (e) =>
                                 handleNewsConfigChange(
                                     index,
@@ -329,10 +405,7 @@ function PanelDetailEdit({
                             },
                             React.createElement("input", {
                                 type: "checkbox",
-                                checked:
-                                    config.since !== undefined
-                                        ? true
-                                        : config.type === "topic",
+                                checked: config.since !== undefined,
                                 onChange: (e) =>
                                     handleNewsConfigChange(
                                         index,
@@ -405,10 +478,7 @@ function PanelDetailEdit({
                             },
                             React.createElement("input", {
                                 type: "checkbox",
-                                checked:
-                                    config.articles !== undefined
-                                        ? true
-                                        : config.type === "topic",
+                                checked: config.articles !== undefined,
                                 onChange: (e) =>
                                     handleNewsConfigChange(
                                         index,
