@@ -51,6 +51,7 @@ flower = "^2.0.1"  # Added Flower for monitoring Celery tasks
 aiohttp = "^3.11.10"
 pygooglenews =  {git = "https://github.com/thirdcognition/pygooglenews.git"}
 lxml = "^5.3.0"
+resend = "^2.5.1"
 
 [tool.poetry.dev-dependencies]
 black = "^23.9.1"

@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     supabase_cache_size: int = Field(
         default_factory=lambda: int(os.getenv("SUPABASE_CACHE_SIZE", 100))
     )
+    resend_api_key: str = Field(default_factory=lambda: os.getenv("RESEND_API_KEY"))
     backend_cors_origins: list[AnyHttpUrl] = [""]
     backend_cors_origins: list[Union[AnyHttpUrl, str]] = ["*"]
 

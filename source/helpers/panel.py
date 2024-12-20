@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_service_client
+from source.helpers.communication import send_email_about_new_shows_task
 from source.models.supabase.public_panel import (
     ProcessState,
     PublicPanelDiscussion,
@@ -478,7 +479,10 @@ def generate_transcripts_task(self: Task, access_token: str):
     for panel_id in transcripts_by_panel:
         transcripts_by_panel[panel_id].sort(key=lambda x: x.updated_at, reverse=True)
 
-    # Loop through transcripts with generation_interval
+    new_transcripts_generated = False  # Flag to track new transcript generation
+
+    new_titles = []  # List to store titles of newly generated transcripts
+
     for transcript in transcripts_with_interval:
         panel_id = transcript.public_panel_id
         latest_transcript: PublicPanelTranscript = transcripts_by_panel.get(
@@ -535,6 +539,11 @@ def generate_transcripts_task(self: Task, access_token: str):
                 transcript_id = create_public_panel_transcript(
                     access_token, new_transcript_data
                 )
+                # Add the title and panelId of the newly generated transcript to the list
+                new_titles.append(
+                    f"{panel.id}: {panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}"
+                )
+
                 metadata.update(audio_metadata)
                 conversation_config.update(
                     audio_metadata.get("conversation_config", {})
@@ -548,6 +557,9 @@ def generate_transcripts_task(self: Task, access_token: str):
                 new_transcript_data.conversation_config = conversation_config
                 print(f"{transcript_id=} {new_transcript_data=}")
                 create_public_panel_audio(access_token, new_transcript_data)
+                new_transcripts_generated = (
+                    True  # Set flag to true if a new transcript is generated
+                )
             else:
                 time_since_creation_str = str(time_since_creation).split(".")[
                     0
@@ -560,3 +572,9 @@ def generate_transcripts_task(self: Task, access_token: str):
                 print(
                     f"Skip generation for {transcript.id} because time since creation is {time_since_creation_str} and minimum generation interval is {generation_interval_str}"
                 )
+
+    # After processing all transcripts, check the flag and send emails if needed
+    if new_transcripts_generated:
+        send_email_about_new_shows_task.delay(
+            new_titles
+        )  # Send emails with the new titles
