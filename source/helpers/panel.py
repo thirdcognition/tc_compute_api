@@ -60,6 +60,7 @@ class PublicPanelRequestData(BaseModel):
     panel_id: Optional[UUID] = None
     transcript_id: Optional[UUID] = None
     google_news: Optional[Union[GoogleNewsConfig, List[GoogleNewsConfig]]] = None
+    update_cycle: Optional[int] = None
 
     def to_json(self):
         return json.dumps(self.model_dump(), default=str)
@@ -241,7 +242,7 @@ def create_public_panel_transcript(
 
     # Construct title
     title_elements = [
-        panel.title,
+        f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
         conversation_config.get("output_language"),
         (
             f"{conversation_config.get('word_count')} words"
@@ -287,6 +288,7 @@ def create_public_panel_transcript(
             "conversation_config": conversation_config,
             # "max_output_tokens": request_data.max_output_tokens,
         },
+        generation_interval=request_data.update_cycle,  # Set generation_interval using update_cycle
     )
     panel_transcript.create_sync(supabase=supabase)
 
@@ -376,7 +378,7 @@ def create_public_panel_audio(
         .get("default_voices", {})
     )
     title_elements = [
-        panel.title,
+        f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
         conversation_config.get("output_language"),
         f"TTS Model: {tts_model}",
         (
@@ -453,3 +455,108 @@ def create_public_panel_task(
     audio_id = create_public_panel_audio(access_token, request_data)
 
     return panel_id, transcript_id, audio_id
+
+
+@celery_app.task(bind=True)
+def generate_transcripts_task(self: Task, access_token: str):
+    supabase: Client = get_sync_supabase_service_client()
+
+    # Fetch all PublicPanelTranscripts with generation_interval set
+    transcripts_with_interval = PublicPanelTranscript.fetch_existing_from_supabase_sync(
+        supabase, filter={"generation_interval": {"neq": None}}
+    )
+
+    # Fetch all PublicPanelTranscripts and map them by panelId
+    all_transcripts = PublicPanelTranscript.fetch_existing_from_supabase_sync(supabase)
+    transcripts_by_panel = {}
+    for transcript in all_transcripts:
+        if transcript.public_panel_id not in transcripts_by_panel:
+            transcripts_by_panel[transcript.public_panel_id] = []
+        transcripts_by_panel[transcript.public_panel_id].append(transcript)
+
+    # Sort each list of transcripts by updated_at, newest first
+    for panel_id in transcripts_by_panel:
+        transcripts_by_panel[panel_id].sort(key=lambda x: x.updated_at, reverse=True)
+
+    # Loop through transcripts with generation_interval
+    for transcript in transcripts_with_interval:
+        panel_id = transcript.public_panel_id
+        latest_transcript: PublicPanelTranscript = transcripts_by_panel.get(
+            panel_id, [None]
+        )[0]
+
+        if latest_transcript:
+            now_aware = datetime.datetime.now(datetime.timezone.utc)
+            time_since_creation = now_aware - latest_transcript.created_at
+            if time_since_creation > datetime.timedelta(
+                seconds=transcript.generation_interval
+            ) - datetime.timedelta(minutes=10):
+                # Fetch the matching PublicPanelDiscussion model
+                panel = PublicPanelDiscussion.fetch_from_supabase_sync(
+                    supabase, panel_id
+                )
+                metadata = panel.metadata or {}
+
+                # Extend the metadata with the PublicPanelTranscript model
+                transcript_metadata = transcript.metadata or {}
+
+                # Fetch the connected PublicPanelAudio model
+                audio = PublicPanelAudio.fetch_from_supabase_sync(
+                    supabase, transcript.id, id_column="public_transcript_id"
+                )
+                print(f"{transcript.id=} {audio=}")
+                audio_metadata = audio.metadata or {}
+
+                # Separate and extend conversation_config
+                conversation_config: dict = metadata.get("conversation_config", {})
+                conversation_config.update(
+                    transcript_metadata.get("conversation_config", {})
+                )
+                metadata.update(transcript_metadata)
+                metadata["conversation_config"] = conversation_config
+                # metadata = transcript.metadata or {}
+
+                new_transcript_data = PublicPanelRequestData(
+                    title=panel.title,
+                    input_source=metadata.get("input_source", ""),
+                    input_text=metadata.get("input_text", ""),
+                    # tts_model=metadata.get("tts_model", "geminimulti"),
+                    longform=metadata.get("longform", False),
+                    bucket_name=metadata.get("bucket_name", "public_panels"),
+                    conversation_config=metadata.get(
+                        "conversation_config", custom_config
+                    ),
+                    panel_id=panel_id,
+                    google_news=metadata.get("google_news", None),
+                )
+                print(
+                    f"Generating timed transcript for {transcript.id} after {time_since_creation}."
+                )
+                transcript_id = create_public_panel_transcript(
+                    access_token, new_transcript_data
+                )
+                metadata.update(audio_metadata)
+                conversation_config.update(
+                    audio_metadata.get("conversation_config", {})
+                )
+                metadata["conversation_config"] = conversation_config
+                new_transcript_data.tts_model = audio_metadata.get(
+                    "tts_model", "gemini"
+                )
+
+                new_transcript_data.transcript_id = transcript_id
+                new_transcript_data.conversation_config = conversation_config
+                print(f"{transcript_id=} {new_transcript_data=}")
+                create_public_panel_audio(access_token, new_transcript_data)
+            else:
+                time_since_creation_str = str(time_since_creation).split(".")[
+                    0
+                ]  # Remove microseconds
+                generation_interval_str = str(
+                    datetime.timedelta(seconds=transcript.generation_interval)
+                ).split(".")[
+                    0
+                ]  # Remove microseconds
+                print(
+                    f"Skip generation for {transcript.id} because time since creation is {time_since_creation_str} and minimum generation interval is {generation_interval_str}"
+                )

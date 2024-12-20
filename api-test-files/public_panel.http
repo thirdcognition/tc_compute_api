@@ -33,11 +33,7 @@ Authorization: Bearer {{accessToken}}
 @panelId = {{createPublicPanel.response.body.$.panel_id}}
 @taskId = {{createPublicPanel.response.body.$.task_id}}
 
-### Check Task Status request
-# @name checkTaskStatus
-GET {{host}}:{{port}}/system/task_status/{{taskId}} HTTP/1.1
-Accept: application/json
-Authorization: Bearer {{accessToken}}
+
 
 ### Fetch News Links request
 # @name fetchNewsLinks
@@ -53,3 +49,18 @@ Authorization: Bearer {{accessToken}}
   "since": "1d",
   "articles": 5
 }
+
+### Generate Transcripts Task request
+# @name generateTranscriptsTask
+POST {{host}}:{{port}}/public_panel/generate_transcripts HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Response
+@taskId = {{generateTranscriptsTask.response.body.$.task_id}}
+
+### Check Task Status request
+# @name checkTaskStatus
+GET {{host}}:{{port}}/system/task_status/{{taskId}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

@@ -42,7 +42,7 @@ else
     UVICORN_PID=$!
 
     echo "Starting Celery worker"
-    celery -A app.core.celery_app worker &
+    celery -A app.core.celery_app worker -B &
     CELERY_WORKER_PID=$!
 
     echo "Starting Flower on port $FLOWER_PORT"

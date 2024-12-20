@@ -32,18 +32,36 @@ class GoogleNewsResolver:
         page = self.browser.new_page()  # Use the incognito context to create a new page
         page.goto(url)
 
-        # Try to accept consent using known selectors
-        for selector in self.consent_accept_selectors.values():
-            if page.locator(selector).count() > 0:
-                try:
-                    page.click(selector)
-                    page.wait_for_load_state("networkidle")
-                except Exception as e:
-                    print(f"Error clicking consent button: {e}")
-                break
-
-        # Get the final URL and page content
+        # Check for chrome-error URLs
+        max_tries = 5
+        tries = 0
+        original_url = url
         final_url = page.url
+
+        while (final_url != original_url and tries < max_tries) or tries == 0:
+            original_url = final_url
+            if "chrome-error://chromewebdata/" in final_url:
+                raise Exception("Encountered a chrome-error URL")
+
+            # Try to accept consent using known selectors
+            for selector in self.consent_accept_selectors.values():
+                if page.locator(selector).count() > 0:
+                    try:
+                        page.click(selector)
+                        page.wait_for_load_state("networkidle")
+                    except Exception as e:
+                        print(f"Error clicking consent button: {e}")
+                    break
+
+            final_url = page.url
+            tries += 1
+
+        if final_url != original_url:
+            raise Exception(
+                "Final URL differs from the original URL after maximum retries"
+            )
+
+        # Get the page content
         content = page.content()
         page.close()
 

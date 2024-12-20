@@ -11,6 +11,10 @@ const TranscriptDetailDisplay = ({
     const [showDetails, setShowDetails] = useState(false);
     const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
     const [transcriptContent, setTranscriptContent] = useState("");
+    const [updateCycle, setUpdateCycle] = useState(
+        (transcript.metadata?.update_cycle ?? transcript.generation_interval) ||
+            0
+    ); // Editable updateCycle in seconds
     const config = transcript.metadata?.conversation_config || {};
 
     const toggleTranscriptVisibility = (transcriptId) => {
@@ -74,6 +78,45 @@ const TranscriptDetailDisplay = ({
             default:
                 return "";
         }
+    };
+
+    const updateTranscript = async (newUpdateCycle) => {
+        try {
+            const response = await fetch(
+                `/public_panel/transcript/${transcript.id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({
+                        ...transcript,
+                        generation_interval: newUpdateCycle || null, // Set or remove the value
+                        metadata: {
+                            ...transcript.metadata,
+                            update_cycle: newUpdateCycle || null
+                        }
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to update transcript");
+            }
+
+            const updatedTranscript = await response.json();
+            setUpdateCycle(updatedTranscript.metadata.update_cycle || 0);
+        } catch (error) {
+            console.error("Error updating transcript:", error);
+        }
+    };
+
+    const formatUpdateCycle = (seconds) => {
+        if (seconds === 0) return "Not set";
+        const days = Math.floor(seconds / (24 * 3600));
+        const hours = (seconds % (24 * 3600)) / 3600;
+        return `${days}d ${hours}h`;
     };
 
     return React.createElement(
@@ -194,7 +237,50 @@ const TranscriptDetailDisplay = ({
                         "p",
                         { className: "mb-2" },
                         `Output Language: ${config.output_language}`
+                    ),
+                React.createElement(
+                    "label",
+                    { className: "font-semibold mb-1 block" },
+                    "Update Cycle:"
+                ),
+                React.createElement(
+                    "div",
+                    { className: "mb-2 flex items-center space-x-2" },
+                    React.createElement("input", {
+                        type: "range",
+                        min: 0,
+                        max: 14 * 24 * 3600, // 2 weeks in seconds
+                        step: 12 * 3600, // 12 hours in seconds
+                        value: updateCycle,
+                        onChange: (e) => setUpdateCycle(Number(e.target.value)),
+                        className: "flex-grow"
+                    }),
+                    React.createElement(
+                        "span",
+                        { className: "ml-2" },
+                        formatUpdateCycle(updateCycle)
+                    ),
+                    React.createElement(
+                        "button",
+                        {
+                            onClick: () =>
+                                updateTranscript(
+                                    updateCycle === 0 ? null : updateCycle
+                                ),
+                            className:
+                                "bg-blue-500 text-white py-1 px-3 rounded"
+                        },
+                        "Update"
+                    ),
+                    React.createElement(
+                        "button",
+                        {
+                            onClick: () => updateTranscript(null),
+                            className: "bg-red-500 text-white py-1 px-3 rounded"
+                        },
+                        "Remove"
                     )
+                )
             ),
         React.createElement(
             "button",

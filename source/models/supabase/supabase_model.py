@@ -379,7 +379,20 @@ class SupabaseModel(BaseModel):
         if filter is not None:
             if isinstance(filter, dict):
                 for key, item in filter.items():
-                    query = query.eq(key, item)
+                    if isinstance(item, dict):
+                        for op, val in item.items():
+                            if op == "is_":
+                                query = query.is_(key, val)
+                            elif op == "range":
+                                query = query.range(key, *val)
+                            elif op == "like":
+                                query = query.like(key, val)
+                            elif op == "neq":
+                                query = query.neq(key, val)
+                            else:
+                                query = query.eq(key, val)
+                    else:
+                        query = query.eq(key, item)
             else:
                 query.eq(id_column, filter)
 
@@ -412,7 +425,24 @@ class SupabaseModel(BaseModel):
         if filter is not None:
             if isinstance(filter, dict):
                 for key, item in filter.items():
-                    query = query.eq(key, item)
+                    if isinstance(item, dict):
+                        for op, val in item.items():
+                            print(f"{op=} {val=}")
+                            if op == "is_":
+                                query = query.is_(key, val)
+                            elif op == "range":
+                                query = query.range(key, *val)
+                            elif op == "like":
+                                query = query.like(key, val)
+                            elif op == "neq":
+                                if val is None:
+                                    query = query.not_.is_(key, None)
+                                else:
+                                    query = query.neq(key, val)
+                            else:
+                                query = query.eq(key, val)
+                    else:
+                        query = query.eq(key, item)
             else:
                 query.eq(id_column, filter)
 

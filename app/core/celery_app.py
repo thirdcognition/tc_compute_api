@@ -3,6 +3,7 @@ import asyncio
 from functools import wraps
 from celery import Celery, Task
 from typing import Any, Callable, Coroutine, ParamSpec, TypeVar
+from celery.schedules import crontab
 from asgiref import sync
 
 from source.load_env import SETTINGS
@@ -32,6 +33,17 @@ celery_app.conf.update(
     flower_host=SETTINGS.flower_host,
     flower_port=SETTINGS.flower_port,
 )
+
+# Schedule the generate_transcripts_task to run daily at 9am
+celery_app.conf.beat_schedule = {
+    "generate-transcripts-every-day-at-9am": {
+        "task": "source.helpers.panel.generate_transcripts_task",
+        "schedule": crontab(hour=16, minute=15),
+        "args": ("",),  # Replace with actual access token if needed
+    },
+}
+
+celery_app.conf.timezone = "UTC"
 
 if __name__ == "__main__":
     celery_app.start()

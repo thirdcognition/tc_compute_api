@@ -54,6 +54,21 @@ function PanelDetailEdit({
         return result.trim();
     };
 
+    const convertTimeFormatToHours = (timeFormat) => {
+        const timeParts = timeFormat.split(" ");
+        let totalHours = 0;
+        timeParts.forEach((part) => {
+            if (part.endsWith("m")) {
+                totalHours += parseInt(part) * 30 * 24;
+            } else if (part.endsWith("d")) {
+                totalHours += parseInt(part) * 24;
+            } else if (part.endsWith("h")) {
+                totalHours += parseInt(part);
+            }
+        });
+        return totalHours;
+    };
+
     return React.createElement(
         React.Fragment,
         null,
@@ -315,19 +330,19 @@ function PanelDetailEdit({
                             React.createElement("input", {
                                 type: "checkbox",
                                 checked:
-                                    config.useDaysHours !== undefined
-                                        ? config.useDaysHours
+                                    config.since !== undefined
+                                        ? true
                                         : config.type === "topic",
                                 onChange: (e) =>
                                     handleNewsConfigChange(
                                         index,
-                                        "useDaysHours",
-                                        e.target.checked
+                                        "since",
+                                        e.target.checked ? 0 : undefined
                                     )
                             }),
                             " Article has to be released within"
                         ),
-                        config.useDaysHours &&
+                        config.since !== undefined &&
                             React.createElement(
                                 "div",
                                 {
@@ -341,12 +356,17 @@ function PanelDetailEdit({
                                     type: "range",
                                     min: "0",
                                     max: "1440", // 2 months in hours
-                                    value: config.releasedWithin || "0",
+                                    value:
+                                        convertTimeFormatToHours(
+                                            config.since
+                                        ) || "0",
                                     onChange: (e) =>
                                         handleNewsConfigChange(
                                             index,
-                                            "releasedWithin",
-                                            e.target.value
+                                            "since",
+                                            convertHoursToTimeFormat(
+                                                e.target.value
+                                            )
                                         ),
                                     className:
                                         "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50",
@@ -360,9 +380,7 @@ function PanelDetailEdit({
                                             textAlign: "left"
                                         }
                                     },
-                                    convertHoursToTimeFormat(
-                                        config.releasedWithin || 0
-                                    )
+                                    config.since || "0h"
                                 )
                             )
                     ),
@@ -388,19 +406,19 @@ function PanelDetailEdit({
                             React.createElement("input", {
                                 type: "checkbox",
                                 checked:
-                                    config.useNumberSelect !== undefined
-                                        ? config.useNumberSelect
+                                    config.articles !== undefined
+                                        ? true
                                         : config.type === "topic",
                                 onChange: (e) =>
                                     handleNewsConfigChange(
                                         index,
-                                        "useNumberSelect",
-                                        e.target.checked
+                                        "articles",
+                                        e.target.checked ? 1 : undefined
                                     )
                             }),
                             " Maximum articles"
                         ),
-                        config.useNumberSelect &&
+                        config.articles !== undefined &&
                             React.createElement(
                                 "div",
                                 {

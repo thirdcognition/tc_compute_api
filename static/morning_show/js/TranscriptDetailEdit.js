@@ -30,7 +30,9 @@ function TranscriptDetailEdit({
     outputLanguage,
     setOutputLanguage,
     longForm,
-    setLongForm
+    setLongForm,
+    updateCycle, // Added updateCycle prop
+    setUpdateCycle // Added setUpdateCycle prop
 }) {
     const [showDetails, setShowDetails] = useState(false);
 
@@ -98,6 +100,21 @@ function TranscriptDetailEdit({
                     " Long Form"
                 )
             )
+        ),
+        React.createElement(
+            Form.Group,
+            { controlId: "updateCycle", className: "mb-4" }, // Added updateCycle input
+            React.createElement(
+                Form.Label,
+                { className: "font-semibold" },
+                "Update Cycle:"
+            ),
+            React.createElement(Form.Control, {
+                type: "text",
+                value: updateCycle,
+                onChange: (e) => setUpdateCycle(e.target.value),
+                className: "w-full"
+            })
         ),
         React.createElement(
             Button,

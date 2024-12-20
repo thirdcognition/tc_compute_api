@@ -63,6 +63,7 @@ function PanelEdit({
     const [defaultVoiceQuestion, setDefaultVoiceQuestion] = useState("");
     const [defaultVoiceAnswer, setDefaultVoiceAnswer] = useState("");
     const [outputLanguage, setOutputLanguage] = useState("English");
+    const [updateCycle, setUpdateCycle] = useState(""); // New state for updateCycle
 
     useEffect(() => {
         const selectedModel = defaultTtsModelOptions.find(
@@ -365,7 +366,8 @@ function PanelEdit({
                         max_output_tokens: Math.min(wordCount * 5, 8192),
                         longform: longForm, // Include longForm in the request
                         bucket_name: "public_panels",
-                        panel_id: panelId
+                        panel_id: panelId,
+                        update_cycle: updateCycle // Include updateCycle in the request
                     })
                 }
             );
@@ -615,7 +617,9 @@ function PanelEdit({
                           outputLanguage,
                           setOutputLanguage,
                           longForm,
-                          setLongForm
+                          setLongForm,
+                          updateCycle, // Pass updateCycle to TranscriptDetailEdit
+                          setUpdateCycle // Pass setUpdateCycle to TranscriptDetailEdit
                       }),
                       React.createElement(
                           Button,

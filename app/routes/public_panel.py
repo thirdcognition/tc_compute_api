@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
-from app.core.supabase import SupaClientDep, AccessTokenDep
+from supabase.client import AsyncClient
+from app.core.supabase import SupaClientDep, AccessTokenDep, get_supabase_service_client
 from source.helpers.routes import handle_exception
 from source.api.public_panel.read import (
     get_public_panel,
@@ -22,7 +23,8 @@ from source.helpers.panel import (
     create_public_panel_task,
     create_public_panel_transcription_task,
     create_public_panel_audio_task,
-    create_public_panel,  # Import the function
+    create_public_panel,
+    generate_transcripts_task,  # Import the task
 )
 from source.models.supabase.public_panel import (
     PublicPanelDiscussion,
@@ -84,6 +86,7 @@ async def api_update_panel(
     request_data: PublicPanelDiscussion,
     supabase: SupaClientDep,
 ):
+    print(f"{request_data=}")
     try:
         request_data.id = discussion_id
         discussion = await update_public_panel(supabase, request_data)
@@ -112,9 +115,11 @@ async def api_update_panel_transcript(
     request_data: PublicPanelTranscript,
     supabase: SupaClientDep,
 ):
+    # TODO: Remove rights from every authenticated user
     try:
         request_data.id = transcript_id
-        transcript = await update_public_panel_transcript(supabase, request_data)
+        serviceSupabase: AsyncClient = await get_supabase_service_client()
+        transcript = await update_public_panel_transcript(serviceSupabase, request_data)
         return transcript
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
@@ -276,3 +281,14 @@ async def api_create_panel(
         raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
         raise handle_exception(e, "Failed to create panel discussion", 500)
+
+
+@router.post("/public_panel/generate_transcripts")
+async def api_generate_transcripts(
+    access_token: AccessTokenDep,
+):
+    try:
+        task = generate_transcripts_task.delay(access_token)
+        return {"task_id": task.id}
+    except Exception as e:
+        raise handle_exception(e, "Failed to generate transcripts", 500)

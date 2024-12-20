@@ -1,4 +1,4 @@
-FROM markushaverinen/tc_poc_base_dev:latest
+FROM markushaverinen/tc_ms_poc_base:latest
 
 COPY . .
 COPY app app
@@ -19,6 +19,8 @@ EXPOSE ${SERVER_PORT}
 # Add a health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD curl --fail http://localhost:${SERVER_PORT}/health || exit 1
+
+RUN --mount=type=cache,target=/root/.cache/ms-playwright playwright install --with-deps
 
 # Modify the entry point script to use the SERVER_PORT environment variable
 ENTRYPOINT ["./start_server.sh"]
