@@ -25,7 +25,7 @@ if [ -f /.dockerenv ]; then
     playwright install
 
     echo "Running inside Docker, starting server without reload."
-    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" &
+    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --log-config logging.ini &
     UVICORN_PID=$!
 
     echo "Starting Celery worker"
@@ -46,7 +46,7 @@ else
     .venv/bin/playwright install
 
     echo "Not running inside Docker, starting server with reload."
-    .venv/bin/uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload &
+    .venv/bin/uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload --log-config logging.ini &
     UVICORN_PID=$!
 
     echo "Starting Celery worker"

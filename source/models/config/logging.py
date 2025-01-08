@@ -26,7 +26,7 @@ class ColoredFormatter(logging.Formatter):
 
     def formatTime(self, record, datefmt=None):
         ct = self.converter(record.created)
-        s = time.strftime(datefmt or "%Y-%m-%d %H:%M:%S", ct)
+        s = time.strftime(datefmt or "%y%m%d %H:%M:%S", ct)
         if datefmt and "%f" in datefmt:
             s = s.replace(".f", f".{int(record.msecs):03d}")
         return s
@@ -46,10 +46,18 @@ class ColoredFormatter(logging.Formatter):
             separator_index = formatted_message.rindex("|") - 9
             indent = " " * separator_index
             wrapped_lines = textwrap.wrap(record.message, width=70)
+
+            whitespace = (
+                record.message[: (len(record.message) - len(record.message.lstrip()))]
+                + "\t"
+            )
+
             wrapped_message = (
                 wrapped_lines[0]
                 + "\n"
-                + "\n".join([indent + "| " + line for line in wrapped_lines[1:]])
+                + "\n".join(
+                    [indent + "| " + whitespace + line for line in wrapped_lines[1:]]
+                )
             )
             formatted_message = formatted_message.replace(
                 record.message, wrapped_message
@@ -59,7 +67,7 @@ class ColoredFormatter(logging.Formatter):
 
 log_format = ColoredFormatter(
     "%(processName)s - %(levelname)-8s: %(asctime)s| %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S.%f",
+    datefmt="%y%m%d %H:%M:%S.%f",
 )
 
 logging.captureWarnings(True)
@@ -70,6 +78,7 @@ root_logger = logging.getLogger()
 
 root_logger.setLevel(logging.INFO if not IN_PRODUCTION else logging.WARNING)
 
+# standard stream handler
 # standard stream handler
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(log_format)

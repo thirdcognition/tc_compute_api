@@ -48,4 +48,32 @@ app.include_router(panel_router)
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host=SETTINGS.server_host, port=SETTINGS.server_port)
+    uvicorn.run(
+        app,
+        host=SETTINGS.server_host,
+        port=SETTINGS.server_port,
+        log_config={
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "()": "source.models.config.logging.ColoredFormatter",
+                    "format": "%(processName)s - %(levelname)-8s: %(asctime)s| %(message)s",
+                    "datefmt": "%Y-%m-%d %H:%M:%S.%f",
+                },
+            },
+            "handlers": {
+                "default": {
+                    "level": "DEBUG",
+                    "formatter": "default",
+                    "class": "logging.StreamHandler",
+                },
+            },
+            "loggers": {
+                "": {  # root logger
+                    "handlers": ["default"],
+                    "level": "DEBUG",
+                },
+            },
+        },
+    )

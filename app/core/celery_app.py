@@ -5,10 +5,10 @@ from celery import Celery, Task
 from typing import Any, Callable, Coroutine, ParamSpec, TypeVar
 from celery.schedules import crontab
 from asgiref import sync
-
 from source.load_env import SETTINGS
 
 _P = ParamSpec("_P")
+
 _R = TypeVar("_R")
 
 # from source.models.config.logging import logger
@@ -29,7 +29,11 @@ celery_app.conf.update(
         "visibility_timeout": 3600,
         "host": SETTINGS.celery_host,
         "port": SETTINGS.celery_port,
+        "retry_on_startup": True,
     },
+    broker_connection_retry_on_startup=True,
+    worker_log_format="%(processName)s - %(levelname)s: %(asctime)s| %(message)s",
+    worker_task_log_format="%(processName)s - %(levelname)s: %(asctime)s| %(message)s",
     flower_host=SETTINGS.flower_host,
     flower_port=SETTINGS.flower_port,
 )
