@@ -312,7 +312,7 @@ matched_descriptions_str = "\n".join(
 )
 
 all_available_roles = get_available_journey_template_roles(as_str=True)
-# print(all_available_roles)
+# logger.debug(all_available_roles)
 
 journey_template_selector = PromptFormatter(
     system=textwrap.dedent(

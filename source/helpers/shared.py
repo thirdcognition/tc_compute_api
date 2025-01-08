@@ -9,6 +9,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.documents import Document
 
 from source.models.config.default_env import DEBUGMODE
+from source.models.config.logging import logger
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,32 +18,32 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 def print_params(msg="", params=""):
     if DEBUGMODE:
         if msg:
-            print(f"\n\n\n{msg}")
+            logger.debug(f"\n\n\n{msg}")
         if params:
-            print(f"'\n\n{pp.pformat(params).replace('\\n', '\n')}\n\n")
+            logger.debug(f"'\n\n{pp.pformat(params).replace('\\n', '\n')}\n\n")
 
 
 def pretty_print(obj, msg=None, force=DEBUGMODE):
     if force:
         if msg:
-            print(f"\n\n\n{msg}\n")
+            logger.debug(f"\n\n\n{msg}\n")
         else:
-            print(f"\n\n\n{type(obj)}\n")
+            logger.debug(f"\n\n\n{type(obj)}\n")
         if obj is None:
-            print("obj = None")
+            logger.debug("obj = None")
         elif isinstance(obj, BaseModel):
-            print(obj.model_dump_json(indent=2))
+            logger.debug(obj.model_dump_json(indent=2))
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
-                print(f"\n{i}:\n")
+                logger.debug(f"\n{i}:\n")
                 if isinstance(item, BaseModel):
-                    print(item.model_dump_json(indent=2))
-                    print("\n\n")
+                    logger.debug(item.model_dump_json(indent=2))
+                    logger.debug("\n\n")
                 else:
                     pp.pprint(item)
         else:
             pp.pprint(obj)
-        print("\n\n")
+        logger.debug("\n\n")
 
 
 def validate_category(category: str) -> bool:
@@ -152,7 +153,7 @@ def flatten_dict(d, parent_key="", sep="_"):
                     v = json.dumps(v)
                 items.append((new_key, v))
             except Exception as e:
-                print(f"Error flattening key '{new_key}': {e}")
+                logger.error(f"Error flattening key '{new_key}': {e}")
                 continue
     return dict(items)
 
@@ -281,7 +282,7 @@ def get_item_str(
                     continue
                 elif value is None and not as_json:
                     value = "None"
-                # print(key, value)
+                # logger.debug(key, value)
                 if isinstance(value, Document):
                     value = value.page_content
 

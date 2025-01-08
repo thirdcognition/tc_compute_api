@@ -12,7 +12,7 @@ class HallucinationParser(BaseOutputParser[tuple[bool, BaseMessage]]):
     """Custom parser to check for hallucinations"""
 
     def parse(self, text: Union[str, BaseMessage]) -> tuple[bool, BaseMessage]:
-        # print(f"Parsing tags: {text}")
+        # logger.info(f"Parsing tags: {text}")
         if isinstance(text, tuple):
             text = text[0]
 

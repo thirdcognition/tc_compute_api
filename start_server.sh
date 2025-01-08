@@ -36,17 +36,25 @@ if [ -f /.dockerenv ]; then
     celery -A app.core.celery_app flower &
     FLOWER_PID=$!
 else
+    if ! docker inspect tc-redis &> /dev/null; then
+        echo "tc-redis not found, starting Redis container..."
+        docker run --name tc-redis -d -p 6379:6379 redis
+    fi
+
     docker start tc-redis
+
+    .venv/bin/playwright install
+
     echo "Not running inside Docker, starting server with reload."
-    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload &
+    .venv/bin/uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload &
     UVICORN_PID=$!
 
     echo "Starting Celery worker"
-    celery -A app.core.celery_app worker -B &
+    .venv/bin/celery -A app.core.celery_app worker -B &
     CELERY_WORKER_PID=$!
 
     echo "Starting Flower on port $FLOWER_PORT"
-    celery -A app.core.celery_app flower &
+    .venv/bin/celery -A app.core.celery_app flower &
     FLOWER_PID=$!
 fi
 

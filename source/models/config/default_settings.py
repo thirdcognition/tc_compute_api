@@ -5,6 +5,7 @@ from pydantic import Field, AnyHttpUrl, IPvAnyAddress
 from pydantic_settings import BaseSettings
 import toml
 
+from source.models.config.default_env import DEFAULT_PATH
 from source.models.config.llm_settings import (
     EmbeddingDefaults,
     EmbeddingProviderSettings,
@@ -14,9 +15,7 @@ from source.models.config.llm_settings import (
 )
 
 
-with open(
-    os.path.join(os.path.dirname(__file__), "../../../", "pyproject.toml"), "r"
-) as f:
+with open(os.path.join(DEFAULT_PATH, "pyproject.toml"), "r") as f:
     pyproject = toml.load(f)
 
 # Get the project name

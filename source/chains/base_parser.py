@@ -14,6 +14,7 @@ from langchain_core.runnables import (
     RunnableLambda,
 )
 from pydantic import ValidationError
+from source.models.config.logging import logger
 from source.chains.base import BaseChain
 from source.helpers.shared import get_text_from_completion, print_params
 from source.prompts.base import PromptFormatter
@@ -124,7 +125,7 @@ class BaseParserChain(BaseChain):
             try:
                 return retry_parser.parse_with_prompt(completion, x["prompt_value"])
             except (ValidationError, CancelledError) as e:
-                print(f"Error: {repr(e)}")
+                logger.error(f"Error: {repr(e)}")
                 completion = parser_retry_chain.invoke(
                     dict(
                         completion=x["completion"],
@@ -145,7 +146,7 @@ class BaseParserChain(BaseChain):
                     completion, x["prompt_value"]
                 )
             except (ValidationError, CancelledError) as e:
-                print(f"Error: {repr(e)}")
+                logger.error(f"Error: {repr(e)}")
                 completion = parser_retry_chain.ainvoke(
                     dict(
                         completion=x["completion"],

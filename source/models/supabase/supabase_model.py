@@ -427,7 +427,7 @@ class SupabaseModel(BaseModel):
                 for key, item in filter.items():
                     if isinstance(item, dict):
                         for op, val in item.items():
-                            print(f"{op=} {val=}")
+                            logger.debug(f"{op=} {val=}")
                             if op == "is_":
                                 query = query.is_(key, val)
                             elif op == "range":
@@ -563,7 +563,7 @@ class SupabaseModel(BaseModel):
         response = await query.execute()
 
         if hasattr(response, "data") and len(response.data) > 0:
-            print(response.data)
+            logger.debug(response.data)
             return True
 
         return False
@@ -589,7 +589,7 @@ class SupabaseModel(BaseModel):
         response = query.execute()
 
         if hasattr(response, "data") and len(response.data) > 0:
-            print(response.data)
+            logger.debug(response.data)
             return True
 
         return False

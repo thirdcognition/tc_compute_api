@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from source.chains.init import get_chain
 from source.load_env import SETTINGS
+from source.models.config.logging import logger
 
 
 def hierarchy_task(chain_name, item, item_formatter):
@@ -142,7 +143,9 @@ def join_items(items: List, item_formatter: Callable, splitter="\n\n") -> List[s
                     current_str = ""
                 current_str += item_str + splitter
             except IndexError:
-                print(f"IndexError: {item_index} , {items_left} > {len(item_strings)}")
+                logger.error(
+                    f"IndexError: {item_index} , {items_left} > {len(item_strings)}"
+                )
                 continue
         new_item_strings.append(current_str)
         item_strings = new_item_strings
@@ -164,7 +167,7 @@ async def execute_chain(
     retry_tasks = {}
     for i, result in enumerate(results):
         if isinstance(result, AIMessage):
-            print(f"\n\nRetrying hierarchy request {i}...")
+            logger.info(f"\n\nRetrying hierarchy request {i}...")
             retry_tasks[i] = task_func(chain_name, items[i], item_formatter)
 
     if len(retry_tasks.keys()) > 0:

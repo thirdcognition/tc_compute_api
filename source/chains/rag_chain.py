@@ -14,6 +14,7 @@ from langchain_core.runnables import (
 #     AIMessage,
 # )
 
+from source.models.config.logging import logger
 from source.chains.base import BaseChain, keep_chain_params, log_chain_params
 from source.chains.init import get_chain, get_llm
 from source.helpers.shared import print_params
@@ -214,7 +215,7 @@ def get_rag_chain(
     if chain_id in rag_chains and not reset:
         return rag_chains[chain_id]
 
-    print(f"Initializing RAG {chain_type} chain: {chain_id}")
+    logger.info(f"Initializing RAG {chain_type} chain: {chain_id}")
 
     retrievers = [
         # get_vectorstore_as_retriever(store_id, embedding_id, amount_of_documents)

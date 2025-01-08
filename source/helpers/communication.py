@@ -1,9 +1,11 @@
-from app.core.celery_app import celery_app
 import requests
-from app.core.supabase import get_sync_supabase_service_client
-from source.load_env import SETTINGS
 from typing import List
 from supabase import Client
+
+from app.core.celery_app import celery_app
+from app.core.supabase import get_sync_supabase_service_client
+from source.load_env import SETTINGS
+from source.models.config.logging import logger
 
 
 # Assuming a function to get the Supabase client
@@ -16,7 +18,7 @@ def send_email_about_new_shows(panels: List[str]):
     supabase = get_sync_supabase_service_client()
     # Fetch all users
     users = supabase.table("auth.users").select("*").execute()
-    print(f"users {users=}")
+    logger.debug(f"users {users=}")
     # for user in users.data:
     #     email = user["email"]
     # Logic to send email
@@ -44,9 +46,9 @@ def send_new_shows_email_task(email: str, panels: List[str]):
 
     response = requests.post(url, headers=headers, json=data)
     if response.status_code == 200:
-        print(f"Email sent to {email}")
+        logger.info(f"Email sent to {email}")
     else:
-        print(f"Failed to send email to {email}: {response.text}")
+        logger.error(f"Failed to send email to {email}: {response.text}")
 
 
 # Celery task

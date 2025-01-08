@@ -21,7 +21,7 @@ ocr = None
 
 # def recursive_find(obj, key, _ret=[]):
 #     if key in obj:
-#         # print("found text: " + obj[key])
+#         # logger.debug("found text: " + obj[key])
 #         return [str(obj[key])]
 #     resp = []
 #     if isinstance(obj, dict):

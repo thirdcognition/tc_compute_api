@@ -57,6 +57,7 @@ class PublicPanelTranscript(SupabaseModel):
     process_state: Optional[ProcessState] = Field(default=None)
     process_fail_message: Optional[str] = Field(default=None)
     generation_interval: Optional[int] = Field(default=None)
+    generation_parent: Optional[UUID] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)

@@ -4,10 +4,11 @@ from pydantic import ValidationError
 from supabase import AuthApiError
 
 from source.models.config.default_env import IN_PRODUCTION
+from source.models.config.logging import logger
 
 
 def handle_exception(e: Exception, default_message: str, status_code: int = None):
-    print("error", e)
+    logger.error("error %s", e)
     if (
         isinstance(e, ValidationError)
         or isinstance(e, AuthApiError)

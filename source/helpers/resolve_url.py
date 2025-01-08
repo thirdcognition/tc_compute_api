@@ -1,6 +1,7 @@
 from typing import Tuple
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
+from source.models.config.logging import logger
 
 
 class GoogleNewsResolver:
@@ -50,7 +51,7 @@ class GoogleNewsResolver:
                         page.click(selector)
                         page.wait_for_load_state("networkidle")
                     except Exception as e:
-                        print(f"Error clicking consent button: {e}")
+                        logger.error(f"Error clicking consent button: {e}")
                     break
 
             final_url = page.url

@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_service_client
+from source.models.config.logging import logger
 from source.helpers.communication import send_email_about_new_shows_task
 from source.models.supabase.public_panel import (
     ProcessState,
@@ -122,10 +123,10 @@ def fetch_news_links(config: GoogleNewsConfig) -> List[Tuple[str, str]]:
             resolved_links.append((resolved_url, content))
             resolved_count += 1
         except StopIteration:
-            print("No more entries to process.")
+            logger.info("No more entries to process.")
             break
         except Exception as e:
-            print(f"Failed to resolve {entry.link}: {e}")
+            logger.info(f"Failed to resolve {entry.link}: {e}")
 
     # Close the resolver
     resolver.close()
@@ -188,7 +189,7 @@ def create_public_panel_transcript(
     }
 
     # Fetch news links from GoogleNewsConfig instances
-    # print(f"{metadata=}")
+    # logger.debug(f"{metadata=}")
     google_news_configs_json = metadata.get("google_news", []) + (
         request_data.google_news or []
     )
@@ -200,7 +201,7 @@ def create_public_panel_transcript(
         GoogleNewsConfig.model_validate(config) for config in google_news_configs_json
     ]
 
-    # print(f"{google_news_configs=}")
+    # logger.debug(f"{google_news_configs=}")
 
     article_contents = []
     for config in google_news_configs:
@@ -209,8 +210,8 @@ def create_public_panel_transcript(
         # ):  # Ensure config is a GoogleNewsConfig instance
         for page, content in fetch_news_links(config):
             article_contents.append(content)
-            print(f"{page=}")
-            # print(f"\n\nArticle: {page=}\n\n{content}\n\n\n")
+            logger.debug(f"{page=}")
+            # logger.debug(f"\n\nArticle: {page=}\n\n{content}\n\n\n")
 
     # Combine input_source with metadata urls
     combined_sources = set()
@@ -229,7 +230,7 @@ def create_public_panel_transcript(
 
     input_source = list(combined_sources)
 
-    # print(f"{input_source=}")
+    # logger.debug(f"{input_source=}")
 
     longform = (
         request_data.longform
@@ -469,7 +470,7 @@ def generate_transcripts_task(self: Task, access_token: str):
 
     # Fetch all PublicPanelTranscripts and map them by panelId
     all_transcripts = PublicPanelTranscript.fetch_existing_from_supabase_sync(supabase)
-    transcripts_by_panel = {}
+    transcripts_by_panel: dict[str, PublicPanelTranscript] = {}
     for transcript in all_transcripts:
         if transcript.public_panel_id not in transcripts_by_panel:
             transcripts_by_panel[transcript.public_panel_id] = []
@@ -488,6 +489,18 @@ def generate_transcripts_task(self: Task, access_token: str):
         latest_transcript: PublicPanelTranscript = transcripts_by_panel.get(
             panel_id, [None]
         )[0]
+
+        # transcripts_wo_parent: list[PublicPanelTranscript] = [
+        #     transcript
+        #     for transcript in transcripts_by_panel.get(panel_id, [None])
+        #     if transcript.generation_parent is None
+        # ]
+
+        # transcripts_with_parent: list[PublicPanelTranscript] = [
+        #     transcript
+        #     for transcript in transcripts_by_panel.get(panel_id, [None])
+        #     if transcript.generation_parent is not None
+        # ]
 
         if latest_transcript:
             now_aware = datetime.datetime.now(datetime.timezone.utc)
@@ -508,7 +521,7 @@ def generate_transcripts_task(self: Task, access_token: str):
                 audio = PublicPanelAudio.fetch_from_supabase_sync(
                     supabase, transcript.id, id_column="public_transcript_id"
                 )
-                print(f"{transcript.id=} {audio=}")
+                logger.debug(f"{transcript.id=} {audio=}")
                 audio_metadata = audio.metadata or {}
 
                 # Separate and extend conversation_config
@@ -555,7 +568,7 @@ def generate_transcripts_task(self: Task, access_token: str):
 
                 new_transcript_data.transcript_id = transcript_id
                 new_transcript_data.conversation_config = conversation_config
-                print(f"{transcript_id=} {new_transcript_data=}")
+                logger.debug(f"{transcript_id=} {new_transcript_data=}")
                 create_public_panel_audio(access_token, new_transcript_data)
                 new_transcripts_generated = (
                     True  # Set flag to true if a new transcript is generated

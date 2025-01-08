@@ -1,16 +1,17 @@
 from datetime import datetime
 import json
 from typing import ClassVar, Optional, List, Dict
+from uuid import UUID
+from pydantic import Field, field_validator
+from supabase.client import AsyncClient
+import uuid
 
 from source.models.structures.journey_template import (
     JourneyItemType,
     JourneyTemplateModel,
 )
 from source.models.supabase.supabase_model import SupabaseModel
-from uuid import UUID
-from pydantic import Field, field_validator
-from supabase.client import AsyncClient
-import uuid
+from source.models.config.logging import logger
 
 
 class JourneyModel(SupabaseModel):
@@ -115,7 +116,7 @@ class JourneyModel(SupabaseModel):
 
         # Create a new JourneyModel instance
         journey_id = uuid.uuid4()
-        print(f"{journey_id=} {template_id=}")
+        logger.debug(f"{journey_id=} {template_id=}")
         journey = cls(
             id=journey_id,
             template_id=template_id,

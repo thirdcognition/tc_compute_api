@@ -2,9 +2,27 @@ import os
 from dotenv import load_dotenv
 from langchain.globals import set_debug, set_verbose
 
+# Flag to check if the environment is already loaded
+ENV_LOADED = False
 env_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../", ".env"))
-load_dotenv(env_file)
-print("Loading env: ", env_file)
+DEFAULT_PATH = os.path.dirname(env_file)
+
+
+def load_environment():
+    from source.models.config.logging import logger
+
+    global ENV_LOADED
+    if ENV_LOADED:
+        return
+
+    load_dotenv(env_file)
+    logger.info("Loading env: " + env_file)
+
+    ENV_LOADED = True
+
+
+# Call the function to load the environment
+load_environment()
 
 DEBUGMODE = os.getenv("LLM_DEBUG", "True") == "True" or False
 DEVMODE = os.getenv("LLM_DEV", "True") == "True" or False

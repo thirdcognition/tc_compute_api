@@ -3,6 +3,7 @@ from uuid import UUID
 from supabase import AsyncClient
 
 # from source.models.organization import Organization
+from source.models.config.logging import logger
 from source.models.supabase.organization import OrganizationsModel
 
 
@@ -19,7 +20,7 @@ async def get_organization(
     Returns:
         Organization: The retrieved organization.
     """
-    print(f"{organization_id=}")
+    logger.debug(f"{organization_id=}")
     organization_model = await OrganizationsModel.fetch_from_supabase(
         supabase, organization_id
     )

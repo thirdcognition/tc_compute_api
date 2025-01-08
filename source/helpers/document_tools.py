@@ -19,6 +19,7 @@ from langchain_experimental.text_splitter import (
 from langchain.schema.document import Document
 
 from source.load_env import SETTINGS
+from source.models.config.logging import logger
 from source.chains.init import get_embeddings
 
 # from source.models.concepts import ConceptDataTable
@@ -140,7 +141,7 @@ def __split_text(semantic_splitter: SemanticChunker, txt: str):
             else [txt.strip()]
         )
     except Exception as e:
-        print(e)
+        logger.error(e)
         resp = [txt.strip()]
     return resp
 
@@ -212,7 +213,7 @@ def split_markdown(text, split=SETTINGS.default_llms.instruct.char_limit):
     # min_len = min(len(text) for text in texts)
     # max_len = max(len(text) for text in texts)
 
-    # print(f"Average length of each string in texts: {avg_len}, Min length: {min_len}, Max length: {max_len}, Total amount of strings: {len(texts)}")
+    # logger.debug(f"Average length of each string in texts: {avg_len}, Min length: {min_len}, Max length: {max_len}, Total amount of strings: {len(texts)}")
 
     return join_documents(texts, split)
 

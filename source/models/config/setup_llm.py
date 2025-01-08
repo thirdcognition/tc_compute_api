@@ -8,6 +8,7 @@ from source.models.config.llm_settings import (
     ProviderModelSettings,
     ProviderSettings,
 )
+from source.models.config.logging import logger
 from source.models.config.mapping import EMBEDDING_MODEL_MAP, LLM_MODEL_MAP, LLM_MODELS
 
 
@@ -15,7 +16,7 @@ def setup_llm(SETTINGS: Settings):
     LLM_PROVIDERS = os.getenv("LLM_PROVIDERS", "OLLAMA").upper().split(",")
     SETTINGS.default_llms = ModelDefaults()
     for provider in LLM_PROVIDERS:
-        print(f"Loading {provider} settings...")
+        logger.info(f"Loading {provider} settings...")
         provider_settings = ProviderSettings(
             type=provider, class_model=LLM_MODEL_MAP[provider]
         )
@@ -143,23 +144,23 @@ def setup_llm(SETTINGS: Settings):
             SETTINGS.default_embedding_provider = provider_settings
 
     for provider_settings in SETTINGS.llms:
-        print(f"+++ {provider_settings.type} +++")
+        logger.info(f"+++ {provider_settings.type} +++")
         for model_settings in provider_settings.models:
-            print(
+            logger.info(
                 f"\t{model_settings.type.capitalize()}: {model_settings.model=} {model_settings.context_size=} {model_settings.char_limit=}"
             )
 
     for embedding_provider_settings in SETTINGS.embeddings:
-        print(f"+++ {embedding_provider_settings.type} EMBEDDINGS +++")
+        logger.info(f"+++ {embedding_provider_settings.type} EMBEDDINGS +++")
         for model_settings in embedding_provider_settings.models:
-            print(
+            logger.info(
                 f"\t{model_settings.type.capitalize()}: {model_settings.model=} {model_settings.char_limit=} {model_settings.overlap=}"
             )
 
-    print("+++ DEFAULTS +++")
-    print(
+    logger.info("+++ DEFAULTS +++")
+    logger.info(
         f"\tLLM: {SETTINGS.default_provider.type} {SETTINGS.default_llms.default.model}"
     )
-    print(
+    logger.info(
         f"\tEMBEDDING: {SETTINGS.default_embedding_provider.type} {SETTINGS.default_embeddings.default.model}"
     )

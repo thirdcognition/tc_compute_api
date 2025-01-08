@@ -240,7 +240,7 @@ class TagsParser(BaseOutputParser[Union[str, Dict]]):
             + self.content_tags
         )
 
-        # print(f"Parsing tags: {text}")
+        # logger.info(f"Parsing tags: {text}")
         if isinstance(text, BaseMessage):
             text = text.content
 
