@@ -5,6 +5,7 @@ from supabase_auth.types import Session
 from app.core.session_storage import get_storage, get_supabase_client
 from pydantic import BaseModel, EmailStr, ValidationError
 
+from source.models.config.logging import logger
 from source.helpers.routes import handle_exception
 
 router = APIRouter()
@@ -23,7 +24,7 @@ async def api_authenticate_supabase():
 @router.post("/auth/login")
 async def api_login(login_request: LoginRequestData) -> Session:
     try:
-        print(f"login: {login_request.email=}, {login_request.password=}")
+        logger.debug(f"login: {login_request.email=}, {login_request.password=}")
 
         # Validate input
         if not login_request.email or not login_request.password:
@@ -41,7 +42,7 @@ async def api_login(login_request: LoginRequestData) -> Session:
 
         session: Session = await supabase.auth.get_session()
         get_storage(access_token=session.access_token, supabase_client=supabase)
-        print(f"session: {session=}")
+        logger.debug(f"session: {session=}")
         return session
     except AuthApiError as ae:
         raise handle_exception(ae, "Invalid login", 401)

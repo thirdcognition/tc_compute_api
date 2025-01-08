@@ -43,7 +43,7 @@ else
 
     docker start tc-redis
 
-    .venv/bin/playwright install
+    .venv/bin/playwright install --with-deps chromium
 
     echo "Not running inside Docker, starting server with reload."
     .venv/bin/uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload --log-config logging.ini &

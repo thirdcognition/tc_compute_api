@@ -9,10 +9,15 @@ function PanelDetailEdit({
     googleNewsConfigs = [],
     setGoogleNewsConfigs,
     inputText,
-    setInputText
+    setInputText,
+    yleNewsConfigs = [],
+    setYleNewsConfigs
 }) {
     const [linkFields, setLinkFields] = useState(links);
-    const [newsConfigFields, setNewsConfigFields] = useState(googleNewsConfigs);
+    const [googleNewsConfigFields, setGoogleNewsConfigFields] =
+        useState(googleNewsConfigs);
+
+    const [yleNewsFields, setYleNewsFields] = useState(yleNewsConfigs);
 
     const handleLinkChange = (index, value) => {
         const newLinkFields = [...linkFields];
@@ -32,7 +37,7 @@ function PanelDetailEdit({
     };
 
     const handleNewsConfigChange = (index, key, value) => {
-        const newNewsConfigFields = [...newsConfigFields];
+        const newNewsConfigFields = [...googleNewsConfigFields];
         if (!newNewsConfigFields[index]) {
             newNewsConfigFields[index] = {};
         }
@@ -41,21 +46,23 @@ function PanelDetailEdit({
         } else {
             newNewsConfigFields[index][key] = value;
         }
-        setNewsConfigFields(newNewsConfigFields);
+        setGoogleNewsConfigFields(newNewsConfigFields);
         setGoogleNewsConfigs(newNewsConfigFields);
     };
 
-    const addNewsConfigField = () => {
-        setNewsConfigFields([
-            ...newsConfigFields,
+    const addGoogleNewsConfigField = () => {
+        const newNewsConfigFields = [
+            ...googleNewsConfigFields,
             { type: "topic", lang: "en", country: "US" }
-        ]);
+        ];
+        setGoogleNewsConfigFields(newNewsConfigFields);
+        setGoogleNewsConfigs(newNewsConfigFields);
     };
-    const removeNewsConfigField = (index) => {
-        const newNewsConfigFields = newsConfigFields.filter(
+    const removeGoogleNewsConfigField = (index) => {
+        const newNewsConfigFields = googleNewsConfigFields.filter(
             (_, i) => i !== index
         );
-        setNewsConfigFields(newNewsConfigFields);
+        setGoogleNewsConfigFields(newNewsConfigFields);
         setGoogleNewsConfigs(newNewsConfigFields);
     };
 
@@ -93,9 +100,29 @@ function PanelDetailEdit({
         return totalHours;
     };
 
+    const handleYleNewsConfigChange = (index, key, value) => {
+        const newYleNewsFields = [...yleNewsFields];
+        if (!newYleNewsFields[index]) {
+            newYleNewsFields[index] = {};
+        }
+        newYleNewsFields[index][key] = value;
+        setYleNewsFields(newYleNewsFields);
+        setYleNewsConfigs(newYleNewsFields);
+    };
+
+    const addYleNewsConfigField = () => {
+        const newYleNewsFields = [
+            ...yleNewsFields,
+            { type: "majorHeadlines", articles: 5 }
+        ];
+        setYleNewsFields(newYleNewsFields);
+        setYleNewsConfigs(newYleNewsFields);
+    };
+
     return React.createElement(
         React.Fragment,
         null,
+
         React.createElement(
             Form.Group,
             { controlId: "title" },
@@ -168,13 +195,13 @@ function PanelDetailEdit({
         ),
         React.createElement(
             Form.Group,
-            { controlId: "googleNewsConfigs" },
+            { controlId: "yleNewsConfigs" },
             React.createElement(
                 Form.Label,
                 { className: "font-semibold" },
-                "Configure Google News:"
+                "Configure Yle News:"
             ),
-            newsConfigFields.map((config, index) =>
+            yleNewsFields.map((config, index) =>
                 React.createElement(
                     "div",
                     {
@@ -206,7 +233,116 @@ function PanelDetailEdit({
                             {
                                 variant: "danger",
                                 type: "button",
-                                onClick: () => removeNewsConfigField(index),
+                                onClick: () => {
+                                    const newYleNewsFields =
+                                        yleNewsFields.filter(
+                                            (_, i) => i !== index
+                                        );
+                                    setYleNewsFields(newYleNewsFields);
+                                    setYleNewsConfigs(newYleNewsFields);
+                                },
+                                className: "py-2"
+                            },
+                            "Remove Config"
+                        )
+                    ),
+                    React.createElement(
+                        Form.Control,
+                        {
+                            as: "select",
+                            value: config.type || "majorHeadlines",
+                            onChange: (e) =>
+                                handleYleNewsConfigChange(
+                                    index,
+                                    "type",
+                                    e.target.value
+                                ),
+                            style: { marginBottom: "10px" },
+                            className:
+                                "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        },
+                        React.createElement(
+                            "option",
+                            { value: "majorHeadlines" },
+                            "Major Headlines"
+                        ),
+                        React.createElement(
+                            "option",
+                            { value: "mostRead" },
+                            "Most Read"
+                        )
+                    ),
+                    React.createElement(Form.Control, {
+                        type: "number",
+                        min: "1",
+                        max: "20",
+                        value: config.articles || 5,
+                        onChange: (e) =>
+                            handleYleNewsConfigChange(
+                                index,
+                                "articles",
+                                parseInt(e.target.value, 10)
+                            ),
+                        style: { marginBottom: "10px" },
+                        className:
+                            "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    })
+                )
+            ),
+            React.createElement(
+                Button,
+                {
+                    variant: "secondary",
+                    type: "button",
+                    onClick: addYleNewsConfigField,
+                    style: { width: "100%", marginBottom: "10px" },
+                    className: "py-2"
+                },
+                "+ Add another Yle News config"
+            )
+        ),
+        React.createElement(
+            Form.Group,
+            { controlId: "googleNewsConfigs" },
+            React.createElement(
+                Form.Label,
+                { className: "font-semibold" },
+                "Configure Google News:"
+            ),
+            googleNewsConfigFields.map((config, index) =>
+                React.createElement(
+                    "div",
+                    {
+                        key: index,
+                        style: {
+                            border: "1px solid #ccc",
+                            padding: "10px",
+                            marginBottom: "10px"
+                        }
+                    },
+                    React.createElement(
+                        "div",
+                        {
+                            style: {
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginBottom: "10px",
+                                width: "100%"
+                            }
+                        },
+                        React.createElement(
+                            "h5",
+                            null,
+                            `Config ${index + 1}: ${config.type || "N/A"}`
+                        ),
+                        React.createElement(
+                            Button,
+                            {
+                                variant: "danger",
+                                type: "button",
+                                onClick: () =>
+                                    removeGoogleNewsConfigField(index),
                                 className: "py-2"
                             },
                             "Remove Config"
@@ -532,7 +668,7 @@ function PanelDetailEdit({
                 {
                     variant: "secondary",
                     type: "button",
-                    onClick: addNewsConfigField,
+                    onClick: addGoogleNewsConfigField,
                     style: { width: "100%", marginBottom: "10px" },
                     className: "py-2"
                 },

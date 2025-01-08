@@ -1,28 +1,79 @@
 import aiohttp
 import asyncio
+import logging
+import logging.config
 from functools import wraps
 from celery import Celery, Task
 from typing import Any, Callable, Coroutine, ParamSpec, TypeVar
 from celery.schedules import crontab
 from asgiref import sync
 from source.load_env import SETTINGS
+from source.models.config.logging import log_format, ColoredFormatter
+from celery.signals import after_setup_logger
 
 _P = ParamSpec("_P")
 
 _R = TypeVar("_R")
 
-# from source.models.config.logging import logger
-
-# Initialize Celery with Redis settings from SETTINGS
 celery_app = Celery(
     "tc_compute_api",
     broker=SETTINGS.redis_broker_url,
     backend=SETTINGS.redis_backend_url,
     include=["source.helpers.panel", "source.helpers.communication"],
-    # log=logger,
+    log="source.models.config.logging.CeleryLogger",
 )
 
-# Update Celery configuration with Celery and Flower host and port
+# Ensure all handlers use the ColoredFormatter
+
+
+@after_setup_logger.connect
+def setup_celery_logger(logger, *args, **kwargs):
+    for handler in logger.handlers:
+        handler.setFormatter(
+            ColoredFormatter(
+                "%(processName)s - %(levelname)-8s: %(asctime)s| %(message)s"
+            )
+        )
+
+
+logging.config.dictConfig(
+    {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "colored": {
+                "()": ColoredFormatter,
+                "format": "%(processName)s - %(levelname)-8s: %(asctime)s| %(message)s",
+            },
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "colored",
+            },
+        },
+        "loggers": {
+            "celery": {
+                "handlers": ["console"],
+                "level": "INFO",
+            },
+            "celery.task": {
+                "handlers": ["console"],
+                "level": "INFO",
+            },
+        },
+    }
+)
+
+for logger_name in ["celery", "celery.task"]:
+    logger = logging.getLogger(logger_name)
+    for handler in logger.handlers:
+        handler.setFormatter(
+            ColoredFormatter(
+                "%(processName)s - %(levelname)-8s: %(asctime)s| %(message)s"
+            )
+        )
+
 celery_app.conf.update(
     result_expires=3600,
     broker_transport_options={
@@ -32,8 +83,8 @@ celery_app.conf.update(
         "retry_on_startup": True,
     },
     broker_connection_retry_on_startup=True,
-    worker_log_format="%(processName)s - %(levelname)s: %(asctime)s| %(message)s",
-    worker_task_log_format="%(processName)s - %(levelname)s: %(asctime)s| %(message)s",
+    worker_log_format=log_format._fmt,
+    worker_task_log_format=log_format._fmt,
     flower_host=SETTINGS.flower_host,
     flower_port=SETTINGS.flower_port,
 )
@@ -66,7 +117,7 @@ async def check_task_status(task_id: str) -> str:
     flower_url = f"http://{SETTINGS.flower_host}:{SETTINGS.flower_port}"
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{flower_url}/api/task/info/{task_id}") as response:
-            print(response)
+            logger.debug(response)
             if response.status == 200:
                 data = await response.json()
                 return data.get("state", "Unknown")

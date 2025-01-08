@@ -235,7 +235,7 @@ async def supabase_middleware(
         logger.error(f"Error occurred while getting session: {str(e)}")
         return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
 
-    print(f"Properly authenticated user {session.user.id}")
+    logger.info(f"Properly authenticated user {session.user.id}")
 
     try:
         if request.headers.get("content-type") == "application/json":

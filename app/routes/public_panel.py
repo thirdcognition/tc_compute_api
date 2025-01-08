@@ -31,6 +31,7 @@ from source.models.supabase.public_panel import (
     PublicPanelTranscript,
     PublicPanelAudio,
 )
+from source.models.config.logging import logger
 
 router = APIRouter()
 
@@ -86,7 +87,7 @@ async def api_update_panel(
     request_data: PublicPanelDiscussion,
     supabase: SupaClientDep,
 ):
-    print(f"{request_data=}")
+    logger.debug(f"{request_data=}")
     try:
         request_data.id = discussion_id
         discussion = await update_public_panel(supabase, request_data)

@@ -18,9 +18,12 @@ function PanelEdit({
     const [links, setLinks] = useState([]);
     const [googleNewsConfigs, setGoogleNewsConfigs] = useState([]);
     const [inputText, setInputText] = useState("");
+    const [yleNewsConfigs, setYleNewsConfigs] = useState([]);
     const [linkFields, setLinkFields] = useState(links);
-    const [newsConfigFields, setNewsConfigFields] = useState(googleNewsConfigs);
+    const [googleNewsConfigFields, setGoogleNewsConfigFields] =
+        useState(googleNewsConfigs);
     const [taskId, setTaskId] = useState(null);
+    const [yleNewsFields, setYleNewsFields] = useState(yleNewsConfigs);
     const [taskStatus, setTaskStatus] = useState("idle"); // Initialize to "idle"
     const [isPolling, setIsPolling] = useState(false);
     const [existingTranscript, setExistingTranscript] = useState(null);
@@ -121,7 +124,8 @@ function PanelEdit({
             if (discussionData.metadata) {
                 setInputText(discussionData.metadata.input_text);
                 setLinkFields(discussionData.metadata.input_source);
-                setGoogleNewsConfigs(discussionData.metadata.google_news || []); // Update googleNewsConfigs
+                setGoogleNewsConfigs(discussionData.metadata.google_news || []);
+                setYleNewsConfigs(discussionData.metadata.yle_news || []);
             }
 
             // Fetch updated transcripts
@@ -197,30 +201,30 @@ function PanelEdit({
         }
     };
 
-    const handleLinkChange = (index, value) => {
-        const newLinkFields = [...linkFields];
-        newLinkFields[index] = value;
-        setLinkFields(newLinkFields);
-        setLinks(newLinkFields);
-    };
+    // const handleLinkChange = (index, value) => {
+    //     const newLinkFields = [...linkFields];
+    //     newLinkFields[index] = value;
+    //     setLinkFields(newLinkFields);
+    //     setLinks(newLinkFields);
+    // };
 
-    const handleNewsConfigChange = (index, key, value) => {
-        const newNewsConfigFields = [...newsConfigFields];
-        if (!newNewsConfigFields[index]) {
-            newNewsConfigFields[index] = {};
-        }
-        newNewsConfigFields[index][key] = value;
-        setNewsConfigFields(newNewsConfigFields);
-        setGoogleNewsConfigs(newNewsConfigFields);
-    };
+    // const handleNewsConfigChange = (index, key, value) => {
+    //     const newNewsConfigFields = [...googleNewsConfigFields];
+    //     if (!newNewsConfigFields[index]) {
+    //         newNewsConfigFields[index] = {};
+    //     }
+    //     newNewsConfigFields[index][key] = value;
+    //     setGoogleNewsConfigFields(newNewsConfigFields);
+    //     setGoogleNewsConfigs(newNewsConfigFields);
+    // };
 
-    const addLinkField = () => {
-        setLinkFields([...linkFields, ""]);
-    };
+    // const addLinkField = () => {
+    //     setLinkFields([...linkFields, ""]);
+    // };
 
-    const addNewsConfigField = () => {
-        setNewsConfigFields([...newsConfigFields, {}]);
-    };
+    // const addGoogleNewsConfigField = () => {
+    //     setGoogleNewsConfigFields([...googleNewsConfigFields, {}]);
+    // };
 
     const pollTaskStatus = async (id, type) => {
         try {
@@ -263,6 +267,9 @@ function PanelEdit({
         const googleNewsArray = googleNewsConfigs.filter(
             (config) => Object.keys(config).length > 0
         );
+        const yleNewsArray = yleNewsConfigs.filter(
+            (config) => Object.keys(config).length > 0
+        );
         try {
             const protocol = window.location.protocol;
             const host = window.location.hostname;
@@ -281,7 +288,8 @@ function PanelEdit({
                         input_text: inputText,
                         input_source: linksArray,
                         google_news: googleNewsArray,
-                        longform: longForm // Include longForm in the request
+                        longform: longForm, // Include longForm in the request
+                        yle_news: yleNewsArray // Include Yle news in the request
                     })
                 }
             );
@@ -309,11 +317,23 @@ function PanelEdit({
                     discussionData.metadata.google_news
                   ? discussionData.metadata.google_news
                   : [];
+        const yleNewsArray = yleNewsConfigs.filter(
+            (config) => Object.keys(config).length > 0
+        );
         const articleCount = Math.max(
             (googleNewsArray.reduce(
                 (val, config) => val + config.articles,
                 0
-            ) || 0) + (linksArray || []).length,
+            ) || 0) +
+                (yleNewsArray.reduce(
+                    (val, config) => val + config.articles,
+                    0
+                ) || 0) +
+                (googleNewsArray.reduce(
+                    (val, config) => val + config.articles,
+                    0
+                ) || 0) +
+                (linksArray || []).length,
             1
         );
         const maxNumChunks = Math.max(
@@ -547,7 +567,9 @@ function PanelEdit({
                         googleNewsConfigs,
                         setGoogleNewsConfigs,
                         inputText,
-                        setInputText
+                        setInputText,
+                        yleNewsConfigs,
+                        setYleNewsConfigs
                     }),
                     React.createElement(
                         Button,

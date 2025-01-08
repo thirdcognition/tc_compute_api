@@ -20,6 +20,7 @@ from source.chains.chain import Chain
 from source.load_env import (
     SETTINGS,
 )
+from source.models.config.logging import logger
 from source.models.config.default_env import DEBUGMODE, DEVMODE
 from source.models.config.llm_settings import (
     EmbeddingModelSettings,
@@ -115,7 +116,7 @@ def init_llm(
     temperature=0.5,
     debug_mode: bool = DEBUGMODE,
 ) -> BaseLLM:
-    print(
+    logger.info(
         f"Initializing llm: {model.model=} with {model.context_size=} and {temperature=}..."
     )
 

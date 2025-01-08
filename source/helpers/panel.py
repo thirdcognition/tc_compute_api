@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import re
 import tempfile
 from typing import Optional, Tuple, Union, List
 from uuid import UUID
@@ -9,12 +8,15 @@ from podcastfy.client import generate_podcast
 from supabase import Client
 from celery import Task
 from celery.worker.request import Request
-from pygooglenews import GoogleNews
+
 from pydantic import BaseModel
 
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_service_client
-from source.models.config.logging import logger
+from source.helpers.news.google import GoogleNewsConfig, fetch_google_news_links
+
+# from source.models.config.logging import logger
+from source.helpers.news.yle import fetch_yle_news_links, YleNewsConfig
 from source.helpers.communication import send_email_about_new_shows_task
 from source.models.supabase.public_panel import (
     ProcessState,
@@ -22,7 +24,7 @@ from source.models.supabase.public_panel import (
     PublicPanelTranscript,
     PublicPanelAudio,
 )
-from source.helpers.resolve_url import GoogleNewsResolver
+
 
 # Load custom_config from environment variables with defaults
 custom_config = {
@@ -38,19 +40,6 @@ custom_config = {
 }
 
 
-class GoogleNewsConfig(BaseModel):
-    lang: Optional[str] = "en"
-    country: Optional[str] = "US"
-    topic: Optional[Union[str, List[str]]] = None
-    query: Optional[str] = None
-    location: Optional[Union[str, List[str]]] = None
-    since: Optional[str] = "1d"
-    articles: Optional[int] = 5
-
-    def to_json(self):
-        return json.dumps(self.model_dump(), default=str)
-
-
 class PublicPanelRequestData(BaseModel):
     title: str = "New public morning show"
     input_source: Union[str, List[str]] = ""
@@ -62,76 +51,11 @@ class PublicPanelRequestData(BaseModel):
     panel_id: Optional[UUID] = None
     transcript_id: Optional[UUID] = None
     google_news: Optional[Union[GoogleNewsConfig, List[GoogleNewsConfig]]] = None
+    yle_news: Optional[Union[YleNewsConfig, List[YleNewsConfig]]] = None
     update_cycle: Optional[int] = None
 
     def to_json(self):
         return json.dumps(self.model_dump(), default=str)
-
-
-def parse_since_value(since_value):
-    # Regular expression to match time units (e.g., 10h, 5d, 2m)
-    pattern = r"(\d+)([hdm])"
-    matches = re.findall(pattern, since_value)
-
-    total_timedelta = datetime.timedelta()
-
-    for amount, unit in matches:
-        time_amount = int(amount)
-
-        if unit == "h":
-            total_timedelta += datetime.timedelta(hours=time_amount)
-        elif unit == "d":
-            total_timedelta += datetime.timedelta(days=time_amount)
-        elif unit == "m":
-            # approx 30.44 days per month for timedelta from months
-            total_timedelta += datetime.timedelta(days=(time_amount * 30.44))
-
-    return total_timedelta
-
-
-def fetch_news_links(config: GoogleNewsConfig) -> List[Tuple[str, str]]:
-    gn = GoogleNews(lang=config.lang, country=config.country)
-    time_span = parse_since_value(config.since)
-
-    if config.query:
-        news = gn.search(config.query, when=config.since)
-    elif config.location:
-        if isinstance(config.location, list):
-            news = gn.geo_multiple_headlines(config.location)
-        else:
-            news = gn.geo_headlines(config.location)
-    elif config.topic:
-        if isinstance(config.topic, list):
-            news = gn.topic_multiple_headlines(config.topic, time_span=time_span)
-        else:
-            news = gn.topic_headlines(config.topic)
-    else:
-        news = gn.top_news()
-
-    # Initialize the GoogleNewsResolver
-    resolver = GoogleNewsResolver()
-
-    # Resolve each URL and fetch content
-    resolved_links = []
-    entries_iter = iter(news["entries"])
-    resolved_count = 0
-
-    while resolved_count < config.articles:
-        try:
-            entry = next(entries_iter)
-            resolved_url, content = resolver.resolve_url(entry.link)
-            resolved_links.append((resolved_url, content))
-            resolved_count += 1
-        except StopIteration:
-            logger.info("No more entries to process.")
-            break
-        except Exception as e:
-            logger.info(f"Failed to resolve {entry.link}: {e}")
-
-    # Close the resolver
-    resolver.close()
-
-    return resolved_links
 
 
 def create_public_panel(
@@ -158,6 +82,9 @@ def create_public_panel(
 
     if request_data.google_news:
         metadata["google_news"] = request_data.google_news
+
+    if request_data.yle_news:
+        metadata["yle_news"] = request_data.yle_news
 
     panel: PublicPanelDiscussion = PublicPanelDiscussion(
         title=request_data.title,
@@ -208,12 +135,28 @@ def create_public_panel_transcript(
         # if isinstance(
         #     config, GoogleNewsConfig
         # ):  # Ensure config is a GoogleNewsConfig instance
-        for page, content in fetch_news_links(config):
+        for page, content in fetch_google_news_links(config):
             article_contents.append(content)
-            logger.debug(f"{page=}")
+            # logger.debug(f"{page=}")
             # logger.debug(f"\n\nArticle: {page=}\n\n{content}\n\n\n")
 
-    # Combine input_source with metadata urls
+    # Fetch news links from YleNewsConfig instances
+    yle_news_configs_json = metadata.get("yle_news", []) + (request_data.yle_news or [])
+    if not isinstance(yle_news_configs_json, list):
+        yle_news_configs_json = [yle_news_configs_json]
+
+    yle_news_configs = [
+        YleNewsConfig.model_validate(config) for config in yle_news_configs_json
+    ]
+
+    # print(f"{yle_news_configs_json=}")
+    # print(f"{yle_news_configs=}")
+
+    for config in yle_news_configs:
+        for page, content in fetch_yle_news_links(config):
+            article_contents.append(content)
+            print(f"{page=}")
+
     combined_sources = set()
     if request_data.input_source:
         combined_sources.update(
@@ -521,7 +464,7 @@ def generate_transcripts_task(self: Task, access_token: str):
                 audio = PublicPanelAudio.fetch_from_supabase_sync(
                     supabase, transcript.id, id_column="public_transcript_id"
                 )
-                logger.debug(f"{transcript.id=} {audio=}")
+                # logger.debug(f"{transcript.id=} {audio=}")
                 audio_metadata = audio.metadata or {}
 
                 # Separate and extend conversation_config
@@ -545,6 +488,7 @@ def generate_transcripts_task(self: Task, access_token: str):
                     ),
                     panel_id=panel_id,
                     google_news=metadata.get("google_news", None),
+                    yle_news=metadata.get("yle_news", None),
                 )
                 print(
                     f"Generating timed transcript for {transcript.id} after {time_since_creation}."
@@ -568,7 +512,7 @@ def generate_transcripts_task(self: Task, access_token: str):
 
                 new_transcript_data.transcript_id = transcript_id
                 new_transcript_data.conversation_config = conversation_config
-                logger.debug(f"{transcript_id=} {new_transcript_data=}")
+                # logger.debug(f"{transcript_id=} {new_transcript_data=}")
                 create_public_panel_audio(access_token, new_transcript_data)
                 new_transcripts_generated = (
                     True  # Set flag to true if a new transcript is generated

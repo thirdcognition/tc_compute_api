@@ -15,35 +15,35 @@ from source.models.config.logging import logger
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def print_params(msg="", params=""):
+def print_params(msg="", params="", method=logger.debug):
     if DEBUGMODE:
         if msg:
-            logger.debug(f"\n\n\n{msg}")
+            method(f"\n\n\n{msg}")
         if params:
-            logger.debug(f"'\n\n{pp.pformat(params).replace('\\n', '\n')}\n\n")
+            method(f"'\n\n{pp.pformat(params).replace('\\n', '\n')}\n\n")
 
 
-def pretty_print(obj, msg=None, force=DEBUGMODE):
+def pretty_print(obj, msg=None, force=DEBUGMODE, method=logger.debug):
     if force:
         if msg:
-            logger.debug(f"\n\n\n{msg}\n")
+            method(f"\n\n\n{msg}\n")
         else:
-            logger.debug(f"\n\n\n{type(obj)}\n")
+            method(f"\n\n\n{type(obj)}\n")
         if obj is None:
-            logger.debug("obj = None")
+            method("obj = None")
         elif isinstance(obj, BaseModel):
-            logger.debug(obj.model_dump_json(indent=2))
+            method(obj.model_dump_json(indent=2))
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
-                logger.debug(f"\n{i}:\n")
+                method(f"\n{i}:\n")
                 if isinstance(item, BaseModel):
-                    logger.debug(item.model_dump_json(indent=2))
-                    logger.debug("\n\n")
+                    method(item.model_dump_json(indent=2))
+                    method("\n\n")
                 else:
                     pp.pprint(item)
         else:
             pp.pprint(obj)
-        logger.debug("\n\n")
+        method("\n\n")
 
 
 def validate_category(category: str) -> bool:

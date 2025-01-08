@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from source.models.config.logging import logger
 
 
-class GoogleNewsResolver:
+class LinkResolver:
     def __init__(self):
         self.playwright = sync_playwright().start()
         self.browser = self.playwright.chromium.launch()

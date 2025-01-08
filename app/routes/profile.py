@@ -4,6 +4,7 @@ from app.routes.journey import handle_exception
 from source.api.profile.read import get_user_profile
 from source.api.profile.update import update_user_profile
 from source.models.supabase.organization import UserProfileModel
+from source.models.config.logging import logger
 
 router = APIRouter()
 
@@ -25,7 +26,7 @@ async def api_get_user_profile_by_id(
     user_id: str = None,
     supabase: SupaClientDep = SupaClientDep,
 ) -> UserProfileModel:
-    print(f"{user_id=}")
+    logger.debug(f"{user_id=}")
     try:
         return await get_user_profile(supabase, user_id=user_id)
     except Exception as e:
