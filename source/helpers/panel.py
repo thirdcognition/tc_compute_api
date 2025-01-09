@@ -87,8 +87,7 @@ def create_public_panel(
         metadata["yle_news"] = request_data.yle_news
 
     panel: PublicPanelDiscussion = PublicPanelDiscussion(
-        title=request_data.title,
-        metadata=metadata,
+        title=request_data.title, metadata=metadata, is_public=True
     )
     panel.create_sync(supabase=service_client)
 
@@ -234,6 +233,7 @@ def create_public_panel_transcript(
             # "max_output_tokens": request_data.max_output_tokens,
         },
         generation_interval=request_data.update_cycle,  # Set generation_interval using update_cycle
+        is_public=True,
     )
     panel_transcript.create_sync(supabase=supabase)
 
@@ -349,6 +349,7 @@ def create_public_panel_audio(
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
         metadata={"conversation_config": conversation_config},
+        is_public=True,
     )
     panel_audio.create_sync(supabase=supabase)
     bucket_audio_file: str = (
