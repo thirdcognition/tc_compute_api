@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.core.supabase import SupaClientDep
-from app.routes.journey import handle_exception
+from source.helpers.routes import handle_exception
 from source.api.organization_user.create import (
     CreateOrganizationUserRequestData,
     create_organization_user,

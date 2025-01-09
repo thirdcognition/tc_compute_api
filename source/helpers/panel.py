@@ -455,17 +455,19 @@ def generate_transcripts_task(self: Task, access_token: str):
                 panel = PublicPanelDiscussion.fetch_from_supabase_sync(
                     supabase, panel_id
                 )
-                metadata = panel.metadata or {}
+                metadata = (panel.metadata or {}) if panel is not None else {}
 
                 # Extend the metadata with the PublicPanelTranscript model
-                transcript_metadata = transcript.metadata or {}
+                transcript_metadata = (
+                    (transcript.metadata or {}) if transcript is not None else {}
+                )
 
                 # Fetch the connected PublicPanelAudio model
                 audio = PublicPanelAudio.fetch_from_supabase_sync(
                     supabase, transcript.id, id_column="public_transcript_id"
                 )
                 # logger.debug(f"{transcript.id=} {audio=}")
-                audio_metadata = audio.metadata or {}
+                audio_metadata = (audio.metadata or {}) if audio is not None else {}
 
                 # Separate and extend conversation_config
                 conversation_config: dict = metadata.get("conversation_config", {})

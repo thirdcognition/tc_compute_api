@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.core.supabase import SupaClientDep
-from app.routes.journey import handle_exception
+from source.helpers.routes import handle_exception
 from source.api.profile.read import get_user_profile
 from source.api.profile.update import update_user_profile
 from source.models.supabase.organization import UserProfileModel

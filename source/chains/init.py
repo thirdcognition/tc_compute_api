@@ -29,15 +29,16 @@ from source.models.config.llm_settings import (
     ProviderSettings,
 )
 from source.prompts.base import PromptFormatter
-from source.prompts.journey import (
-    plan,
-    module_intro,
-    action_details,
-    module_actions,
-    module_content,
-    journey_template_selector,
-)
-from source.prompts.journey_structured import module_structured
+
+# from source.prompts.journey import (
+#     plan,
+#     module_intro,
+#     action_details,
+#     module_actions,
+#     module_content,
+#     journey_template_selector,
+# )
+# from source.prompts.journey_structured import module_structured
 from source.prompts.actions import (
     action,
     summary,
@@ -388,21 +389,21 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         journey_prompts,
         True,
     ),
-    "module_structured": ("structured", module_structured, False),
-    "plan": (
-        "structured_detailed" if not DEVMODE else "structured",
-        plan,
-        True,
-    ),
-    "module_content": ("instruct_detailed_warm", module_content, True),
-    "module_intro": ("instruct_warm", module_intro, True),
-    "module_actions": (
-        "instruct_detailed" if not DEVMODE else "instruct",
-        module_actions,
-        True,
-    ),
-    "journey_template_selector": ("instruct", journey_template_selector, True),
-    "action_details": ("instruct_warm", action_details, True),
+    # "module_structured": ("structured", module_structured, False),
+    # "plan": (
+    #     "structured_detailed" if not DEVMODE else "structured",
+    #     plan,
+    #     True,
+    # ),
+    # "module_content": ("instruct_detailed_warm", module_content, True),
+    # "module_intro": ("instruct_warm", module_intro, True),
+    # "module_actions": (
+    #     "instruct_detailed" if not DEVMODE else "instruct",
+    #     module_actions,
+    #     True,
+    # ),
+    # "journey_template_selector": ("instruct", journey_template_selector, True),
+    # "action_details": ("instruct_warm", action_details, True),
     "question": ("chat", question, True),
     "helper": ("chat", helper, False),
     "chat": ("chat", chat, False),

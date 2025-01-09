@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter
 from app.core.supabase import SupaClientDep
-from app.routes.journey import handle_exception
+from source.helpers.routes import handle_exception
 from source.api.organization.create import create_organization
 from source.api.organization.read import get_organization, list_organizations
 from source.api.organization.update import (
