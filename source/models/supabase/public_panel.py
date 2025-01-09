@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime
 from typing import ClassVar, Dict, Optional, List
 from uuid import UUID
 from pydantic import Field
@@ -27,10 +27,12 @@ class PublicPanelAudio(SupabaseModel):
     process_fail_message: Optional[str] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
     is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    started_at: Optional[time] = Field(default=None)
-    completed_at: Optional[time] = Field(default=None)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class PublicPanelDiscussion(SupabaseModel):
@@ -40,10 +42,12 @@ class PublicPanelDiscussion(SupabaseModel):
     tags: Optional[List[str]] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
     is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    started_at: Optional[time] = Field(default=None)
-    completed_at: Optional[time] = Field(default=None)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class PublicPanelTranscript(SupabaseModel):
@@ -62,10 +66,12 @@ class PublicPanelTranscript(SupabaseModel):
     generation_parent: Optional[UUID] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
     is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    started_at: Optional[time] = Field(default=None)
-    completed_at: Optional[time] = Field(default=None)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class PublicPanelTranscriptSourceReference(SupabaseModel):
@@ -76,7 +82,9 @@ class PublicPanelTranscriptSourceReference(SupabaseModel):
     type: Optional[str] = Field(default=None)
     data: Optional[Dict] = Field(default=None)
     is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
-    started_at: Optional[time] = Field(default=None)
-    completed_at: Optional[time] = Field(default=None)
+    owner_id: Optional[UUID] = Field(default=None)
+    organization_id: Optional[UUID] = Field(default=None)

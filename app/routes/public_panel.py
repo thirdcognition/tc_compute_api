@@ -1,7 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
-from supabase.client import AsyncClient
-from app.core.supabase import SupaClientDep, AccessTokenDep, get_supabase_service_client
+
+# from supabase.client import AsyncClient
+from app.core.supabase import (
+    SupaClientDep,
+    get_supabase_tokens,
+)  # , AccessTokenDep, get_supabase_service_client
 from source.helpers.routes import handle_exception
 from source.api.public_panel.read import (
     get_public_panel,
@@ -119,8 +123,8 @@ async def api_update_panel_transcript(
     # TODO: Remove rights from every authenticated user
     try:
         request_data.id = transcript_id
-        serviceSupabase: AsyncClient = await get_supabase_service_client()
-        transcript = await update_public_panel_transcript(serviceSupabase, request_data)
+        # serviceSupabase: AsyncClient = await get_supabase_service_client()
+        transcript = await update_public_panel_transcript(supabase, request_data)
         return transcript
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
@@ -159,12 +163,15 @@ async def api_update_panel_audio(
 @router.post("/public_panel/")
 async def api_create_public_panel(
     request_data: PublicPanelRequestData,
-    access_token: AccessTokenDep,
+    supabase: SupaClientDep,
 ):
     try:
         # Convert request_data to a JSON-serializable format
         request_data_json = request_data.to_json()
-        task = create_public_panel_task.delay(access_token, request_data_json)
+
+        task = create_public_panel_task.delay(
+            await get_supabase_tokens(supabase), request_data_json
+        )
         return {"task_id": task.id}
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
@@ -175,12 +182,12 @@ async def api_create_public_panel(
 @router.post("/public_panel/transcript")
 async def api_create_public_panel_transcript(
     request_data: PublicPanelRequestData,
-    access_token: AccessTokenDep,
+    supabase: SupaClientDep,
 ):
     try:
         request_data_json = request_data.to_json()
         task = create_public_panel_transcription_task.delay(
-            access_token, request_data_json
+            await get_supabase_tokens(supabase), request_data_json
         )
         return {"task_id": task.id}
     except ValidationError as ve:
@@ -192,11 +199,13 @@ async def api_create_public_panel_transcript(
 @router.post("/public_panel/audio")
 async def api_create_public_panel_audio(
     request_data: PublicPanelRequestData,
-    access_token: AccessTokenDep,
+    supabase: SupaClientDep,
 ):
     try:
         request_data_json = request_data.to_json()
-        task = create_public_panel_audio_task.delay(access_token, request_data_json)
+        task = create_public_panel_audio_task.delay(
+            await get_supabase_tokens(supabase), request_data_json
+        )
         return {"task_id": task.id}
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
@@ -273,10 +282,12 @@ async def api_list_public_panel_audios_w_id(
 @router.post("/public_panel/discussion")
 async def api_create_panel(
     request_data: PublicPanelRequestData,
-    access_token: AccessTokenDep,
+    supabase: SupaClientDep,
 ):
     try:
-        panel_id = create_public_panel(access_token, request_data)
+        panel_id = create_public_panel(
+            await get_supabase_tokens(supabase), request_data
+        )
         return {"panel_id": panel_id}
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
@@ -286,10 +297,10 @@ async def api_create_panel(
 
 @router.post("/public_panel/generate_transcripts")
 async def api_generate_transcripts(
-    access_token: AccessTokenDep,
+    supabase: SupaClientDep,
 ):
     try:
-        task = generate_transcripts_task.delay(access_token)
+        task = generate_transcripts_task.delay(await get_supabase_tokens(supabase))
         return {"task_id": task.id}
     except Exception as e:
         raise handle_exception(e, "Failed to generate transcripts", 500)

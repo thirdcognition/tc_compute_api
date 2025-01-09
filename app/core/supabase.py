@@ -146,11 +146,17 @@ async def _get_supabase_client(
         )
 
 
-def _get_sync_supabase_client(
-    access_token: str,
-) -> Client:
+async def get_supabase_tokens(supabase: AsyncClient) -> Tuple[str, str]:
+    session = await supabase.auth.get_session()
+    return session.access_token, session.refresh_token
+
+
+def get_sync_supabase_client(access_token: str, refresh_token: str) -> Client:
     try:
-        supabase_client: Client = get_storage(access_token).get_sync_supabase_client()
+        logger.info(f"Get sync session with {access_token=} {refresh_token=}")
+        supabase_client: Client = get_storage(
+            access_token, refresh_token
+        ).get_sync_supabase_client()
 
         return supabase_client
 
@@ -159,6 +165,11 @@ def _get_sync_supabase_client(
         raise HTTPException(
             status_code=401, detail="Invalid authentication credentials"
         )
+
+
+def get_supabase_tokens_sync(supabase: Client) -> Tuple[str, str]:
+    session = supabase.auth.get_session()
+    return session.access_token, session.refresh_token
 
 
 async def get_supabase_client_by_request(

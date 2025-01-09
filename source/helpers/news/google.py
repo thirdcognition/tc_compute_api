@@ -4,6 +4,8 @@ import re
 from typing import List, Optional, Tuple, Union
 from pydantic import BaseModel
 from pygooglenews import GoogleNews
+
+# from source.helpers.shared import pretty_print
 from source.models.config.logging import logger
 from source.helpers.resolve_url import LinkResolver
 

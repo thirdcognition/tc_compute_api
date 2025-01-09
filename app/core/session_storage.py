@@ -36,11 +36,16 @@ def get_sync_supabase_client(access_token: str | None = None) -> Client:
     if access_token:
         options.headers = {"Authorization": f"Bearer {access_token}"}
 
-    return create_client(
-        SETTINGS.supabase_url,
-        SETTINGS.supabase_key,
-        options=options,
-    )
+    try:
+        return create_client(
+            SETTINGS.supabase_url,
+            SETTINGS.supabase_key,
+            options=options,
+        )
+    except Exception as e:
+        logger.debug(f"{options=}")
+        logger.error(f"error while creating sync client {e=}")
+        raise e
 
 
 class SessionStorage:
@@ -63,18 +68,50 @@ class SessionStorage:
 
     async def get_supabase_client(self) -> AsyncClient:
         if self.supabase_client is None:
-            self.supabase_client = await get_supabase_client(self.access_token)
-            await self.supabase_client.auth.set_session(
+            try:
+                self.supabase_client = await get_supabase_client(self.access_token)
+            except Exception as e:
+                logger.error(e)
+                raise e
+            auth_resp = await self.supabase_client.auth.set_session(
                 access_token=self.access_token, refresh_token=self.refresh_token
             )
+            self.access_token = (
+                auth_resp.session.access_token
+                if auth_resp.session.access_token is not None
+                else self.access_token
+            )
+            self.refresh_token = (
+                auth_resp.session.refresh_token
+                if auth_resp.session.refresh_token is not None
+                else self.refresh_token
+            )
+
         return self.supabase_client
 
     def get_sync_supabase_client(self) -> Client:
         if self.sync_supabase_client is None:
             self.sync_supabase_client = get_sync_supabase_client(self.access_token)
-            self.sync_supabase_client.auth.set_session(
-                access_token=self.access_token, refresh_token=self.refresh_token
-            )
+            try:
+                logger.debug(f"tokens {self.access_token=} {self.refresh_token=}")
+                logger.debug(f"client {self.sync_supabase_client=}")
+                auth_resp = self.sync_supabase_client.auth.set_session(
+                    access_token=self.access_token, refresh_token=self.refresh_token
+                )
+                logger.debug(f"{auth_resp=}")
+                self.access_token = (
+                    auth_resp.session.access_token
+                    if auth_resp.session.access_token is not None
+                    else self.access_token
+                )
+                self.refresh_token = (
+                    auth_resp.session.refresh_token
+                    if auth_resp.session.refresh_token is not None
+                    else self.refresh_token
+                )
+            except Exception as e:
+                logger.error(f"error while initializing storage client {e=}")
+                raise e
         return self.sync_supabase_client
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -98,6 +135,9 @@ def get_storage(
     global storage_cache
 
     if access_token not in storage_cache:
+        logger.info(
+            f"Initializing new storage for {access_token=} {refresh_token=} {code=}"
+        )
         if (
             refresh_token is None
             and code is None
@@ -116,6 +156,20 @@ def get_storage(
             redirect=redirect,
             supabase_client=supabase_client,
             sync_supabase_client=sync_supabase_client,
+        )
+    else:
+        logger.info(
+            f"Loading existing storage for {access_token=} {refresh_token=} {code=}"
+        )
+        storage_cache[access_token].access_token = (
+            access_token
+            if access_token is not None
+            else storage_cache[access_token].access_token
+        )
+        storage_cache[access_token].refresh_token = (
+            refresh_token
+            if refresh_token is not None
+            else storage_cache[access_token].refresh_token
         )
     return storage_cache[access_token]
 

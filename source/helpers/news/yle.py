@@ -1,20 +1,11 @@
-from typing import List, Tuple, Optional
-from pydantic import BaseModel, HttpUrl
+from typing import List, Tuple
+from pydantic import BaseModel
 from datetime import datetime
 from enum import Enum
 import feedparser
+from source.helpers.news.news_item import NewsItem
 from source.helpers.resolve_url import LinkResolver
 from source.models.config.logging import logger
-
-
-# Define a Pydantic model for the news item
-class YleNewsItem(BaseModel):
-    title: str
-    link: HttpUrl
-    description: str
-    image: Optional[HttpUrl]
-    publish_date: Optional[datetime]
-    categories: List[str]
 
 
 # Enum for feed types
@@ -28,7 +19,7 @@ class YleNewsConfig(BaseModel):
     articles: int
 
 
-def fetch_yle_news_items(config: YleNewsConfig) -> List[YleNewsItem]:
+def fetch_yle_news_items(config: YleNewsConfig) -> List[NewsItem]:
     # Construct the feed URL based on the feed type
     feed_url = f"https://feeds.yle.fi/uutiset/v1/{config.type.value}/YLE_UUTISET.rss"
 
@@ -37,8 +28,8 @@ def fetch_yle_news_items(config: YleNewsConfig) -> List[YleNewsItem]:
 
     # Extract the required number of news items
     news_items = []
-    for entry in feed.entries[: config.articles]:
-        news_item = YleNewsItem(
+    for entry in feed.entries:
+        news_item = NewsItem(
             title=entry.title,
             link=entry.link,
             description=entry.description,

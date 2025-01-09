@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime
 from typing import ClassVar, Dict, Optional, List
 from uuid import UUID
 from pydantic import Field
@@ -18,13 +18,12 @@ class PanelAudio(SupabaseModel):
     process_state: Optional[ProcessState] = Field(default=None)
     process_fail_message: Optional[str] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
-    is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
-    started_at: Optional[time] = Field(default=None)
-    completed_at: Optional[time] = Field(default=None)
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class PanelDiscussion(SupabaseModel):
@@ -35,13 +34,12 @@ class PanelDiscussion(SupabaseModel):
     file: Optional[str] = Field(default=None)
     bucket_id: Optional[str] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
-    is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
-    started_at: Optional[time] = Field(default=None)
-    completed_at: Optional[time] = Field(default=None)
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class PanelTranscript(SupabaseModel):
@@ -56,13 +54,12 @@ class PanelTranscript(SupabaseModel):
     process_fail_message: Optional[str] = Field(default=None)
     generation_interval: Optional[int] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
-    is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
-    started_at: Optional[time] = Field(default=None)
-    completed_at: Optional[time] = Field(default=None)
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class PanelTranscriptOrder(SupabaseModel):
@@ -74,13 +71,14 @@ class PanelTranscriptOrder(SupabaseModel):
     before_id: Optional[UUID] = Field(default=None)
     after_id: Optional[UUID] = Field(default=None)
     data: Optional[Dict] = Field(default=None)
-    is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
 
 
 class PanelTranscriptSourceReference(SupabaseModel):
@@ -90,10 +88,11 @@ class PanelTranscriptSourceReference(SupabaseModel):
     source_version_id: UUID
     type: Optional[str] = Field(default=None)
     data: Optional[Dict] = Field(default=None)
-    is_public: Optional[bool] = Field(default=False)
+    disabled: Optional[bool] = Field(default=False)
+    disabled_at: Optional[datetime] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
-    organization_id: UUID
+    organization_id: Optional[UUID] = Field(default=None)
