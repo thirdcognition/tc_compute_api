@@ -24,6 +24,7 @@ class SourceModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "source"
     id: UUID
     type: Optional[SourceTypeEnum] = Field(default=None)
+    is_public: Optional[bool] = Field(default=False)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -43,6 +44,7 @@ class SourceChunkModel(SupabaseModel):
     chunk_prev_id: Optional[UUID] = Field(default=None)
     data: Optional[Dict] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
+    is_public: Optional[bool] = Field(default=False)
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     organization_id: Optional[UUID] = Field(default=None)
@@ -62,6 +64,7 @@ class SourceRelationshipModel(SupabaseModel):
     related_source_version_id: UUID
     relationship_type: Optional[str] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
+    is_public: Optional[bool] = Field(default=False)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -128,6 +131,7 @@ class SourceVersionModel(SupabaseModel):
     content_hash: Optional[str] = Field(default=None)
     data: Optional[Dict] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
+    is_public: Optional[bool] = Field(default=False)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
