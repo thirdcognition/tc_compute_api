@@ -22,7 +22,7 @@ app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 @app.get("/")
 async def redirect_root_to_morning_show():
-    return RedirectResponse("/morning_show")
+    return RedirectResponse("/player")
 
 
 @app.get("/health")
@@ -34,6 +34,15 @@ async def health_check():
 async def serve_morning_show(path_name: str):
     return FileResponse("static/morning_show/index.html")
 
+# @app.get("/player/{path_name:path}")
+# async def serve_player(path_name: str):
+#     return FileResponse("static/player/build/index.html")
+
+# app.mount("/player/", StaticFiles(directory="static/player/build/", html=True), name="player")
+
+@app.get("/player/{path_name:path}")
+async def serve_player_root(path_name: str):
+    return FileResponse("static/player/build/" + (path_name if path_name else "index.html"))
 
 # Include routers
 app.include_router(auth_router)

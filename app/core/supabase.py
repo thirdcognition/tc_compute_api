@@ -206,6 +206,7 @@ async def supabase_middleware(
         or request.url.path == "/health"
         or request.url.path.startswith("/static")
         or request.url.path.startswith("/morning_show")
+        or request.url.path.startswith("/player")
     ):
         return await call_next(request)
 
