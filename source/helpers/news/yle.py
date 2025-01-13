@@ -31,7 +31,8 @@ def fetch_yle_news_items(config: YleNewsConfig) -> List[NewsItem]:
     for entry in feed.entries:
         news_item = NewsItem(
             title=entry.title,
-            link=entry.link,
+            source="Yle",
+            original_source=entry.link,
             description=entry.description,
             image=(entry.enclosures[0].href if entry.enclosures else None),
             publish_date=(
@@ -61,8 +62,11 @@ def fetch_yle_news_links(config: YleNewsConfig) -> List[Tuple[str, str]]:
         if resolved_count >= config.articles:
             break
         try:
-            resolved_url, content = resolver.resolve_url(str(item.link))
-            resolved_links.append((resolved_url, content))
+            resolved_url, content = resolver.resolve_url(str(item.original_source))
+            item.resolved_source = resolved_url
+            item.original_content = content
+            resolved_links.append(item)
+            # resolved_links.append((resolved_url, content))
             resolved_count += 1
         except Exception as e:
             logger.info(f"Failed to resolve {item.link}: {e}")

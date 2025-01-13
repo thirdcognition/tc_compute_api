@@ -78,6 +78,7 @@ const PanelDetailDisplay = ({ panel }) => {
                 "div",
                 { className: "border p-3 mb-4 rounded" },
                 metadata.urls &&
+                    Array.isArray(metadata.urls) &&
                     metadata.urls.length > 0 &&
                     React.createElement(
                         "div",

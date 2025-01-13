@@ -159,10 +159,7 @@ function AppContent() {
     }
 
     async function fetchPublicPanels(accessToken) {
-        const panels = await fetchData(
-            "/public_panel/discussions/",
-            accessToken
-        );
+        const panels = await fetchData("/panel/discussions/", accessToken);
         return Array.isArray(panels) ? panels : [];
     }
 

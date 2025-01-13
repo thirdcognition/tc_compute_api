@@ -23,7 +23,14 @@ class SourceTypeEnum(Enum):
 class SourceModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "source"
     id: UUID
+    original_source: Optional[str] = Field(default=None)
+    resolved_source: Optional[str] = Field(default=None)
     type: Optional[SourceTypeEnum] = Field(default=None)
+    title: Optional[str] = Field(default=None)
+    lang: Optional[str] = Field(default=None)
+    content_hash: Optional[str] = Field(default=None)
+    data: Optional[Dict] = Field(default=None)
+    metadata: Optional[Dict] = Field(default=None)
     is_public: Optional[bool] = Field(default=False)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
@@ -31,15 +38,21 @@ class SourceModel(SupabaseModel):
     updated_at: Optional[datetime] = Field(default=None)
     owner_id: Optional[UUID] = Field(default=None)
     organization_id: Optional[UUID] = Field(default=None)
-    current_version_id: Optional[UUID] = Field(default=None)
     updated_by: Optional[UUID] = Field(default=None)
+
+    @field_validator("metadata", "data", mode="before")
+    def validate_json_fields(cls, v):
+        if isinstance(v, str):
+            return json.loads(v)
+        elif isinstance(v, dict):
+            return json.dumps(v)
+        return v
 
 
 class SourceChunkModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "source_chunk"
     id: UUID
     source_id: Optional[UUID] = Field(default=None)
-    source_version_id: Optional[UUID] = Field(default=None)
     chunk_next_id: Optional[UUID] = Field(default=None)
     chunk_prev_id: Optional[UUID] = Field(default=None)
     data: Optional[Dict] = Field(default=None)
@@ -60,8 +73,8 @@ class SourceChunkModel(SupabaseModel):
 
 class SourceRelationshipModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "source_relationship"
-    source_version_id: UUID
-    related_source_version_id: UUID
+    source_id: UUID
+    related_source_id: UUID
     relationship_type: Optional[str] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
     is_public: Optional[bool] = Field(default=False)
@@ -92,7 +105,7 @@ class SourceRelationshipModel(SupabaseModel):
         supabase: AsyncClient,
         instances,
         on_conflict=None,
-        id_column="source_version_id",
+        id_column="source_id",
     ):
         return await super(SourceRelationshipModel, cls).upsert_to_supabase(
             supabase, instances, on_conflict, id_column
@@ -100,7 +113,7 @@ class SourceRelationshipModel(SupabaseModel):
 
     @classmethod
     async def fetch_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_column="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_column="source_id"
     ):
         return await super(SourceRelationshipModel, cls).fetch_from_supabase(
             supabase, value=value, id_column=id_column
@@ -108,7 +121,7 @@ class SourceRelationshipModel(SupabaseModel):
 
     @classmethod
     async def exists_in_supabase(
-        cls, supabase: AsyncClient, value=None, id_column="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_column="source_id"
     ):
         return await super(SourceRelationshipModel, cls).exists_in_supabase(
             supabase, value=value, id_column=id_column
@@ -116,34 +129,8 @@ class SourceRelationshipModel(SupabaseModel):
 
     @classmethod
     async def delete_from_supabase(
-        cls, supabase: AsyncClient, value=None, id_column="source_version_id"
+        cls, supabase: AsyncClient, value=None, id_column="source_id"
     ):
         return await super(SourceRelationshipModel, cls).delete_from_supabase(
             supabase, value=value, id_column=id_column
         )
-
-
-class SourceVersionModel(SupabaseModel):
-    TABLE_NAME: ClassVar[str] = "source_version"
-    id: UUID
-    title: Optional[str] = Field(default=None)
-    lang: Optional[str] = Field(default=None)
-    content_hash: Optional[str] = Field(default=None)
-    data: Optional[Dict] = Field(default=None)
-    metadata: Optional[Dict] = Field(default=None)
-    is_public: Optional[bool] = Field(default=False)
-    disabled: bool = Field(default=False)
-    disabled_at: Optional[datetime] = Field(default=None)
-    created_at: Optional[datetime] = Field(default=None)
-    updated_at: Optional[datetime] = Field(default=None)
-    owner_id: Optional[UUID] = Field(default=None)
-    organization_id: Optional[UUID] = Field(default=None)
-    version_of_id: Optional[UUID] = Field(default=None)
-
-    @field_validator("metadata", "data", mode="before")
-    def validate_json_fields(cls, v):
-        if isinstance(v, str):
-            return json.loads(v)
-        elif isinstance(v, dict):
-            return json.dumps(v)
-        return v

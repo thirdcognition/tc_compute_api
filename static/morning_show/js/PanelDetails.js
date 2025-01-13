@@ -33,7 +33,7 @@ function PanelDetails({ panel, accessToken }) {
         const host = window.location.hostname;
         const port = window.location.port ? `:${window.location.port}` : "";
 
-        fetch(`/public_panel/${panel.id}/files`, {
+        fetch(`/panel/${panel.id}/files`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
@@ -72,7 +72,7 @@ function PanelDetails({ panel, accessToken }) {
             );
 
         // Fetch audios
-        fetch(`${protocol}//${host}${port}/public_panel/${panel.id}/audios`, {
+        fetch(`${protocol}//${host}${port}/panel/${panel.id}/audios`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`
             }
@@ -94,14 +94,11 @@ function PanelDetails({ panel, accessToken }) {
             .catch((error) => console.error("Error fetching audios:", error));
 
         // Fetch transcripts
-        fetch(
-            `${protocol}//${host}${port}/public_panel/${panel.id}/transcripts`,
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
+        fetch(`${protocol}//${host}${port}/panel/${panel.id}/transcripts`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
             }
-        )
+        })
             .then((response) => response.json())
             .then((data) => {
                 setTranscripts(data);

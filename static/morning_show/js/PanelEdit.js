@@ -109,7 +109,7 @@ function PanelEdit({
 
             // Fetch updated discussion data
             const discussionResponse = await fetch(
-                `${protocol}//${host}${port}/public_panel/${panelId}`,
+                `${protocol}//${host}${port}/panel/${panelId}`,
                 {
                     method: "GET",
                     headers: {
@@ -130,7 +130,7 @@ function PanelEdit({
 
             // Fetch updated transcripts
             const transcriptResponse = await fetch(
-                `${protocol}//${host}${port}/public_panel/${panelId}/transcripts`,
+                `${protocol}//${host}${port}/panel/${panelId}/transcripts`,
                 {
                     method: "GET",
                     headers: {
@@ -148,7 +148,7 @@ function PanelEdit({
 
             // Fetch updated audios
             const audioResponse = await fetch(
-                `${protocol}//${host}${port}/public_panel/${panelId}/audios`,
+                `${protocol}//${host}${port}/panel/${panelId}/audios`,
                 {
                     method: "GET",
                     headers: {
@@ -161,14 +161,11 @@ function PanelEdit({
             setExistingAudio(audioData);
 
             // Fetch files for transcript and audio URLs
-            const filesResponse = await fetch(
-                `/public_panel/${panelId}/files`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`
-                    }
+            const filesResponse = await fetch(`/panel/${panelId}/files`, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
                 }
-            );
+            });
             const filesData = await filesResponse.json();
             const updatedTranscriptUrls = filesData.transcript_urls
                 ? Object.fromEntries(
@@ -244,12 +241,14 @@ function PanelEdit({
             );
             const result = await response.json();
             setTaskStatus(result.status);
-            if (result.status.toLowerCase() === "success") {
+            if ((result.status ?? "failure").toLowerCase() === "success") {
                 fetchPanels(accessToken);
                 refreshPanelData(panelId); // Refresh panel data to fetch transcriptId
                 setIsPolling(false);
                 setTaskStatus("idle"); // Reset to "idle" after success
-            } else if (result.status.toLowerCase() === "failure") {
+            } else if (
+                (result.status ?? "failure").toLowerCase() === "failure"
+            ) {
                 setIsPolling(false);
                 setTaskStatus("idle"); // Reset to "idle" after failure
             } else {
@@ -275,7 +274,7 @@ function PanelEdit({
             const host = window.location.hostname;
             const port = window.location.port ? `:${window.location.port}` : "";
             const response = await fetch(
-                `${protocol}//${host}${port}/public_panel/discussion`,
+                `${protocol}//${host}${port}/panel/discussion`,
                 {
                     method: "POST",
                     headers: {
@@ -353,7 +352,7 @@ function PanelEdit({
             const host = window.location.hostname;
             const port = window.location.port ? `:${window.location.port}` : "";
             const response = await fetch(
-                `${protocol}//${host}${port}/public_panel/transcript`,
+                `${protocol}//${host}${port}/panel/transcript`,
                 {
                     method: "POST",
                     headers: {
@@ -412,7 +411,7 @@ function PanelEdit({
             const host = window.location.hostname;
             const port = window.location.port ? `:${window.location.port}` : "";
             const response = await fetch(
-                `${protocol}//${host}${port}/public_panel/audio`,
+                `${protocol}//${host}${port}/panel/audio`,
                 {
                     method: "POST",
                     headers: {

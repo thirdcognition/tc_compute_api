@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
-from app.core.supabase import SupaClientDep
+from app.core.supabase import SupaClientDep, get_supabase_tokens
 from source.helpers.routes import handle_exception
 from source.api.panel.read import (
     get_panel,
+    list_panel_audios_w_id,
+    list_panel_transcripts_w_id,
     list_panels,
     get_panel_transcript,
     get_panel_audio,
@@ -16,7 +18,16 @@ from source.api.panel.update import (
     update_panel_audio,
 )
 from source.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
-from source.helpers.panel import fetch_google_news_links, GoogleNewsConfig
+from source.helpers.panel import (
+    PanelRequestData,
+    create_panel,
+    create_panel_audio_task,
+    create_panel_task,
+    create_panel_transcription_task,
+    fetch_google_news_links,
+    GoogleNewsConfig,
+    generate_transcripts_task,
+)
 
 router = APIRouter()
 
@@ -149,6 +160,59 @@ async def api_update_panel_audio(
         raise handle_exception(e, "Panel audio not found", 404)
 
 
+@router.post("/panel/")
+async def api_create_panel(
+    request_data: PanelRequestData,
+    supabase: SupaClientDep,
+):
+    try:
+        # Convert request_data to a JSON-serializable format
+        request_data_json = request_data.to_json()
+
+        task = create_panel_task.delay(
+            await get_supabase_tokens(supabase), request_data_json
+        )
+        return {"task_id": task.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except Exception as e:
+        raise handle_exception(e, "Internal Server Error")
+
+
+@router.post("/panel/transcript")
+async def api_create_panel_transcript(
+    request_data: PanelRequestData,
+    supabase: SupaClientDep,
+):
+    try:
+        request_data_json = request_data.to_json()
+        task = create_panel_transcription_task.delay(
+            await get_supabase_tokens(supabase), request_data_json
+        )
+        return {"task_id": task.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except Exception as e:
+        raise handle_exception(e, "Failed to create panel transcript", 500)
+
+
+@router.post("/panel/audio")
+async def api_create_panel_audio(
+    request_data: PanelRequestData,
+    supabase: SupaClientDep,
+):
+    try:
+        request_data_json = request_data.to_json()
+        task = create_panel_audio_task.delay(
+            await get_supabase_tokens(supabase), request_data_json
+        )
+        return {"task_id": task.id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except Exception as e:
+        raise handle_exception(e, "Failed to create panel audio", 500)
+
+
 @router.get("/panel/{panel_id}/files")
 async def api_get_panel_files(
     panel_id: str,
@@ -164,15 +228,75 @@ async def api_get_panel_files(
         )
 
         # Generate file URLs using Supabase storage
-        transcript_urls = [
-            supabase.storage.from_(record.bucket_id).get_public_url(record.file)
+        transcript_urls = {
+            record.id: (
+                await supabase.storage.from_(record.bucket_id).get_public_url(
+                    record.file
+                )
+            ).rstrip("?")
             for record in transcript_records
-        ]
-        audio_urls = [
-            supabase.storage.from_(record.bucket_id).get_public_url(record.file)
+        }
+        audio_urls = {
+            record.id: (
+                await supabase.storage.from_(record.bucket_id).get_public_url(
+                    record.file
+                )
+            ).rstrip("?")
             for record in audio_records
-        ]
+        }
 
         return {"transcript_urls": transcript_urls, "audio_urls": audio_urls}
     except Exception as e:
-        raise handle_exception(e, "Files not found for the given panel ID", 404)
+        raise handle_exception(e, "An error occurred while fetching files", 500)
+
+
+@router.get("/panel/{panel_id}/transcripts")
+async def api_list_panel_transcripts_w_id(
+    panel_id: str,
+    supabase: SupaClientDep,
+):
+    try:
+        transcripts = await list_panel_transcripts_w_id(supabase, panel_id)
+        return transcripts
+    except Exception as e:
+        raise handle_exception(
+            e, "Transcripts not found for the given discussion ID", 404
+        )
+
+
+@router.get("/panel/{panel_id}/audios")
+async def api_list_panel_audios_w_id(
+    panel_id: str,
+    supabase: SupaClientDep,
+):
+    try:
+        audios = await list_panel_audios_w_id(supabase, panel_id)
+        return audios
+    except Exception as e:
+        raise handle_exception(e, "Audios not found for the given discussion ID", 404)
+
+
+# New endpoint for creating a public panel discussion
+@router.post("/panel/discussion")
+async def api_create_panel_discussion(
+    request_data: PanelRequestData,
+    supabase: SupaClientDep,
+):
+    try:
+        panel_id = create_panel(await get_supabase_tokens(supabase), request_data)
+        return {"panel_id": panel_id}
+    except ValidationError as ve:
+        raise HTTPException(status_code=422, detail=str(ve))
+    except Exception as e:
+        raise handle_exception(e, "Failed to create panel discussion", 500)
+
+
+@router.post("/panel/generate_transcripts")
+async def api_generate_transcripts(
+    supabase: SupaClientDep,
+):
+    try:
+        task = generate_transcripts_task.delay(await get_supabase_tokens(supabase))
+        return {"task_id": task.id}
+    except Exception as e:
+        raise handle_exception(e, "Failed to generate transcripts", 500)

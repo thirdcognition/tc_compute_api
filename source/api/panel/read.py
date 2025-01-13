@@ -43,3 +43,20 @@ async def list_panel_audios(
     supabase: AsyncClient,
 ) -> List[PanelAudio]:
     return await PanelAudio.fetch_existing_from_supabase(supabase)
+
+
+# Functions to list transcripts and audios for a specific panel
+async def list_panel_transcripts_w_id(
+    supabase: AsyncClient, panel_id: UUID
+) -> List[PanelTranscript]:
+    return await PanelTranscript.fetch_existing_from_supabase(
+        supabase, {"panel_id": panel_id}
+    )
+
+
+async def list_panel_audios_w_id(
+    supabase: AsyncClient, panel_id: UUID
+) -> List[PanelAudio]:
+    return await PanelAudio.fetch_existing_from_supabase(
+        supabase, {"panel_id": panel_id}
+    )

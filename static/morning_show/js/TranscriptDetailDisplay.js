@@ -82,24 +82,21 @@ const TranscriptDetailDisplay = ({
 
     const updateTranscript = async (newUpdateCycle) => {
         try {
-            const response = await fetch(
-                `/public_panel/transcript/${transcript.id}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${accessToken}`
-                    },
-                    body: JSON.stringify({
-                        ...transcript,
-                        generation_interval: newUpdateCycle || null, // Set or remove the value
-                        metadata: {
-                            ...transcript.metadata,
-                            update_cycle: newUpdateCycle || null
-                        }
-                    })
-                }
-            );
+            const response = await fetch(`/panel/transcript/${transcript.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    ...transcript,
+                    generation_interval: newUpdateCycle || null, // Set or remove the value
+                    metadata: {
+                        ...transcript.metadata,
+                        update_cycle: newUpdateCycle || null
+                    }
+                })
+            });
 
             if (!response.ok) {
                 throw new Error("Failed to update transcript");
@@ -308,7 +305,7 @@ const TranscriptDetailDisplay = ({
             ),
         audios &&
             audios
-                .filter((audio) => audio.public_transcript_id === transcript.id)
+                .filter((audio) => audio.transcript_id === transcript.id)
                 .map((audio) =>
                     React.createElement(AudioDetailDisplay, {
                         key: audio.id,

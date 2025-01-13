@@ -15,14 +15,15 @@ from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_client, get_sync_supabase_service_client
 from source.helpers.news.google import GoogleNewsConfig, fetch_google_news_links
 
+from source.helpers.news.news_item import NewsItem
 from source.models.config.logging import logger
 from source.helpers.news.yle import fetch_yle_news_links, YleNewsConfig
 from source.helpers.communication import send_email_about_new_shows_task
-from source.models.supabase.public_panel import (
+from source.models.supabase.panel import (
     ProcessState,
-    PublicPanelDiscussion,
-    PublicPanelTranscript,
-    PublicPanelAudio,
+    PanelDiscussion,
+    PanelTranscript,
+    PanelAudio,
 )
 
 
@@ -40,7 +41,7 @@ custom_config = {
 }
 
 
-class PublicPanelRequestData(BaseModel):
+class PanelRequestData(BaseModel):
     title: str = "New public morning show"
     input_source: Union[str, List[str]] = ""
     input_text: Optional[str] = ""
@@ -60,9 +61,9 @@ class PublicPanelRequestData(BaseModel):
         return json.dumps(self.model_dump(), default=str)
 
 
-def create_public_panel(
+def create_panel(
     tokens: Tuple[str, str],
-    request_data: PublicPanelRequestData,
+    request_data: PanelRequestData,
     task_request: Request = None,
 ) -> UUID:
     logger.debug(f"create public panel {tokens=}")
@@ -97,7 +98,7 @@ def create_public_panel(
     if request_data.yle_news:
         metadata["yle_news"] = request_data.yle_news
 
-    panel: PublicPanelDiscussion = PublicPanelDiscussion(
+    panel: PanelDiscussion = PanelDiscussion(
         title=request_data.title,
         metadata=metadata,
         is_public=True,
@@ -109,20 +110,20 @@ def create_public_panel(
     return panel.id
 
 
-def create_public_panel_transcript(
-    tokens: Tuple[str, str], request_data: PublicPanelRequestData
+def create_panel_transcript(
+    tokens: Tuple[str, str], request_data: PanelRequestData
 ) -> UUID:
     supabase_client: Client = get_sync_supabase_client(
         access_token=tokens[0], refresh_token=tokens[1]
     )
 
     # Retrieve panel metadata
-    panel = PublicPanelDiscussion.fetch_from_supabase_sync(
+    panel = PanelDiscussion.fetch_from_supabase_sync(
         supabase_client, request_data.panel_id
     )
     metadata = panel.metadata or {}
 
-    # Load base conversation_config from PublicPanelDiscussion metadata
+    # Load base conversation_config from PanelDiscussion metadata
     base_conversation_config = metadata.get("conversation_config", {})
     # Extend with conversation_config from request_data and apply custom_config defaults
     conversation_config = {
@@ -169,9 +170,10 @@ def create_public_panel_transcript(
     # print(f"{yle_news_configs=}")
 
     for config in yle_news_configs:
-        for page, content in fetch_yle_news_links(config):
-            article_contents.append(content)
-            print(f"{page=}")
+        news_item: NewsItem = None
+        for news_item in fetch_yle_news_links(config):
+            article_contents.append(news_item.original_content)
+            # print(f"{page=}")
 
     combined_sources = set()
     if request_data.input_source:
@@ -239,8 +241,8 @@ def create_public_panel_transcript(
     ]
     title = " - ".join(filter(None, title_elements))
 
-    panel_transcript: PublicPanelTranscript = PublicPanelTranscript(
-        public_panel_id=request_data.panel_id,
+    panel_transcript: PanelTranscript = PanelTranscript(
+        panel_id=request_data.panel_id,
         title=title,
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
@@ -290,27 +292,27 @@ def create_public_panel_transcript(
 
 
 @celery_app.task
-def create_public_panel_transcription_task(tokens: Tuple[str, str], request_data_json):
-    request_data = PublicPanelRequestData.model_validate_json(request_data_json)
-    return create_public_panel_transcript(tokens, request_data)
+def create_panel_transcription_task(tokens: Tuple[str, str], request_data_json):
+    request_data = PanelRequestData.model_validate_json(request_data_json)
+    return create_panel_transcript(tokens, request_data)
 
 
 @celery_app.task(bind=True)
-def create_public_panel_w_transcript_task(
+def create_panel_w_transcript_task(
     self: Task, tokens: Tuple[str, str], request_data_json
 ) -> Tuple[UUID, UUID]:
-    request_data = PublicPanelRequestData.model_validate_json(request_data_json)
-    panel_id = create_public_panel(tokens, request_data, self.request)
+    request_data = PanelRequestData.model_validate_json(request_data_json)
+    panel_id = create_panel(tokens, request_data, self.request)
     request_data.panel_id = panel_id
 
-    transcript_id = create_public_panel_transcript(tokens, request_data)
+    transcript_id = create_panel_transcript(tokens, request_data)
 
     return panel_id, transcript_id
 
 
-def create_public_panel_audio(
+def create_panel_audio(
     tokens: Tuple[str, str],
-    request_data: PublicPanelRequestData,
+    request_data: PanelRequestData,
 ) -> UUID:
     panel_id: UUID = request_data.panel_id
     transcript_id: UUID = request_data.transcript_id
@@ -322,13 +324,13 @@ def create_public_panel_audio(
     )
 
     # Retrieve panel metadata
-    panel = PublicPanelDiscussion.fetch_from_supabase_sync(supabase_client, panel_id)
-    transcript = PublicPanelTranscript.fetch_from_supabase_sync(
+    panel = PanelDiscussion.fetch_from_supabase_sync(supabase_client, panel_id)
+    transcript = PanelTranscript.fetch_from_supabase_sync(
         supabase_client, transcript_id
     )
     metadata = transcript.metadata or {}
 
-    # Load base conversation_config from PublicPanelTranscript metadata
+    # Load base conversation_config from PanelTranscript metadata
     base_conversation_config = metadata.get("conversation_config", {})
     # Extend with conversation_config from request_data and apply custom_config defaults
     conversation_config = {
@@ -365,9 +367,9 @@ def create_public_panel_audio(
         tmp_file.write(response)
         transcript_file = tmp_file.name
 
-    panel_audio: PublicPanelAudio = PublicPanelAudio(
-        public_panel_id=panel_id,
-        public_transcript_id=transcript_id,
+    panel_audio: PanelAudio = PanelAudio(
+        panel_id=panel_id,
+        transcript_id=transcript_id,
         title=title,
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
@@ -407,23 +409,23 @@ def create_public_panel_audio(
 
 
 @celery_app.task
-def create_public_panel_audio_task(tokens: Tuple[str, str], request_data_json):
-    request_data = PublicPanelRequestData.model_validate_json(request_data_json)
-    return create_public_panel_audio(tokens, request_data)
+def create_panel_audio_task(tokens: Tuple[str, str], request_data_json):
+    request_data = PanelRequestData.model_validate_json(request_data_json)
+    return create_panel_audio(tokens, request_data)
 
 
 @celery_app.task(bind=True)
-def create_public_panel_task(
+def create_panel_task(
     self: Task, tokens: Tuple[str, str], request_data_json
 ) -> Tuple[UUID, UUID, UUID]:
-    request_data = PublicPanelRequestData.model_validate_json(request_data_json)
-    panel_id = create_public_panel(tokens, request_data, self.request)
+    request_data = PanelRequestData.model_validate_json(request_data_json)
+    panel_id = create_panel(tokens, request_data, self.request)
     request_data.panel_id = panel_id
 
-    transcript_id = create_public_panel_transcript(tokens, request_data)
+    transcript_id = create_panel_transcript(tokens, request_data)
     request_data.transcript_id = transcript_id
 
-    audio_id = create_public_panel_audio(tokens, request_data)
+    audio_id = create_panel_audio(tokens, request_data)
 
     return panel_id, transcript_id, audio_id
 
@@ -440,20 +442,18 @@ def generate_transcripts_task(
             access_token=tokens[0], refresh_token=tokens[1]
         )
 
-    # Fetch all PublicPanelTranscripts with generation_interval set
-    transcripts_with_interval = PublicPanelTranscript.fetch_existing_from_supabase_sync(
+    # Fetch all PanelTranscripts with generation_interval set
+    transcripts_with_interval = PanelTranscript.fetch_existing_from_supabase_sync(
         supabase_client, filter={"generation_interval": {"neq": None}}
     )
 
-    # Fetch all PublicPanelTranscripts and map them by panelId
-    all_transcripts = PublicPanelTranscript.fetch_existing_from_supabase_sync(
-        supabase_client
-    )
-    transcripts_by_panel: dict[str, PublicPanelTranscript] = {}
+    # Fetch all PanelTranscripts and map them by panelId
+    all_transcripts = PanelTranscript.fetch_existing_from_supabase_sync(supabase_client)
+    transcripts_by_panel: dict[str, PanelTranscript] = {}
     for transcript in all_transcripts:
-        if transcript.public_panel_id not in transcripts_by_panel:
-            transcripts_by_panel[transcript.public_panel_id] = []
-        transcripts_by_panel[transcript.public_panel_id].append(transcript)
+        if transcript.panel_id not in transcripts_by_panel:
+            transcripts_by_panel[transcript.panel_id] = []
+        transcripts_by_panel[transcript.panel_id].append(transcript)
 
     # Sort each list of transcripts by updated_at, newest first
     for panel_id in transcripts_by_panel:
@@ -464,18 +464,18 @@ def generate_transcripts_task(
     new_titles = []  # List to store titles of newly generated transcripts
 
     for transcript in transcripts_with_interval:
-        panel_id = transcript.public_panel_id
-        latest_transcript: PublicPanelTranscript = transcripts_by_panel.get(
-            panel_id, [None]
-        )[0]
+        panel_id = transcript.panel_id
+        latest_transcript: PanelTranscript = transcripts_by_panel.get(panel_id, [None])[
+            0
+        ]
 
-        # transcripts_wo_parent: list[PublicPanelTranscript] = [
+        # transcripts_wo_parent: list[PanelTranscript] = [
         #     transcript
         #     for transcript in transcripts_by_panel.get(panel_id, [None])
         #     if transcript.generation_parent is None
         # ]
 
-        # transcripts_with_parent: list[PublicPanelTranscript] = [
+        # transcripts_with_parent: list[PanelTranscript] = [
         #     transcript
         #     for transcript in transcripts_by_panel.get(panel_id, [None])
         #     if transcript.generation_parent is not None
@@ -487,20 +487,20 @@ def generate_transcripts_task(
             if time_since_creation > datetime.timedelta(
                 seconds=transcript.generation_interval
             ) - datetime.timedelta(minutes=10):
-                # Fetch the matching PublicPanelDiscussion model
-                panel = PublicPanelDiscussion.fetch_from_supabase_sync(
+                # Fetch the matching PanelDiscussion model
+                panel = PanelDiscussion.fetch_from_supabase_sync(
                     supabase_client, panel_id
                 )
                 metadata = (panel.metadata or {}) if panel is not None else {}
 
-                # Extend the metadata with the PublicPanelTranscript model
+                # Extend the metadata with the PanelTranscript model
                 transcript_metadata = (
                     (transcript.metadata or {}) if transcript is not None else {}
                 )
 
-                # Fetch the connected PublicPanelAudio model
-                audio = PublicPanelAudio.fetch_from_supabase_sync(
-                    supabase_client, transcript.id, id_column="public_transcript_id"
+                # Fetch the connected PanelAudio model
+                audio = PanelAudio.fetch_from_supabase_sync(
+                    supabase_client, transcript.id, id_column="transcript_id"
                 )
                 # logger.debug(f"{transcript.id=} {audio=}")
                 audio_metadata = (audio.metadata or {}) if audio is not None else {}
@@ -514,7 +514,7 @@ def generate_transcripts_task(
                 metadata["conversation_config"] = conversation_config
                 # metadata = transcript.metadata or {}
 
-                new_transcript_data = PublicPanelRequestData(
+                new_transcript_data = PanelRequestData(
                     title=panel.title,
                     input_source=metadata.get("input_source", ""),
                     input_text=metadata.get("input_text", ""),
@@ -533,9 +533,7 @@ def generate_transcripts_task(
                 print(
                     f"Generating timed transcript for {transcript.id} after {time_since_creation}."
                 )
-                transcript_id = create_public_panel_transcript(
-                    tokens, new_transcript_data
-                )
+                transcript_id = create_panel_transcript(tokens, new_transcript_data)
                 # Add the title and panelId of the newly generated transcript to the list
                 new_titles.append(
                     f"{panel.id}: {panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}"
@@ -553,7 +551,7 @@ def generate_transcripts_task(
                 new_transcript_data.transcript_id = transcript_id
                 new_transcript_data.conversation_config = conversation_config
                 # logger.debug(f"{transcript_id=} {new_transcript_data=}")
-                create_public_panel_audio(tokens, new_transcript_data)
+                create_panel_audio(tokens, new_transcript_data)
                 new_transcripts_generated = (
                     True  # Set flag to true if a new transcript is generated
                 )

@@ -8,7 +8,6 @@ from app.routes.organization_user import router as organization_user_router
 # from app.routes.journey import router as journey_router
 from app.routes.profile import router as profile_router
 from app.routes.system import router as system_router
-from app.routes.public_panel import router as public_panel_router
 from app.routes.panel import router as panel_router
 from app.core.init_app import init_app
 from source.load_env import SETTINGS
@@ -43,7 +42,6 @@ app.include_router(organization_user_router)
 # app.include_router(journey_router)
 app.include_router(profile_router)
 app.include_router(system_router)
-app.include_router(public_panel_router)
 app.include_router(panel_router)
 
 if __name__ == "__main__":
