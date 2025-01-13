@@ -1,4 +1,4 @@
-import json
+# import json
 import aiohttp
 import asyncio
 import logging
@@ -94,8 +94,12 @@ celery_app.conf.update(
 celery_app.conf.beat_schedule = {
     "generate-transcripts-every-day-at-9am": {
         "task": "source.helpers.panel.generate_transcripts_task",
-        "schedule": crontab(hour=8, minute=15),
-        "args": json.dumps([None, True]),  # Replace with actual access token if needed
+        # "schedule": crontab(hour=9, minute=15),
+        "schedule": crontab(minute="*/2"),
+        "args": (
+            None,
+            True,
+        ),  # json.dumps([None, True]),  # Replace with actual access token if needed
     },
 }
 

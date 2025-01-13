@@ -84,11 +84,13 @@ function PanelDetails({ panel, accessToken }) {
                     setRedirectToEdit(true); // Set redirect if no audios
                 } else {
                     const audio = data[0];
-                    setDetails((prevDetails) => ({
-                        ...prevDetails,
-                        audioProcessState: audio.process_state || "",
-                        audioFailMessage: audio.process_fail_message || ""
-                    }));
+                    if (audio) {
+                        setDetails((prevDetails) => ({
+                            ...prevDetails,
+                            audioProcessState: audio.process_state || "",
+                            audioFailMessage: audio.process_fail_message || ""
+                        }));
+                    }
                 }
             })
             .catch((error) => console.error("Error fetching audios:", error));

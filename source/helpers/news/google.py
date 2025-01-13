@@ -8,6 +8,7 @@ from pygooglenews import GoogleNews
 # from source.helpers.shared import pretty_print
 from source.models.config.logging import logger
 from source.helpers.resolve_url import LinkResolver
+from source.models.data.user import UserIDs
 
 
 class GoogleNewsConfig(BaseModel):
@@ -44,7 +45,9 @@ def parse_since_value(since_value):
     return total_timedelta
 
 
-def fetch_google_news_links(config: GoogleNewsConfig) -> List[Tuple[str, str]]:
+def fetch_google_news_links(
+    config: GoogleNewsConfig, user_ids: UserIDs = None
+) -> List[Tuple[str, str]]:
     gn = GoogleNews(lang=config.lang, country=config.country)
     time_span = parse_since_value(config.since)
 

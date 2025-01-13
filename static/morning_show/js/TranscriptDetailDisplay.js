@@ -246,8 +246,8 @@ const TranscriptDetailDisplay = ({
                     React.createElement("input", {
                         type: "range",
                         min: 0,
-                        max: 14 * 24 * 3600, // 2 weeks in seconds
-                        step: 12 * 3600, // 12 hours in seconds
+                        max: 3600, //14 * 24 * 3600, // 2 weeks in seconds
+                        step: 60, //12 * 3600, // 12 hours in seconds
                         value: updateCycle,
                         onChange: (e) => setUpdateCycle(Number(e.target.value)),
                         className: "flex-grow"

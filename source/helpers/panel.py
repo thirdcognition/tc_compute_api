@@ -15,10 +15,11 @@ from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_client, get_sync_supabase_service_client
 from source.helpers.news.google import GoogleNewsConfig, fetch_google_news_links
 
-from source.helpers.news.news_item import NewsItem
+from source.models.data.news_item import NewsItem
 from source.models.config.logging import logger
 from source.helpers.news.yle import fetch_yle_news_links, YleNewsConfig
 from source.helpers.communication import send_email_about_new_shows_task
+from source.models.data.user import UserIDs
 from source.models.supabase.panel import (
     ProcessState,
     PanelDiscussion,
@@ -50,6 +51,7 @@ class PanelRequestData(BaseModel):
     bucket_name: str = "public_panels"
     conversation_config: Optional[dict] = custom_config
     panel_id: Optional[UUID] = None
+    transcript_parent_id: Optional[str] = None
     transcript_id: Optional[UUID] = None
     google_news: Optional[Union[GoogleNewsConfig, List[GoogleNewsConfig]]] = None
     yle_news: Optional[Union[YleNewsConfig, List[YleNewsConfig]]] = None
@@ -65,9 +67,14 @@ def create_panel(
     tokens: Tuple[str, str],
     request_data: PanelRequestData,
     task_request: Request = None,
+    supabase_client: Client = None,
 ) -> UUID:
+    supabase_client = (
+        supabase_client
+        if supabase_client is not None
+        else get_sync_supabase_client(access_token=tokens[0], refresh_token=tokens[1])
+    )
     logger.debug(f"create public panel {tokens=}")
-    supabase_client: Client = None
     try:
         supabase_client = get_sync_supabase_client(
             access_token=tokens[0], refresh_token=tokens[1]
@@ -111,10 +118,14 @@ def create_panel(
 
 
 def create_panel_transcript(
-    tokens: Tuple[str, str], request_data: PanelRequestData
+    tokens: Tuple[str, str],
+    request_data: PanelRequestData,
+    supabase_client: Client = None,
 ) -> UUID:
-    supabase_client: Client = get_sync_supabase_client(
-        access_token=tokens[0], refresh_token=tokens[1]
+    supabase_client = (
+        supabase_client
+        if supabase_client is not None
+        else get_sync_supabase_client(access_token=tokens[0], refresh_token=tokens[1])
     )
 
     # Retrieve panel metadata
@@ -131,6 +142,12 @@ def create_panel_transcript(
         **base_conversation_config,
         **(request_data.conversation_config or {}),
     }
+
+    user_ids: UserIDs = None
+    if request_data.organization_id is not None:
+        user_ids = UserIDs(
+            user_id=request_data.owner_id, organization_id=request_data.organization_id
+        )
 
     # Fetch news links from GoogleNewsConfig instances
     # logger.debug(f"{metadata=}")
@@ -171,7 +188,9 @@ def create_panel_transcript(
 
     for config in yle_news_configs:
         news_item: NewsItem = None
-        for news_item in fetch_yle_news_links(config):
+        for news_item in fetch_yle_news_links(
+            supabase_client, config, user_ids=user_ids
+        ):
             article_contents.append(news_item.original_content)
             # print(f"{page=}")
 
@@ -240,6 +259,8 @@ def create_panel_transcript(
         ),
     ]
     title = " - ".join(filter(None, title_elements))
+    if request_data.transcript_parent_id is not None:
+        title = "Recurring-" + title
 
     panel_transcript: PanelTranscript = PanelTranscript(
         panel_id=request_data.panel_id,
@@ -248,10 +269,16 @@ def create_panel_transcript(
         process_state=ProcessState.processing,
         type="segment",
         metadata={
+            "longform": longform,
             "conversation_config": conversation_config,
             # "max_output_tokens": request_data.max_output_tokens,
         },
-        generation_interval=request_data.update_cycle,  # Set generation_interval using update_cycle
+        generation_interval=(
+            request_data.update_cycle
+            if request_data.update_cycle is None or request_data.update_cycle > 0
+            else None
+        ),  # Set generation_interval using update_cycle
+        generation_parent=request_data.transcript_parent_id,
         is_public=True,
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
@@ -313,15 +340,18 @@ def create_panel_w_transcript_task(
 def create_panel_audio(
     tokens: Tuple[str, str],
     request_data: PanelRequestData,
+    supabase_client: Client = None,
 ) -> UUID:
+    supabase_client = (
+        supabase_client
+        if supabase_client is not None
+        else get_sync_supabase_client(access_token=tokens[0], refresh_token=tokens[1])
+    )
+
     panel_id: UUID = request_data.panel_id
     transcript_id: UUID = request_data.transcript_id
 
     bucket_transcript_file: str = f"panel_{panel_id}_{transcript_id}_transcript.txt"
-
-    supabase_client: Client = get_sync_supabase_client(
-        access_token=tokens[0], refresh_token=tokens[1]
-    )
 
     # Retrieve panel metadata
     panel = PanelDiscussion.fetch_from_supabase_sync(supabase_client, panel_id)
@@ -432,12 +462,14 @@ def create_panel_task(
 
 @celery_app.task(bind=True)
 def generate_transcripts_task(
-    self: Task, tokens: Tuple[str, str], use_service_account=False
+    self: Task,
+    tokens: Tuple[str, str],
+    use_service_account=False,
+    supabase_client: Client = None,
 ):
-    supabase_client: Client = None
-    if use_service_account:
+    if use_service_account and supabase_client is None:
         supabase_client = get_sync_supabase_service_client()
-    else:
+    elif supabase_client is None:
         supabase_client = get_sync_supabase_client(
             access_token=tokens[0], refresh_token=tokens[1]
         )
@@ -448,26 +480,35 @@ def generate_transcripts_task(
     )
 
     # Fetch all PanelTranscripts and map them by panelId
-    all_transcripts = PanelTranscript.fetch_existing_from_supabase_sync(supabase_client)
-    transcripts_by_panel: dict[str, PanelTranscript] = {}
-    for transcript in all_transcripts:
-        if transcript.panel_id not in transcripts_by_panel:
-            transcripts_by_panel[transcript.panel_id] = []
-        transcripts_by_panel[transcript.panel_id].append(transcript)
+    all_transcripts_with_parent = PanelTranscript.fetch_existing_from_supabase_sync(
+        supabase_client, filter={"generation_parent": {"neq": None}}
+    )
+
+    transcripts_by_parent: dict[str, PanelTranscript] = {}
+    for transcript in all_transcripts_with_parent:
+        if transcript.generation_parent not in transcripts_by_parent:
+            transcripts_by_parent[transcript.generation_parent] = []
+        transcripts_by_parent[transcript.generation_parent].append(transcript)
 
     # Sort each list of transcripts by updated_at, newest first
-    for panel_id in transcripts_by_panel:
-        transcripts_by_panel[panel_id].sort(key=lambda x: x.updated_at, reverse=True)
+    for transcript_id in transcripts_by_parent:
+        transcripts_by_parent[transcript_id].sort(
+            key=lambda x: x.updated_at, reverse=True
+        )
 
     new_transcripts_generated = False  # Flag to track new transcript generation
 
     new_titles = []  # List to store titles of newly generated transcripts
 
     for transcript in transcripts_with_interval:
+        transcript_id = transcript.id
         panel_id = transcript.panel_id
-        latest_transcript: PanelTranscript = transcripts_by_panel.get(panel_id, [None])[
-            0
-        ]
+        latest_transcript: PanelTranscript = transcripts_by_parent.get(
+            transcript_id, [None]
+        )[0]
+
+        if latest_transcript is None:
+            latest_transcript = transcript
 
         # transcripts_wo_parent: list[PanelTranscript] = [
         #     transcript
@@ -527,13 +568,20 @@ def generate_transcripts_task(
                     panel_id=panel_id,
                     google_news=metadata.get("google_news", None),
                     yle_news=metadata.get("yle_news", None),
-                    owner_id=panel.owner_id,
-                    organization_id=panel.organization_id,
+                    owner_id=str(panel.owner_id),
+                    organization_id=str(panel.organization_id),
+                    transcript_parent_id=str(transcript_id),
                 )
+
                 print(
                     f"Generating timed transcript for {transcript.id} after {time_since_creation}."
                 )
-                transcript_id = create_panel_transcript(tokens, new_transcript_data)
+                if tokens is not None:
+                    transcript_id = create_panel_transcript(tokens, new_transcript_data)
+                else:
+                    transcript_id = create_panel_transcript(
+                        tokens, new_transcript_data, supabase_client
+                    )
                 # Add the title and panelId of the newly generated transcript to the list
                 new_titles.append(
                     f"{panel.id}: {panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}"
@@ -551,7 +599,10 @@ def generate_transcripts_task(
                 new_transcript_data.transcript_id = transcript_id
                 new_transcript_data.conversation_config = conversation_config
                 # logger.debug(f"{transcript_id=} {new_transcript_data=}")
-                create_panel_audio(tokens, new_transcript_data)
+                if tokens is not None:
+                    create_panel_audio(tokens, new_transcript_data)
+                else:
+                    create_panel_audio(tokens, new_transcript_data, supabase_client)
                 new_transcripts_generated = (
                     True  # Set flag to true if a new transcript is generated
                 )

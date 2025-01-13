@@ -78,3 +78,8 @@ class Settings(BaseSettings):
     flower_port: int = Field(
         default_factory=lambda: int(os.getenv("FLOWER_PORT", 5555))
     )
+    tc_org_id: str = Field(
+        default_factory=lambda: int(
+            os.getenv("tc_org_id", "34303437-3164-6431-6439-393230626365")
+        )
+    )

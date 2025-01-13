@@ -287,7 +287,7 @@ function PanelEdit({
                         input_text: inputText,
                         input_source: linksArray,
                         google_news: googleNewsArray,
-                        longform: longForm, // Include longForm in the request
+                        // longform: longForm, // Include longForm in the request
                         yle_news: yleNewsArray // Include Yle news in the request
                     })
                 }
@@ -499,7 +499,7 @@ function PanelEdit({
     };
 
     const getStatusSymbol = () => {
-        switch (taskStatus.toLowerCase()) {
+        switch ((taskStatus ?? "failure").toLowerCase()) {
             case "success":
                 return "✔️"; // UML symbol for success
             case "failure":

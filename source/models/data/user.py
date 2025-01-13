@@ -22,6 +22,12 @@ from app.core.supabase import get_supabase_service_client
 from pydantic import BaseModel
 
 
+class UserIDs(BaseModel):
+    email: Optional[str] = None
+    user_id: str
+    organization_id: str
+
+
 class CreateOrganizationUserRequestData(BaseModel):
     email: Optional[str] = None
     auth_id: Optional[UUID] = None

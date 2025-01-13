@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import ClassVar, Dict, Optional
 from uuid import UUID
-from pydantic import field_validator, Field
+from pydantic import Field
 from enum import Enum
-import json
 from supabase.client import AsyncClient
 
 from source.models.supabase.supabase_model import SupabaseModel
@@ -22,7 +21,7 @@ class SourceTypeEnum(Enum):
 
 class SourceModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "source"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     original_source: Optional[str] = Field(default=None)
     resolved_source: Optional[str] = Field(default=None)
     type: Optional[SourceTypeEnum] = Field(default=None)
@@ -40,18 +39,10 @@ class SourceModel(SupabaseModel):
     organization_id: Optional[UUID] = Field(default=None)
     updated_by: Optional[UUID] = Field(default=None)
 
-    @field_validator("metadata", "data", mode="before")
-    def validate_json_fields(cls, v):
-        if isinstance(v, str):
-            return json.loads(v)
-        elif isinstance(v, dict):
-            return json.dumps(v)
-        return v
-
 
 class SourceChunkModel(SupabaseModel):
     TABLE_NAME: ClassVar[str] = "source_chunk"
-    id: UUID
+    id: Optional[UUID] = Field(default=None)
     source_id: Optional[UUID] = Field(default=None)
     chunk_next_id: Optional[UUID] = Field(default=None)
     chunk_prev_id: Optional[UUID] = Field(default=None)
@@ -61,14 +52,6 @@ class SourceChunkModel(SupabaseModel):
     created_at: Optional[datetime] = Field(default=None)
     updated_at: Optional[datetime] = Field(default=None)
     organization_id: Optional[UUID] = Field(default=None)
-
-    @field_validator("metadata", "data", mode="before")
-    def validate_json_fields(cls, v):
-        if isinstance(v, str):
-            return json.loads(v)
-        elif isinstance(v, dict):
-            return json.dumps(v)
-        return v
 
 
 class SourceRelationshipModel(SupabaseModel):
@@ -85,13 +68,13 @@ class SourceRelationshipModel(SupabaseModel):
     owner_id: Optional[UUID] = Field(default=None)
     organization_id: Optional[UUID] = Field(default=None)
 
-    @field_validator("metadata", mode="before")
-    def validate_metadata(cls, v):
-        if isinstance(v, str):
-            return json.loads(v)
-        elif isinstance(v, dict):
-            return json.dumps(v)
-        return v
+    # @field_validator("metadata", mode="before")
+    # def validate_metadata(cls, v):
+    #     if isinstance(v, str):
+    #         return json.loads(v)
+    #     elif isinstance(v, dict):
+    #         return json.dumps(v)
+    #     return v
 
     @classmethod
     async def save_to_supabase(cls, supabase: AsyncClient, instance, on_conflict=None):
