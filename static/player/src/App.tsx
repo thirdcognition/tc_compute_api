@@ -65,9 +65,9 @@ const initializeAnalytics = (): Session => {
     lastHeartbeat: timestamp,
     tabId: Math.random().toString(36).substring(2)
   };
-  
+
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  
+
   // Updated GA4 initialization with debug options
   ReactGA.initialize(GA_MEASUREMENT_ID, {
     gtagOptions: {
@@ -93,7 +93,7 @@ const initializeAnalytics = (): Session => {
       userId: getUserId()
     });
   }
-  
+
   return session;
 };
 
@@ -107,11 +107,11 @@ const updateHeartbeat = (session: Session): void => {
 const cleanupOldSessions = (): Session | null => {
   const currentTime = Date.now();
   const threshold = currentTime - (HEARTBEAT_INTERVAL * 3);
-  
+
   try {
     const sessionData = localStorage.getItem(SESSION_KEY);
     if (!sessionData) return null;
-    
+
     const session = JSON.parse(sessionData) as Session;
     if (session.lastHeartbeat < threshold) {
       localStorage.removeItem(SESSION_KEY);
@@ -167,7 +167,7 @@ function App() {
     // Add these console logs
     console.log('Initializing GA...');
     console.log('GA Measurement ID:', GA_MEASUREMENT_ID);
-    
+
     if (!ReactGA.ga()) {
       sessionRef.current = initializeAnalytics();
       // Add this check
@@ -278,7 +278,7 @@ function App() {
 
   const handleLike = () => {
     const userVote = localStorage.getItem(`vote_${userId.current}`);
-    
+
     if (isLiked) {
       // Remove like
       setLikeCount(prev => prev - 1);
@@ -305,7 +305,7 @@ function App() {
 
   const handleDislike = () => {
     const userVote = localStorage.getItem(`vote_${userId.current}`);
-    
+
     if (isDisliked) {
       // Remove dislike
       setDislikeCount(prev => prev - 1);
@@ -358,8 +358,8 @@ function App() {
     if (audioRef.current) {
       audioRef.current.currentTime += seconds;
       trackEvent(
-        'skip', 
-        'Player', 
+        'skip',
+        'Player',
         `Skip ${seconds > 0 ? 'Forward' : 'Backward'}: ${Math.abs(seconds)}s`
       );
     }
@@ -395,7 +395,7 @@ function App() {
     e.preventDefault();
     if (newComment.trim() && !isSubmitting) {
       setIsSubmitting(true);
-      
+
       const comment: Comment = {
         id: Math.random().toString(36).substr(2, 9),
         text: newComment.trim(),
@@ -416,7 +416,7 @@ function App() {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
@@ -432,7 +432,7 @@ function App() {
     localStorage.removeItem('totalDislikes');
     localStorage.removeItem(`vote_${userId.current}`);
     localStorage.removeItem('comments');
-    
+
     // Reset state
     setLikeCount(0);
     setDislikeCount(0);
@@ -461,7 +461,7 @@ function App() {
       const wasPlaying = !audioRef.current.paused;
       const currentTime = audioRef.current.currentTime;
       audioRef.current.playbackRate = newSpeed;
-      
+
       // If audio was playing, ensure it continues playing after speed change
       if (wasPlaying) {
         const playPromise = audioRef.current.play();
@@ -478,9 +478,9 @@ function App() {
 
   const SpeedPopup = () => {
     const speeds = [0.75, 1.0, 1.25, 1.5, 2.0];
-    
+
     return (
-      <div 
+      <div
         ref={speedPopupRef}
         className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 w-64 z-50"
       >
@@ -489,7 +489,7 @@ function App() {
             {playbackSpeed}x
           </span>
         </div>
-        
+
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => handleSpeedChange(playbackSpeed - 0.25)}
@@ -497,7 +497,7 @@ function App() {
           >
             <HiMinus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
-          
+
           <input
             type="range"
             min="0.75"
@@ -507,7 +507,7 @@ function App() {
             onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
             className="flex-1 mx-4 h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
           />
-          
+
           <button
             onClick={() => handleSpeedChange(playbackSpeed + 0.25)}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -515,7 +515,7 @@ function App() {
             <HiPlus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
-        
+
         <div className="flex flex-wrap gap-2 justify-center">
           {speeds.map((speed) => (
             <button
@@ -538,7 +538,7 @@ function App() {
   // Add new tracking for audio progress
   useEffect(() => {
     let progressInterval: NodeJS.Timeout;
-    
+
     if (isPlaying) {
       progressInterval = setInterval(() => {
         if (audioRef.current) {
@@ -554,7 +554,7 @@ function App() {
   // Add tracking for time spent
   useEffect(() => {
     let timeSpentInterval: NodeJS.Timeout;
-    
+
     if (isPlaying) {
       const startTime = Date.now();
       timeSpentInterval = setInterval(() => {
@@ -570,8 +570,8 @@ function App() {
     const newTheme = !isDark;
     setIsDark(newTheme);
     trackEvent(
-      'theme_toggle', 
-      'UI', 
+      'theme_toggle',
+      'UI',
       `Theme: ${newTheme ? 'Dark' : 'Light'}`
     );
   };
@@ -586,8 +586,8 @@ function App() {
             <div className="relative">
               <button
                 onClick={() => setShowSpeedPopup(!showSpeedPopup)}
-                className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 
-                          text-gray-700 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400 
+                className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
+                          text-gray-700 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400
                           transition-colors duration-200 font-medium"
               >
                 {playbackSpeed}x
@@ -616,14 +616,14 @@ function App() {
               </button>
             </div>
           </div>
-          
+
           <audio
             ref={audioRef}
             src="https://cehncdkfuslzatlfawma.supabase.co/storage/v1/object/public/public_panels/panel_4bdb5eba-20bd-4eab-9f89-519126c7de3e_6cce40af-a079-49af-9dad-cc8741d88485_64614690-5116-4c18-9138-2492dff137ef_audio.mp3"
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
           />
-          
+
           {/* Player Controls */}
           <div className="space-y-4">
             <div className="flex items-center justify-center space-x-6">
@@ -633,7 +633,7 @@ function App() {
               >
                 <FiRotateCcw className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </button>
-              
+
               <button
                 onClick={togglePlay}
                 className="p-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -644,7 +644,7 @@ function App() {
                   <BsFillPlayFill className="w-8 h-8" />
                 )}
               </button>
-              
+
               <button
                 onClick={() => skip(15)}
                 className="p-3 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
@@ -701,7 +701,7 @@ function App() {
           <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
             Comments ({comments.length})
           </h3>
-          
+
           {/* Comment Input */}
           <form onSubmit={handleCommentSubmit} className="mb-6">
             <div className="flex items-center space-x-2">
@@ -758,4 +758,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
