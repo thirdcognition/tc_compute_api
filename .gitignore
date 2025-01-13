@@ -163,3 +163,5 @@ cython_debug/
 
 data/
 celerybeat-schedule.db
+
+node_modules/

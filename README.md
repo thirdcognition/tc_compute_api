@@ -111,3 +111,10 @@ poetry run pytest
 This command will run all tests located in the `test` directory, including both end-to-end and unit tests, using the configuration specified in `pyproject.toml`.
 
 Ensure that the server is running locally on `http://127.0.0.1:4000` before executing the end-to-end tests.
+
+
+# Kasra commands
+
+docker build --platform linux/amd64 -t KasraAliyon/tc_poc . -f Dockerfile
+
+docker run -d -p 4000:4000 --name tc_poc --mount type=bind,source=/e/The\ Morning\ Show/tc_compute_api/static,target=/static,readonly --env-file .env KasraAliyon/tc_poc

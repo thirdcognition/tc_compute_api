@@ -29,11 +29,11 @@ if [ -f /.dockerenv ]; then
     UVICORN_PID=$!
 
     echo "Starting Celery worker"
-    celery -A app.core.celery_app worker -B &
+    #celery -A app.core.celery_app worker -B &
     CELERY_WORKER_PID=$!
 
     echo "Starting Flower on port $FLOWER_PORT"
-    celery -A app.core.celery_app flower &
+    #celery -A app.core.celery_app flower &
     FLOWER_PID=$!
 else
     if ! docker inspect tc-redis &> /dev/null; then
