@@ -1,6 +1,9 @@
 import LoginForm from "./LoginForm.js";
 import PanelEdit from "./PanelEdit.js";
 import PanelDetails from "./PanelDetails.js";
+import session from "./helpers/session.js";
+import { fetchPublicPanels } from "./helpers/fetch.js";
+
 const {
     BrowserRouter,
     Route,
@@ -26,9 +29,6 @@ function App() {
 function AppContent() {
     const [panels, setPanels] = useState([]);
     const [selectedPanel, setSelectedPanel] = useState("new");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [accessToken, setAccessToken] = useState("");
     const [loading, setLoading] = useState(true);
 
     const history = useHistory();
@@ -37,16 +37,18 @@ function AppContent() {
     const [routeId, setRouteId] = useState(routeIdFromParams); // State for routeId
     const [redirectPath, setRedirectPath] = useState(curLocation.pathname);
 
+    // Initialize session with history
+    useEffect(() => {
+        session.setHistory(history);
+    }, [history]);
+
     console.log("routeId", routeId);
 
     useEffect(() => {
-        const token = getCookie("access_token");
-        if (token) {
-            setAccessToken(token);
-            fetchPanels(token);
+        if (session.isAuthenticated()) {
+            fetchPanels();
         }
         setLoading(false);
-        console.log("Token found:", token);
     }, []);
 
     useEffect(() => {
@@ -75,22 +77,9 @@ function AppContent() {
         }
     }, [loading, routeId, panels]);
 
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(";").shift();
-    }
-
-    function setCookie(name, value, days) {
-        const d = new Date();
-        d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-        const expires = "expires=" + d.toUTCString();
-        document.cookie = name + "=" + value + ";" + expires + ";path=/";
-    }
-
-    async function fetchPanels(accessToken) {
+    async function fetchPanels() {
         try {
-            const panelsData = await fetchPublicPanels(accessToken);
+            const panelsData = await fetchPublicPanels();
             const sortedPanels = Array.isArray(panelsData)
                 ? panelsData.sort(
                       (a, b) => new Date(b.created_at) - new Date(a.created_at)
@@ -103,64 +92,15 @@ function AppContent() {
         }
     }
 
-    async function login(event) {
-        event.preventDefault();
-        try {
-            const port = window.location.port ? `:${window.location.port}` : "";
-            const response = await fetch(
-                `${window.location.protocol}//${window.location.hostname}${port}/auth/login`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json"
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        password: password
-                    })
-                }
-            );
-            const data = await response.json();
-            setCookie("access_token", data.access_token, 1);
-            setAccessToken(data.access_token);
-            fetchPanels(data.access_token);
-            history.push(redirectPath);
-        } catch (error) {
-            console.error("Error logging in:", error);
-        }
+    function handleLogin() {
+        fetchPanels();
+        history.push(redirectPath);
     }
 
     function logout() {
-        setCookie("access_token", "", -1);
+        session.logout();
         setPanels([]);
         setSelectedPanel("new");
-    }
-
-    async function fetchData(endpoint, accessToken) {
-        const port = window.location.port ? `:${window.location.port}` : "";
-        const response = await fetch(
-            `${window.location.protocol}//${window.location.hostname}${port}${endpoint}`,
-            {
-                method: "GET",
-                headers: {
-                    Accept: "application/json",
-                    Authorization: `Bearer ${accessToken}`
-                }
-            }
-        );
-
-        if (response.status === 401 || response.status === 403) {
-            history.push("/login");
-            throw new Error("Unauthorized access - redirecting to login.");
-        }
-
-        return response.json();
-    }
-
-    async function fetchPublicPanels(accessToken) {
-        const panels = await fetchData("/panel/discussions/", accessToken);
-        return Array.isArray(panels) ? panels : [];
     }
 
     const handlePanelChange = (panel) => {
@@ -206,7 +146,7 @@ function AppContent() {
                         { style: { margin: 0 } },
                         "My Morning Show"
                     ),
-                    accessToken &&
+                    session.isAuthenticated() &&
                         React.createElement(
                             Button,
                             { variant: "secondary", onClick: logout },
@@ -218,7 +158,7 @@ function AppContent() {
         React.createElement(
             Row,
             null,
-            accessToken &&
+            session.isAuthenticated() &&
                 React.createElement(
                     Col,
                     { md: 4 },
@@ -279,8 +219,8 @@ function AppContent() {
             React.createElement(
                 Col,
                 {
-                    md: accessToken ? 8 : 12,
-                    className: !accessToken
+                    md: session.isAuthenticated() ? 8 : 12,
+                    className: !session.isAuthenticated()
                         ? "d-flex justify-content-center"
                         : ""
                 },
@@ -305,20 +245,15 @@ function AppContent() {
                                 "Please log in to access your panels."
                             ),
                             React.createElement(LoginForm, {
-                                email,
-                                setEmail,
-                                password,
-                                setPassword,
-                                login
+                                onLogin: handleLogin
                             })
                         )
                     ),
                     React.createElement(
                         Route,
                         { path: "/new" },
-                        accessToken
+                        session.isAuthenticated()
                             ? React.createElement(PanelEdit, {
-                                  accessToken,
                                   fetchPanels,
                                   setSelectedPanel
                               })
@@ -327,9 +262,8 @@ function AppContent() {
                     React.createElement(
                         Route,
                         { path: "/panel/:id/edit" }, // New route for editing
-                        accessToken
+                        session.isAuthenticated()
                             ? React.createElement(PanelEdit, {
-                                  accessToken,
                                   fetchPanels,
                                   setSelectedPanel,
                                   initialPanelId: routeId // Pass the panelId
@@ -339,17 +273,16 @@ function AppContent() {
                     React.createElement(
                         Route,
                         { path: "/panel/:id" },
-                        accessToken
+                        session.isAuthenticated()
                             ? React.createElement(PanelDetailsWrapper, {
-                                  panels,
-                                  accessToken
+                                  panels
                               })
                             : React.createElement(Redirect, { to: "/login" })
                     ),
                     React.createElement(
                         Route,
                         { path: "/", exact: true },
-                        accessToken
+                        session.isAuthenticated()
                             ? React.createElement(Redirect, {
                                   to: redirectPath
                               })
@@ -361,12 +294,12 @@ function AppContent() {
     );
 }
 
-function PanelDetailsWrapper({ panels, accessToken }) {
+function PanelDetailsWrapper({ panels }) {
     const { id } = useParams();
     const panel = panels.find((p) => p.id === id);
 
     return panel
-        ? React.createElement(PanelDetails, { panel, accessToken })
+        ? React.createElement(PanelDetails, { panel })
         : React.createElement("div", null, "Panel not found");
 }
 

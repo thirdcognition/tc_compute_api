@@ -1,13 +1,14 @@
 import AudioDetailDisplay from "./AudioDetailDisplay.js";
-const { useState } = React;
+import {
+    fetchPanelFiles,
+    fetchPanelAudios,
+    fetchTranscriptContent,
+    updateTranscript
+} from "./helpers/fetch.js";
+import { processStateIcon } from "./helpers/ui.js";
+const { useState, useEffect } = React;
 
-const TranscriptDetailDisplay = ({
-    transcript,
-    accessToken,
-    transcriptUrls,
-    audios,
-    audioUrls
-}) => {
+const TranscriptDetailDisplay = ({ transcript }) => {
     const [showDetails, setShowDetails] = useState(false);
     const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
     const [transcriptContent, setTranscriptContent] = useState("");
@@ -16,15 +17,30 @@ const TranscriptDetailDisplay = ({
             0
     ); // Editable updateCycle in seconds
     const config = transcript.metadata?.conversation_config || {};
+    const [audios, setAudios] = useState([]);
+    const [transcriptUrls, setTranscriptUrls] = useState({});
+    const [audioUrls, setAudioUrls] = useState({});
+
+    useEffect(() => {
+        fetchPanelFiles(transcript.panel_id)
+            .then(({ updatedTranscriptUrls, updatedAudioUrls }) => {
+                setTranscriptUrls(updatedTranscriptUrls);
+                setAudioUrls(updatedAudioUrls);
+            })
+            .catch((error) =>
+                console.error("Error fetching panel details:", error)
+            );
+
+        fetchPanelAudios(transcript.panel_id)
+            .then((data) => {
+                setAudios(data);
+            })
+            .catch((error) => console.error("Error fetching audios:", error));
+    }, [transcript.panel_id]);
 
     const toggleTranscriptVisibility = (transcriptId) => {
         if (!isTranscriptVisible && transcriptUrls[transcriptId]) {
-            fetch(transcriptUrls[transcriptId], {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
-            })
-                .then((response) => response.text())
+            fetchTranscriptContent(transcriptUrls[transcriptId])
                 .then((text) => {
                     setTranscriptContent(text);
                     setIsTranscriptVisible(true);
@@ -63,46 +79,13 @@ const TranscriptDetailDisplay = ({
         );
     };
 
-    const processStateIcon = (state) => {
-        switch (state) {
-            case "none":
-                return "○"; // UML symbol for none
-            case "waiting":
-                return "⏳"; // UML symbol for waiting
-            case "processing":
-                return "⚙️"; // UML symbol for processing
-            case "failed":
-                return "❌"; // UML symbol for failed
-            case "done":
-                return "✔️"; // UML symbol for done
-            default:
-                return "";
-        }
-    };
-
-    const updateTranscript = async (newUpdateCycle) => {
+    const handleUpdateTranscript = async (newUpdateCycle) => {
         try {
-            const response = await fetch(`/panel/transcript/${transcript.id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${accessToken}`
-                },
-                body: JSON.stringify({
-                    ...transcript,
-                    generation_interval: newUpdateCycle || null, // Set or remove the value
-                    metadata: {
-                        ...transcript.metadata,
-                        update_cycle: newUpdateCycle || null
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to update transcript");
-            }
-
-            const updatedTranscript = await response.json();
+            const updatedTranscript = await updateTranscript(
+                transcript.id,
+                transcript,
+                newUpdateCycle
+            );
             setUpdateCycle(updatedTranscript.metadata.update_cycle || 0);
         } catch (error) {
             console.error("Error updating transcript:", error);
@@ -261,7 +244,7 @@ const TranscriptDetailDisplay = ({
                         "button",
                         {
                             onClick: () =>
-                                updateTranscript(
+                                handleUpdateTranscript(
                                     updateCycle === 0 ? null : updateCycle
                                 ),
                             className:
@@ -272,7 +255,7 @@ const TranscriptDetailDisplay = ({
                     React.createElement(
                         "button",
                         {
-                            onClick: () => updateTranscript(null),
+                            onClick: () => handleUpdateTranscript(null),
                             className: "bg-red-500 text-white py-1 px-3 rounded"
                         },
                         "Remove"

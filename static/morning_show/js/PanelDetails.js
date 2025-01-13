@@ -1,125 +1,27 @@
 import PanelDetailDisplay from "./PanelDetailDisplay.js";
 import TranscriptDetailDisplay from "./TranscriptDetailDisplay.js";
+import { fetchPanelTranscripts } from "./helpers/fetch.js";
 const { Card } = ReactBootstrap;
-const { Redirect, Link } = ReactRouterDOM; // Import Redirect
+const { Redirect, Link } = ReactRouterDOM;
 
-function PanelDetails({ panel, accessToken }) {
-    const [details, setDetails] = React.useState({
-        audioProcessState: "",
-        audioFailMessage: "",
-        transcriptProcessState: "",
-        transcriptFailMessage: ""
-    });
+function PanelDetails({ panel }) {
     const [transcripts, setTranscripts] = React.useState([]);
-    const [audios, setAudios] = React.useState([]);
-    const [transcriptUrls, setTranscriptUrls] = React.useState({});
-    const [audioUrls, setAudioUrls] = React.useState({});
-    const [redirectToEdit, setRedirectToEdit] = React.useState(false); // New state for redirection
+    const [redirectToEdit, setRedirectToEdit] = React.useState(false);
 
     React.useEffect(() => {
-        // Reset details, transcripts, and audios when panel changes
-        setDetails({
-            audioProcessState: "",
-            audioFailMessage: "",
-            transcriptProcessState: "",
-            transcriptFailMessage: ""
-        });
         setTranscripts([]);
-        setAudios([]);
-        setTranscriptUrls({});
-        setAudioUrls({});
 
-        const protocol = window.location.protocol;
-        const host = window.location.hostname;
-        const port = window.location.port ? `:${window.location.port}` : "";
-
-        fetch(`/panel/${panel.id}/files`, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`
-            }
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                const updatedTranscriptUrls = data.transcript_urls
-                    ? Object.fromEntries(
-                          Object.entries(data.transcript_urls).map(
-                              ([id, url]) => [
-                                  id,
-                                  url.replace(
-                                      "http://127.0.0.1:4000",
-                                      `${protocol}//${host}${port}`
-                                  )
-                              ]
-                          )
-                      )
-                    : {};
-                const updatedAudioUrls = data.audio_urls
-                    ? Object.fromEntries(
-                          Object.entries(data.audio_urls).map(([id, url]) => [
-                              id,
-                              url.replace(
-                                  "http://127.0.0.1:4000",
-                                  `${protocol}//${host}${port}`
-                              )
-                          ])
-                      )
-                    : {};
-                setTranscriptUrls(updatedTranscriptUrls);
-                setAudioUrls(updatedAudioUrls);
-            })
-            .catch((error) =>
-                console.error("Error fetching panel details:", error)
-            );
-
-        // Fetch audios
-        fetch(`${protocol}//${host}${port}/panel/${panel.id}/audios`, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`
-            }
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setAudios(data);
-                if (data.length === 0) {
-                    setRedirectToEdit(true); // Set redirect if no audios
-                } else {
-                    const audio = data[0];
-                    if (audio) {
-                        setDetails((prevDetails) => ({
-                            ...prevDetails,
-                            audioProcessState: audio.process_state || "",
-                            audioFailMessage: audio.process_fail_message || ""
-                        }));
-                    }
-                }
-            })
-            .catch((error) => console.error("Error fetching audios:", error));
-
-        // Fetch transcripts
-        fetch(`${protocol}//${host}${port}/panel/${panel.id}/transcripts`, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`
-            }
-        })
-            .then((response) => response.json())
+        fetchPanelTranscripts(panel.id)
             .then((data) => {
                 setTranscripts(data);
                 if (data.length === 0) {
-                    setRedirectToEdit(true); // Set redirect if no transcripts
-                } else {
-                    const transcript = data[0];
-                    setDetails((prevDetails) => ({
-                        ...prevDetails,
-                        transcriptProcessState: transcript.process_state || "",
-                        transcriptFailMessage:
-                            transcript.process_fail_message || ""
-                    }));
+                    setRedirectToEdit(true);
                 }
             })
             .catch((error) =>
                 console.error("Error fetching transcripts:", error)
             );
-    }, [panel, accessToken]);
+    }, [panel]);
 
     if (redirectToEdit) {
         return React.createElement(Redirect, { to: `/panel/${panel.id}/edit` });
@@ -156,11 +58,7 @@ function PanelDetails({ panel, accessToken }) {
                             className: "mb-4"
                         },
                         React.createElement(TranscriptDetailDisplay, {
-                            transcript,
-                            accessToken,
-                            transcriptUrls,
-                            audios,
-                            audioUrls
+                            transcript
                         })
                     )
                 )

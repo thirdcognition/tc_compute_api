@@ -1,6 +1,20 @@
 const { Form, Button } = ReactBootstrap;
+import session from "./helpers/session.js";
+const { useState } = React;
 
-function LoginForm({ email, setEmail, password, setPassword, login }) {
+function LoginForm({ onLogin }) {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+    async function login(event) {
+        event.preventDefault();
+        try {
+            await session.login(email, password);
+            onLogin();
+        } catch (error) {
+            console.error("Error logging in:", error);
+        }
+    }
     return React.createElement(
         Form,
         { onSubmit: login, className: "space-y-4" },

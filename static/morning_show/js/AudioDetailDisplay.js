@@ -1,27 +1,11 @@
 const { useState } = React;
+import { processStateIcon } from "./helpers/ui.js";
 
 const AudioDetailDisplay = ({ audio, audioUrl }) => {
     const [showDetails, setShowDetails] = useState(false);
     const ttsConfig = audio.metadata?.conversation_config?.text_to_speech || {};
     const elevenlabsConfig = ttsConfig.elevenlabs || {};
     const geminiConfig = ttsConfig.gemini || {};
-
-    const processStateIcon = (state) => {
-        switch (state) {
-            case "none":
-                return "○"; // UML symbol for none
-            case "waiting":
-                return "⏳"; // UML symbol for waiting
-            case "processing":
-                return "⚙️"; // UML symbol for processing
-            case "failed":
-                return "❌"; // UML symbol for failed
-            case "done":
-                return "✔️"; // UML symbol for done
-            default:
-                return "";
-        }
-    };
 
     const handleDownload = async () => {
         try {
