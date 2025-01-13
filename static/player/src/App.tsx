@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactGA from 'react-ga4';
 import { BsFillPlayFill, BsPauseFill, BsMoonFill, BsSunFill } from 'react-icons/bs';
 import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi';
 import { FiRotateCcw, FiRotateCw } from 'react-icons/fi';
@@ -9,7 +10,40 @@ import { TbClearAll } from 'react-icons/tb';
 import { HiMinus, HiPlus } from 'react-icons/hi';
 
 // Configuration
-const SHOW_CLEAR_BUTTON = true; // Set this to false to hide the clear button
+const SHOW_CLEAR_BUTTON = false; // Set this to false to hide the clear button
+const GA_MEASUREMENT_ID = 'G-5HQD9T8EHK';
+
+// Declare gtag type
+declare global {
+  interface Window {
+    gtag: (...args: any[]) => void;
+  }
+}
+
+// set the debug mode to true or false
+const DEBUG_MODE = true;
+
+// Enable GA4 debug mode in development
+if (process.env.NODE_ENV === 'development' && DEBUG_MODE) {
+  window.localStorage.setItem('debug', 'ga:*');
+  // Enable GA4 debug view
+  if (window.gtag) {
+    window.gtag('config', GA_MEASUREMENT_ID, {
+      debug_mode: DEBUG_MODE
+    });
+  }
+}
+
+// Session management
+const SESSION_KEY = 'app_session';
+const HEARTBEAT_INTERVAL = 10000; // 10 seconds
+
+interface Session {
+  id: string;
+  startTime: number;
+  lastHeartbeat: number;
+  tabId: string;
+}
 
 // Generate a unique user ID if it doesn't exist
 const getUserId = () => {
@@ -21,11 +55,92 @@ const getUserId = () => {
   return userId;
 };
 
+// Custom analytics initialization
+const initializeAnalytics = (): Session => {
+  const sessionId = Math.random().toString(36).substring(2);
+  const timestamp = Date.now();
+  const session: Session = {
+    id: sessionId,
+    startTime: timestamp,
+    lastHeartbeat: timestamp,
+    tabId: Math.random().toString(36).substring(2)
+  };
+  
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  
+  // Updated GA4 initialization with debug options
+  ReactGA.initialize(GA_MEASUREMENT_ID, {
+    gtagOptions: {
+      debug_mode: DEBUG_MODE,
+      send_page_view: true
+    }
+  });
+
+  // Send initial pageview with more details
+  ReactGA.send({
+    hitType: "pageview",
+    page: window.location.pathname,
+    title: document.title,
+    location: window.location.href
+  });
+
+  // Log initialization in debug mode
+  if (DEBUG_MODE) {
+    console.log('GA4 Initialization:', {
+      measurementId: GA_MEASUREMENT_ID,
+      debug: DEBUG_MODE,
+      sessionId: sessionId,
+      userId: getUserId()
+    });
+  }
+  
+  return session;
+};
+
+// Heartbeat to maintain session
+const updateHeartbeat = (session: Session): void => {
+  session.lastHeartbeat = Date.now();
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+};
+
+// Clean up old sessions
+const cleanupOldSessions = (): Session | null => {
+  const currentTime = Date.now();
+  const threshold = currentTime - (HEARTBEAT_INTERVAL * 3);
+  
+  try {
+    const sessionData = localStorage.getItem(SESSION_KEY);
+    if (!sessionData) return null;
+    
+    const session = JSON.parse(sessionData) as Session;
+    if (session.lastHeartbeat < threshold) {
+      localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return session;
+  } catch {
+    return null;
+  }
+};
+
 interface Comment {
   id: string;
   text: string;
   timestamp: number;
 }
+
+const DebugGA = () => {
+  useEffect(() => {
+    console.group('GA4 Debug Information');
+    console.log('GA Measurement ID:', GA_MEASUREMENT_ID);
+    console.log('GA Initialized:', !!ReactGA.ga());
+    console.log('Debug Mode:', DEBUG_MODE);
+    console.log('Current Page:', window.location.pathname);
+    console.groupEnd();
+  }, []);
+
+  return null;
+};
 
 function App() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -45,6 +160,54 @@ function App() {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [showSpeedPopup, setShowSpeedPopup] = useState(false);
   const speedPopupRef = useRef<HTMLDivElement>(null);
+  const sessionRef = useRef<Session | null>(null);
+
+  // Initialize session and analytics
+  useEffect(() => {
+    // Add these console logs
+    console.log('Initializing GA...');
+    console.log('GA Measurement ID:', GA_MEASUREMENT_ID);
+    
+    if (!ReactGA.ga()) {
+      sessionRef.current = initializeAnalytics();
+      // Add this check
+      console.log('GA Initialized:', !!ReactGA.ga());
+    } else {
+      console.log('GA already initialized');
+      const existingSession = cleanupOldSessions();
+      if (existingSession) {
+        sessionRef.current = existingSession;
+      } else {
+        sessionRef.current = initializeAnalytics();
+      }
+    }
+
+    // Set up heartbeat
+    const heartbeatInterval = setInterval(() => {
+      if (sessionRef.current) {
+        updateHeartbeat(sessionRef.current);
+      }
+    }, HEARTBEAT_INTERVAL);
+
+    // Set up storage event listener to handle multiple tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === SESSION_KEY && e.newValue && sessionRef.current) {
+        const newSession = JSON.parse(e.newValue) as Session;
+        if (newSession.tabId !== sessionRef.current.tabId) {
+          // Another tab is active, update our session if needed
+          sessionRef.current = newSession;
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Cleanup
+    return () => {
+      clearInterval(heartbeatInterval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   // Load initial votes and comments from localStorage
   useEffect(() => {
@@ -83,6 +246,36 @@ function App() {
     }
   }, [isDark]);
 
+  // Track user interactions with GA4
+  const trackEvent = (eventName: string, category: string, label?: string) => {
+    if (DEBUG_MODE) {
+      console.group('GA4 Event Tracking');
+      console.log('Event Name:', eventName);
+      console.log('Category:', category);
+      console.log('Label:', label);
+      console.log('User ID:', userId.current);
+      console.groupEnd();
+    }
+
+    // Enhanced event tracking with more parameters
+    ReactGA.event(eventName, {
+      event_category: category,
+      event_label: label,
+      user_id: userId.current,
+      session_id: sessionRef.current?.id,
+      timestamp: new Date().toISOString(),
+      page_title: document.title,
+      page_location: window.location.href,
+      debug_mode: DEBUG_MODE
+    });
+
+    // Verify GA object exists and log any issues
+    if (!ReactGA.ga()) {
+      console.error('GA4 not initialized properly');
+      return;
+    }
+  };
+
   const handleLike = () => {
     const userVote = localStorage.getItem(`vote_${userId.current}`);
     
@@ -92,6 +285,7 @@ function App() {
       setIsLiked(false);
       localStorage.setItem('totalLikes', String(likeCount - 1));
       localStorage.removeItem(`vote_${userId.current}`);
+      trackEvent('unlike', 'Engagement', 'Remove Like');
     } else {
       // Add like
       if (isDisliked) {
@@ -99,11 +293,13 @@ function App() {
         setDislikeCount(prev => prev - 1);
         setIsDisliked(false);
         localStorage.setItem('totalDislikes', String(dislikeCount - 1));
+        trackEvent('remove_dislike', 'Engagement', 'Remove Dislike');
       }
       setLikeCount(prev => prev + 1);
       setIsLiked(true);
       localStorage.setItem('totalLikes', String(likeCount + 1));
       localStorage.setItem(`vote_${userId.current}`, 'like');
+      trackEvent('like', 'Engagement', 'Add Like');
     }
   };
 
@@ -116,6 +312,7 @@ function App() {
       setIsDisliked(false);
       localStorage.setItem('totalDislikes', String(dislikeCount - 1));
       localStorage.removeItem(`vote_${userId.current}`);
+      trackEvent('undislike', 'Engagement', 'Remove Dislike');
     } else {
       // Add dislike
       if (isLiked) {
@@ -123,11 +320,13 @@ function App() {
         setLikeCount(prev => prev - 1);
         setIsLiked(false);
         localStorage.setItem('totalLikes', String(likeCount - 1));
+        trackEvent('remove_like', 'Engagement', 'Remove Like');
       }
       setDislikeCount(prev => prev + 1);
       setIsDisliked(true);
       localStorage.setItem('totalDislikes', String(dislikeCount + 1));
       localStorage.setItem(`vote_${userId.current}`, 'dislike');
+      trackEvent('dislike', 'Engagement', 'Add Dislike');
     }
   };
 
@@ -135,16 +334,34 @@ function App() {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
+        trackEvent('pause', 'Player', 'Pause Audio');
+        setIsPlaying(false);
       } else {
-        audioRef.current.play();
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              setIsPlaying(true);
+              trackEvent('play', 'Player', 'Play Audio');
+            })
+            .catch(error => {
+              // Handle any play() errors here
+              console.error('Error attempting to play:', error);
+              setIsPlaying(false);
+            });
+        }
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
   const skip = (seconds: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime += seconds;
+      trackEvent(
+        'skip', 
+        'Player', 
+        `Skip ${seconds > 0 ? 'Forward' : 'Backward'}: ${Math.abs(seconds)}s`
+      );
     }
   };
 
@@ -190,6 +407,8 @@ function App() {
       localStorage.setItem('comments', JSON.stringify(updatedComments));
       setNewComment('');
       setIsSubmitting(false);
+
+      trackEvent('comment_submit', 'Engagement', `Comment Length: ${newComment.trim().length}`);
     }
   };
 
@@ -236,11 +455,24 @@ function App() {
     };
   }, []);
 
-  const handleSpeedChange = (speed: number) => {
-    const newSpeed = Math.max(0.75, Math.min(2, speed));
+  const handleSpeedChange = (newSpeed: number) => {
+    setPlaybackSpeed(newSpeed);
     if (audioRef.current) {
+      const wasPlaying = !audioRef.current.paused;
+      const currentTime = audioRef.current.currentTime;
       audioRef.current.playbackRate = newSpeed;
-      setPlaybackSpeed(newSpeed);
+      
+      // If audio was playing, ensure it continues playing after speed change
+      if (wasPlaying) {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            console.log("Playback error:", error);
+          });
+        }
+      }
+
+      trackEvent('speed_change', 'Player', `Speed: ${newSpeed}x`);
     }
   };
 
@@ -303,6 +535,47 @@ function App() {
     );
   };
 
+  // Add new tracking for audio progress
+  useEffect(() => {
+    let progressInterval: NodeJS.Timeout;
+    
+    if (isPlaying) {
+      progressInterval = setInterval(() => {
+        if (audioRef.current) {
+          const progress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+          trackEvent('progress', 'Player', `Progress: ${Math.floor(progress)}%`);
+        }
+      }, 10000); // Track progress every 10 seconds
+    }
+
+    return () => clearInterval(progressInterval);
+  }, [isPlaying]);
+
+  // Add tracking for time spent
+  useEffect(() => {
+    let timeSpentInterval: NodeJS.Timeout;
+    
+    if (isPlaying) {
+      const startTime = Date.now();
+      timeSpentInterval = setInterval(() => {
+        const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+        trackEvent('time_spent', 'Player', `Time Spent: ${timeSpent}s`);
+      }, 60000); // Track time spent every minute
+    }
+
+    return () => clearInterval(timeSpentInterval);
+  }, [isPlaying]);
+
+  const toggleTheme = () => {
+    const newTheme = !isDark;
+    setIsDark(newTheme);
+    trackEvent(
+      'theme_toggle', 
+      'UI', 
+      `Theme: ${newTheme ? 'Dark' : 'Light'}`
+    );
+  };
+
   return (
     <div className={`min-h-screen ${isDark ? 'dark' : ''}`}>
       <div className="bg-white dark:bg-gray-900 min-h-screen flex flex-col items-center p-8">
@@ -332,7 +605,7 @@ function App() {
                 </button>
               )}
               <button
-                onClick={() => setIsDark(!isDark)}
+                onClick={toggleTheme}
                 className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
               >
                 {isDark ? (
@@ -346,7 +619,7 @@ function App() {
           
           <audio
             ref={audioRef}
-            src="/Episode6.mp3"
+            src="https://cehncdkfuslzatlfawma.supabase.co/storage/v1/object/public/public_panels/panel_4bdb5eba-20bd-4eab-9f89-519126c7de3e_6cce40af-a079-49af-9dad-cc8741d88485_64614690-5116-4c18-9138-2492dff137ef_audio.mp3"
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
           />
@@ -400,25 +673,23 @@ function App() {
               <div className="flex justify-center space-x-8">
                 <button
                   onClick={handleLike}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  className="flex items-center p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 >
                   {isLiked ? (
                     <AiFillLike className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   ) : (
                     <AiOutlineLike className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                   )}
-                  <span className="text-gray-600 dark:text-gray-400 font-medium">{likeCount}</span>
                 </button>
                 <button
                   onClick={handleDislike}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                  className="flex items-center p-2 rounded-lg hover:bg-red-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 >
                   {isDisliked ? (
-                    <AiFillDislike className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <AiFillDislike className="w-6 h-6 text-red-600 dark:text-red-400" />
                   ) : (
                     <AiOutlineDislike className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                   )}
-                  <span className="text-gray-600 dark:text-gray-400 font-medium">{dislikeCount}</span>
                 </button>
               </div>
             </div>
