@@ -12,6 +12,7 @@ from app.routes.system import router as system_router
 from app.routes.panel import router as panel_router
 from app.core.init_app import init_app
 from source.load_env import SETTINGS
+from source.models.config.logging import logger
 
 app = init_app()
 
@@ -22,8 +23,8 @@ app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 
 @app.get("/")
-async def redirect_root_to_morning_show():
-    return RedirectResponse("/morning_show")
+async def redirect_root_to_admin():
+    return RedirectResponse("/admin")
 
 
 @app.get("/health")
@@ -34,18 +35,41 @@ async def health_check():
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-@app.get("/morning_show/{path_name:path}")
-async def serve_morning_show(path_name: str):
+@app.get("/admin/{path_name:path}")
+async def serve_admin(path_name: str):
     # Construct the absolute file path
-    file_path = os.path.join(script_dir, "../static/morning_show/build", path_name)
-    # Check if the path exists and if it is a file
-    if os.path.isfile(file_path):
-        return FileResponse(file_path)
+    path_parts = os.path.normpath(path_name).split(os.sep)
+
+    # Get the last and second to last directories
+    if len(path_parts) >= 2:
+        second_to_last_directory, last_directory = path_parts[-2], path_parts[-1]
+    elif len(path_parts) == 1:
+        second_to_last_directory, last_directory = "", path_parts[-1]
     else:
-        # Return the index.html from the same base directory
-        index_file_path = os.path.join(
-            script_dir, "../static/morning_show/build/index.html"
+        second_to_last_directory, last_directory = "", ""
+
+    # Construct the absolute file path with only the second to last and last directories
+    file_path_with_dir = os.path.abspath(
+        os.path.join(
+            script_dir,
+            "../static/admin/build/static",
+            second_to_last_directory,
+            last_directory,
         )
+    )
+    file_path_wo_dir = os.path.abspath(
+        os.path.join(script_dir, "../static/admin/build", last_directory)
+    )
+
+    # Check if the path exists and if it is a file
+    if os.path.isfile(file_path_with_dir):
+        return FileResponse(file_path_with_dir)
+    elif os.path.isfile(file_path_wo_dir):
+        return FileResponse(file_path_wo_dir)
+    else:
+        logger.info(f"File not found: {file_path_with_dir=}, {file_path_wo_dir=}")
+        # Return the index.html from the same base directory
+        index_file_path = os.path.join(script_dir, "../static/admin/build/index.html")
         return FileResponse(index_file_path)
 
 

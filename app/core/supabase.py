@@ -209,15 +209,25 @@ async def get_supabase_client_by_request(
 async def supabase_middleware(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
+    # Define lists for exceptional paths and methods
+    exception_paths = [
+        "/",
+        "/auth/login",
+        "/health",
+    ]
+
+    exception_path_starts = [
+        "/static",
+        "/admin",
+        "/player",
+    ]
+
+    # Check if the request is an exception
     if (
         request.method == "OPTIONS"
         and request.headers.get("access-control-request-method")
-        or request.url.path == "/"
-        or request.url.path == "/auth/login"
-        or request.url.path == "/health"
-        or request.url.path.startswith("/static")
-        or request.url.path.startswith("/morning_show")
-        or request.url.path.startswith("/player")
+        or request.url.path in exception_paths
+        or any(request.url.path.startswith(prefix) for prefix in exception_path_starts)
     ):
         return await call_next(request)
 

@@ -17,7 +17,7 @@ import { fetchPublicPanels } from "./js/helpers/fetch.js";
 
 function App() {
     return (
-        <BrowserRouter basename="/morning_show">
+        <BrowserRouter basename="/admin">
             <AppContent />
         </BrowserRouter>
     );

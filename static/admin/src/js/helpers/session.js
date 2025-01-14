@@ -1,4 +1,4 @@
-// morning_show_js/helpers/session.js
+// admin_js/helpers/session.js
 
 import { getCookie, setCookie } from "./auth.js";
 import { fetchData } from "./fetch.js";
