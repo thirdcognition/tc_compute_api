@@ -12,13 +12,13 @@ ENV REACT_APP_DEBUG_MODE=${DEBUG_MODE}
 ENV REACT_APP_PORT=${SERVER_PORT}
 
 WORKDIR /static/admin
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm npm install
 RUN npm run build
 WORKDIR /
 
 # Install and build for /static/player/
 WORKDIR /static/player
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm npm install
 RUN npm run build
 WORKDIR /
 

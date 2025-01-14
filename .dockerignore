@@ -1,3 +1,5 @@
 db/
 .venv/
 .gitignore
+build/
+node_modules/
