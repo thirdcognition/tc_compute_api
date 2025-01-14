@@ -29,8 +29,8 @@ excempt_from_auth_check("/", ["GET"])
 
 
 @app.get("/")
-async def redirect_root_to_admin():
-    return RedirectResponse("/admin")
+async def redirect_root_to_player():
+    return RedirectResponse("/player")
 
 
 excempt_from_auth_check("/health", ["GET"])
