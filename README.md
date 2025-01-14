@@ -112,6 +112,31 @@ This command will run all tests located in the `test` directory, including both 
 
 Ensure that the server is running locally on `http://127.0.0.1:4000` before executing the end-to-end tests.
 
+# Run local docker
+
+### Run docker redis
+
+```bash
+docker run --name tc-redis -d -p 6379:6379 redis
+```
+
+### Build base image:
+```bash
+docker build --platform linux/amd64 -t markushaverinen/tc_ms_poc_base . -f Dockerfile_base
+```
+
+### Build runnable
+```bash
+source .env && docker build --platform linux/amd64 --build-arg GA_MEASUREMENT_ID=$GA_MEASUREMENT_ID --build-arg DEBUG_MODE=$DEBUG_MODE --build-arg SERVER_PORT=$SERVER_PORT -t markushaverinen/tc_poc . -f Dockerfile
+```
+
+### Run docker
+```bash
+docker run -d --env-file .env --name tc-poc --net=host markushaverinen/tc_poc
+```
+
+Replace markushaverinen with your details.
+
 
 # Kasra commands
 

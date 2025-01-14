@@ -3,3 +3,4 @@ db/
 .gitignore
 build/
 node_modules/
+celerybeat-schedule.db

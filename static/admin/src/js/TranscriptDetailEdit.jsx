@@ -86,8 +86,8 @@ function TranscriptDetailEdit({
                         <Form.Control
                             type="range"
                             min={0}
-                            max={3600}
-                            step={180}
+                            max={3600 * 24 * 14}
+                            step={3600}
                             value={updateCycle}
                             onChange={(e) =>
                                 setUpdateCycle(Number(e.target.value))

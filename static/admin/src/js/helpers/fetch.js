@@ -3,14 +3,17 @@ import session from "./session.js";
 
 export async function fetchData(endpoint, options = {}) {
     const { protocol, hostname, port } = config;
-    const response = await fetch(`${protocol}//${hostname}${port}${endpoint}`, {
-        method: "GET",
-        headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${session.getAccessToken()}`
-        },
-        ...options
-    });
+    const response = await fetch(
+        `${protocol}//${hostname}${port ? `:${port}` : ""}${endpoint}`,
+        {
+            method: "GET",
+            headers: {
+                Accept: "application/json",
+                Authorization: `Bearer ${session.getAccessToken()}`
+            },
+            ...options
+        }
+    );
 
     if (response.status === 401 || response.status === 403) {
         session.handleUnauthorized();
