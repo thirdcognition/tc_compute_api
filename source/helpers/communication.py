@@ -35,8 +35,8 @@ def send_email_about_new_shows(panels: List[str]):
 
 @celery_app.task
 def send_new_shows_email_task(email: str, panels: List[str]):
-    print(f"Send email to {email=}")
-    return
+    # print(f"Send email to {email=}")
+    # return
 
     api_key = SETTINGS.resend_api_key
     url = "https://api.resend.com/emails"
