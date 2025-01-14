@@ -43,15 +43,10 @@ async def health_check():
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-excempt_from_auth_check_with_prefix("/admin", ["GET"])
 
-
-@app.get("/admin/{path_name:path}")
-async def serve_admin(path_name: str):
-    # Construct the absolute file path
+def serve_static_file(base_dir: str, path_name: str):
     path_parts = os.path.normpath(path_name).split(os.sep)
 
-    # Get the last and second to last directories
     if len(path_parts) >= 2:
         second_to_last_directory, last_directory = path_parts[-2], path_parts[-1]
     elif len(path_parts) == 1:
@@ -59,29 +54,35 @@ async def serve_admin(path_name: str):
     else:
         second_to_last_directory, last_directory = "", ""
 
-    # Construct the absolute file path with only the second to last and last directories
     file_path_with_dir = os.path.abspath(
         os.path.join(
             script_dir,
-            "../static/admin/build/static",
+            base_dir,
+            "static",
             second_to_last_directory,
             last_directory,
         )
     )
     file_path_wo_dir = os.path.abspath(
-        os.path.join(script_dir, "../static/admin/build", last_directory)
+        os.path.join(script_dir, base_dir, last_directory)
     )
 
-    # Check if the path exists and if it is a file
     if os.path.isfile(file_path_with_dir):
         return FileResponse(file_path_with_dir)
     elif os.path.isfile(file_path_wo_dir):
         return FileResponse(file_path_wo_dir)
     else:
         logger.info(f"File not found: {file_path_with_dir=}, {file_path_wo_dir=}")
-        # Return the index.html from the same base directory
-        index_file_path = os.path.join(script_dir, "../static/admin/build/index.html")
+        index_file_path = os.path.join(script_dir, base_dir, "index.html")
         return FileResponse(index_file_path)
+
+
+excempt_from_auth_check_with_prefix("/admin", ["GET"])
+
+
+@app.get("/admin/{path_name:path}")
+async def serve_admin(path_name: str):
+    return serve_static_file("../static/admin/build", path_name)
 
 
 # @app.get("/player/{path_name:path}")
@@ -95,9 +96,7 @@ excempt_from_auth_check_with_prefix("/player", ["GET"])
 
 @app.get("/player/{path_name:path}")
 async def serve_player_root(path_name: str):
-    return FileResponse(
-        "static/player/build/" + (path_name if path_name else "index.html")
-    )
+    return serve_static_file("../static/player/build", path_name)
 
 
 # Include routers
