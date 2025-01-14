@@ -1,3 +1,4 @@
+import os
 from langchain.globals import set_debug
 from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,11 +31,22 @@ async def health_check():
     return {"status": "healthy"}
 
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+
 @app.get("/morning_show/{path_name:path}")
 async def serve_morning_show(path_name: str):
-    return FileResponse(
-        "static/morning_show/" + (path_name if path_name else "index.html")
-    )
+    # Construct the absolute file path
+    file_path = os.path.join(script_dir, "../static/morning_show/build", path_name)
+    # Check if the path exists and if it is a file
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+    else:
+        # Return the index.html from the same base directory
+        index_file_path = os.path.join(
+            script_dir, "../static/morning_show/build/index.html"
+        )
+        return FileResponse(index_file_path)
 
 
 # @app.get("/player/{path_name:path}")

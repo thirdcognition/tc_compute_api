@@ -1,19 +1,22 @@
-import { replaceLocalhostUrl, urlFormatter } from "./url.js";
+import { urlFormatter } from "./url.js";
 import session from "./session.js";
 
+const config = {
+    protocol: window.location.protocol,
+    hostname: window.location.hostname,
+    port: ":4000" // window.location.port ? `:${window.location.port}` : ""
+};
+
 export async function fetchData(endpoint, options = {}) {
-    const port = window.location.port ? `:${window.location.port}` : "";
-    const response = await fetch(
-        `${window.location.protocol}//${window.location.hostname}${port}${endpoint}`,
-        {
-            method: "GET",
-            headers: {
-                Accept: "application/json",
-                Authorization: `Bearer ${session.getAccessToken()}`
-            },
-            ...options
-        }
-    );
+    const { protocol, hostname, port } = config;
+    const response = await fetch(`${protocol}//${hostname}${port}${endpoint}`, {
+        method: "GET",
+        headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${session.getAccessToken()}`
+        },
+        ...options
+    });
 
     if (response.status === 401 || response.status === 403) {
         session.handleUnauthorized();
@@ -63,7 +66,7 @@ export async function updateTranscript(
     transcript,
     newUpdateCycle
 ) {
-    const response = await fetch(`/panel/transcript/${transcriptId}`, {
+    const response = await fetchData(`/panel/transcript/${transcriptId}`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",

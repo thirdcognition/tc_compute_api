@@ -1,32 +1,31 @@
 // morning_show_js/helpers/session.js
 
 import { getCookie, setCookie } from "./auth.js";
+import { fetchData } from "./fetch.js";
 
 class Session {
     constructor() {
         this.accessToken = getCookie("access_token") || "";
-        this.history = null;
+        this.navigate = null;
     }
 
-    setHistory(history) {
-        this.history = history;
+    setNavigate(navigate) {
+        this.navigate = navigate;
     }
 
     login(email, password) {
-        return fetch(`${window.location.origin}/auth/login`, {
+        return fetchData(`/auth/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json"
             },
             body: JSON.stringify({ email, password })
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setCookie("access_token", data.access_token, 1);
-                this.accessToken = data.access_token;
-                return data.access_token;
-            });
+        }).then((data) => {
+            setCookie("access_token", data.access_token, 1);
+            this.accessToken = data.access_token;
+            return data.access_token;
+        });
     }
 
     logout() {
@@ -43,8 +42,8 @@ class Session {
     }
 
     handleUnauthorized() {
-        if (this.history) {
-            this.history.push("/login");
+        if (this.navigate) {
+            this.navigate("/login");
         }
     }
 }
