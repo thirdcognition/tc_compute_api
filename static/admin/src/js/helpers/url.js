@@ -1,7 +1,14 @@
+export const config = {
+    protocol: window.location.protocol,
+    hostname: window.location.hostname,
+    port: process.env.REACT_APP_PORT || ":4000"
+};
+
 export function replaceLocalhostUrl(url) {
+    const { protocol, hostname, port } = config;
     return url.replace(
-        "http://127.0.0.1:4000",
-        `${window.location.protocol}//${window.location.hostname}${window.location.port ? `:${window.location.port}` : ""}`
+        `http://127.0.0.1:${port}`,
+        `${protocol}//${hostname}${port ? `:${port}` : ""}`
     );
 }
 

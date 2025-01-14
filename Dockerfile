@@ -5,6 +5,23 @@ COPY app app
 COPY source source
 COPY file_repository file_repository
 COPY static static
+
+# Set environment variables for React applications
+ENV REACT_APP_GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID}
+ENV REACT_APP_DEBUG_MODE=${DEBUG_MODE}
+ENV REACT_APP_PORT=${SERVER_PORT}
+
+WORKDIR /static/admin
+RUN npm install
+RUN npm run build
+WORKDIR /
+
+# Install and build for /static/player/
+WORKDIR /static/player
+RUN npm install
+RUN npm run build
+WORKDIR /
+
 RUN chmod +x start_server.sh
 # RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 

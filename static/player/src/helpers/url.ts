@@ -1,7 +1,7 @@
 export const config = {
     protocol: window.location.protocol,
     hostname: window.location.hostname,
-    port: ":4000" // window.location.port ? `:${window.location.port}` : ""
+    port: process.env.REACT_APP_PORT || ":4000" // window.location.port ? `:${window.location.port}` : ""
 };
 
 export function replaceLocalhostUrl(url: string): string {

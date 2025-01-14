@@ -1,11 +1,5 @@
-import { urlFormatter } from "./url.js";
+import { urlFormatter, config } from "./url.js";
 import session from "./session.js";
-
-const config = {
-    protocol: window.location.protocol,
-    hostname: window.location.hostname,
-    port: ":4000" // window.location.port ? `:${window.location.port}` : ""
-};
 
 export async function fetchData(endpoint, options = {}) {
     const { protocol, hostname, port } = config;

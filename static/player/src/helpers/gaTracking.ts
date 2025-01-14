@@ -1,7 +1,9 @@
+/// <reference types="react-scripts" />
 import ReactGA from "react-ga4";
 
-const DEBUG_MODE = true;
-const GA_MEASUREMENT_ID = "G-5HQD9T8EHK";
+const DEBUG_MODE = process.env.REACT_APP_DEBUG_MODE === "true";
+const GA_MEASUREMENT_ID =
+    process.env.REACT_APP_GA_MEASUREMENT_ID || "G-5HQD9T8EHK";
 
 // Session management
 export const SESSION_KEY = "app_session";
