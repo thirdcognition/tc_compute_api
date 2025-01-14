@@ -35,8 +35,8 @@ def send_email_about_new_shows(panels: List[str]):
 
 @celery_app.task
 def send_new_shows_email_task(email: str, panels: List[str]):
-    # print(f"Send email to {email=}")
-    # return
+    print(f"Send email to {email=}")
+    return
 
     api_key = SETTINGS.resend_api_key
     url = "https://api.resend.com/emails"
@@ -44,7 +44,7 @@ def send_new_shows_email_task(email: str, panels: List[str]):
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     formatted_panels = [
-        f'<a href="https://show.thirdcognition.app/morning_show/panel/{panel.split(": ")[0]}">{panel.split(": ")[1]}</a>'
+        f'<a href="https://show.thirdcognition.app/admin/panel/{panel.split(": ")[0]}">{panel.split(": ")[1]}</a>'
         for panel in panels
     ]
     data = {

@@ -2,6 +2,10 @@ import os
 from langchain.globals import set_debug
 from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from app.core.supabase import (
+    excempt_from_auth_check,
+    excempt_from_auth_check_with_prefix,
+)
 from app.routes.auth import router as auth_router
 from app.routes.organization import router as organization_router
 from app.routes.organization_user import router as organization_user_router
@@ -18,13 +22,18 @@ app = init_app()
 
 set_debug(True)
 
-# Mount the static files directory
+excempt_from_auth_check_with_prefix("/static", ["GET"])
 app.mount("/static", StaticFiles(directory="static", html=True), name="static")
+
+excempt_from_auth_check("/", ["GET"])
 
 
 @app.get("/")
 async def redirect_root_to_admin():
     return RedirectResponse("/admin")
+
+
+excempt_from_auth_check("/health", ["GET"])
 
 
 @app.get("/health")
@@ -33,6 +42,8 @@ async def health_check():
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
+
+excempt_from_auth_check_with_prefix("/admin", ["GET"])
 
 
 @app.get("/admin/{path_name:path}")
@@ -78,6 +89,8 @@ async def serve_admin(path_name: str):
 #     return FileResponse("static/player/build/index.html")
 
 # app.mount("/player/", StaticFiles(directory="static/player/build/", html=True), name="player")
+
+excempt_from_auth_check_with_prefix("/player", ["GET"])
 
 
 @app.get("/player/{path_name:path}")

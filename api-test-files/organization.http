@@ -1,6 +1,6 @@
 @host = http://127.0.0.1
 @port = 4000
-@email = user1@example.com
+@email = markus@thirdcognition.com
 @email2 = user5@example.com
 @password = password123
 

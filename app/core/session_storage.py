@@ -9,7 +9,9 @@ from source.load_env import SETTINGS
 from source.models.config.logging import logger
 
 
-async def get_supabase_client(access_token: str | None = None) -> AsyncClient:
+async def get_supabase_client(
+    access_token: str | None = None, custom_options: dict = None
+) -> AsyncClient:
     options = ClientOptions(
         postgrest_client_timeout=10,
         storage_client_timeout=10,
@@ -18,6 +20,12 @@ async def get_supabase_client(access_token: str | None = None) -> AsyncClient:
     )
     if access_token:
         options.headers = {"Authorization": f"Bearer {access_token}"}
+
+    # Update options with custom_options if provided
+    if custom_options:
+        options_dict = vars(options)  # Convert options to a dictionary
+        options_dict.update(custom_options)
+        options = ClientOptions(**options_dict)  # Recreate options with updated dict
 
     return await create_async_client(
         SETTINGS.supabase_url,
@@ -26,7 +34,9 @@ async def get_supabase_client(access_token: str | None = None) -> AsyncClient:
     )
 
 
-def get_sync_supabase_client(access_token: str | None = None) -> Client:
+def get_sync_supabase_client(
+    access_token: str | None = None, custom_options: dict = None
+) -> Client:
     options = ClientOptions(
         postgrest_client_timeout=10,
         storage_client_timeout=10,
@@ -35,6 +45,12 @@ def get_sync_supabase_client(access_token: str | None = None) -> Client:
     )
     if access_token:
         options.headers = {"Authorization": f"Bearer {access_token}"}
+
+    # Update options with custom_options if provided
+    if custom_options:
+        options_dict = vars(options)  # Convert options to a dictionary
+        options_dict.update(custom_options)
+        options = ClientOptions(**options_dict)  # Recreate options with updated dict
 
     try:
         return create_client(

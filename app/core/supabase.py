@@ -2,7 +2,7 @@ import json
 import time
 from typing import Annotated, AsyncGenerator, Awaitable, Callable, Optional, Tuple
 
-from app.core.session_storage import SessionStorage, get_storage
+from app.core.session_storage import SessionStorage, get_storage, get_supabase_client
 from supabase.client import AsyncClient, create_async_client, Client, create_client
 from supabase import ClientOptions
 from supabase_auth.types import Session
@@ -15,7 +15,47 @@ from supabase_auth.errors import AuthApiError
 from source.load_env import SETTINGS
 from source.models.config.logging import logger
 
-get_oauth2: OAuth2PasswordBearer = OAuth2PasswordBearer(
+anon_paths = []
+exception_paths = []
+exception_path_starts = []
+
+
+def allow_anonymous_login(path: str, methods: list):
+    global anon_paths
+    logger.info(f"Allow anonymous login for {path}, using {methods=}")
+    anon_paths.append((path, methods))
+
+
+def excempt_from_auth_check(path: str, methods: list):
+    global exception_paths
+    logger.info(f"Excemption of auth for {path}, using {methods=}")
+    exception_paths.append((path, methods))
+
+
+def excempt_from_auth_check_with_prefix(prefix: str, methods: list):
+    global exception_path_starts
+    logger.info(
+        f"Excemption of auth for paths starting with {prefix}, using {methods=}"
+    )
+    exception_path_starts.append((prefix, methods))
+
+
+# Define existing paths using the utility methods
+
+
+class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
+    async def __call__(self, request: Request) -> Optional[str]:
+        global anon_paths
+
+        if any(
+            request.url.path.startswith(path) and request.method in methods
+            for path, methods in anon_paths
+        ):
+            return None
+        return await super().__call__(request)
+
+
+get_oauth2: CustomOAuth2PasswordBearer = CustomOAuth2PasswordBearer(
     tokenUrl="please login by supabase-js to get token"
 )
 AccessTokenDep = Annotated[str, Depends(get_oauth2)]
@@ -129,15 +169,23 @@ async def get_supabase_service_client_dep() -> AsyncGenerator[AsyncClient, None]
         )
 
 
+anon_async_client: AsyncClient = None
+anon_sync_client: Client = None
+
+
 async def _get_supabase_client(
     access_token: AccessTokenDep,
 ) -> AsyncGenerator[AsyncClient, None]:
     try:
-        supabase_client: AsyncClient = await get_storage(
-            access_token
-        ).get_supabase_client()
+        if access_token is not None:
+            supabase_client: AsyncClient = await get_storage(
+                access_token
+            ).get_supabase_client()
 
-        yield supabase_client
+            yield supabase_client
+        else:
+            global anon_async_client
+            yield anon_async_client
 
     except AuthApiError as e:
         logger.error(e)
@@ -173,8 +221,27 @@ def get_supabase_tokens_sync(supabase: Client) -> Tuple[str, str]:
 
 
 async def get_supabase_client_by_request(
-    request: Request,
+    request: Request, anon_paths=[]
 ) -> Tuple[Optional[AsyncClient], Optional[SessionStorage]]:
+    # Check if the request is for the /panel path
+    if any(
+        request.url.path.startswith(path) and request.method in methods
+        for path, methods in anon_paths
+    ):
+        # Initialize anonymous Supabase client for /panel path
+        supabase_client = await get_supabase_client(
+            None,
+            {
+                "auto_refresh_token": False,
+                "persist_session": False,
+            },
+        )
+        global anon_async_client
+        await supabase_client.auth.sign_in_anonymously()
+        anon_async_client = supabase_client
+
+        return supabase_client, None
+
     authorization_header: Optional[str] = request.headers.get("Authorization")
     refresh_header: Optional[str] = request.headers.get("Refresh-Authorization")
     code_header: Optional[str] = request.headers.get("Auth-Code")
@@ -210,30 +277,28 @@ async def supabase_middleware(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
     # Define lists for exceptional paths and methods
-    exception_paths = [
-        "/",
-        "/auth/login",
-        "/health",
-    ]
-
-    exception_path_starts = [
-        "/static",
-        "/admin",
-        "/player",
-    ]
+    global exception_paths
+    global exception_path_starts
+    global anon_paths
 
     # Check if the request is an exception
     if (
         request.method == "OPTIONS"
         and request.headers.get("access-control-request-method")
-        or request.url.path in exception_paths
-        or any(request.url.path.startswith(prefix) for prefix in exception_path_starts)
+        or any(
+            request.url.path == path and request.method in methods
+            for path, methods in exception_paths
+        )
+        or any(
+            request.url.path.startswith(prefix) and request.method in methods
+            for prefix, methods in exception_path_starts
+        )
     ):
         return await call_next(request)
 
     supabase_client: AsyncClient | None = None
     try:
-        supabase_client, _ = await get_supabase_client_by_request(request)
+        supabase_client, _ = await get_supabase_client_by_request(request, anon_paths)
     except HTTPException as e:
         return JSONResponse(status_code=e.status_code, content={"error": e.detail})
     except Exception as e:
@@ -272,6 +337,7 @@ async def supabase_middleware(
         return JSONResponse(status_code=400, content={"error": "Invalid JSON"})
 
     response = await call_next(request)
+
     return response
 
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
-from app.core.supabase import SupaClientDep, get_supabase_tokens
+from app.core.supabase import SupaClientDep, allow_anonymous_login, get_supabase_tokens
 from source.helpers.routes import handle_exception
 from source.api.panel.read import (
     get_panel,
@@ -30,6 +30,8 @@ from source.helpers.panel import (
 )
 
 router = APIRouter()
+
+allow_anonymous_login("/panel", ["GET"])
 
 
 @router.post("/panel/news_links")

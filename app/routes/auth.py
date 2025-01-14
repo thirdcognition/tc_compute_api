@@ -5,6 +5,7 @@ from supabase_auth.types import Session
 from app.core.session_storage import get_storage, get_supabase_client
 from pydantic import BaseModel, EmailStr, ValidationError
 
+from app.core.supabase import excempt_from_auth_check
 from source.models.config.logging import logger
 from source.helpers.routes import handle_exception
 
@@ -19,6 +20,9 @@ class LoginRequestData(BaseModel):
 @router.get("/auth/callback")
 async def api_authenticate_supabase():
     return {"message": "ok"}
+
+
+excempt_from_auth_check("/auth/login", ["POST"])
 
 
 @router.post("/auth/login")

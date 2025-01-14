@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from app.core.celery_app import check_task_status, test_task
+from app.core.supabase import excempt_from_auth_check_with_prefix
 
 router = APIRouter()
+
+excempt_from_auth_check_with_prefix("/system/task_status/", ["GET"])
 
 
 @router.get("/system/task_status/{task_id}")

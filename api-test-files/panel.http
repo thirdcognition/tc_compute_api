@@ -4,6 +4,11 @@
 @email = markus@thirdcognition.com
 @password = password123
 
+### List all panels
+# @name listPanels
+GET {{host}}:{{port}}/panel/discussions/ HTTP/1.1
+Accept: application/json
+
 ### Login request
 # @name login
 POST {{host}}:{{port}}/auth/login HTTP/1.1
