@@ -13,7 +13,7 @@ ARG SERVER_PORT
 # Set environment variables for React applications
 ENV REACT_APP_GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID}
 ENV REACT_APP_DEBUG_MODE=${DEBUG_MODE}
-ENV REACT_APP_PORT=${SERVER_PORT}
+ENV REACT_APP_PORT=${PUBLIC_SERVER_PORT}
 
 WORKDIR /static/admin
 RUN --mount=type=cache,target=/root/.npm npm install
