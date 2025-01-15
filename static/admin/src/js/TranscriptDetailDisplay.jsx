@@ -5,7 +5,11 @@ import {
     fetchTranscriptContent,
     updateTranscript
 } from "./helpers/fetch.js";
-import { processStateIcon, formatUpdateCycle } from "./helpers/ui.js";
+import {
+    processStateIcon,
+    formatUpdateCycle,
+    getWordCountDescription
+} from "./helpers/ui.js";
 
 const TranscriptDetailDisplay = ({ transcript }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -139,7 +143,10 @@ const TranscriptDetailDisplay = ({ transcript }) => {
             {showDetails && (
                 <div className="border p-3 mb-4 rounded">
                     {config.word_count && (
-                        <p className="mb-2">Word Count: {config.word_count}</p>
+                        <p className="mb-2">
+                            Length:{" "}
+                            {getWordCountDescription(config.word_count, 4000)}
+                        </p>
                     )}
                     {config.creativity && (
                         <p className="mb-2">Creativity: {config.creativity}</p>

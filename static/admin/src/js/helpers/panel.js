@@ -31,6 +31,7 @@ export const handleCreatePanel = async (params) => {
 };
 
 export const handleCreateTranscript = async (params) => {
+    const longForm = params.longForm || false;
     const linksArray = params.discussionData?.metadata?.input_source || [];
     const googleNewsArray = params.discussionData?.metadata?.google_news || [];
     const yleNewsArray = params.discussionData?.metadata?.yle_news || [];
@@ -48,17 +49,20 @@ export const handleCreateTranscript = async (params) => {
         1
     );
     const maxNumChunks = Math.max(
-        Math.ceil((params.wordCount * 5) / 8192),
-        articleCount
+        longForm ? Math.ceil((params.wordCount * 5) / 8192) : 1,
+        longForm ? articleCount : 1
     );
     const minChunkSize = Math.max(
         Math.min(300, params.wordCount),
-        Math.floor(params.wordCount / articleCount)
+        Math.min(
+            Math.floor((params.wordCount / (longForm ? articleCount : 1)) * 3),
+            8192
+        )
     );
     const targetWordCount =
-        (params.wordCount / articleCount) * 3 < 8192
-            ? params.wordCount / articleCount
-            : Math.ceil(8192 / 3);
+        (params.wordCount / (longForm ? articleCount : 1)) * 2 < 8192
+            ? params.wordCount / (longForm ? articleCount : 1)
+            : Math.ceil(8192 / 2);
     try {
         const taskId = await createTranscript({
             title: params.title,
@@ -73,11 +77,12 @@ export const handleCreateTranscript = async (params) => {
                 dialogue_structure: params.dialogueStructure,
                 engagement_techniques: params.engagementTechniques,
                 user_instructions:
-                    `Use up to ${targetWordCount} words when generating the response. Make sure to fit your response into ${targetWordCount} words! ` +
+                    `Use ${longForm ? "up to" : "at least"} ${targetWordCount} words when generating the response. Make sure to ${longForm ? "fit your response into" : "not use less than"} ${targetWordCount} words! ` +
                     (params.outputLanguage !== "English"
                         ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
                         : "") +
-                    params.userInstructions,
+                    params.userInstructions +
+                    ` Generate the response with ${targetWordCount} words.`,
                 output_language: params.outputLanguage,
                 max_num_chunks: maxNumChunks,
                 min_chunk_size: minChunkSize

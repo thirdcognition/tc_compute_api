@@ -51,3 +51,16 @@ export const formatUpdateCycle = (seconds) => {
     const hours = (seconds % (24 * 3600)) / 3600;
     return `${days}d ${hours}h`;
 };
+
+export const getWordCountDescription = (wordCount, maxWordCount) => {
+    const percentage = (wordCount / maxWordCount) * 100;
+    if (percentage <= 10) return "shortest";
+    if (percentage <= 20) return "shorter";
+    if (percentage <= 30) return "short";
+    if (percentage <= 40) return "medium -";
+    if (percentage <= 60) return "medium";
+    if (percentage <= 70) return "medium +";
+    if (percentage <= 80) return "long";
+    if (percentage <= 90) return "longer";
+    return "longest";
+};

@@ -9,7 +9,7 @@ import {
     engagementTechniquesOptions,
     outputLanguageOptions
 } from "./options.js";
-import { formatUpdateCycle } from "./helpers/ui.js";
+import { formatUpdateCycle, getWordCountDescription } from "./helpers/ui.js";
 
 function TranscriptDetailEdit({
     panelId,
@@ -18,7 +18,7 @@ function TranscriptDetailEdit({
     initiatePolling
 }) {
     const [showDetails, setShowDetails] = useState(false);
-    const [wordCount, setWordCount] = useState(5000);
+    const [wordCount, setWordCount] = useState(2500);
     const [creativity, setCreativity] = useState(0.7);
     const [conversationStyle, setConversationStyle] = useState([
         "engaging",
@@ -94,18 +94,19 @@ function TranscriptDetailEdit({
                     </Form.Group>
                     <Form.Group controlId="wordCount" className="mb-4">
                         <Form.Label className="font-semibold">
-                            Requested Word Count (~1 min per 100 words):
+                            Requested length (up to around 5 min for short
+                            form):
                         </Form.Label>
                         <Form.Control
                             type="range"
-                            min={50}
-                            max={10000}
-                            step={50}
+                            min={100}
+                            max={4000}
+                            step={100}
                             value={wordCount}
                             onChange={(e) => setWordCount(e.target.value)}
                             className="w-full"
                         />
-                        <div>{`${wordCount} words`}</div>
+                        <div>{getWordCountDescription(wordCount, 4000)}</div>
                     </Form.Group>
                     <Form.Group controlId="creativity" className="mb-4">
                         <Form.Label className="font-semibold">
