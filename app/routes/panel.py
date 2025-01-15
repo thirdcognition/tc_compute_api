@@ -3,8 +3,13 @@ from pydantic import ValidationError
 from app.core.supabase import SupaClientDep, allow_anonymous_login, get_supabase_tokens
 from source.helpers.routes import handle_exception
 from source.api.panel.read import (
+    PanelDetailsResponse,
     get_panel,
+    get_panel_details,
+    get_panel_files,
+    get_panel_transcript_sources_w_id,
     list_panel_audios_w_id,
+    list_panel_transcript_audios_w_id,
     list_panel_transcripts_w_id,
     list_panels,
     get_panel_transcript,
@@ -45,16 +50,16 @@ async def api_fetch_news_links(
         raise handle_exception(e, "Failed to fetch news links")
 
 
-@router.get("/panel/{discussion_id}")
+@router.get("/panel/{panel_id}")
 async def api_get_panel(
-    discussion_id: str,
+    panel_id: str,
     supabase: SupaClientDep,
 ):
     try:
-        discussion = await get_panel(supabase, discussion_id)
-        return discussion
+        panel = await get_panel(supabase, panel_id)
+        return panel
     except Exception as e:
-        raise handle_exception(e, "Panel discussion not found", 404)
+        raise handle_exception(e, "Panel not found", 404)
 
 
 @router.get("/panel/discussions/")
@@ -62,8 +67,8 @@ async def api_list_panels(
     supabase: SupaClientDep,
 ):
     try:
-        discussions = await list_panels(supabase)
-        return discussions
+        panels = await list_panels(supabase)
+        return panels
     except Exception as e:
         raise handle_exception(e, "Internal Server Error")
 
@@ -90,20 +95,20 @@ async def api_list_panel_audios(
         raise handle_exception(e, "Internal Server Error")
 
 
-@router.put("/panel/{discussion_id}")
+@router.put("/panel/{panel_id}")
 async def api_update_panel(
-    discussion_id: str,
+    panel_id: str,
     request_data: PanelDiscussion,
     supabase: SupaClientDep,
 ):
     try:
-        request_data.id = discussion_id
-        discussion = await update_panel(supabase, request_data)
-        return discussion
+        request_data.id = panel_id
+        panel = await update_panel(supabase, request_data)
+        return panel
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise handle_exception(e, "Panel discussion not found", 404)
+        raise handle_exception(e, "Panel not found", 404)
 
 
 @router.get("/panel/transcript/{transcript_id}")
@@ -114,6 +119,30 @@ async def api_get_panel_transcript(
     try:
         transcript = await get_panel_transcript(supabase, transcript_id)
         return transcript
+    except Exception as e:
+        raise handle_exception(e, "Panel transcript not found", 404)
+
+
+@router.get("/panel/transcript/{transcript_id}/audios")
+async def api_get_panel_transcript_audios(
+    transcript_id: str,
+    supabase: SupaClientDep,
+):
+    try:
+        audios = await list_panel_transcript_audios_w_id(supabase, transcript_id)
+        return audios
+    except Exception as e:
+        raise handle_exception(e, "Panel transcript not found", 404)
+
+
+@router.get("/panel/transcript/{transcript_id}/sources")
+async def api_get_panel_transcript_sources(
+    transcript_id: str,
+    supabase: SupaClientDep,
+):
+    try:
+        sources = await get_panel_transcript_sources_w_id(supabase, transcript_id)
+        return sources
     except Exception as e:
         raise handle_exception(e, "Panel transcript not found", 404)
 
@@ -222,30 +251,7 @@ async def api_get_panel_files(
 ):
     try:
         # Fetch all transcript and audio records associated with the panel_id
-        transcript_records = await PanelTranscript.fetch_existing_from_supabase(
-            supabase, {"panel_id": panel_id}
-        )
-        audio_records = await PanelAudio.fetch_existing_from_supabase(
-            supabase, {"panel_id": panel_id}
-        )
-
-        # Generate file URLs using Supabase storage
-        transcript_urls = {
-            record.id: (
-                await supabase.storage.from_(record.bucket_id).get_public_url(
-                    record.file
-                )
-            ).rstrip("?")
-            for record in transcript_records
-        }
-        audio_urls = {
-            record.id: (
-                await supabase.storage.from_(record.bucket_id).get_public_url(
-                    record.file
-                )
-            ).rstrip("?")
-            for record in audio_records
-        }
+        transcript_urls, audio_urls = await get_panel_files(supabase, panel_id)
 
         return {"transcript_urls": transcript_urls, "audio_urls": audio_urls}
     except Exception as e:
@@ -261,9 +267,7 @@ async def api_list_panel_transcripts_w_id(
         transcripts = await list_panel_transcripts_w_id(supabase, panel_id)
         return transcripts
     except Exception as e:
-        raise handle_exception(
-            e, "Transcripts not found for the given discussion ID", 404
-        )
+        raise handle_exception(e, "Transcripts not found for the given panel ID", 404)
 
 
 @router.get("/panel/{panel_id}/audios")
@@ -275,12 +279,24 @@ async def api_list_panel_audios_w_id(
         audios = await list_panel_audios_w_id(supabase, panel_id)
         return audios
     except Exception as e:
-        raise handle_exception(e, "Audios not found for the given discussion ID", 404)
+        raise handle_exception(e, "Audios not found for the given panel ID", 404)
 
 
-# New endpoint for creating a public panel discussion
+@router.get("/panel/{panel_id}/details")
+async def api_get_panel_details(
+    panel_id: str,
+    supabase: SupaClientDep,
+) -> PanelDetailsResponse:
+    try:
+        panel = await get_panel_details(supabase, panel_id)
+        return panel
+    except Exception as e:
+        raise handle_exception(e, "Panel not found", 404)
+
+
+# New endpoint for creating a public panelpanel
 @router.post("/panel/discussion")
-async def api_create_panel_discussion(
+async def api_create_panel_panel(
     request_data: PanelRequestData,
     supabase: SupaClientDep,
 ):
@@ -290,7 +306,7 @@ async def api_create_panel_discussion(
     except ValidationError as ve:
         raise HTTPException(status_code=422, detail=str(ve))
     except Exception as e:
-        raise handle_exception(e, "Failed to create panel discussion", 500)
+        raise handle_exception(e, "Failed to create panel panel", 500)
 
 
 @router.post("/panel/generate_transcripts")

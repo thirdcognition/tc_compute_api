@@ -14,6 +14,7 @@ const PanelDetailDisplay = ({ panel }) => {
     const links = panel.links || [];
     const metadata = panel.metadata || {};
     const googleNewsConfigs = metadata.google_news || [];
+    const yleNewsConfigs = metadata.yle_news || [];
 
     return (
         <div className="panel-detail-display border p-3 mb-4 rounded">
@@ -110,6 +111,21 @@ const PanelDetailDisplay = ({ panel }) => {
                                     {config.since && (
                                         <p>Since: {config.since}</p>
                                     )}
+                                    {config.articles && (
+                                        <p>Articles: {config.articles}</p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {yleNewsConfigs.length > 0 && (
+                        <div>
+                            <strong className="font-semibold">
+                                Yle News Configurations:
+                            </strong>
+                            {yleNewsConfigs.map((config, index) => (
+                                <div key={index} className="ml-4 mb-2">
+                                    {config.type && <p>Type: {config.type}</p>}
                                     {config.articles && (
                                         <p>Articles: {config.articles}</p>
                                     )}

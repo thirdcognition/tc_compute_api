@@ -5,6 +5,32 @@ interface FetchOptions extends RequestInit {
     headers?: HeadersInit;
 }
 
+const cache = {};
+
+function memoize(fn: Function, ttl = 5000) {
+    const promiseCache: { [key: string]: Promise<any> } = {};
+    return async function (...args: any[]) {
+        const key = JSON.stringify(args);
+        if (cache.hasOwnProperty(key)) {
+            const { result, expiry } = cache[key];
+            if (Date.now() < expiry) {
+                return result;
+            }
+            delete cache[key];
+        }
+        if (promiseCache.hasOwnProperty(key)) {
+            return promiseCache[key];
+        }
+        const expiry = Date.now() + ttl;
+        const promise = fn(...args);
+        promiseCache[key] = promise;
+        const result = await promise;
+        delete promiseCache[key];
+        cache[key] = { result, expiry };
+        return result;
+    };
+}
+
 export async function fetchData(
     endpoint: string,
     options: FetchOptions = {}
@@ -30,8 +56,20 @@ export async function fetchData(
     return response.json();
 }
 
+const memoizedFetchData = memoize(fetchData);
+
+export function fetchDataWithMemoization(
+    endpoint: string,
+    options: FetchOptions = {}
+): Promise<any> {
+    if (options.method && options.method.toUpperCase() !== "GET") {
+        return fetchData(endpoint, options);
+    }
+    return memoizedFetchData(endpoint, options);
+}
+
 export async function fetchPublicPanels(): Promise<any[]> {
-    const panels = await fetchData("/panel/discussions/");
+    const panels = await fetchDataWithMemoization("/panel/discussions/");
     return Array.isArray(panels) ? panels : [];
 }
 
@@ -39,7 +77,7 @@ export async function fetchPanelFiles(panelId: string): Promise<{
     updatedTranscriptUrls: Record<string, string>;
     updatedAudioUrls: Record<string, string>;
 }> {
-    const data = await fetchData(`/panel/${panelId}/files`);
+    const data = await fetchDataWithMemoization(`/panel/${panelId}/files`);
 
     const updatedTranscriptUrls = urlFormatter(data.transcript_urls);
     const updatedAudioUrls = urlFormatter(data.audio_urls);
@@ -47,11 +85,11 @@ export async function fetchPanelFiles(panelId: string): Promise<{
 }
 
 export async function fetchPanelAudios(panelId: string): Promise<any> {
-    return fetchData(`/panel/${panelId}/audios`);
+    return fetchDataWithMemoization(`/panel/${panelId}/audios`);
 }
 
 export async function fetchPanelTranscripts(panelId: string): Promise<any> {
-    return fetchData(`/panel/${panelId}/transcripts`);
+    return fetchDataWithMemoization(`/panel/${panelId}/transcripts`);
 }
 
 export async function fetchTranscriptContent(
@@ -98,22 +136,30 @@ export async function updateTranscript(
     return response.json();
 }
 
-export async function refreshPanelData(panelId: string): Promise<{
+export async function fetchPanelDetails(panelId: string): Promise<{
     discussionData: any;
     transcriptData: any;
+    transcriptSources: any;
     audioData: any;
-    filesData: any;
+    filesData: {
+        transcript_urls: Record<string, string>;
+        audio_urls: Record<string, string>;
+    };
 }> {
     try {
-        const [discussionData, transcriptData, audioData, filesData] =
-            await Promise.all([
-                fetchData(`/panel/${panelId}`),
-                fetchData(`/panel/${panelId}/transcripts`),
-                fetchData(`/panel/${panelId}/audios`),
-                fetchData(`/panel/${panelId}/files`)
-            ]);
-
-        return { discussionData, transcriptData, audioData, filesData };
+        const panelDetails = await fetchDataWithMemoization(
+            `/panel/${panelId}/details`
+        );
+        return {
+            discussionData: panelDetails.panel,
+            transcriptData: panelDetails.transcripts,
+            transcriptSources: panelDetails.transcript_sources,
+            audioData: panelDetails.audios,
+            filesData: {
+                transcript_urls: urlFormatter(panelDetails.transcript_urls),
+                audio_urls: urlFormatter(panelDetails.audio_urls)
+            }
+        };
     } catch (error) {
         console.error("Error refreshing panel data:", error);
         throw error;

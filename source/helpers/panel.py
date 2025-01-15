@@ -165,14 +165,14 @@ def create_panel_transcript(
     # logger.debug(f"{google_news_configs=}")
 
     article_contents = []
+    article_news_items = []
+
     for config in google_news_configs:
         # if isinstance(
         #     config, GoogleNewsConfig
         # ):  # Ensure config is a GoogleNewsConfig instance
         for page, content in fetch_google_news_links(config):
             article_contents.append(content)
-            # logger.debug(f"{page=}")
-            # logger.debug(f"\n\nArticle: {page=}\n\n{content}\n\n\n")
 
     # Fetch news links from YleNewsConfig instances
     yle_news_configs_json = metadata.get("yle_news", []) + (request_data.yle_news or [])
@@ -192,6 +192,7 @@ def create_panel_transcript(
             supabase_client, config, user_ids=user_ids
         ):
             article_contents.append(news_item.original_content)
+            article_news_items.append(news_item)
             # print(f"{page=}")
 
     combined_sources = set()
@@ -284,6 +285,11 @@ def create_panel_transcript(
         organization_id=request_data.organization_id,
     )
     panel_transcript.create_sync(supabase=supabase_client)
+
+    for news_item in article_news_items:
+        news_item.create_panel_transcript_source_reference_sync(
+            supabase_client, panel_transcript
+        )
 
     bucket_transcript_file: str = (
         f"panel_{request_data.panel_id}_{panel_transcript.id}_transcript.txt"
@@ -509,18 +515,6 @@ def generate_transcripts_task(
 
         if latest_transcript is None:
             latest_transcript = transcript
-
-        # transcripts_wo_parent: list[PanelTranscript] = [
-        #     transcript
-        #     for transcript in transcripts_by_panel.get(panel_id, [None])
-        #     if transcript.generation_parent is None
-        # ]
-
-        # transcripts_with_parent: list[PanelTranscript] = [
-        #     transcript
-        #     for transcript in transcripts_by_panel.get(panel_id, [None])
-        #     if transcript.generation_parent is not None
-        # ]
 
         if latest_transcript:
             now_aware = datetime.datetime.now(datetime.timezone.utc)

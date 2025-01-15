@@ -40,7 +40,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
             setIsSubmitting(true);
 
             const comment: Comment = {
-                id: Math.random().toString(36).substr(2, 9),
+                id: Math.random().toString(36).substring(2, 9),
                 text: newComment.trim(),
                 timestamp: Date.now()
             };
@@ -57,7 +57,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
             trackEvent(
                 "comment_submit",
                 "Engagement",
-                `Comment Length: ${newComment.trim().length}`,
+                `Comment: ${newComment.trim()}`,
                 userId,
                 sessionRef
             );
@@ -83,9 +83,12 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
     return (
         <div className="w-full max-w-2xl bg-blue-50 dark:bg-gray-800 rounded-lg shadow-xl p-6 overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
-                Comments ({comments.length})
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                Feedback
             </h3>
+            <small className="text-gray-700 dark:text-gray-300 mt-2 mb-4 block">
+                Feedback is only visible for you.
+            </small>
 
             {/* Comment Input */}
             <form onSubmit={handleCommentSubmit} className="mb-6">
@@ -94,7 +97,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                         type="text"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
+                        placeholder="Send feedback..."
                         className="flex-1 px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
                         maxLength={500}
                     />

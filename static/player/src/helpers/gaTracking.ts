@@ -45,7 +45,7 @@ const updateHeartbeat = (session: Session): void => {
 export const getUserId = () => {
     let userId = localStorage.getItem("userId");
     if (!userId) {
-        userId = Math.random().toString(36).substr(2, 9);
+        userId = Math.random().toString(36).substring(2, 9);
         localStorage.setItem("userId", userId);
     }
     return userId;
@@ -59,11 +59,12 @@ export const trackEvent = (
     sessionRef: React.RefObject<Session | null>
 ) => {
     if (DEBUG_MODE) {
-        console.group("GA4 Event Tracking");
+        console.group("GA4 Event Tracking", GA_MEASUREMENT_ID);
         console.log("Event Name:", eventName);
         console.log("Category:", category);
         console.log("Label:", label);
         console.log("User ID:", userId.current);
+        console.log("Session_id", sessionRef.current?.id);
         console.groupEnd();
     }
 
@@ -78,15 +79,17 @@ export const trackEvent = (
         debug_mode: DEBUG_MODE
     });
 
-    if (!ReactGA.ga()) {
+    if (!ReactGA.ga(() => {})) {
         console.error("GA4 not initialized properly");
         return;
     }
 };
 
+let initialized = false;
+
 export const initializeAnalytics = (
-    sessionRef: React.MutableRefObject<Session | null>,
-    userId: React.MutableRefObject<string>
+    sessionRef: React.RefObject<Session | null>,
+    userId: React.RefObject<string>
 ) => {
     const sessionId = Math.random().toString(36).substring(2);
     const timestamp = Date.now();
@@ -100,13 +103,15 @@ export const initializeAnalytics = (
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 
     // Initialize GA if not already initialized
-    if (!ReactGA.ga()) {
+    if (!initialized || !ReactGA.ga(() => {})) {
+        console.log("Initialize GA", GA_MEASUREMENT_ID);
         ReactGA.initialize(GA_MEASUREMENT_ID, {
             gtagOptions: {
                 debug_mode: DEBUG_MODE,
                 send_page_view: true
             }
         });
+        initialized = true;
     } else {
         console.log("GA already initialized");
         const existingSession = cleanupOldSessions();

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, ChangeEvent } from "react";
 import { useParams } from "react-router-dom";
-import { refreshPanelData } from "../helpers/fetch.ts";
+import { fetchPanelDetails } from "../helpers/fetch.ts";
 import { urlFormatter } from "../helpers/url.ts";
 import CommentsSection from "./CommentsSection.tsx";
 import { Player } from "./Player.tsx";
@@ -13,10 +13,12 @@ interface PanelProps {
 
 const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
     const { panelId } = useParams<{ panelId?: string }>();
+    const [transcriptId, setTranscriptId] = useState<string | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [audioOptions, setAudioOptions] = useState<
-        { url: string; date: string }[]
+        { url: string; date: string; transcript_id: string }[]
     >([]);
+    const [transcriptSources, setTranscriptSources] = useState([]);
 
     useEffect(() => {
         if (!panelId) {
@@ -31,19 +33,29 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
             }
 
             try {
-                const { audioData, filesData } =
-                    await refreshPanelData(panelId);
+                const {
+                    discussionData,
+                    transcriptData,
+                    transcriptSources,
+                    audioData,
+                    filesData
+                } = await fetchPanelDetails(panelId);
+                setTranscriptSources(transcriptSources); // Set transcript sources
                 if (audioData && filesData && filesData.audio_urls) {
                     const formattedAudioUrls = urlFormatter(
                         filesData.audio_urls
                     );
                     const audioEntries = audioData.map((audio) => ({
+                        transcript_id: audio.transcript_id,
                         url: formattedAudioUrls[audio.id],
                         date: new Date(audio.created_at).toLocaleDateString()
                     }));
                     setAudioOptions(audioEntries);
                     if (audioEntries.length > 0) {
                         setAudioUrl(audioEntries[audioEntries.length - 1].url); // Default to the latest
+                        setTranscriptId(
+                            audioEntries[audioEntries.length - 1].transcript_id
+                        );
                     }
                 }
             } catch (error) {
@@ -66,12 +78,15 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                                 (option) => option.url === audioUrl
                             )?.date || ""
                         }
+                        transcriptSources={
+                            transcriptId && transcriptSources[transcriptId]
+                        } // Pass sources as a prop
                     />
-                    <CommentsSection
+                    {/* <CommentsSection
                         userId={userId}
                         sessionRef={sessionRef}
                         audioUrl={audioUrl}
-                    />
+                    /> */}
                     <div className="mt-4 bg-blue-50 dark:bg-gray-800 rounded-lg shadow-xl p-4">
                         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                             Episodes
@@ -88,7 +103,12 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                                                 ? "bg-blue-100 dark:bg-gray-700"
                                                 : "bg-white dark:bg-gray-800"
                                         }`}
-                                        onClick={() => setAudioUrl(option.url)}
+                                        onClick={() => {
+                                            setAudioUrl(option.url);
+                                            setTranscriptId(
+                                                option.transcript_id
+                                            );
+                                        }}
                                     >
                                         <span
                                             className={`text-sm font-medium text-center block ${

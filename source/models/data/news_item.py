@@ -6,6 +6,7 @@ from supabase.client import AsyncClient, Client
 from source.models.supabase.sources import SourceModel, SourceRelationshipModel
 from pydantic import BaseModel, HttpUrl, Field
 from datetime import datetime
+from source.models.supabase.panel import PanelTranscript, PanelTranscriptSourceReference
 
 
 class NewsItem(BaseModel):
@@ -98,7 +99,10 @@ class NewsItem(BaseModel):
             supabase, value=str(self.original_source), id_column="original_source"
         )
         if result:
+            # print(f"{result.id=}, {result.original_source}")
             self._populate_news_item(result)
+        # else:
+        #     print(f"No result: {self.original_source=}")
 
     async def check_if_exists(self, supabase: AsyncClient) -> bool:
         return await SourceModel.exists_in_supabase(
@@ -205,3 +209,35 @@ class NewsItem(BaseModel):
         )
         if result:
             self._populate_news_item(result)
+
+    def _create_panel_transcript_source_reference(self, transcript: PanelTranscript):
+        # pretty_print(self, "news_item", True, print)
+        return PanelTranscriptSourceReference(
+            transcript_id=transcript.id,
+            source_id=self.source_id,
+            type="news_item",
+            data={
+                "title": self.title,
+                "image": str(self.image) if self.image else None,
+                "publish_date": (
+                    self.publish_date.isoformat() if self.publish_date else None
+                ),
+                "url": self.resolved_source,
+                "lang": self.lang,
+            },
+            is_public=True,
+            owner_id=self.owner_id,
+            organization_id=self.organization_id,
+        )
+
+    async def create_panel_transcript_source_reference(
+        self, supabase: AsyncClient, transcript: PanelTranscript
+    ) -> PanelTranscriptSourceReference:
+        reference = self._create_panel_transcript_source_reference(transcript)
+        return await reference.create(supabase)
+
+    def create_panel_transcript_source_reference_sync(
+        self, supabase: Client, transcript: PanelTranscript
+    ) -> PanelTranscriptSourceReference:
+        reference = self._create_panel_transcript_source_reference(transcript)
+        return reference.create_sync(supabase)

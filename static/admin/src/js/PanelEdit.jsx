@@ -8,7 +8,7 @@ import TranscriptDetailDisplay from "./TranscriptDetailDisplay.jsx";
 import AudioDetailEdit from "./AudioDetailEdit.jsx";
 import { urlFormatter } from "./helpers/url.js";
 import { pollTaskStatus } from "./helpers/pollState.js";
-import { refreshPanelData } from "./helpers/fetch.js";
+import { fetchPanelDetails } from "./helpers/fetch.js";
 
 import { getStatusBarStyle, getStatusSymbol } from "./helpers/ui.js";
 
@@ -41,8 +41,13 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
 
     const handleRefreshPanelData = async (panelId) => {
         try {
-            const { discussionData, transcriptData, audioData, filesData } =
-                await refreshPanelData(panelId);
+            const {
+                discussionData,
+                transcriptData,
+                audioData,
+                filesData,
+                sourceData
+            } = await fetchPanelDetails(panelId);
             setDiscussionData(discussionData);
             if (transcriptData.length > 0) {
                 setTranscriptData(transcriptData);

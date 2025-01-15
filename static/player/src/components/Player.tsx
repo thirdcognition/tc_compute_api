@@ -3,7 +3,8 @@ import {
     BsFillPlayFill,
     BsPauseFill,
     BsMoonFill,
-    BsSunFill
+    BsSunFill,
+    BsFillInfoCircleFill // New icon for Sources button
 } from "react-icons/bs";
 import { FiRotateCcw, FiRotateCw } from "react-icons/fi";
 import { TbClearAll } from "react-icons/tb";
@@ -16,22 +17,71 @@ interface PlayerProps {
     sessionRef: React.RefObject<Session | null>;
     audioSrc: string;
     audioDate: string; // New prop for audio date
+    transcriptSources: Array<{
+        id: string;
+        data: {
+            url: string;
+            title: string;
+            publish_date: string;
+            image: string;
+        };
+    }>; // New prop for sources
 }
+
+const SourcesPopup: React.FC<{
+    transcriptSources: PlayerProps["transcriptSources"];
+}> = ({ transcriptSources }) => {
+    const sources = Array.isArray(transcriptSources) ? transcriptSources : []; // Ensure sources is an array
+
+    return (
+        <div className="absolute z-10  bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-96 divide-y divide-dashed">
+            {sources.map((source) => (
+                <div key={source.id} className="p-4 flex items-start">
+                    <img
+                        src={source.data.image}
+                        alt={source.data.title}
+                        className="h-12 mt-2 mr-4 border rounded"
+                    />
+                    <h6 className="text-left">
+                        {source.data.url ? (
+                            <a
+                                href={source.data.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {source.data.title}
+                            </a>
+                        ) : (
+                            source.data.title
+                        )}
+                    </h6>
+                    {/* <p>{new Date(source.data.publish_date).toLocaleString()}</p> */}
+                </div>
+            ))}
+        </div>
+    );
+};
 
 const Player: React.FC<PlayerProps> = ({
     userId,
     sessionRef,
     audioSrc,
-    audioDate
+    audioDate,
+    transcriptSources
 }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [isDark, setIsDark] = useState(false);
+    const [isDark, setIsDark] = useState(() => {
+        const savedTheme = localStorage.getItem("theme");
+        return savedTheme ? JSON.parse(savedTheme) : false;
+    });
     const audioRef = useRef<HTMLAudioElement>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
     const [showSpeedPopup, setShowSpeedPopup] = useState(false);
+    const [showSourcesPopup, setShowSourcesPopup] = useState(false);
     const speedPopupRef = useRef<HTMLDivElement>(null);
+    const sourcesPopupRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isDark) {
@@ -143,6 +193,7 @@ const Player: React.FC<PlayerProps> = ({
     const toggleTheme = () => {
         const newTheme = !isDark;
         setIsDark(newTheme);
+        localStorage.setItem("theme", JSON.stringify(newTheme));
         trackEvent(
             "theme_toggle",
             "UI",
@@ -165,6 +216,12 @@ const Player: React.FC<PlayerProps> = ({
                 !speedPopupRef.current.contains(event.target as Node)
             ) {
                 setShowSpeedPopup(false);
+            }
+            if (
+                sourcesPopupRef.current &&
+                !sourcesPopupRef.current.contains(event.target as Node)
+            ) {
+                setShowSourcesPopup(false);
             }
         }
 
@@ -198,6 +255,19 @@ const Player: React.FC<PlayerProps> = ({
                     )}
                 </div>
                 <div className="flex space-x-2">
+                    <button
+                        onClick={() => setShowSourcesPopup(!showSourcesPopup)}
+                        className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400   transition-colors duration-200"
+                        title="Show sources"
+                    >
+                        <BsFillInfoCircleFill className="w-5 h-5" />
+                        {showSourcesPopup && (
+                            <SourcesPopup
+                                transcriptSources={transcriptSources}
+                            />
+                        )}
+                    </button>
+
                     <button
                         onClick={clearUserData}
                         className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200"

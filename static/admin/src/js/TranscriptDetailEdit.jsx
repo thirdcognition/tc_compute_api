@@ -9,6 +9,7 @@ import {
     engagementTechniquesOptions,
     outputLanguageOptions
 } from "./options.js";
+import { formatUpdateCycle } from "./helpers/ui.js";
 
 function TranscriptDetailEdit({
     panelId,
@@ -17,8 +18,8 @@ function TranscriptDetailEdit({
     initiatePolling
 }) {
     const [showDetails, setShowDetails] = useState(false);
-    const [wordCount, setWordCount] = useState(200);
-    const [creativity, setCreativity] = useState(1);
+    const [wordCount, setWordCount] = useState(5000);
+    const [creativity, setCreativity] = useState(0.7);
     const [conversationStyle, setConversationStyle] = useState([
         "engaging",
         "fast-paced",
@@ -41,13 +42,6 @@ function TranscriptDetailEdit({
     const [outputLanguage, setOutputLanguage] = useState("English");
     const [updateCycle, setUpdateCycle] = useState(0); // Default to 0 if not defined
     const [longForm, setLongForm] = useState(false);
-
-    const formatUpdateCycle = (seconds) => {
-        if (seconds === 0) return "Not set";
-        const days = Math.floor(seconds / (24 * 3600));
-        const hours = (seconds % (24 * 3600)) / 3600;
-        return `${days}d ${hours}h`;
-    };
 
     const handleTranscriptSubmit = async (e) => {
         e.preventDefault();

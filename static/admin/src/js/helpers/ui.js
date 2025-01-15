@@ -44,3 +44,10 @@ export const getStatusSymbol = (taskStatus) => {
             return "";
     }
 };
+
+export const formatUpdateCycle = (seconds) => {
+    if (seconds === 0) return "Not set";
+    const days = Math.floor(seconds / (24 * 3600));
+    const hours = (seconds % (24 * 3600)) / 3600;
+    return `${days}d ${hours}h`;
+};

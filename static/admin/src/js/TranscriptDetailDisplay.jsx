@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import AudioDetailDisplay from "./AudioDetailDisplay.jsx";
 import {
-    fetchPanelFiles,
-    fetchPanelAudios,
+    fetchPanelDetails,
     fetchTranscriptContent,
     updateTranscript
 } from "./helpers/fetch.js";
-import { processStateIcon } from "./helpers/ui.js";
+import { processStateIcon, formatUpdateCycle } from "./helpers/ui.js";
 
 const TranscriptDetailDisplay = ({ transcript }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -20,22 +19,18 @@ const TranscriptDetailDisplay = ({ transcript }) => {
     const [audios, setAudios] = useState([]);
     const [transcriptUrls, setTranscriptUrls] = useState({});
     const [audioUrls, setAudioUrls] = useState({});
+    const [transcriptSources, setTranscriptSources] = useState([]);
+    const [isSourcesVisible, setIsSourcesVisible] = useState(false);
 
     useEffect(() => {
-        fetchPanelFiles(transcript.panel_id)
-            .then(({ updatedTranscriptUrls, updatedAudioUrls }) => {
-                setTranscriptUrls(updatedTranscriptUrls);
-                setAudioUrls(updatedAudioUrls);
-            })
-            .catch((error) =>
-                console.error("Error fetching panel details:", error)
+        fetchPanelDetails(transcript.panel_id).then((response) => {
+            setTranscriptUrls(response.filesData.transcript_urls);
+            setAudioUrls(response.filesData.audio_urls);
+            setAudios(response.audioData);
+            setTranscriptSources(
+                response.transcriptSources[transcript.id] || []
             );
-
-        fetchPanelAudios(transcript.panel_id)
-            .then((data) => {
-                setAudios(data);
-            })
-            .catch((error) => console.error("Error fetching audios:", error));
+        });
     }, [transcript.panel_id]);
 
     const toggleTranscriptVisibility = (transcriptId) => {
@@ -68,6 +63,38 @@ const TranscriptDetailDisplay = ({ transcript }) => {
         ));
     };
 
+    const renderSources = () => {
+        return transcriptSources.map((source) => (
+            <div key={source.id} className="mb-4 p-2 border rounded">
+                <h6 className="font-bold">
+                    {source.data.url ? (
+                        <a
+                            href={source.data.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            {source.data.title}
+                        </a>
+                    ) : (
+                        source.data.title
+                    )}
+                </h6>
+                <p>{new Date(source.data.publish_date).toLocaleString()}</p>
+                {source.data.image && (
+                    <img
+                        src={source.data.image}
+                        alt={source.data.title}
+                        className="w-full h-auto"
+                    />
+                )}
+            </div>
+        ));
+    };
+
+    const toggleSourcesVisibility = () => {
+        setIsSourcesVisible(!isSourcesVisible);
+    };
+
     const handleUpdateTranscript = async (newUpdateCycle) => {
         try {
             const updatedTranscript = await updateTranscript(
@@ -79,13 +106,6 @@ const TranscriptDetailDisplay = ({ transcript }) => {
         } catch (error) {
             console.error("Error updating transcript:", error);
         }
-    };
-
-    const formatUpdateCycle = (seconds) => {
-        if (seconds === 0) return "Not set";
-        const days = Math.floor(seconds / (24 * 3600));
-        const hours = (seconds % (24 * 3600)) / 3600;
-        return `${days}d ${hours}h`;
     };
 
     return (
@@ -213,6 +233,20 @@ const TranscriptDetailDisplay = ({ transcript }) => {
             {isTranscriptVisible && (
                 <div className="mt-4">
                     {renderTranscript(transcriptContent)}
+                </div>
+            )}
+            <button
+                onClick={toggleSourcesVisibility}
+                className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
+            >
+                <span className="mr-2">{isSourcesVisible ? "▼" : "▶"}</span>
+                <span>
+                    {isSourcesVisible ? "Hide Sources" : "View Sources"}
+                </span>
+            </button>
+            {isSourcesVisible && (
+                <div className="mt-4 border p-3 mb-4 rounded">
+                    {renderSources()}
                 </div>
             )}
             {audios &&
