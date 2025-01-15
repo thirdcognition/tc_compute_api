@@ -83,11 +83,13 @@ class NewsItem(BaseModel):
 
     async def create_and_save_source(self, supabase: AsyncClient):
         source_model = self._populate_source_model()
-        await source_model.create(supabase)
+        result = await source_model.create(supabase)
+        self._populate_news_item(result)
 
     def create_and_save_source_sync(self, supabase: Client):
         source_model = self._populate_source_model()
-        source_model.create_sync(supabase)
+        result = source_model.create_sync(supabase)
+        self._populate_news_item(result)
 
     def check_if_exists_sync(self, supabase: Client) -> bool:
         return SourceModel.exists_in_supabase_sync(
@@ -99,10 +101,10 @@ class NewsItem(BaseModel):
             supabase, value=str(self.original_source), id_column="original_source"
         )
         if result:
-            # print(f"{result.id=}, {result.original_source}")
+            print(f"{result.id=}, {result.original_source}")
             self._populate_news_item(result)
-        # else:
-        #     print(f"No result: {self.original_source=}")
+        else:
+            print(f"No result: {self.original_source=}")
 
     async def check_if_exists(self, supabase: AsyncClient) -> bool:
         return await SourceModel.exists_in_supabase(
@@ -233,11 +235,21 @@ class NewsItem(BaseModel):
     async def create_panel_transcript_source_reference(
         self, supabase: AsyncClient, transcript: PanelTranscript
     ) -> PanelTranscriptSourceReference:
-        reference = self._create_panel_transcript_source_reference(transcript)
-        return await reference.create(supabase)
+        if self.source_id is not None:
+            reference = self._create_panel_transcript_source_reference(transcript)
+            return await reference.create(supabase)
+        else:
+            print(
+                f"No source id set for {self.original_source}, skipping reference creation"
+            )
 
     def create_panel_transcript_source_reference_sync(
         self, supabase: Client, transcript: PanelTranscript
     ) -> PanelTranscriptSourceReference:
-        reference = self._create_panel_transcript_source_reference(transcript)
-        return reference.create_sync(supabase)
+        if self.source_id is not None:
+            reference = self._create_panel_transcript_source_reference(transcript)
+            return reference.create_sync(supabase)
+        else:
+            print(
+                f"No source id set for {self.original_source}, skipping reference creation"
+            )
