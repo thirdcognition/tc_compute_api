@@ -30,13 +30,19 @@ def send_email_about_new_shows(panels: List[str]):
         # Logic to send email
         # email = "markus@thirdcognition.com"
         # if email == "markus@thirdcognition.com":
-        send_new_shows_email_task.delay(email, panels)
+        if email is not None:
+            send_new_shows_email_task.delay(email, panels)
 
 
 @celery_app.task
 def send_new_shows_email_task(email: str, panels: List[str]):
-    # print(f"Send email to {email=}")
     # return
+
+    if email is None or len(panels) == 0:
+        print("No email defined or length of panels is 0, skipping email sending")
+        return
+
+    print(f"Send email to {email=} for {panels=}")
 
     api_key = SETTINGS.resend_api_key
     url = "https://api.resend.com/emails"

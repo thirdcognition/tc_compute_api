@@ -597,9 +597,9 @@ def generate_transcripts_task(
                     create_panel_audio(tokens, new_transcript_data)
                 else:
                     create_panel_audio(tokens, new_transcript_data, supabase_client)
-                new_transcripts_generated = (
-                    True  # Set flag to true if a new transcript is generated
-                )
+                new_transcripts_generated = True
+                # Set flag to true if a new transcript is generated
+
             else:
                 time_since_creation_str = str(time_since_creation).split(".")[
                     0
