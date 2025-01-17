@@ -103,24 +103,28 @@ export const handleCreateTranscript = async (params) => {
 
 export const handleCreateAudio = async (params) => {
     try {
+        const textToSpeechConfig = {
+            elevenlabs: {
+                default_voices: {
+                    question: params.defaultVoiceQuestion,
+                    answer: params.defaultVoiceAnswer
+                },
+                model: "eleven_multilingual_v2"
+            },
+            gemini: {
+                default_voices: {
+                    question: params.defaultVoiceQuestion,
+                    answer: params.defaultVoiceAnswer
+                }
+            }
+        };
+
         const taskId = await createAudio({
             title: params.title,
             tts_model: params.ttsModel,
             conversation_config: {
                 text_to_speech: {
-                    elevenlabs: {
-                        default_voices: {
-                            question: params.defaultVoiceQuestion,
-                            answer: params.defaultVoiceAnswer
-                        },
-                        model: "eleven_multilingual_v2"
-                    },
-                    gemini: {
-                        default_voices: {
-                            question: params.defaultVoiceQuestion,
-                            answer: params.defaultVoiceAnswer
-                        }
-                    }
+                    [params.ttsModel]: textToSpeechConfig[params.ttsModel]
                 }
             },
             bucket_name: "public_panels",

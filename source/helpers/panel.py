@@ -298,9 +298,7 @@ def create_panel_transcript(
     panel_transcript.update_sync(supabase=supabase_client)
 
     try:
-        print(
-            f"Creating {longform=} transcript for {input_source=} with {conversation_config=}"
-        )
+        print(f"Creating {longform=} transcript with {conversation_config=}")
         transcript_file: str = generate_podcast(
             urls=(input_source if isinstance(input_source, list) else [input_source]),
             transcript_only=True,

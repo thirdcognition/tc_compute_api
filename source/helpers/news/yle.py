@@ -8,7 +8,8 @@ from supabase import Client
 # from source.helpers.shared import pretty_print
 from source.models.data.news_item import NewsItem
 from source.helpers.resolve_url import LinkResolver
-from source.models.config.logging import logger
+
+# from source.models.config.logging import logger
 from source.models.data.user import UserIDs
 
 
@@ -87,7 +88,7 @@ def fetch_yle_news_links(
                 resolved_links.append(item)
                 resolved_count += 1
             except Exception as e:
-                logger.info(f"Failed to resolve {item.original_source}: {e}")
+                print(f"Failed to resolve {item.original_source}: {e}")
                 raise e
 
     # Close the resolver
