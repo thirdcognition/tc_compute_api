@@ -25,13 +25,14 @@ def send_email_about_new_shows(panels: List[str]):
         .eq("organization_users.organization_id", SETTINGS.tc_org_id)
         .execute()
     )
-    for user in users.data:
-        email = user["email"]
-        # Logic to send email
-        # email = "markus@thirdcognition.com"
-        # if email == "markus@thirdcognition.com":
-        if email is not None:
-            send_new_shows_email_task.delay(email, panels)
+    # for user in users.data:
+    #     email = user["email"]
+    #     # Logic to send email
+    #     # email = "markus@thirdcognition.com"
+    #     # if email == "markus@thirdcognition.com":
+    email = ", ".join(user["email"] for user in users.data)
+    if email is not None:
+        send_new_shows_email_task.delay(email, panels)
 
 
 @celery_app.task
