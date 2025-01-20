@@ -14,11 +14,19 @@ from pydantic import BaseModel
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_client, get_sync_supabase_service_client
 from source.helpers.news.google import GoogleNewsConfig, fetch_google_news_links
+from source.helpers.news.yle import fetch_yle_news_links, YleNewsConfig
+from source.helpers.news.techcrunch import (
+    fetch_techcrunch_news_links,
+    TechCrunchNewsConfig,
+)
+from source.helpers.news.hackernews import (
+    fetch_hackernews_links,
+    HackerNewsConfig,
+)
 
 from source.llm_exec.panel_exec import verify_transcript_quality
 from source.models.data.news_item import NewsItem
 from source.models.config.logging import logger
-from source.helpers.news.yle import fetch_yle_news_links, YleNewsConfig
 from source.helpers.communication import send_email_about_new_shows_task
 from source.models.data.user import UserIDs
 from source.models.supabase.panel import (
@@ -56,6 +64,10 @@ class PanelRequestData(BaseModel):
     transcript_id: Optional[UUID] = None
     google_news: Optional[Union[GoogleNewsConfig, List[GoogleNewsConfig]]] = None
     yle_news: Optional[Union[YleNewsConfig, List[YleNewsConfig]]] = None
+    techcrunch_news: Optional[
+        Union[TechCrunchNewsConfig, List[TechCrunchNewsConfig]]
+    ] = None
+    hackernews: Optional[Union[HackerNewsConfig, List[HackerNewsConfig]]] = None
     update_cycle: Optional[int] = None
     owner_id: Optional[str] = None
     organization_id: Optional[str] = None
@@ -105,6 +117,12 @@ def create_panel(
 
     if request_data.yle_news:
         metadata["yle_news"] = request_data.yle_news
+
+    if request_data.techcrunch_news:
+        metadata["techcrunch_news"] = request_data.techcrunch_news
+
+    if request_data.hackernews:
+        metadata["hackernews"] = request_data.hackernews
 
     panel: PanelDiscussion = PanelDiscussion(
         title=request_data.title,
@@ -169,11 +187,15 @@ def create_panel_transcript(
     article_news_items = []
 
     for config in google_news_configs:
-        # if isinstance(
-        #     config, GoogleNewsConfig
-        # ):  # Ensure config is a GoogleNewsConfig instance
-        for page, content in fetch_google_news_links(config):
-            article_contents.append(content)
+        for news_item in fetch_google_news_links(
+            supabase_client, config, user_ids=user_ids
+        ):
+            article_contents.append(
+                news_item.formatted_content
+                if news_item.formatted_content is not None
+                else news_item.original_content
+            )
+            article_news_items.append(news_item)
 
     # Fetch news links from YleNewsConfig instances
     yle_news_configs_json = metadata.get("yle_news", []) + (request_data.yle_news or [])
@@ -192,9 +214,58 @@ def create_panel_transcript(
         for news_item in fetch_yle_news_links(
             supabase_client, config, user_ids=user_ids
         ):
-            article_contents.append(news_item.original_content)
+            article_contents.append(
+                news_item.formatted_content
+                if news_item.formatted_content is not None
+                else news_item.original_content
+            )
             article_news_items.append(news_item)
             # print(f"{page=}")
+
+    # Fetch news links from TechCrunchNewsConfig instances
+    techcrunch_news_configs_json = metadata.get("techcrunch_news", []) + (
+        request_data.techcrunch_news or []
+    )
+    if not isinstance(techcrunch_news_configs_json, list):
+        techcrunch_news_configs_json = [techcrunch_news_configs_json]
+
+    techcrunch_news_configs = [
+        TechCrunchNewsConfig.model_validate(config)
+        for config in techcrunch_news_configs_json
+    ]
+
+    for config in techcrunch_news_configs:
+        for news_item in fetch_techcrunch_news_links(
+            supabase_client, config, user_ids=user_ids
+        ):
+            article_contents.append(
+                news_item.formatted_content
+                if news_item.formatted_content is not None
+                else news_item.original_content
+            )
+            article_news_items.append(news_item)
+
+    # Fetch news links from HackerNewsConfig instances
+    hackernews_configs_json = metadata.get("hackernews", []) + (
+        request_data.hackernews or []
+    )
+    if not isinstance(hackernews_configs_json, list):
+        hackernews_configs_json = [hackernews_configs_json]
+
+    hackernews_configs = [
+        HackerNewsConfig.model_validate(config) for config in hackernews_configs_json
+    ]
+
+    for config in hackernews_configs:
+        for news_item in fetch_hackernews_links(
+            supabase_client, config, user_ids=user_ids
+        ):
+            article_contents.append(
+                news_item.formatted_content
+                if news_item.formatted_content is not None
+                else news_item.original_content
+            )
+            article_news_items.append(news_item)
 
     combined_sources = set()
     if request_data.input_source:
@@ -582,6 +653,8 @@ def generate_transcripts_task(
                     panel_id=panel_id,
                     google_news=metadata.get("google_news", None),
                     yle_news=metadata.get("yle_news", None),
+                    techcrunch_news=metadata.get("techcrunch_news", None),
+                    hackernews=metadata.get("hackernews", None),
                     owner_id=str(panel.owner_id),
                     organization_id=str(panel.organization_id),
                     transcript_parent_id=str(transcript_id),

@@ -4,6 +4,8 @@ SERVER_PORT=${SERVER_PORT:-8080}
 
 # Function to handle cleanup on script exit
 cleanup() {
+    kill -9 $(ps aux | grep spawn_main | awk '{print $2}')
+
     echo "Stopping Uvicorn..."
     kill "$UVICORN_PID"
 

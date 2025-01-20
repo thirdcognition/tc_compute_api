@@ -15,12 +15,17 @@ const PanelDetailDisplay = ({ panel }) => {
     const metadata = panel.metadata || {};
     const googleNewsConfigs = metadata.google_news || [];
     const yleNewsConfigs = metadata.yle_news || [];
+    const techCrunchNewsConfigs = metadata.techcrunch_news || [];
+    const inputText = panel.inputText || "";
 
     return (
         <div className="panel-detail-display border p-3 mb-4 rounded">
             {panel.title && <h2 className="font-bold mb-2">{panel.title}</h2>}
-            {panel.inputText && (
-                <p className="mb-2">Input Text: {panel.inputText}</p>
+            {inputText && (
+                <div className="border p-3 mb-4 rounded">
+                    <strong className="font-semibold">Input Text:</strong>
+                    <p className="mb-2">{inputText}</p>
+                </div>
             )}
             {links.length > 0 && (
                 <div>
@@ -111,6 +116,20 @@ const PanelDetailDisplay = ({ panel }) => {
                                     {config.since && (
                                         <p>Since: {config.since}</p>
                                     )}
+                                    {config.articles && (
+                                        <p>Articles: {config.articles}</p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {techCrunchNewsConfigs.length > 0 && (
+                        <div>
+                            <strong className="font-semibold">
+                                TechCrunch News Configurations:
+                            </strong>
+                            {techCrunchNewsConfigs.map((config, index) => (
+                                <div key={index} className="ml-4 mb-2">
                                     {config.articles && (
                                         <p>Articles: {config.articles}</p>
                                     )}

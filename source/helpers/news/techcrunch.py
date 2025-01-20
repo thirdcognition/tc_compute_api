@@ -1,42 +1,31 @@
 from typing import List, Tuple
 from pydantic import BaseModel
 from datetime import datetime
-from enum import Enum
 import feedparser
 from supabase import Client
 
-# from source.helpers.shared import pretty_print
 from source.models.data.news_item import NewsItem
 from source.helpers.resolve_url import LinkResolver
-
-# from source.models.config.logging import logger
 from source.models.data.user import UserIDs
 
 
-# Enum for feed types
-class YleFeedType(str, Enum):
-    MAJOR_HEADLINES = "majorHeadlines"
-    MOST_READ = "mostRead"
-
-
-class YleNewsConfig(BaseModel):
-    type: YleFeedType
+class TechCrunchNewsConfig(BaseModel):
     articles: int
 
 
-def fetch_yle_news_items(config: YleNewsConfig) -> List[NewsItem]:
-    # Construct the feed URL based on the feed type
-    feed_url = f"https://feeds.yle.fi/uutiset/v1/{config.type.value}/YLE_UUTISET.rss"
+def fetch_techcrunch_news_items(config: TechCrunchNewsConfig) -> List[NewsItem]:
+    # TechCrunch RSS feed URL
+    feed_url = "https://techcrunch.com/feed/"
 
     # Parse the RSS feed
     feed = feedparser.parse(feed_url)
 
     # Extract the required number of news items
     news_items = []
-    for entry in feed.entries:
+    for entry in feed.entries[: config.articles]:
         news_item = NewsItem(
             title=entry.title,
-            source="Yle",
+            source="TechCrunch",
             original_source=entry.link,
             description=entry.description,
             image=(entry.enclosures[0].href if entry.enclosures else None),
@@ -45,19 +34,23 @@ def fetch_yle_news_items(config: YleNewsConfig) -> List[NewsItem]:
                 if hasattr(entry, "published") and entry.published
                 else None
             ),
-            categories=[category.term for category in entry.tags],
-            lang="FI",
+            categories=(
+                [category.term for category in entry.tags]
+                if hasattr(entry, "tags")
+                else []
+            ),
+            lang="EN",
         )
         news_items.append(news_item)
 
     return news_items
 
 
-def fetch_yle_news_links(
-    supabase: Client, config: YleNewsConfig, user_ids: UserIDs = None
+def fetch_techcrunch_news_links(
+    supabase: Client, config: TechCrunchNewsConfig, user_ids: UserIDs = None
 ) -> List[Tuple[str, str]]:
     # Fetch news items using the existing function
-    news_items = fetch_yle_news_items(config)
+    news_items = fetch_techcrunch_news_items(config)
 
     # Initialize the LinkResolver
     resolver = LinkResolver(reformat_text=True)
@@ -77,7 +70,6 @@ def fetch_yle_news_links(
         else:
             try:
                 print(f"Create new item for {str(item.original_source)=}")
-                # pretty_print(item, "News_item", True, print)
                 resolved_url, content, formatted_content = resolver.resolve_url(
                     str(item.original_source)
                 )

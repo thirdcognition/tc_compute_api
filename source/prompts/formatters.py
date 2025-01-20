@@ -14,7 +14,8 @@ text_formatter_simple = PromptFormatter(
         Act as a document formatter.
         {MAINTAIN_CONTENT_AND_USER_LANGUAGE}
         Rewrite the text specified by the user defined in context in full detail.
-        Remove all mentions of confidentiality. Use only information from the available in the context.
+        Remove any mentions about cookies, privacy policies, adverticement policies, etc.
+        Use only information from the available in the context.
         """
     ),
     user=textwrap.dedent(
@@ -37,7 +38,8 @@ text_formatter = PromptFormatter(
         {KEEP_PRE_THINK_TOGETHER}
         Rewrite the text specified by the user defined in context in full detail.
         If available use previous and next page to improve the context.
-        Remove all mentions of confidentiality. Use only information from the available in the context.
+        Remove any mentions about cookies, privacy policies, adverticement policies, etc.
+        Use only information from the available in the context.
         """
     ),
     user=textwrap.dedent(
@@ -69,7 +71,7 @@ text_formatter_compress = PromptFormatter(
         context start and context end in retaining details using natural language.
         Don't return the context text as it is, process it to shorter form.
         The context is a part of a longer document. Don't use html tags or markdown.
-        Remove all mentions of confidentiality.
+        Remove any mentions about cookies, privacy policies, adverticement policies, etc.
         Use only information from the available in the text.
         If available follow the instructions but don't repeat them in the result.
         """

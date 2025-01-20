@@ -1,13 +1,15 @@
 from typing import Tuple
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
+from source.llm_exec.news_exec import rewrite_text
 from source.models.config.logging import logger
 
 
 class LinkResolver:
-    def __init__(self):
+    def __init__(self, reformat_text=False):
         self.playwright = sync_playwright().start()
         self.browser = self.playwright.chromium.launch()
+        self.reformat_text = reformat_text
 
         self.consent_accept_selectors = {
             "onetrust-cookiepro": "#onetrust-accept-btn-handler",
@@ -33,7 +35,15 @@ class LinkResolver:
         page = self.browser.new_page()  # Use the incognito context to create a new page
         page.goto(url)
 
-        # Check for chrome-error URLs
+        # Check for Cloudflare challenge
+        if "cloudflare" in page.content().lower():
+            logger.info("Cloudflare challenge detected, attempting to bypass.")
+            page.wait_for_timeout(
+                5000
+            )  # Wait for 5 seconds to let Cloudflare challenge pass
+            page.reload()
+            page.wait_for_load_state("networkidle")
+
         max_tries = 5
         tries = 0
         original_url = url
@@ -83,10 +93,14 @@ class LinkResolver:
             for meta in soup.find_all("meta")
         }
 
+        if self.reformat_text:
+            formatted_text = rewrite_text(text)
+
         # Combine text and metadata
         human_readable_content = f"Metadata: {metadata}\n\nContent:\n{text}"
+        rewritten_content = f"Metadata: {metadata}\n\nContent:\n{formatted_text}"
 
-        return final_url, human_readable_content
+        return final_url, human_readable_content, rewritten_content
 
     def close(self):
         self.browser.close()

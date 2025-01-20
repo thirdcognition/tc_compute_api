@@ -1,14 +1,15 @@
 import datetime
 import json
 import re
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 from pydantic import BaseModel
 from pygooglenews import GoogleNews
 
 # from source.helpers.shared import pretty_print
-from source.models.config.logging import logger
 from source.helpers.resolve_url import LinkResolver
 from source.models.data.user import UserIDs
+from source.models.data.news_item import NewsItem
+from supabase import Client
 
 
 class GoogleNewsConfig(BaseModel):
@@ -25,6 +26,7 @@ class GoogleNewsConfig(BaseModel):
 
 
 def parse_since_value(since_value):
+    print(f"GoogleNews: Parsing since value: {since_value}")
     # Regular expression to match time units (e.g., 10h, 5d, 2m)
     pattern = r"(\d+)([hdm])"
     matches = re.findall(pattern, since_value)
@@ -45,13 +47,14 @@ def parse_since_value(since_value):
     return total_timedelta
 
 
-def fetch_google_news_links(
-    config: GoogleNewsConfig, user_ids: UserIDs = None
-) -> List[Tuple[str, str]]:
+def fetch_google_news_items(config: GoogleNewsConfig) -> List[NewsItem]:
+    print(f"GoogleNews: Fetching news items with config: {config!r}")
     gn = GoogleNews(lang=config.lang, country=config.country)
     time_span = parse_since_value(config.since)
 
+    print(f"GoogleNews: Time span for news items: {time_span}")
     if config.query:
+        print(f"GoogleNews: Searching news with query: {config.query}")
         news = gn.search(config.query, when=config.since)
     elif config.location:
         if isinstance(config.location, list):
@@ -66,26 +69,86 @@ def fetch_google_news_links(
     else:
         news = gn.top_news()
 
-    # Initialize the LinkResolver
-    resolver = LinkResolver()
+    print(f"GoogleNews: Number of news entries fetched: {len(news['entries'])}")
+    # Extract news items
+    news_items = []
+    for entry in news["entries"]:
+        print(f"GoogleNews: Processing news entry: {entry.title}")
+        news_item = NewsItem(
+            title=entry.title,
+            source="Google News",
+            original_source=entry.link,
+            description=entry.summary,
+            image=None,  # Google News entries may not have images
+            publish_date=(
+                datetime.datetime.strptime(
+                    entry.published.replace("GMT", "+0000"), "%a, %d %b %Y %H:%M:%S %z"
+                )
+                if hasattr(entry, "published") and entry.published
+                else None
+            ),
+            categories=(
+                [category.term for category in entry.tags]
+                if hasattr(entry, "tags")
+                else []
+            ),
+            lang=config.lang,
+        )
+        news_items.append(news_item)
 
-    # Resolve each URL and fetch content
+    return news_items
+
+
+def fetch_google_news_links(
+    supabase: Client, config: GoogleNewsConfig, user_ids: UserIDs = None
+) -> List[NewsItem]:
+    print("GoogleNews: Fetching Google News links")
+    # Fetch news items using the existing function
+    news_items = fetch_google_news_items(config)
+
+    print("GoogleNews: Initializing LinkResolver")
+    # Initialize the LinkResolver
+    resolver = LinkResolver(reformat_text=True)
+
+    # Check if each news item exists in the database
     resolved_links = []
-    entries_iter = iter(news["entries"])
     resolved_count = 0
 
-    while resolved_count < config.articles:
-        try:
-            entry = next(entries_iter)
-            resolved_url, content = resolver.resolve_url(entry.link)
-            resolved_links.append((resolved_url, content))
-            resolved_count += 1
-        except StopIteration:
-            logger.info("No more entries to process.")
+    for item in news_items:
+        print(f"GoogleNews: Checking if item exists in Supabase: {item.title}")
+        if resolved_count >= config.articles:
             break
-        except Exception as e:
-            logger.info(f"Failed to resolve {entry.link}: {e}")
+        if item.check_if_exists_sync(supabase):
+            print(f"GoogleNews: Item exists in Supabase: {item.title}")
+            item.load_from_supabase_sync(supabase)
+            resolved_links.append(item)
+            resolved_count += 1
+        else:
+            try:
+                print(f"GoogleNews: Resolving URL for item: {item.title}")
+                resolved_url, content, formatted_content = resolver.resolve_url(
+                    str(item.original_source)
+                )
+                print(f"GoogleNews: Resolved URL: {resolved_url}")
+                if len(content) > 500:
+                    item.resolved_source = resolved_url
+                    item.original_content = content
+                    item.formatted_content = formatted_content
+                    if user_ids is not None:
+                        item.owner_id = user_ids.user_id
+                        item.organization_id = user_ids.organization_id
+                    item.create_and_save_source_sync(supabase)
+                    resolved_links.append(item)
+                    resolved_count += 1
+                else:
+                    print(
+                        f"GoogleNews: Resolved content length too short {len(content)}"
+                    )
+            except Exception as e:
+                print(f"GoogleNews: Failed to resolve {item.original_source}: {e}")
+                raise e
 
+    print("GoogleNews: Closing LinkResolver")
     # Close the resolver
     resolver.close()
 

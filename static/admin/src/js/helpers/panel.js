@@ -14,13 +14,25 @@ export const handleCreatePanel = async (params) => {
               (config) => Object.keys(config).length > 0
           )
         : [];
+    const techCrunchNewsArray = params.techCrunchNewsConfigs
+        ? params.techCrunchNewsConfigs.filter(
+              (config) => Object.keys(config).length > 0
+          )
+        : [];
+    const hackerNewsArray = params.hackerNewsConfigs
+        ? params.hackerNewsConfigs.filter(
+              (config) => Object.keys(config).length > 0
+          )
+        : [];
     try {
         const panelId = await createPanel({
             title: params.title,
             input_text: params.inputText,
             input_source: linksArray,
             google_news: googleNewsArray,
-            yle_news: yleNewsArray
+            yle_news: yleNewsArray,
+            techcrunch_news: techCrunchNewsArray,
+            hackernews: hackerNewsArray
         });
         return { panelId, success: true };
     } catch (error) {

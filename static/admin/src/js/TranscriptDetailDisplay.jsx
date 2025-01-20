@@ -11,6 +11,7 @@ import {
     formatUpdateCycle,
     getWordCountDescription
 } from "./helpers/ui.js";
+import { pollTaskStatus } from "./helpers/pollState.js";
 
 const TranscriptDetailDisplay = ({ transcript }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -26,6 +27,8 @@ const TranscriptDetailDisplay = ({ transcript }) => {
     const [audioUrls, setAudioUrls] = useState({});
     const [transcriptSources, setTranscriptSources] = useState([]);
     const [isSourcesVisible, setIsSourcesVisible] = useState(false);
+    const [taskStatus, setTaskStatus] = useState("idle");
+    const [isPolling, setIsPolling] = useState(false);
 
     useEffect(() => {
         fetchPanelDetails(transcript.panel_id).then((response) => {
@@ -114,6 +117,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
     };
 
     const handleDuplicateTranscript = async () => {
+        setTaskStatus("processing");
         try {
             const { taskId, success } = await handleCreateTranscript({
                 panelId: transcript.panel_id,
@@ -147,15 +151,40 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                 longForm: false,
                 updateCycle: updateCycle
             });
-            if (success) {
+            if (success && taskId) {
                 console.log(
                     "Transcript duplicated successfully, taskId:",
                     taskId
                 );
+                initiatePolling(taskId, "transcript");
+            } else {
+                setTaskStatus("failure");
             }
         } catch (error) {
             console.error("Error duplicating transcript:", error);
+            setTaskStatus("failure");
         }
+    };
+
+    const initiatePolling = (taskId, type) => {
+        setTaskStatus("processing"); // Set initial taskStatus
+        setTimeout(() => {
+            pollTaskStatus(
+                taskId,
+                type,
+                () => {
+                    setTaskStatus("success");
+                },
+                () => {
+                    setTaskStatus("failure");
+                },
+                () => {
+                    console.error("Error polling task status");
+                    setTaskStatus("failure");
+                },
+                (isPolling) => setIsPolling(isPolling)
+            );
+        }, 1000);
     };
 
     return (
@@ -179,9 +208,17 @@ const TranscriptDetailDisplay = ({ transcript }) => {
             )}
             <button
                 onClick={handleDuplicateTranscript}
-                className="w-full py-2 mb-4 flex items-center justify-center bg-green-500 text-white rounded"
+                className={`w-full py-2 mb-4 flex items-center justify-center rounded ${
+                    taskStatus === "processing"
+                        ? "bg-gray-500 text-white"
+                        : "bg-green-500 text-white"
+                }`}
+                disabled={taskStatus === "processing"}
             >
-                Recreate Transcript
+                {taskStatus === "idle" && "Recreate Transcript"}
+                {taskStatus === "processing" && "Processing..."}
+                {taskStatus === "success" && "Success"}
+                {taskStatus === "failure" && "Failed"}
             </button>
             <button
                 onClick={() => setShowDetails(!showDetails)}

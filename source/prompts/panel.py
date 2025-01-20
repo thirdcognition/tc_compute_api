@@ -22,8 +22,12 @@ verify_transcript_quality = PromptFormatter(
         <Person2>Person 2 dialog</Person2>
 
         Make sure that the conversation uses natural non repetitive language, follows normal dialogue
-        rythm and uses the defined configuration specified by the user.
+        rhythm and uses the defined configuration specified by the user. Messages from
+        different Persons should not be extensively long and they should always resemble
+        spoken word in a dialogue. If the transcript does not follow these princibles
+        it should be failed.
         Return "yes" if the transcript follows the defined specification otherwise return "no".
+        Be strict when evaluating the generated transcript.
         Do not add anything else in the response. Just return "yes" or "no".
         """
     ),

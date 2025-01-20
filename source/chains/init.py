@@ -321,7 +321,7 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "action": ("instruct_0", action, False, False),
     "grader": ("structured", grader, False, False),
     "check": ("instruct_0", check, False, False),
-    "text_formatter_simple": ("instruct", text_formatter_simple, False, False),
+    "text_formatter_simple": ("instruct", text_formatter_simple, False, True),
     "text_formatter": ("instruct", text_formatter, False, False),
     "text_formatter_compress": ("instruct", text_formatter_compress, False, False),
     "text_formatter_guided": (
