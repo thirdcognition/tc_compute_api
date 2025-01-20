@@ -82,6 +82,7 @@ def create_panel(
     task_request: Request = None,
     supabase_client: Client = None,
 ) -> UUID:
+    print(f"Creating panel with tokens request data: {request_data}")
     supabase_client = (
         supabase_client
         if supabase_client is not None
@@ -131,7 +132,9 @@ def create_panel(
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
     )
+    print(f"Panel created with metadata: {metadata}")
     panel.create_sync(supabase=supabase_client)
+    print(f"Panel ID: {panel.id}")
 
     return panel.id
 
@@ -141,6 +144,7 @@ def create_panel_transcript(
     request_data: PanelRequestData,
     supabase_client: Client = None,
 ) -> UUID:
+    print(f"Creating panel transcript with request data: {request_data}")
     supabase_client = (
         supabase_client
         if supabase_client is not None
@@ -177,6 +181,7 @@ def create_panel_transcript(
         google_news_configs_json = [google_news_configs_json]
 
     # Deserialize JSON strings into GoogleNewsConfig objects
+    print(f"Google News Configs JSON: {google_news_configs_json}")
     google_news_configs = [
         GoogleNewsConfig.model_validate(config) for config in google_news_configs_json
     ]
@@ -202,6 +207,7 @@ def create_panel_transcript(
     if not isinstance(yle_news_configs_json, list):
         yle_news_configs_json = [yle_news_configs_json]
 
+    print(f"Yle News Configs JSON: {yle_news_configs_json}")
     yle_news_configs = [
         YleNewsConfig.model_validate(config) for config in yle_news_configs_json
     ]
@@ -229,6 +235,7 @@ def create_panel_transcript(
     if not isinstance(techcrunch_news_configs_json, list):
         techcrunch_news_configs_json = [techcrunch_news_configs_json]
 
+    print(f"TechCrunch News Configs JSON: {techcrunch_news_configs_json}")
     techcrunch_news_configs = [
         TechCrunchNewsConfig.model_validate(config)
         for config in techcrunch_news_configs_json
@@ -252,6 +259,7 @@ def create_panel_transcript(
     if not isinstance(hackernews_configs_json, list):
         hackernews_configs_json = [hackernews_configs_json]
 
+    print(f"HackerNews Configs JSON: {hackernews_configs_json}")
     hackernews_configs = [
         HackerNewsConfig.model_validate(config) for config in hackernews_configs_json
     ]
@@ -356,7 +364,9 @@ def create_panel_transcript(
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
     )
+    print(f"Panel Transcript created with title: {title}")
     panel_transcript.create_sync(supabase=supabase_client)
+    print(f"Panel Transcript ID: {panel_transcript.id}")
 
     for news_item in article_news_items:
         news_item.create_panel_transcript_source_reference_sync(
@@ -375,10 +385,12 @@ def create_panel_transcript(
         check_passed = False
         orig_user_instructions = conversation_config["user_instructions"]
 
-        print(f"Creating {longform=} transcript with {conversation_config=}")
+        print(
+            f"Creating transcript with longform={longform} and conversation_config={conversation_config}"
+        )
         while not check_passed and retry_count < max_count:
             if retry_count > 0:
-                print(f"Retrying transcript generation ({retry_count}).")
+                print(f"Retrying transcript generation, attempt {retry_count}.")
 
             transcript_file: str = generate_podcast(
                 urls=(
@@ -407,6 +419,7 @@ def create_panel_transcript(
         panel_transcript.process_state = ProcessState.failed
         panel_transcript.process_fail_message = str(e)
         panel_transcript.update_sync(supabase=supabase_client)
+        print(f"Error during transcript generation: {e}")
         raise RuntimeError("Failed to generate podcast transcript") from e
 
     with open(transcript_file, "rb") as transcript_src:
@@ -414,7 +427,11 @@ def create_panel_transcript(
             bucket_transcript_file, transcript_src
         )
     panel_transcript.process_state = ProcessState.done
+    print(
+        f"Uploading transcript file: {transcript_file} to bucket: {request_data.bucket_name}"
+    )
     panel_transcript.update_sync(supabase=supabase_client)
+    print("Panel Transcript process state updated to done.")
 
     return panel_transcript.id
 
@@ -443,6 +460,7 @@ def create_panel_audio(
     request_data: PanelRequestData,
     supabase_client: Client = None,
 ) -> UUID:
+    print(f"Creating panel audio with request data: {request_data}")
     supabase_client = (
         supabase_client
         if supabase_client is not None
@@ -509,7 +527,9 @@ def create_panel_audio(
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
     )
+    print(f"Panel Audio created with title: {title}")
     panel_audio.create_sync(supabase=supabase_client)
+    print(f"Panel Audio ID: {panel_audio.id}")
     bucket_audio_file: str = (
         f"panel_{panel_id}_{transcript_id}_{panel_audio.id}_audio.mp3"
     )
@@ -522,6 +542,7 @@ def create_panel_audio(
             conversation_config=conversation_config,
         )
     except Exception as e:
+        print(f"Error during audio generation: {e}")
         panel_audio.process_state = ProcessState.failed
         panel_audio.process_fail_message = str(e)
         panel_audio.update_sync(supabase=supabase_client)
@@ -536,6 +557,7 @@ def create_panel_audio(
     panel_audio.process_state = ProcessState.done
     panel_audio.update_sync(supabase=supabase_client)
 
+    print(f"Uploading audio file: {audio_file} to bucket: {request_data.bucket_name}")
     return panel_audio.id
 
 

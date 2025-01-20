@@ -129,7 +129,6 @@ def fetch_hackernews_links(
                     )
             except Exception as e:
                 print(f"HackerNews: Failed to resolve {item.original_source}: {e}")
-                raise e
 
     resolver.close()
     return resolved_links

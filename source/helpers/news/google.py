@@ -129,6 +129,7 @@ def fetch_google_news_links(
                 resolved_url, content, formatted_content = resolver.resolve_url(
                     str(item.original_source)
                 )
+
                 print(f"GoogleNews: Resolved URL: {resolved_url}")
                 if len(content) > 500:
                     item.resolved_source = resolved_url
@@ -146,7 +147,6 @@ def fetch_google_news_links(
                     )
             except Exception as e:
                 print(f"GoogleNews: Failed to resolve {item.original_source}: {e}")
-                raise e
 
     print("GoogleNews: Closing LinkResolver")
     # Close the resolver

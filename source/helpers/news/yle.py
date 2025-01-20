@@ -28,8 +28,10 @@ def fetch_yle_news_items(config: YleNewsConfig) -> List[NewsItem]:
     # Construct the feed URL based on the feed type
     feed_url = f"https://feeds.yle.fi/uutiset/v1/{config.type.value}/YLE_UUTISET.rss"
 
+    print(f"Yle: Fetching Yle news items from URL: {feed_url}")
     # Parse the RSS feed
     feed = feedparser.parse(feed_url)
+    print(f"Yle: Number of items fetched: {len(feed.entries)}")
 
     # Extract the required number of news items
     news_items = []
@@ -59,6 +61,7 @@ def fetch_yle_news_links(
     # Fetch news items using the existing function
     news_items = fetch_yle_news_items(config)
 
+    print(f"Yle: Resolving links for {len(news_items)} news items")
     # Initialize the LinkResolver
     resolver = LinkResolver(reformat_text=True)
 
@@ -70,17 +73,18 @@ def fetch_yle_news_links(
         if resolved_count >= config.articles:
             break
         if item.check_if_exists_sync(supabase):
-            print(f"Use existing item for {str(item.original_source)=}")
+            print(f"Yle: Use existing item for {str(item.original_source)=}")
             item.load_from_supabase_sync(supabase)
             resolved_links.append(item)
             resolved_count += 1
         else:
             try:
-                print(f"Create new item for {str(item.original_source)=}")
+                print(f"Yle: Create new item for {str(item.original_source)=}")
                 # pretty_print(item, "News_item", True, print)
                 resolved_url, content, formatted_content = resolver.resolve_url(
                     str(item.original_source)
                 )
+
                 item.resolved_source = resolved_url
                 item.original_content = content
                 item.formatted_content = formatted_content
@@ -91,8 +95,7 @@ def fetch_yle_news_links(
                 resolved_links.append(item)
                 resolved_count += 1
             except Exception as e:
-                print(f"Failed to resolve {item.original_source}: {e}")
-                raise e
+                print(f"Yle: Failed to resolve {item.original_source}: {e}")
 
     # Close the resolver
     resolver.close()
