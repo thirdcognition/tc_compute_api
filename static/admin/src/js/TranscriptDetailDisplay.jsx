@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import AudioDetailDisplay from "./AudioDetailDisplay.jsx";
+import { handleCreateTranscript } from "./helpers/panel.js";
 import {
     fetchPanelDetails,
     fetchTranscriptContent,
@@ -112,6 +113,51 @@ const TranscriptDetailDisplay = ({ transcript }) => {
         }
     };
 
+    const handleDuplicateTranscript = async () => {
+        try {
+            const { taskId, success } = await handleCreateTranscript({
+                panelId: transcript.panel_id,
+                discussionData: { metadata: transcript.metadata },
+                wordCount:
+                    transcript.metadata?.conversation_config?.word_count ||
+                    2500,
+                creativity:
+                    transcript.metadata?.conversation_config?.creativity || 0.7,
+                conversationStyle:
+                    transcript.metadata?.conversation_config
+                        ?.conversation_style || [],
+                rolesPerson1:
+                    transcript.metadata?.conversation_config?.roles_person1 ||
+                    "",
+                rolesPerson2:
+                    transcript.metadata?.conversation_config?.roles_person2 ||
+                    "",
+                dialogueStructure:
+                    transcript.metadata?.conversation_config
+                        ?.dialogue_structure || [],
+                engagementTechniques:
+                    transcript.metadata?.conversation_config
+                        ?.engagement_techniques || [],
+                userInstructions:
+                    transcript.metadata?.conversation_config
+                        ?.user_instructions || "",
+                outputLanguage:
+                    transcript.metadata?.conversation_config?.output_language ||
+                    "English",
+                longForm: false,
+                updateCycle: updateCycle
+            });
+            if (success) {
+                console.log(
+                    "Transcript duplicated successfully, taskId:",
+                    taskId
+                );
+            }
+        } catch (error) {
+            console.error("Error duplicating transcript:", error);
+        }
+    };
+
     return (
         <div className="transcript-detail-display border p-3 mb-4 rounded">
             <h5 className="font-bold mb-2">{transcript.title}</h5>
@@ -131,6 +177,12 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     Error: {transcript.process_fail_message}
                 </p>
             )}
+            <button
+                onClick={handleDuplicateTranscript}
+                className="w-full py-2 mb-4 flex items-center justify-center bg-green-500 text-white rounded"
+            >
+                Recreate Transcript
+            </button>
             <button
                 onClick={() => setShowDetails(!showDetails)}
                 className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"

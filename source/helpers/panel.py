@@ -15,6 +15,7 @@ from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_client, get_sync_supabase_service_client
 from source.helpers.news.google import GoogleNewsConfig, fetch_google_news_links
 
+from source.llm_exec.panel_exec import verify_transcript_quality
 from source.models.data.news_item import NewsItem
 from source.models.config.logging import logger
 from source.helpers.news.yle import fetch_yle_news_links, YleNewsConfig
@@ -298,14 +299,35 @@ def create_panel_transcript(
     panel_transcript.update_sync(supabase=supabase_client)
 
     try:
+        retry_count = 0
+        max_count = 4
+        check_passed = False
+
         print(f"Creating {longform=} transcript with {conversation_config=}")
-        transcript_file: str = generate_podcast(
-            urls=(input_source if isinstance(input_source, list) else [input_source]),
-            transcript_only=True,
-            longform=longform,
-            conversation_config=conversation_config,
-            text=input_text,
-        )
+        while not check_passed and retry_count < max_count:
+            if retry_count > 0:
+                print(f"Retrying transcript generation ({retry_count}).")
+
+            transcript_file: str = generate_podcast(
+                urls=(
+                    input_source if isinstance(input_source, list) else [input_source]
+                ),
+                transcript_only=True,
+                longform=longform,
+                conversation_config=conversation_config,
+                text=input_text,
+            )
+            with open(transcript_file, "rb") as transcript_src:
+                check_passed = verify_transcript_quality(
+                    transcript=transcript_src,
+                    content=input_text,
+                    config=conversation_config,
+                )
+                print(
+                    f"Transcript check result {'passed' if check_passed else 'failed'}."
+                )
+            retry_count += 1
+
     except Exception as e:
         panel_transcript.process_state = ProcessState.failed
         panel_transcript.process_fail_message = str(e)

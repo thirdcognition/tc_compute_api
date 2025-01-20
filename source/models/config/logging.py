@@ -48,9 +48,12 @@ class ColoredFormatter(logging.Formatter):
         )
         record.processName = (procName[:-4]) if len(procName) > 4 else procName.ljust(4)
         formatted_message = super().format(record)
+        formatted_message_split = formatted_message.split("|")
+        formatted_message_split[0] = formatted_message_split[0].strip()
+        formatted_message = " | ".join(formatted_message_split)
         if len(record.message) > 84:
             separator_index = formatted_message.rindex("|") - 9
-            indent = " " * separator_index
+            indent = " " * min(separator_index, 30)
             wrapped_lines = textwrap.wrap(record.message, width=84)
 
             whitespace = (

@@ -80,7 +80,9 @@ from source.prompts.concepts import (
 )
 from source.prompts.chat import chat, question, helper
 from source.prompts.hyde import hyde, hyde_document
-from source.chains.prompt_generator import journey_prompts
+from source.prompts.panel import verify_transcript_quality
+
+# from source.chains.prompt_generator import journey_prompts
 
 CHAT_RATE_LIMITER = None
 
@@ -280,6 +282,7 @@ def init_chain(
     validate_id: str = "instruct" if DEVMODE else "instruct_detailed",
     check_for_hallucinations=False,
     ChainType: BaseChain = Chain,
+    sync_mode: bool = False,
 ) -> BaseChain:
     if retry_id is None:
         retry_id = "structured_detailed" if "structured" in id else "instruct_detailed"
@@ -291,123 +294,145 @@ def init_chain(
         validation_llm=(
             get_llm(validate_id) if (check_for_hallucinations and not DEVMODE) else None
         ),
-        async_mode=True,
+        async_mode=not sync_mode,
     )
 
 
 CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
-    "combine_bullets": ("instruct", combine_description, False),
-    "summary": ("instruct_detailed" if not DEVMODE else "instruct", summary, True),
+    "combine_bullets": ("instruct", combine_description, False, False),
+    "summary": (
+        "instruct_detailed" if not DEVMODE else "instruct",
+        summary,
+        True,
+        False,
+    ),
     "summary_guided": (
         "instruct_detailed" if not DEVMODE else "instruct",
         summary_guided,
         True,
+        False,
     ),
     "summary_with_title": (
         "structured_detailed" if not DEVMODE else "structured",
         summary_with_title,
         True,
+        False,
     ),
-    "action": ("instruct_0", action, False),
-    "grader": ("structured", grader, False),
-    "check": ("instruct_0", check, False),
-    "text_formatter_simple": ("instruct", text_formatter_simple, False),
-    "text_formatter": ("instruct", text_formatter, False),
-    "text_formatter_compress": ("instruct", text_formatter_compress, False),
+    "action": ("instruct_0", action, False, False),
+    "grader": ("structured", grader, False, False),
+    "check": ("instruct_0", check, False, False),
+    "text_formatter_simple": ("instruct", text_formatter_simple, False, False),
+    "text_formatter": ("instruct", text_formatter, False, False),
+    "text_formatter_compress": ("instruct", text_formatter_compress, False, False),
     "text_formatter_guided": (
         "instruct_detailed_0" if not DEVMODE else "instruct_0",
         text_formatter_guided,
         True,
+        False,
     ),
     "text_formatter_compress_guided": (
         "instruct_detailed_0" if not DEVMODE else "instruct_0",
         text_formatter_compress_guided,
         True,
+        False,
     ),
-    "md_formatter": ("instruct", md_formatter, False),
+    "md_formatter": ("instruct", md_formatter, False, False),
     "md_formatter_guided": (
         "instruct_detailed_0" if not DEVMODE else "instruct_0",
         md_formatter_guided,
         True,
+        False,
     ),
-    "page_formatter": ("instruct", page_formatter, True),
+    "page_formatter": ("instruct", page_formatter, True, False),
     "page_formatter_guided": (
         "instruct_detailed_0" if not DEVMODE else "instruct_0",
         page_formatter_guided,
         True,
+        False,
     ),
-    "topic_formatter": ("instruct", topic_formatter, True),
+    "topic_formatter": ("instruct", topic_formatter, True, False),
     "topic_formatter_guided": (
         "instruct_detailed_0" if not DEVMODE else "instruct_0",
         topic_formatter_guided,
         True,
+        False,
     ),
     "topic_hierarchy": (
         "structured_detailed" if not DEVMODE else "structured",
         topic_hierarchy,
+        False,
         False,
     ),
     "topic_combiner": (
         "structured_detailed" if not DEVMODE else "structured",
         topic_combiner,
         False,
+        False,
     ),
     # "taxonomy": (
     #     "instruct",
     #     taxonomy,
     #     False,
-    # ),
+    # , False),
     # "taxonomy_hierarchy": (
     #     "structured_detailed" if not DEVMODE else "structured",
     #     taxonomy_hierarchy,
     #     True,
-    # ),
+    # , False),
     # "taxonomy_combiner": (
     #     "structured_detailed" if not DEVMODE else "structured",
     #     taxonomy_combiner,
     #     False,
-    # ),
-    "concept_structured": ("structured", concept_structured, False),
-    "concept_more": ("structured", concept_more, False),
+    # , False),
+    "concept_structured": ("structured", concept_structured, False, False),
+    "concept_more": ("structured", concept_more, False, False),
     # "concept_unique": (
     #     "structured_detailed" if not DEVMODE else "structured",
     #     concept_unique,
     #     True,
-    # ),
+    # , False),
     "concept_hierarchy": (
         "structured_detailed" if not DEVMODE else "structured",
         concept_hierarchy,
+        False,
         False,
     ),
     "concept_combiner": (
         "structured_detailed" if not DEVMODE else "structured",
         concept_combiner,
         False,
+        False,
     ),
-    "journey_prompt_generator": (
-        "structured_detailed" if not DEVMODE else "structured",
-        journey_prompts,
-        True,
-    ),
-    # "module_structured": ("structured", module_structured, False),
+    # "journey_prompt_generator": (
+    #     "structured_detailed" if not DEVMODE else "structured",
+    #     journey_prompts,
+    #     True,
+    # , False),
+    # "module_structured": ("structured", module_structured, False, False),
     # "plan": (
     #     "structured_detailed" if not DEVMODE else "structured",
     #     plan,
     #     True,
-    # ),
-    # "module_content": ("instruct_detailed_warm", module_content, True),
-    # "module_intro": ("instruct_warm", module_intro, True),
+    # , False),
+    # "module_content": ("instruct_detailed_warm", module_content, True, False),
+    # "module_intro": ("instruct_warm", module_intro, True, False),
     # "module_actions": (
     #     "instruct_detailed" if not DEVMODE else "instruct",
     #     module_actions,
     #     True,
-    # ),
-    # "journey_template_selector": ("instruct", journey_template_selector, True),
-    # "action_details": ("instruct_warm", action_details, True),
-    "question": ("chat", question, True),
-    "helper": ("chat", helper, False),
-    "chat": ("chat", chat, False),
-    "question_classification": ("tester", question_classifier, False),
+    # , False),
+    # "journey_template_selector": ("instruct", journey_template_selector, True, False),
+    # "action_details": ("instruct_warm", action_details, True, False),
+    "question": ("chat", question, True, False),
+    "helper": ("chat", helper, False, False),
+    "chat": ("chat", chat, False, False),
+    "question_classification": ("tester", question_classifier, False, False),
+    "verify_transcript_quality": (
+        "instruct_detailed_0",
+        verify_transcript_quality,
+        False,
+        True,
+    ),
 }
 
 chains: Dict[str, Union[BaseChain, RunnableSequence]] = {}
@@ -419,9 +444,12 @@ def get_base_chain(chain) -> Union[BaseChain, RunnableSequence]:
         return chains[chain]
 
     if chain in CHAIN_CONFIG:
-        llm_id, prompt, check_for_hallucinations = CHAIN_CONFIG[chain]
+        llm_id, prompt, check_for_hallucinations, sync_mode = CHAIN_CONFIG[chain]
         chains[chain] = init_chain(
-            llm_id, prompt, check_for_hallucinations=check_for_hallucinations
+            llm_id,
+            prompt,
+            check_for_hallucinations=check_for_hallucinations,
+            sync_mode=sync_mode,
         )
         return chains[chain]
 

@@ -30,7 +30,11 @@ def send_email_about_new_shows(panels: List[str]):
     #     # Logic to send email
     #     # email = "markus@thirdcognition.com"
     #     # if email == "markus@thirdcognition.com":
-    email = ", ".join(user["email"] for user in users.data)
+    email = ", ".join(
+        (user["email"] if user is not None and user["email"] is not None else "")
+        for user in users.data
+        if user is not None and user["email"] is not None
+    )
     if email is not None:
         send_new_shows_email_task.delay(email, panels)
 
