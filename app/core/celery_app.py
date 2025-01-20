@@ -56,11 +56,11 @@ logging.config.dictConfig(
         "loggers": {
             "celery": {
                 "handlers": ["console"],
-                "level": "INFO",
+                "level": SETTINGS.log_level,
             },
             "celery.task": {
                 "handlers": ["console"],
-                "level": "INFO",
+                "level": SETTINGS.log_level,
             },
         },
     }

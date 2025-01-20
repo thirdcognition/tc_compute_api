@@ -4,8 +4,17 @@ import time
 import warnings
 import textwrap
 from celery.app.log import Logging
+from dotenv import load_dotenv
 
-IN_PRODUCTION = os.getenv("TC_PRODUCTION", "False") == "True" or False
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
+
+if LOG_LEVEL == "DEBUG":
+    env_file = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../../", ".env")
+    )
+    load_dotenv(env_file)
+    LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
 
 
 class ColoredFormatter(logging.Formatter):
@@ -88,7 +97,8 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 # root logger
 root_logger = logging.getLogger()
 
-root_logger.setLevel(logging.INFO if not IN_PRODUCTION else logging.WARNING)
+# Use LOG_LEVEL to set the root logger level
+root_logger.setLevel(LOG_LEVEL)
 
 # standard stream handler
 # standard stream handler
@@ -119,4 +129,6 @@ class CeleryLogger(Logging):
         self.logger.info("Celery logging subsystem initialized.")
 
 
+print("Set log level " + LOG_LEVEL)
 logger = logging.getLogger(__name__)
+logger.setLevel(LOG_LEVEL)

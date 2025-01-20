@@ -41,7 +41,8 @@ def send_email_about_new_shows(panels: List[str]):
 
 @celery_app.task
 def send_new_shows_email_task(email: str, panels: List[str]):
-    # return
+    print(f"{email=}")
+    return
 
     if email is None or len(panels) == 0:
         print("No email defined or length of panels is 0, skipping email sending")

@@ -127,7 +127,7 @@ if __name__ == "__main__":
             },
             "handlers": {
                 "default": {
-                    "level": "DEBUG",
+                    "level": SETTINGS.log_level,
                     "formatter": "default",
                     "class": "logging.StreamHandler",
                 },
@@ -135,7 +135,7 @@ if __name__ == "__main__":
             "loggers": {
                 "": {  # root logger
                     "handlers": ["default"],
-                    "level": "DEBUG",
+                    "level": SETTINGS.log_level,
                 },
             },
         },

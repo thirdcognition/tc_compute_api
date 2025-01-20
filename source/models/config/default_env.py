@@ -9,13 +9,13 @@ DEFAULT_PATH = os.path.dirname(env_file)
 
 
 def load_environment():
-    from source.models.config.logging import logger
-
     global ENV_LOADED
     if ENV_LOADED:
         return
 
     load_dotenv(env_file)
+    from source.models.config.logging import logger
+
     logger.info("Loading env: " + env_file)
 
     ENV_LOADED = True

@@ -4,7 +4,7 @@ SERVER_PORT=${SERVER_PORT:-8080}
 
 # Function to handle cleanup on script exit
 cleanup() {
-    kill -9 $(ps aux | grep spawn_main | awk '{print $2}')
+    kill $(ps aux | grep spawn_main | awk '{print $2}')
 
     echo "Stopping Uvicorn..."
     kill "$UVICORN_PID"
@@ -27,7 +27,7 @@ if [ -f /.dockerenv ]; then
     playwright install chromium
 
     echo "Running inside Docker, starting server without reload."
-    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --log-config logging.ini &
+    uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --log-config logging_prod.ini &
     UVICORN_PID=$!
 
     echo "Starting Celery worker"

@@ -93,12 +93,19 @@ class LinkResolver:
             for meta in soup.find_all("meta")
         }
 
+        formatted_text: str = None
+
         if self.reformat_text:
-            formatted_text = rewrite_text(text)
+            try:
+                formatted_text = rewrite_text(text)
+            except Exception as e:
+                print(f"Failed to format text, {e=}")
 
         # Combine text and metadata
         human_readable_content = f"Metadata: {metadata}\n\nContent:\n{text}"
-        rewritten_content = f"Metadata: {metadata}\n\nContent:\n{formatted_text}"
+        rewritten_content: str = None
+        if formatted_text is not None:
+            rewritten_content = f"Metadata: {metadata}\n\nContent:\n{formatted_text}"
 
         return final_url, human_readable_content, rewritten_content
 

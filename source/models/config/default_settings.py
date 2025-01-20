@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     server_host: Union[IPvAnyAddress, Literal["localhost"]] = Field(
         default_factory=lambda: os.getenv("SERVER_HOST", "0.0.0.0")
     )
+    log_level: str = Field(default_factory=lambda: os.getenv("LOG_LEVEL", "DEBUG"))
     supabase_url: str = Field(default_factory=lambda: os.getenv("SUPABASE_URL"))
     supabase_key: str = Field(default_factory=lambda: os.getenv("SUPABASE_KEY"))
     supabase_service_key: str = Field(
