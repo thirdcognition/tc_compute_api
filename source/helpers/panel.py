@@ -371,8 +371,9 @@ def create_panel_transcript(
 
     try:
         retry_count = 0
-        max_count = 4
+        max_count = 3
         check_passed = False
+        orig_user_instructions = conversation_config["user_instructions"]
 
         print(f"Creating {longform=} transcript with {conversation_config=}")
         while not check_passed and retry_count < max_count:
@@ -389,13 +390,16 @@ def create_panel_transcript(
                 text=input_text,
             )
             with open(transcript_file, "rb") as transcript_src:
-                check_passed = verify_transcript_quality(
+                check_passed, guidance = verify_transcript_quality(
                     transcript=transcript_src,
                     content=input_text,
                     config=conversation_config,
                 )
+                conversation_config[
+                    "user_instructions"
+                ] = f"{orig_user_instructions}\n\nGenerated transcript does not follow the required configuration. Follow this guidance when re-generating the transcript.\n\nGuidance: {guidance}. \n\nUse the previously generated transcript as base when regenerating the transcript:\n\nPrevious transcript:\n{transcript_src}"
                 print(
-                    f"Transcript check result {'passed' if check_passed else 'failed'}."
+                    f"Transcript check result {'passed' if check_passed else 'failed'}. Because {guidance}"
                 )
             retry_count += 1
 

@@ -21,14 +21,13 @@ verify_transcript_quality = PromptFormatter(
         <Person1>Person 1 dialog</Person1>
         <Person2>Person 2 dialog</Person2>
 
-        Make sure that the conversation uses natural non repetitive language, follows normal dialogue
-        rhythm and uses the defined configuration specified by the user. Messages from
-        different Persons should not be extensively long and they should always resemble
-        spoken word in a dialogue. If the transcript does not follow these princibles
-        it should be failed.
-        Return "yes" if the transcript follows the defined specification otherwise return "no".
-        Be strict when evaluating the generated transcript.
-        Do not add anything else in the response. Just return "yes" or "no".
+        Verify that the conversation uses mostly natural non repetitive language,
+        follows normal dialogue rhythm common to podcasts and radio show style
+        and uses the defined configuration specified by the user.
+        The transcript should always follow the specified language.
+        Return "yes" if the transcript mostly follows the defined specification otherwise return "no".
+        If transcript doesn't pass add a guidance after "no" for an llm for what not to do
+        and where to focus when generating a new revision without access to the previous version.
         """
     ),
     user=textwrap.dedent(
@@ -50,7 +49,7 @@ verify_transcript_quality = PromptFormatter(
         Engagement techniques: {engagement_techniques}
         Word count: {word_count}
 
-        Respond with "yes" or "no"
+        Respond with "yes" or "no" and add a guidance for what not to do.
         """
     ),
 )

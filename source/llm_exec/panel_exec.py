@@ -1,8 +1,8 @@
 from source.chains.init import get_chain
 
 
-def verify_transcript_quality(transcript: str, content: str, config: dict = {}) -> str:
-    result = get_chain("verify_transcript_quality").invoke(
+def verify_transcript_quality(transcript: str, content: str, config: dict = {}) -> bool:
+    result, response = get_chain("verify_transcript_quality").invoke(
         {
             "content": content,
             "transcript": transcript,
@@ -16,4 +16,6 @@ def verify_transcript_quality(transcript: str, content: str, config: dict = {}) 
         }
     )
 
-    return result  # Pass supabase
+    print(f"LLM result {result=}, response {response=}")
+
+    return result, response  # Pass supabase
