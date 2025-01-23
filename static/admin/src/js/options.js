@@ -58,8 +58,8 @@ export const defaultTtsModelOptions = [
         value: "elevenlabs",
         label: "ElevenLabs",
         defaultVoices: {
-            question: "Chris",
-            answer: "Jessica"
+            question: "Liam",
+            answer: "Juniper"
         },
         model: "eleven_multilingual_v2",
         disabled: false

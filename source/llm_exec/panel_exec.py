@@ -2,6 +2,8 @@
 import re
 from typing import List
 from source.chains.init import get_chain
+from source.models.data.web_source import WebSource
+from source.prompts.panel import TranscriptSummary
 
 # from podcastfy.client import generate_podcast
 
@@ -217,6 +219,38 @@ def transcript_conclusion_writer(
     return result  # Pass supabase
 
 
+def transcript_summary_writer(
+    transcript: str, conversation_config: dict = {}
+) -> TranscriptSummary:
+    """
+    Generate a title, subjects, and description from a transcript using the transcript_summary_formatter.
+
+    :param transcript: The transcript to summarize.
+    :return: A TranscriptSummary object containing the title, subjects, and description.
+    """
+    print(
+        f"transcript_summary_writer - Starting with transcript ({count_words(transcript)} words)"
+    )
+    retries = 3
+    result = None
+    while not result and retries > 0:
+        retries -= 1
+        result = get_chain("transcript_summary_formatter_sync").invoke(
+            {
+                "transcript": transcript,
+                "podcast_name": conversation_config.get("podcast_name", ""),
+                "podcast_tagline": conversation_config.get("podcast_tagline", ""),
+                "output_language": conversation_config.get("output_language", ""),
+            }
+        )
+
+    if not result:
+        raise ValueError("Failed to generate transcript summary after retries.")
+
+    print("transcript_summary_writer - Completed.")
+    return result
+
+
 def check_transcript_length(
     transcript: str,
     content: str,
@@ -244,24 +278,25 @@ def check_transcript_length(
         if word_count_in_transcript < target_word_count:
             multiplier = target_word_count / word_count_in_transcript
             if multiplier > 2:
-                length_instruction = "Make the transcript at least three times longer. Try to extend on details, content, considerations and explanation."
+                length_instruction = "Make the transcript at least three times longer. Try to extend on details, content, considerations and explanation. The transcript needs to be considerably longer. The transcript is too short, add more details. Write a longer version of the transcript. Do not return the same transcript. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details."
             elif multiplier > 1.5:
-                length_instruction = "Make the transcript twice as long. Try to extend on details from content and discussion of the topic."
+                length_instruction = "Make the transcript twice as long. Try to extend on details from content and discussion of the topic. The transcript needs to be longer. The transcript is too short, write a longer version of it. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details."
             else:
                 length_instruction = "Make the transcript slightly longer. Try to extend on conversation and dialogue."
             # conversation_config["user_instructions"] = (
             #     f"{orig_user_instr} {length_instruction}."
             # )
-        print(f"Word count: Resulting instructions: {length_instruction=}")
     return make_longer, length_instruction
 
 
 def generate_and_verify_transcript(
     # config: dict,
     conversation_config: dict,
-    content: str = "",
+    content: str = None,
+    source: WebSource = None,
     urls: list = None,
     total_count=1,
+    sources: List[WebSource] = None,
 ) -> str:
     """
     Generate a podcast transcript and verify its quality.
@@ -272,10 +307,18 @@ def generate_and_verify_transcript(
     :return: The path to the generated transcript file.
     """
     urls = urls or []
-    max_count = 3
+    max_count = 6 if total_count == 1 else 3
     guidance = ""
 
+    if content is None:
+        content = ""
+        if source is not None:
+            content = str(source)
+        elif sources is not None:
+            content = "\n\n".join(map(str, sources))
+
     print(f"Generate transcript with: {conversation_config=}")
+    # print(f"Generation content {content=}")
 
     # Generate the initial transcript - unable to configure open ai so it's google.
     # transcript_file: str = generate_podcast(
@@ -293,14 +336,15 @@ def generate_and_verify_transcript(
 
     orig_transcript_content = transcript_writer(content, conversation_config)
 
-    print(f"Resulting initial transcript: {orig_transcript_content=}")
+    # print(f"Resulting initial transcript: {orig_transcript_content=}")
 
     transcript_content = orig_transcript_content
 
     retry_count = 0
     check_passed = False
+    make_longer = True
 
-    while not check_passed and retry_count < max_count:
+    while (not check_passed or make_longer) and retry_count < max_count:
         check_passed, guidance = verify_transcript_quality(
             transcript=transcript_content,
             content=content,
@@ -317,16 +361,19 @@ def generate_and_verify_transcript(
             )
 
         if not check_passed or make_longer:
-            # Rewrite the transcript if verification fails
-            print(
-                f"Rewrite transcript due to failed check. {length_instructions=}, {guidance=}"
+            feedback = (
+                ("" if check_passed else guidance)
+                + " "
+                + (length_instructions if make_longer else "")
             )
+            # Rewrite the transcript if verification fails
+            print(f"Rewrite transcript due to failed check. {feedback=}")
+            prev_content = transcript_content
+            prev_len = count_words(transcript_content)
             transcript_content = transcript_rewriter(
                 transcript=transcript_content,
                 content=content,
-                feedback=("" if check_passed else guidance)
-                + " "
-                + (length_instructions if make_longer else ""),
+                feedback=feedback,
                 conversation_config=conversation_config,
                 previous_transcript=(
                     orig_transcript_content
@@ -334,9 +381,15 @@ def generate_and_verify_transcript(
                     else ""
                 ),
             )
-            print(
-                f"Rewritten transcript ({count_words(transcript_content)=}): {transcript_content=}"
-            )
+            print(f"Rewritten transcript ({count_words(transcript_content)=})")
+            if (
+                check_passed
+                and (prev_len * 1.05) > count_words(transcript_content)
+                and retry_count > 2
+            ):
+                transcript_content = prev_content
+                retry_count = max_count + 1
+
         retry_count += 1
 
     # Ensure the final transcript is saved after the last rewrite attempt
@@ -347,11 +400,15 @@ def generate_and_verify_transcript(
 
 
 def transcript_combiner(
-    transcripts: List[str], content: str, conversation_config: dict = {}
+    transcripts: List[str], sources: List[WebSource], conversation_config: dict = {}
 ) -> str:
     # Initialize a list to hold the combined transcripts with bridges
     combined_transcripts = []
-
+    content = ""
+    if sources is not None:
+        content = "\n\n".join(map(str, sources))
+    else:
+        raise "Sources needed for combining resulting transcripts."
     combined_transcripts.append(transcript_intro_writer(content, conversation_config))
 
     # Iterate through the transcripts and add bridges between them
@@ -413,14 +470,15 @@ def transcript_combiner(
     )
 
     print("Combiner result:")
-    print(f"Input ({count_words(orig_transcript)=}): {orig_transcript}")
-    print(f"Output ({count_words(transcript_content)=}): {transcript_content}")
+    print(f"Input ({count_words(orig_transcript)=})")
+    print(f"Output ({count_words(transcript_content)=})")
 
-    max_count = 5
+    max_count = 6
     retry_count = 0
     check_passed = False
+    make_longer = True
 
-    while not check_passed and retry_count < max_count:
+    while (not check_passed or make_longer) and retry_count < max_count:
         check_passed, guidance = verify_transcript_quality(
             transcript=transcript_content,
             content=content,
@@ -439,24 +497,33 @@ def transcript_combiner(
 
         if not check_passed or make_longer:
             # Rewrite the transcript if verification fails
-            print(
-                f"Rewrite transcript due to failed check. {length_instructions=} {guidance=}"
+            feedback = (
+                ("" if check_passed else guidance)
+                + " "
+                + (length_instructions if make_longer else "")
             )
+            print(f"Rewrite transcript due to failed check. {feedback=}")
+            prev_content = transcript_content
+            prev_len = count_words(transcript_content)
             transcript_content = transcript_rewriter(
                 transcript=transcript_content,
                 content=content,
-                feedback=("" if check_passed else guidance)
-                + " "
-                + (length_instructions if make_longer else ""),
+                feedback=feedback,
                 conversation_config=conversation_config,
                 previous_transcript=(
                     orig_transcript if transcript_content is not orig_transcript else ""
                 ),
                 chain="transcript_combined_rewriter",
             )
-            print(
-                f"Rewritten transcript ({count_words(transcript_content)=}): {transcript_content=}"
-            )
+            print(f"Rewritten transcript ({count_words(transcript_content)=})")
+            if (
+                check_passed
+                and (prev_len * 1.05) > count_words(transcript_content)
+                and retry_count > 2
+            ):
+                transcript_content = prev_content
+                retry_count = max_count + 1
+
         retry_count += 1
 
     # print(f"LLM result {count_words(transcript_content)=}")

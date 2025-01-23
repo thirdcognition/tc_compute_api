@@ -1,13 +1,24 @@
 from source.chains.init import get_chain
+from source.models.structures.url_result import UrlResult
 
 
-async def rewrite_text(context) -> str:
-    result = await get_chain("text_formatter_simple").ainvoke({"context": context})
+async def web_source_article_builder(data: UrlResult) -> str:
+    payload = {"context": data.human_readable_content, "meta": data.metadata}
+    if data.image_data:
+        payload["image_data"] = data.image_data
+
+    result = await get_chain("web_source_builder").ainvoke(payload)
 
     return result  # Pass supabase
 
 
-def rewrite_text_sync(context) -> str:
-    result = get_chain("text_formatter_simple_sync").invoke({"context": context})
+def web_source_article_builder_sync(data: UrlResult) -> str:
+    payload = {"context": data.human_readable_content, "meta": data.metadata}
+    if data.image_data:
+        payload["image_data"] = data.image_data
+
+    result = get_chain("web_source_builder_sync").invoke(payload)
+
+    print(f"Resulting article {result=}")
 
     return result  # Pass supabase

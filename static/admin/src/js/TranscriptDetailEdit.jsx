@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { handleCreateTranscript } from "./helpers/panel.js";
 import { Form, Button } from "react-bootstrap";
 import {
@@ -19,6 +19,8 @@ function TranscriptDetailEdit({
 }) {
     const [showDetails, setShowDetails] = useState(false);
     const [wordCount, setWordCount] = useState(2500);
+    const [maxWordCount, setMaxWordCount] = useState(20000); // Dynamically updated max
+    const [duration, setDuration] = useState(20); // Duration in minutes
     const [creativity, setCreativity] = useState(0.7);
     const [conversationStyle, setConversationStyle] = useState([
         "engaging",
@@ -42,6 +44,41 @@ function TranscriptDetailEdit({
     const [outputLanguage, setOutputLanguage] = useState("English");
     const [updateCycle, setUpdateCycle] = useState(0); // Default to 0 if not defined
     const [longForm, setLongForm] = useState(false);
+
+    // Utility function to calculate article count
+    const calculateArticleCount = (data) => {
+        const linksArray = data?.metadata?.input_source || [];
+        const googleNewsArray = data?.metadata?.google_news || [];
+        const yleNewsArray = data?.metadata?.yle_news || [];
+        const techCrunchNewsArray = data?.metadata?.techcrunch_news || [];
+        const hackerNewsArray = data?.metadata?.hackernews || [];
+        const newsSources = [
+            googleNewsArray,
+            yleNewsArray,
+            techCrunchNewsArray,
+            hackerNewsArray
+        ];
+        let totalArticles = 0;
+        newsSources.forEach((sourceArray) => {
+            totalArticles +=
+                sourceArray.reduce((val, config) => val + config.articles, 0) ||
+                0;
+        });
+        return Math.max(totalArticles + linksArray.length, 1);
+    };
+
+    // Effect to update maxWordCount and duration based on article count
+    useEffect(() => {
+        if (discussionData) {
+            const articleCount = calculateArticleCount(discussionData);
+            const newMaxWordCount = articleCount * 1000;
+            setMaxWordCount(newMaxWordCount);
+            setDuration(newMaxWordCount / 500); // Calculate duration
+            if (wordCount > newMaxWordCount) {
+                setWordCount(newMaxWordCount); // Adjust wordCount if it exceeds max
+            }
+        }
+    }, [discussionData]);
 
     const handleTranscriptSubmit = async (e) => {
         e.preventDefault();
@@ -94,20 +131,23 @@ function TranscriptDetailEdit({
                     </Form.Group>
                     <Form.Group controlId="wordCount" className="mb-4">
                         <Form.Label className="font-semibold">
-                            Requested length (up to around 20 min):
+                            Requested length (up to around {duration.toFixed(0)}{" "}
+                            min):
                         </Form.Label>
                         <Form.Control
                             type="range"
                             min={100}
-                            max={20000}
+                            max={maxWordCount}
                             step={100}
                             value={wordCount}
                             onChange={(e) => setWordCount(e.target.value)}
                             className="w-full"
                         />
-                        <div>{getWordCountDescription(wordCount, 20000)}</div>
+                        <div>
+                            {getWordCountDescription(wordCount, maxWordCount)}
+                        </div>
                     </Form.Group>
-                    <Form.Group controlId="creativity" className="mb-4">
+                    {/* <Form.Group controlId="creativity" className="mb-4">
                         <Form.Label className="font-semibold">
                             Creativity:
                         </Form.Label>
@@ -121,7 +161,7 @@ function TranscriptDetailEdit({
                             className="w-full"
                         />
                         <div>{`${creativity}`}</div>
-                    </Form.Group>
+                    </Form.Group> */}
                     <Form.Group controlId="longForm" className="mb-4">
                         <div className="flex items-center mb-2.5">
                             <label className="mr-2.5">
@@ -132,7 +172,9 @@ function TranscriptDetailEdit({
                                         setLongForm(e.target.checked)
                                     }
                                 />
-                                {" Long Form"}
+                                {
+                                    " Process every article separately. (higher quality, longer process time)"
+                                }
                             </label>
                         </div>
                     </Form.Group>

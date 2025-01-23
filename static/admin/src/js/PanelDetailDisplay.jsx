@@ -78,7 +78,9 @@ const PanelDetailDisplay = ({ panel }) => {
                         )}
                     {metadata.longform !== undefined && (
                         <p className="mb-2">
-                            Longform: {metadata.longform ? "Yes" : "No"}
+                            Process every article separately. (higher quality,
+                            longer process time):{" "}
+                            {metadata.longform ? "Yes" : "No"}
                         </p>
                     )}
                     {googleNewsConfigs.length > 0 && (

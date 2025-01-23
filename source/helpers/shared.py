@@ -119,6 +119,10 @@ def get_text_from_completion(completion):
     elif isinstance(completion, BaseModel):
         completion_content = completion.model_dump_json()
     elif isinstance(completion, dict) and "content" in completion.keys():
+        if isinstance(completion["content"], str):
+            completion_content = str(completion["content"]).strip()
+        else:
+            completion_content = json.dumps(completion["content"], indent=2)
         completion_content = str(completion["content"]).strip()
     elif isinstance(completion, str):
         completion_content = completion.strip()

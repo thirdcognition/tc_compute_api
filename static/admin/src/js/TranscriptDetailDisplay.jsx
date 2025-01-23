@@ -250,9 +250,9 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                             {getWordCountDescription(config.word_count, 4000)}
                         </p>
                     )}
-                    {config.creativity && (
+                    {/* {config.creativity && (
                         <p className="mb-2">Creativity: {config.creativity}</p>
-                    )}
+                    )} */}
                     {config.conversation_style && (
                         <p className="mb-2">
                             Conversation Style:{" "}

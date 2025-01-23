@@ -1,6 +1,6 @@
 import datetime
 from json import dumps, loads
-from typing import List, Tuple
+from typing import List, Tuple, Union, Type
 from uuid import UUID
 from supabase import Client
 
@@ -17,220 +17,75 @@ from source.helpers.sources import (
     fetch_links,
 )
 from source.llm_exec.panel_exec import (
-    count_words,
     generate_and_verify_transcript,
     transcript_combiner,
+    transcript_summary_writer,
 )
 from source.models.data.user import UserIDs
 
-# from source.models.config.logging import logger
 
-
-# content_gen_config = {
-#     "llm_model": "gemini-1.5-pro-latest",
-#     "meta_llm_model": "gemini-1.5-pro-latest",
-#     "max_output_tokens": 8192,
-#     "prompt_template": "souzatharsis/podcastfy_multimodal_cleanmarkup",
-#     "prompt_commit": "b2365f11",
-#     "longform_prompt_template": "souzatharsis/podcastfy_longform",
-#     "longform_prompt_commit": "acfdbc91",
-#     "cleaner_prompt_template": "souzatharsis/podcastfy_longform_clean",
-#     "cleaner_prompt_commit": "8c110a0b",
-#     "rewriter_prompt_template": "souzatharsis/podcast_rewriter",
-#     "rewriter_prompt_commit": "8ee296fb",
-# }
-
-
-def create_panel_transcript(
-    tokens: Tuple[str, str],
-    request_data: PanelRequestData,
-    supabase_client: Client = None,
-) -> UUID:
-    print(f"Creating panel transcript with request data: {request_data}")
-    supabase_client = (
-        supabase_client
-        if supabase_client is not None
-        else get_sync_supabase_client(access_token=tokens[0], refresh_token=tokens[1])
+def initialize_supabase_client(
+    tokens: Tuple[str, str], supabase_client: Client = None
+) -> Client:
+    return supabase_client or get_sync_supabase_client(
+        access_token=tokens[0], refresh_token=tokens[1]
     )
 
-    # Retrieve panel metadata
-    panel = PanelDiscussion.fetch_from_supabase_sync(
-        supabase_client, request_data.panel_id
-    )
+
+def fetch_panel_metadata_and_config(
+    supabase_client: Client, panel_id: UUID, request_data: PanelRequestData
+) -> Tuple[dict, dict, PanelDiscussion]:
+    panel = PanelDiscussion.fetch_from_supabase_sync(supabase_client, panel_id)
     metadata = panel.metadata or {}
-
-    # Load base conversation_config from PanelDiscussion metadata
     base_conversation_config = metadata.get("conversation_config", {})
-    # Extend with conversation_config from request_data and apply custom_config defaults
     conversation_config = {
         **custom_config,
         **base_conversation_config,
         **(request_data.conversation_config or {}),
     }
-
-    user_ids: UserIDs = None
-    if request_data.organization_id is not None:
-        user_ids = UserIDs(
-            user_id=request_data.owner_id, organization_id=request_data.organization_id
-        )
-
-    # Combine all news configurations and URLs
-    sources = []
-
-    google_news_configs_json = metadata.get("google_news", []) + (
-        request_data.google_news or []
+    conversation_config["output_language"] = (
+        conversation_config["output_language"] or "English"
     )
-    if not isinstance(google_news_configs_json, list):
-        google_news_configs_json = [google_news_configs_json]
+    return conversation_config, metadata, panel
 
-    # Deduplicate configurations
-    # Debug: Log initial configurations
 
-    unique_google_news_configs = list(
+def deduplicate_and_validate_configs(
+    configs_json: List[dict],
+    config_class: Union[
+        Type[GoogleNewsConfig],
+        Type[YleNewsConfig],
+        Type[TechCrunchNewsConfig],
+        Type[HackerNewsConfig],
+    ],
+) -> List:
+    unique_configs = list(
         {
             dumps(
                 (
                     config.model_dump(mode="json")
-                    if isinstance(config, GoogleNewsConfig)
+                    if isinstance(config, config_class)
                     else config
                 ),
                 sort_keys=True,
             )
-            for config in google_news_configs_json
+            for config in configs_json
         }
     )
+    return [config_class.model_validate(loads(config)) for config in unique_configs]
 
-    # Debug: Log deduplicated configurations
-    google_news_configs = [
-        GoogleNewsConfig.model_validate(loads(config))
-        for config in unique_google_news_configs
-    ]
 
-    sources.extend(google_news_configs)
-
-    yle_news_configs_json = metadata.get("yle_news", []) + (request_data.yle_news or [])
-    if not isinstance(yle_news_configs_json, list):
-        yle_news_configs_json = [yle_news_configs_json]
-
-    # Deduplicate configurations
-    # Debug: Log initial configurations
-
-    unique_yle_news_configs = list(
-        {
-            dumps(
-                (
-                    config.model_dump(mode="json")
-                    if isinstance(config, YleNewsConfig)
-                    else config
-                ),
-                sort_keys=True,
-            )
-            for config in yle_news_configs_json
-        }
-    )
-
-    # Debug: Log deduplicated configurations
-    yle_news_configs = [
-        YleNewsConfig.model_validate(loads(config))
-        for config in unique_yle_news_configs
-    ]
-
-    sources.extend(yle_news_configs)
-
-    techcrunch_news_configs_json = metadata.get("techcrunch_news", []) + (
-        request_data.techcrunch_news or []
-    )
-    if not isinstance(techcrunch_news_configs_json, list):
-        techcrunch_news_configs_json = [techcrunch_news_configs_json]
-
-    # Deduplicate configurations
-    # Debug: Log initial configurations
-
-    unique_techcrunch_news_configs = list(
-        {
-            dumps(
-                (
-                    config.model_dump(mode="json")
-                    if isinstance(config, TechCrunchNewsConfig)
-                    else config
-                ),
-                sort_keys=True,
-            )
-            for config in techcrunch_news_configs_json
-        }
-    )
-
-    # Debug: Log deduplicated configurations
-    techcrunch_news_configs = [
-        TechCrunchNewsConfig.model_validate(loads(config))
-        for config in unique_techcrunch_news_configs
-    ]
-
-    sources.extend(techcrunch_news_configs)
-
-    hackernews_configs_json = metadata.get("hackernews", []) + (
-        request_data.hackernews or []
-    )
-    if not isinstance(hackernews_configs_json, list):
-        hackernews_configs_json = [hackernews_configs_json]
-
-    # Deduplicate configurations
-    # Debug: Log initial configurations
-
-    unique_hackernews_configs = list(
-        {
-            dumps(
-                (
-                    config.model_dump(mode="json")
-                    if isinstance(config, HackerNewsConfig)
-                    else config
-                ),
-                sort_keys=True,
-            )
-            for config in hackernews_configs_json
-        }
-    )
-
-    # Debug: Log deduplicated configurations
-    hackernews_configs = [
-        HackerNewsConfig.model_validate(loads(config))
-        for config in unique_hackernews_configs
-    ]
-
-    sources.extend(hackernews_configs)
-
-    if request_data.input_source:
-        sources.extend(
-            request_data.input_source
-            if isinstance(request_data.input_source, list)
-            else [request_data.input_source]
-        )
-    if metadata.get("urls"):
-        sources.extend(
-            metadata["urls"]
-            if isinstance(metadata["urls"], list)
-            else [metadata["urls"]]
-        )
-
-    # Fetch all links using the updated fetch_links method
-    article_contents: List[str] = []
-    article_news_items: List[WebSource] = []
+def fetch_links_and_process_articles(
+    supabase_client: Client, sources: List, user_ids: UserIDs = None
+) -> List[WebSource]:
+    article_news_items = []
     for news_item in fetch_links(supabase_client, sources, user_ids=user_ids):
-        article_contents.append(
-            news_item.formatted_content
-            if news_item.formatted_content is not None
-            else news_item.original_content
-        )
         article_news_items.append(news_item)
+    return article_news_items
 
-    longform = (
-        request_data.longform
-        if request_data.longform is not None
-        else metadata.get("longform", False)
-    )
-    input_text = request_data.input_text or metadata.get("input_text", "")
 
-    # Construct title
+def construct_transcript_title(
+    panel: PanelDiscussion, conversation_config: dict, request_data: PanelRequestData
+) -> str:
     title_elements = [
         f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
         conversation_config.get("output_language"),
@@ -269,8 +124,17 @@ def create_panel_transcript(
     title = " - ".join(filter(None, title_elements))
     if request_data.transcript_parent_id is not None:
         title = "Recurring-" + title
+    return title
 
-    panel_transcript: PanelTranscript = PanelTranscript(
+
+def create_and_update_panel_transcript(
+    supabase_client: Client,
+    request_data: PanelRequestData,
+    title: str,
+    conversation_config: dict,
+    longform: bool,
+) -> PanelTranscript:
+    panel_transcript = PanelTranscript(
         panel_id=request_data.panel_id,
         title=title,
         bucket_id=request_data.bucket_name,
@@ -290,118 +154,175 @@ def create_panel_transcript(
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
     )
-    print(f"Panel Transcript created with title: {title}")
     panel_transcript.create_sync(supabase=supabase_client)
-    print(f"Panel Transcript ID: {panel_transcript.id}")
+    return panel_transcript
 
-    for news_item in article_news_items:
-        news_item.create_panel_transcript_source_reference_sync(
-            supabase_client, panel_transcript
-        )
 
-    bucket_transcript_file: str = (
-        f"panel_{request_data.panel_id}_{panel_transcript.id}_transcript.txt"
-    )
-    panel_transcript.file = bucket_transcript_file
-    panel_transcript.update_sync(supabase=supabase_client)
-    # final_transcript_content: str = None
-
-    combined_content = ""
-
+def generate_transcripts(
+    conversation_config: dict,
+    input_text: str,
+    sources: List[WebSource],
+    longform: bool,
+) -> Tuple[List[str], str]:
     all_transcripts = []
-    try:
-        total_count = len(article_contents) + (1 if input_text else 0)
-        # Collect all generated transcript contents
+    combined_sources = []
+    total_count = len(sources) + 1
 
-        # first = True
-
-        # Generate transcript for each input source, input text, and article content
+    if longform:
         if input_text:
-            # content_gen_config["prompt_template"] = (
-            #     "heurekalabs/podcastfy_multimodal_cleanmarkup_middle"
-            #     if not first
-            #     else "heurekalabs/podcastfy_multimodal_cleanmarkup_beginning"
-            # )
-            # content_gen_config["prompt_commit"] = (
-            #     "4433a387" if not first else "5be2e760"
-            # )
             transcript = generate_and_verify_transcript(
-                # config={"content_generator": content_gen_config},
                 conversation_config=conversation_config,
                 content=input_text,
                 urls=[],
                 total_count=total_count,
             )
-            # first = False
-            combined_content += input_text + "\n\n"
+            combined_sources.append(input_text)
             all_transcripts.append(transcript)
 
-        # i = 0
-
-        for content in article_contents:
-            # i += 1
-            # last = i == (total_count - 1)
-            if content:
-                # if first and not last:
-                #     content_gen_config["prompt_template"] = (
-                #         "heurekalabs/podcastfy_multimodal_cleanmarkup_middle"
-                #         if not first
-                #         else "heurekalabs/podcastfy_multimodal_cleanmarkup_beginning"
-                #     )
-                #     content_gen_config["prompt_commit"] = (
-                #         "4433a387" if not first else "5be2e760"
-                #     )
-                #     first = False
-                # elif not first:
-                #     content_gen_config["prompt_template"] = (
-                #         "heurekalabs/podcastfy_multimodal_cleanmarkup_middle"
-                #         if not last
-                #         else "heurekalabs/podcastfy_multimodal_cleanmarkup_ending"
-                #     )
-                #     content_gen_config["prompt_commit"] = (
-                #         "4433a387" if not first else "f107708c"
-                #     )
+        for source in sources:
+            if source:
                 transcript = generate_and_verify_transcript(
-                    # config={"content_generator": content_gen_config},
                     conversation_config=conversation_config,
-                    content=content,
+                    source=source,
                     urls=[],
                     total_count=total_count,
                 )
-                print(
-                    f"Append transcript ({len(all_transcripts)}): {count_words(transcript)} words"
-                )
                 all_transcripts.append(transcript)
-                combined_content += content + "\n\n"
+                combined_sources.append(source)
+    else:
+        combined_sources = sources
+        all_transcripts = [
+            generate_and_verify_transcript(
+                conversation_config=conversation_config,
+                sources=sources,
+                urls=[],
+                total_count=1,
+            )
+        ]
+        # all_transcripts = article_contents
 
-        # Join all transcripts into a single content
+    return all_transcripts, combined_sources
 
-        # combined_transcript =
 
-        print(
-            f"Combined transcript {len(all_transcripts)=}: Total words: {sum(count_words(t) for t in all_transcripts)}"
+def upload_transcript_to_supabase(
+    supabase_client: Client,
+    panel_transcript: PanelTranscript,
+    final_transcript: str,
+    bucket_name: str,
+):
+    bucket_transcript_file = (
+        f"panel_{panel_transcript.panel_id}_{panel_transcript.id}_transcript.txt"
+    )
+    supabase_client.storage.from_(bucket_name).upload(
+        path=bucket_transcript_file, file=final_transcript.encode("utf-8")
+    )
+    panel_transcript.file = bucket_transcript_file
+    panel_transcript.process_state = ProcessState.done
+    panel_transcript.update_sync(supabase=supabase_client)
+
+
+def create_panel_transcript(
+    tokens: Tuple[str, str],
+    request_data: PanelRequestData,
+    supabase_client: Client = None,
+) -> UUID:
+    supabase_client = initialize_supabase_client(tokens, supabase_client)
+    conversation_config, metadata, panel = fetch_panel_metadata_and_config(
+        supabase_client, request_data.panel_id, request_data
+    )
+
+    user_ids = (
+        UserIDs(
+            user_id=request_data.owner_id, organization_id=request_data.organization_id
+        )
+        if request_data.organization_id
+        else None
+    )
+
+    sources = []
+    sources.extend(
+        deduplicate_and_validate_configs(
+            metadata.get("google_news", []) + (request_data.google_news or []),
+            GoogleNewsConfig,
+        )
+    )
+    sources.extend(
+        deduplicate_and_validate_configs(
+            metadata.get("yle_news", []) + (request_data.yle_news or []), YleNewsConfig
+        )
+    )
+    sources.extend(
+        deduplicate_and_validate_configs(
+            metadata.get("techcrunch_news", []) + (request_data.techcrunch_news or []),
+            TechCrunchNewsConfig,
+        )
+    )
+    sources.extend(
+        deduplicate_and_validate_configs(
+            metadata.get("hackernews", []) + (request_data.hackernews or []),
+            HackerNewsConfig,
+        )
+    )
+
+    if request_data.input_source:
+        sources.extend(
+            request_data.input_source
+            if isinstance(request_data.input_source, list)
+            else [request_data.input_source]
+        )
+    if metadata.get("urls"):
+        sources.extend(
+            metadata["urls"]
+            if isinstance(metadata["urls"], list)
+            else [metadata["urls"]]
         )
 
+    web_sources = fetch_links_and_process_articles(supabase_client, sources, user_ids)
+    title = construct_transcript_title(panel, conversation_config, request_data)
+    panel_transcript = create_and_update_panel_transcript(
+        supabase_client, request_data, title, conversation_config, request_data.longform
+    )
+
+    for source in web_sources:
+        source.create_panel_transcript_source_reference_sync(
+            supabase_client, panel_transcript
+        )
+
+    try:
+        all_transcripts, combined_sources = generate_transcripts(
+            conversation_config,
+            request_data.input_text or "",
+            web_sources,
+            request_data.longform,
+        )
+        final_transcript = transcript_combiner(
+            all_transcripts, combined_sources, conversation_config
+        )
+
+        transcript_summaries = transcript_summary_writer(final_transcript)
+
+        panel_transcript.title = transcript_summaries.title
+        panel_transcript.metadata["subjects"] = transcript_summaries.subjects
+        panel_transcript.metadata["description"] = transcript_summaries.description
+
+        # New code to add images to metadata
+        if "images" not in panel_transcript.metadata:
+            panel_transcript.metadata["images"] = []
+
+        for source in combined_sources:
+            if isinstance(source, WebSource) and source.image:
+                panel_transcript.metadata["images"].append(str(source.image))
+
+        upload_transcript_to_supabase(
+            supabase_client,
+            panel_transcript,
+            final_transcript,
+            request_data.bucket_name,
+        )
     except Exception as e:
         panel_transcript.process_state = ProcessState.failed
         panel_transcript.process_fail_message = str(e)
         panel_transcript.update_sync(supabase=supabase_client)
-        print(f"Error during transcript generation: {e}")
         raise RuntimeError("Failed to generate podcast transcript") from e
-
-    final_transcript = transcript_combiner(
-        all_transcripts, combined_content, conversation_config
-    )
-
-    print(f"Final transcript total words: {count_words(final_transcript)}")
-    print(
-        f"Uploading transcript file: {bucket_transcript_file} to bucket: {request_data.bucket_name}"
-    )
-    supabase_client.storage.from_(request_data.bucket_name).upload(
-        path=bucket_transcript_file, file=final_transcript.encode("utf-8")
-    )
-    panel_transcript.process_state = ProcessState.done
-    panel_transcript.update_sync(supabase=supabase_client)
-    print("Panel Transcript process state updated to done.")
 
     return panel_transcript.id

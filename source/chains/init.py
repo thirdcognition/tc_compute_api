@@ -89,7 +89,9 @@ from source.prompts.panel import (
     transcript_bridge_writer,
     transcript_intro_writer,
     transcript_conclusion_writer,
+    transcript_summary_formatter,
 )
+from source.prompts.web_source import web_source_builder
 
 # from source.chains.prompt_generator import journey_prompts
 
@@ -437,6 +439,8 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "helper": ("chat", helper, False, False),
     "chat": ("chat", chat, False, False),
     "question_classification": ("tester", question_classifier, False, False),
+    "web_source_builder": ("structured_detailed", web_source_builder, True, False),
+    "web_source_builder_sync": ("structured_detailed", web_source_builder, True, True),
     "transcript_writer": (
         "instruct_detailed",
         transcript_writer,
@@ -450,7 +454,7 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
     ),
     "transcript_rewriter": (
-        "instruct_detailed",
+        "instruct_detailed_warm",
         transcript_rewriter,
         True,
         True,
@@ -462,7 +466,7 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
     ),
     "transcript_combined_rewriter": (
-        "instruct_detailed",
+        "instruct_detailed_warm",
         transcript_combined_rewriter,
         True,
         True,
@@ -483,6 +487,18 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         "instruct",
         transcript_conclusion_writer,
         False,
+        True,
+    ),
+    "transcript_summary_formatter": (
+        "structured_warm",
+        transcript_summary_formatter,
+        True,
+        False,
+    ),
+    "transcript_summary_formatter_sync": (
+        "structured_warm",
+        transcript_summary_formatter,
+        True,
         True,
     ),
 }

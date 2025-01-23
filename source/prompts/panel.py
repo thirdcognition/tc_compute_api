@@ -1,6 +1,9 @@
 import re
 import textwrap
+from typing import List
+from pydantic import BaseModel, Field
 from langchain_core.exceptions import OutputParserException
+from langchain.output_parsers import PydanticOutputParser
 from source.prompts.actions import QuestionClassifierParser
 from source.prompts.base import (
     BaseOutputParser,
@@ -99,6 +102,8 @@ verify_transcript_quality = PromptFormatter(
         - Speakers should speak in turns. Speaker1 should always follow Speaker2 and Speaker2 always Speaker1.
         - Transcript should always end with a proper conclusion.
         - Use details between content start and content end to verify that the transcript uses the specified information.
+        - Transcript language can be different than content language, especially if Language configuration is set.
+        - Transcript should be in the language defined in Transcript configuration.
 
         Allow for:
         - Long transcript. Do not critisize long transcripts as long as the conversation is natural.
@@ -160,7 +165,7 @@ transcript_rewriter = PromptFormatter(
         - If a previous transcript is available, use it to guide the rewriting process.
         - Do not reduce the length of the conversation unless explicitly instructed in the feedback.
         - The resulting transcript should be as long as the previous transcript if available, unless explicitly instructed otherwise.
-        - If the feedback requests longer transcript follow the instruction explicitly and entirely. Do not fail to increase the length of the transcript.
+        - If the feedback requests longer transcript follow the instruction explicitly and entirely. Make the transcript longer.
         - The transcript should always have a proper conclusion.
 
         FEWSHOT EXAMPLES:
@@ -591,8 +596,8 @@ transcript_intro_writer = PromptFormatter(
         - Your task is to create an engaging introduction for a podcast.
         - Use the provided content to generate a comprehensive description of all topics in the upcoming episode.
         - Integrate the descriptions into the following dialogue format:
-          <Person1> "Welcome to [Podcast Name] - [Podcast Tagline]! Today, we're discussing [brief summary of all topics]. Let's dive in!"</Person1>
-          <Person2> "I'm excited to discuss this! So what are we covering today?"</Person2>
+          <Person1> "Welcome to [Podcast Name] - [Podcast Tagline]! Today, we're discussing [few words about the episode]!"</Person1>
+          <Person2> "[intro for person2 being exited]! [question towards what podcast will be about]?"</Person2>
           <Person1> "We'll start with [topic 1], then move on to [topic 2], followed by [topic 3], and finally, we'll wrap up with [topic n]."</Person1>
           <Person2> "That sounds like a fantastic lineup! Let's get started."</Person2>
         - Ensure the introduction is concise, engaging, and adheres to the specified format.
@@ -610,10 +615,10 @@ transcript_intro_writer = PromptFormatter(
         Podcast Tagline: "Your source for the latest in technology and innovation."
 
         Output:
-        <Person1> "Welcome to TechTalk Weekly - Your source for the latest in technology and innovation! Today, we're discussing how AI is transforming healthcare, the future of renewable energy, an incredible story about space exploration, and the impact of blockchain on finance. Let's dive in!"</Person1>
-        <Person2> "I'm excited to discuss this! So what are we covering today?"</Person2>
+        <Person1> "Welcome to TechTalk Weekly - Your source for the latest in technology and innovation! We have so many great topics around AI for today!"</Person1>
+        <Person2> "I'm so exited about todays episode! So what are we covering today?"</Person2>
         <Person1> "We'll start with how AI is revolutionizing healthcare, then move on to the latest breakthroughs in renewable energy, followed by an inspiring story about space exploration, and finally, we'll explore how blockchain is reshaping the financial industry."</Person1>
-        <Person2> "That sounds like a fantastic lineup! Let's get started."</Person2>
+        <Person2> "That's straight up in our alley! Let's get started."</Person2>
 
         EXAMPLE 2:
         Input:
@@ -622,8 +627,8 @@ transcript_intro_writer = PromptFormatter(
         Podcast Tagline: "Insights into the human mind and behavior."
 
         Output:
-        <Person1> "Welcome to Mind Matters - Insights into the human mind and behavior! Today, we're exploring the psychology behind decision-making, the secrets of great storytelling, practical tips for effective communication, and the science of habit formation. Let's dive in!"</Person1>
-        <Person2> "I'm excited to discuss this! So what are we covering today?"</Person2>
+        <Person1> "Welcome to Mind Matters - Insights into the human mind and behavior! Today, we have a jam packed episode full of psychology and science!"</Person1>
+        <Person2> "It's great to be back! So what are we covering today?"</Person2>
         <Person1> "We'll start with the fascinating psychology of how we make decisions, then uncover the art and science of storytelling, followed by actionable tips for improving communication skills, and finally, we'll delve into the science of building better habits."</Person1>
         <Person2> "I can't wait to dive into these topics. Let's get started!"</Person2>
         """
@@ -641,7 +646,6 @@ transcript_intro_writer = PromptFormatter(
         Conversation Style: {conversation_style}
         Person 1 role: {roles_person1}
         Person 2 role: {roles_person2}
-        Dialogue Structure: {dialogue_structure}
         Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
         """
@@ -710,7 +714,6 @@ transcript_conclusion_writer = PromptFormatter(
         Conversation Style: {conversation_style}
         Person 1 role: {roles_person1}
         Person 2 role: {roles_person2}
-        Dialogue Structure: {dialogue_structure}
         Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
         """
@@ -718,3 +721,55 @@ transcript_conclusion_writer = PromptFormatter(
 )
 
 transcript_conclusion_writer.parser = TranscriptParser()
+
+
+class TranscriptSummary(BaseModel):
+    title: str = Field(
+        ..., title="Title", description="Generated title for the transcript."
+    )
+    main_subject: str = Field(
+        ..., title="Main subject", description="Main or most important subject."
+    )
+    subjects: List[str] = Field(
+        ..., title="Subjects", description="List of subjects/topics covered."
+    )
+    description: str = Field(
+        ...,
+        title="Description",
+        description="2-3 sentence description of the transcript.",
+    )
+
+
+transcript_summary_parser = PydanticOutputParser(pydantic_object=TranscriptSummary)
+
+transcript_summary_formatter = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        You are an expert summarizer. Your task is to analyze the provided transcript and generate:
+        - A concise and engaging title.
+        - Do not use generalizations in title.
+        - A main subject that's the most important one.
+        - A list of subjects/topics covered in the transcript.
+        - A 2-3 sentence description summarizing the transcript.
+        - Make sure to not use podcast_name or podcast_tagline in your words.
+        - Use the defined language.
+
+        Format your output as follows:
+        {transcript_summary_parser.get_format_instructions()}
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Transcript:
+        {transcript}
+
+        Language: {output_language}
+        Podcast name: {podcast_name}
+        Podcast tagline: {podcast_tagline}
+
+        Generate a title, subjects, and description based on the transcript.
+        """
+    ),
+)
+
+transcript_summary_formatter.parser = transcript_summary_parser

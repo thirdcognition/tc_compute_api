@@ -1,14 +1,19 @@
 import hashlib
-from typing import List, Optional
+from typing import List, Optional, Union
 from supabase.client import AsyncClient, Client
 
 # from source.helpers.shared import pretty_print
+from source.llm_exec.news_exec import web_source_article_builder_sync
+from source.models.structures.url_result import UrlResult
 from source.models.supabase.sources import SourceModel, SourceRelationshipModel
 from pydantic import BaseModel, HttpUrl, Field
 from datetime import datetime
 from source.models.supabase.panel import PanelTranscript, PanelTranscriptSourceReference
 from source.helpers.resolve_url import LinkResolver
 from source.models.data.user import UserIDs
+
+# from source.models.config.logging import logger
+from source.prompts.web_source import NewsArticle
 
 
 class WebSource(BaseModel):
@@ -19,19 +24,99 @@ class WebSource(BaseModel):
     source_id: Optional[str] = None
     description: Optional[str] = None
     original_content: Optional[str] = None
-    formatted_content: Optional[str] = None
+    url_result: Optional[UrlResult] = None
+    article: Optional[NewsArticle] = None
+
     image: Optional[HttpUrl] = None
     publish_date: Optional[datetime] = None
     categories: Optional[List[str]] = Field(default_factory=list)
     linked_items: Optional[List[str]] = Field(default_factory=list)
     lang: Optional[str] = None
+    metadata: Optional[dict] = None
     owner_id: Optional[str] = None
     organization_id: Optional[str] = None
+
+    def _verify_image(self, article_image) -> bool:
+        """
+        Check if the image from the article exists in any of the specified fields
+        of self.url_result.
+        """
+        if not self.url_result:
+            return False
+
+        image_to_check = article_image
+        if not image_to_check:
+            return False
+
+        # Check in various fields of UrlResult
+        return any(
+            [
+                image_to_check in (self.url_result.image or ""),
+                image_to_check in (self.url_result.metadata or ""),
+                image_to_check in (self.url_result.original_content or ""),
+                image_to_check in (self.url_result.human_readable_content or ""),
+            ]
+        )
+
+    def _update_from_(self, obj: Union[UrlResult, NewsArticle, SourceModel]):
+        """
+        Update the fields of the WebSource instance based on the provided object.
+        """
+        if isinstance(obj, UrlResult):
+            self.title = obj.title or self.title
+            self.image = obj.image or self.image
+            self.description = obj.description or self.description
+            self.lang = obj.lang or self.lang
+            self.categories = obj.categories or self.categories
+            self.original_content = obj.human_readable_content or self.original_content
+            self.resolved_source = obj.resolved_url or self.resolved_source
+            self.source = obj.source or self.source
+            self.publish_date = obj.publish_date or self.publish_date
+            self.metadata = obj.metadata or self.metadata
+        elif isinstance(obj, NewsArticle):
+            self.title = obj.title or self.title
+            if self._verify_image(obj.image):
+                self.image = obj.image or self.image
+            self.description = obj.description or self.description
+            self.lang = obj.lang or self.lang
+            self.categories = (
+                [category.value for category in obj.categories]
+                if obj.categories
+                else self.categories
+            )
+        elif isinstance(obj, SourceModel):
+            self.resolved_source = obj.resolved_source or self.resolved_source
+            self.source = obj.data.get("source")
+            self.linked_items = obj.data.get("linked_items")
+            self.title = obj.title or self.title
+            self.image = obj.metadata.get("image") or self.image
+            self.description = obj.data.get("description") or self.description
+            self.lang = obj.lang or self.lang
+            self.categories = obj.data.get("categories") or self.categories
+            self.original_content = (
+                obj.data.get("original_content") or self.original_content
+            )
+            self.publish_date = (
+                datetime.fromisoformat(obj.metadata.get("publish_date"))
+                if obj.metadata.get("publish_date")
+                else self.publish_date
+            )
+            self.source_id = obj.id or self.source_id
+            self.owner_id = obj.owner_id or self.owner_id
+            self.organization_id = obj.organization_id or self.organization_id
+            if obj.data.get("url_result"):
+                self.url_result = UrlResult.model_validate(obj.data.get("url_result"))
+            if obj.data.get("article"):
+                self.article = NewsArticle.model_validate(obj.data.get("article"))
+        else:
+            raise ValueError(f"Unsupported object type: {type(obj)}")
 
     def _populate_source_model(self):
         # pretty_print(self, "News_item save", True, print)
         print(f"Populating source model for: {self.title} ({self.original_source})")
-        content_to_hash = (self.original_content or "") + (self.formatted_content or "")
+        content_to_hash = (self.original_content or "") + (
+            str(self.article) if self.article else ""
+        )
         content_hash = (
             hashlib.sha256(content_to_hash.encode("utf-8")).hexdigest()
             if content_to_hash
@@ -42,15 +127,15 @@ class WebSource(BaseModel):
             original_source=str(self.original_source),
             resolved_source=str(self.resolved_source) if self.resolved_source else None,
             title=self.title,
-            type=None,  # Assuming type is not directly available in WebSource
-            lang=self.lang,  # Assuming lang is not directly available in WebSource
+            type="webpage",
+            lang=self.lang,
             content_hash=content_hash,
             is_public=True,
             data={
                 "source": self.source,
                 "description": self.description,
-                "original_content": self.original_content,
-                "formatted_content": self.formatted_content,
+                "url_result": self.url_result.model_dump() if self.url_result else None,
+                "article": self.article.model_dump() if self.article else None,
                 "categories": self.categories,
                 "linked_items": self.linked_items,
             },
@@ -64,32 +149,11 @@ class WebSource(BaseModel):
             organization_id=self.organization_id,
         )
 
-    def _populate_news_item(self, result: SourceModel):
-        print(f"Populating news item from result: {result.id}")
-        self.resolved_source = result.resolved_source
-        self.title = result.title
-        self.source = result.data.get("source")
-        self.source_id = result.id
-        self.description = result.data.get("description")
-        self.original_content = result.data.get("original_content")
-        self.formatted_content = result.data.get("formatted_content")
-        self.categories = result.data.get("categories")
-        self.linked_items = result.data.get("linked_items")
-        self.image = result.metadata.get("image")
-        self.lang = result.lang
-        self.publish_date = (
-            datetime.fromisoformat(result.metadata.get("publish_date"))
-            if result.metadata.get("publish_date")
-            else None
-        )
-        self.owner_id = result.owner_id
-        self.organization_id = result.organization_id
-
     async def create_and_save_source(self, supabase: AsyncClient):
         print(f"Creating and saving source for: {self.title} ({self.original_source})")
         source_model = self._populate_source_model()
         result = await source_model.create(supabase)
-        self._populate_news_item(result)
+        self._update_from_(result)
 
     def create_and_save_source_sync(self, supabase: Client):
         print(
@@ -97,7 +161,7 @@ class WebSource(BaseModel):
         )
         source_model = self._populate_source_model()
         result = source_model.create_sync(supabase)
-        self._populate_news_item(result)
+        self._update_from_(result)
 
     def check_if_exists_sync(self, supabase: Client) -> bool:
         print(f"Checking if source exists for: {self.original_source}")
@@ -112,7 +176,7 @@ class WebSource(BaseModel):
         )
         if result:
             print(f"Loaded result: {result.id}, {result.original_source}")
-            self._populate_news_item(result)
+            self._update_from_(result)
         else:
             print(f"No result found for: {self.original_source}")
 
@@ -170,6 +234,54 @@ class WebSource(BaseModel):
             on_conflict=["source_id", "related_source_id"],
         )
 
+    def __str__(self):
+        """
+        Generate a string representation of the WebSource instance.
+        Fields are included in the order: Title, Description, Content, Image, and Categories.
+        Data is prioritized from NewsArticle, then UrlResult, and finally WebSource itself.
+        """
+
+        def get_field(article_attr, url_result_attr, self_attr):
+            """
+            Helper function to return the first non-None value in priority order:
+            NewsArticle -> UrlResult -> WebSource.
+            Handles attribute availability checks.
+            """
+            article_value = (
+                getattr(self.article, article_attr, None) if self.article else None
+            )
+            url_result_value = (
+                getattr(self.url_result, url_result_attr, None)
+                if self.url_result
+                else None
+            )
+            self_value = getattr(self, self_attr, None)
+            return article_value or url_result_value or self_value
+
+        # Construct the string representation
+        title = get_field("title", "title", "title")
+        description = get_field("description", "description", "description")
+        content = get_field("article", "human_readable_content", "original_content")
+        categories = get_field("categories", "categories", "categories")
+
+        # Format categories if they exist
+        if categories and isinstance(categories, list):
+            if self.article and categories == self.article.categories:
+                categories = ", ".join([cat.value for cat in categories])
+            else:
+                categories = ", ".join(categories)
+
+        # Combine all parts into a list
+        parts = [
+            f"Title: {title}" if title else None,
+            f"Description: {description}" if description else None,
+            f"Content: {content}" if content else None,
+            f"Categories: {categories}" if categories else None,
+        ]
+
+        # Filter out None values and join parts with newlines
+        return "\n".join(filter(None, parts))
+
     async def process_linked_items_sync(self, supabase: Client):
         link_upsert = []
         for linked_item in self.linked_items:
@@ -222,9 +334,10 @@ class WebSource(BaseModel):
             supabase, value=str(self.original_source), id_column="original_source"
         )
         if result:
-            self._populate_news_item(result)
+            self._update_from_(result)
 
     def _create_panel_transcript_source_reference(self, transcript: PanelTranscript):
+        print(f"Connect source to {self.source_id=} {transcript.id=}")
         # pretty_print(self, "news_item", True, print)
         return PanelTranscriptSourceReference(
             transcript_id=transcript.id,
@@ -276,48 +389,39 @@ class WebSource(BaseModel):
             self.load_from_supabase_sync(supabase)
             return True
         else:
-            try:
-                print(f"Resolving URL: {self.original_source}")
-                url_results = resolver.resolve_url(str(self.original_source))
-                if len(url_results.human_readable_content) > 500:
-                    self.source = url_results.source
-                    self.description = (
-                        url_results.description
-                        if url_results.description is not None
-                        else self.description
-                    )
-                    self.image = (
-                        url_results.image
-                        if url_results.image is not None
-                        else self.image
-                    )
-                    self.title = (
-                        url_results.title
-                        if url_results.title is not None
-                        else self.title
-                    )
-                    self.publish_date = (
-                        url_results.publish_date
-                        if url_results.publish_date is not None
-                        else self.publish_date
-                    )
-                    self.lang = (
-                        url_results.lang if url_results.lang is not None else self.lang
-                    )
-                    self.resolved_source = url_results.resolved_url
-                    self.original_content = url_results.human_readable_content
-                    self.formatted_content = url_results.formatted_content
-                    if user_ids is not None:
-                        self.owner_id = user_ids.user_id
-                        self.organization_id = user_ids.organization_id
-                    print(
-                        f"Resolved URL successfully, saving source for: {self.title} ({self.original_source})"
-                    )
-                    self.create_and_save_source_sync(supabase)
-                    return True
-            except Exception as e:
-                print(f"Failed to resolve {self.original_source}: {e}")
-            finally:
-                print(f"Closing resolver for: {self.original_source}")
-                resolver.close()
+            # try:
+            print(f"Resolving URL: {self.original_source}")
+            url_result = resolver.resolve_url(str(self.original_source))
+            self.url_result = url_result
+            if len(url_result.human_readable_content) > 500:
+                self._update_from_(url_result)  # Replaced manual updates
+                self.build_article()  # Update article
+                if user_ids is not None:
+                    self.owner_id = user_ids.user_id
+                    self.organization_id = user_ids.organization_id
+                print(
+                    f"Resolved URL successfully, saving source for: {self.title} ({self.original_source})"
+                )
+                self.create_and_save_source_sync(supabase)
+                return True
+            # except Exception as e:
+            #     print(f"Failed to resolve {self.original_source}: {e}")
+            # finally:
+            #     print(f"Closing resolver for: {self.original_source}")
         return False
+
+    def build_article(self):
+        print(f"Formatting content for: {self.original_source}")
+        # try:
+        if self.original_content:
+            self.article = None
+            # try:
+            self.article = web_source_article_builder_sync(self.url_result)
+            # Extract details to the instance after generation
+            if self.article:
+                self._update_from_(self.article)  # Replaced manual updates
+
+            # except Exception as e:
+            #     logger.error(f"Failed to format text: {e}")
+        # except Exception as e:
+        #     print(f"Failed to format content for: {self.original_source}: {e}")

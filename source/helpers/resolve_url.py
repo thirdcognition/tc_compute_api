@@ -1,6 +1,7 @@
+import base64
 from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel
+import json
+
 from playwright.sync_api import sync_playwright, Page, Playwright, Browser
 from playwright.async_api import (
     async_playwright,
@@ -8,28 +9,12 @@ from playwright.async_api import (
     Playwright as AsyncPlaywright,
     Browser as AsyncBrowser,
 )
-from bs4 import BeautifulSoup
-from source.llm_exec.news_exec import rewrite_text, rewrite_text_sync
+from bs4 import BeautifulSoup, Tag
 from source.models.config.logging import logger
 import asyncio
 import nest_asyncio
 
-
-class UrlResults(BaseModel):
-    orig_url: Optional[str] = None
-    resolved_url: Optional[str] = None
-    title: Optional[str] = None
-    source: Optional[str] = None
-    description: Optional[str] = None
-    image: Optional[str] = None
-    publish_date: Optional[datetime] = None
-    categories: Optional[List[str]] = None
-    lang: Optional[str] = None
-    human_readable_content: Optional[str] = None
-    formatted_content: Optional[str] = None
-
-    def __str__(self):
-        return f"Original URL: {self.orig_url}, Resolved URL: {self.resolved_url}, Title: {self.title}, Source: {self.source}, Description: {self.description}, Image: {self.image}, Publish Date: {self.publish_date}, Categories: {self.categories}, Language: {self.lang}"
+from source.models.structures.url_result import UrlResult
 
 
 def parse_publish_date(date_str):
@@ -128,36 +113,130 @@ class LinkResolver:
 
         # Get the page content
         content = self.page.content()
-        self.page.close()
 
         return resolved_url, content
 
-    def _resolve_text_w_metadata(self, content) -> tuple[str, dict]:
-        # Parse the content with BeautifulSoup
+    def _parse_content_with_soup(
+        self, content
+    ) -> tuple[str, dict, list[tuple[int, str]]]:
         soup = BeautifulSoup(content, "html.parser")
 
-        # Remove scripts and styles
-        for script_or_style in soup(["script", "style"]):
-            script_or_style.decompose()
-
-        # Extract text and metadata
-        text = soup.get_text(separator="\n", strip=True)
+        # Extract metadata
         metadata = {
             meta.get("name", meta.get("property", "")): meta.get("content", "")
             for meta in soup.find_all("meta")
         }
-
-        # Extract title, source, description, image, publish date, categories, and language
         metadata["title"] = soup.title.string if soup.title else None
         metadata["categories"] = [
             tag.get("content", "")
             for tag in soup.find_all("meta", property="article:tag")
         ]
 
-        return text, metadata
+        # Extract image URLs and replace with placeholders
+        image_urls = []
+        image_index = 1
+        for img in soup.find_all("img"):
+            if isinstance(img, Tag):
+                img_src = img.get("src")
+                if img_src and not (
+                    img_src.endswith(".ico")
+                    or img_src.endswith(".svg")
+                    or "assets" in img_src
+                    or "icons" in img_src
+                ):
+                    image_urls.append((image_index, img_src))
 
-    def _build_results(self, url, resolved_url, text, formatted_text, metadata):
-        return UrlResults(
+                    img_title = img.get("title")
+                    img_alt = img.get("alt")
+                    aria_label = img.get("aria-label")
+
+                    placeholder_parts = [f"[Image {image_index}"]
+                    if img_title:
+                        placeholder_parts.append(f"Title='{img_title}'")
+                    if img_alt:
+                        placeholder_parts.append(f"Alt='{img_alt}'")
+                    if aria_label:
+                        placeholder_parts.append(f"Aria-Label='{aria_label}'")
+
+                    placeholder = " ".join(placeholder_parts) + "]"
+                    img.replace_with(placeholder)
+                    image_index += 1
+
+        # Extract text
+        text = soup.get_text(separator="\n", strip=True)
+
+        return text, metadata, image_urls
+
+    def _fetch_images_sync(self, image_urls: list[tuple[int, str]]) -> list[dict]:
+        image_data = []
+        for index, img_src in image_urls:
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    with self.page.expect_response(img_src) as response_info:
+                        self.page.goto(img_src)
+                    response = response_info.value
+                    if response.ok:
+                        base64_data = base64.b64encode(response.body()).decode("utf-8")
+                        image_data.append(
+                            {"index": index, "url": img_src, "data": base64_data}
+                        )
+                        break
+                except Exception as e:
+                    logger.error(
+                        f"Attempt {attempt + 1} failed to fetch or encode image {img_src}: {e}"
+                    )
+                    if attempt == max_retries - 1:
+                        logger.error(
+                            f"Giving up on image {img_src} after {max_retries} attempts"
+                        )
+        return image_data
+
+    async def _fetch_images_async(
+        self, image_urls: list[tuple[int, str]]
+    ) -> list[dict]:
+        image_data = []
+        for index, img_src in image_urls:
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    async with self.async_page.expect_response(
+                        img_src
+                    ) as response_info:
+                        await self.async_page.goto(img_src)
+                    response = await response_info.value
+                    if response.ok:
+                        base64_data = base64.b64encode(await response.body()).decode(
+                            "utf-8"
+                        )
+                        image_data.append(
+                            {"index": index, "url": img_src, "data": base64_data}
+                        )
+                        break
+                except Exception as e:
+                    logger.error(
+                        f"Attempt {attempt + 1} failed to fetch or encode image {img_src}: {e}"
+                    )
+                    if attempt == max_retries - 1:
+                        logger.error(
+                            f"Giving up on image {img_src} after {max_retries} attempts"
+                        )
+        return image_data
+
+    def _resolve_text_w_metadata_sync(self, content) -> tuple[str, dict, list[dict]]:
+        text, metadata, image_urls = self._parse_content_with_soup(content)
+        image_data = self._fetch_images_sync(image_urls)
+        return text, metadata, image_data
+
+    async def _resolve_text_w_metadata_async(
+        self, content
+    ) -> tuple[str, dict, list[dict]]:
+        text, metadata, image_urls = self._parse_content_with_soup(content)
+        image_data = await self._fetch_images_async(image_urls)
+        return text, metadata, image_data
+
+    def _build_results(self, url, resolved_url, content, text, metadata, image_data):
+        return UrlResult(
             orig_url=url,
             resolved_url=resolved_url,
             title=metadata.get("title"),
@@ -169,24 +248,14 @@ class LinkResolver:
                 metadata.get("categories") if metadata.get("categories") else None
             ),
             lang=metadata.get("og:locale", "EN").split("_")[0],
-            human_readable_content=f"Metadata: {metadata}\n\nContent:\n{text}",
-            formatted_content=(
-                f"Metadata: {metadata}\n\nContent:\n{formatted_text}"
-                if formatted_text
-                else None
-            ),
+            metadata=json.dumps(metadata),
+            original_content=content,
+            human_readable_content=text,
+            image_data=image_data,
         )
 
-    def _format_content_sync(self, text):
-        formatted_text = None
-        if self.reformat_text:
-            try:
-                formatted_text = rewrite_text_sync(text)
-            except Exception as e:
-                logger.error(f"Failed to format text: {e}")
-        return formatted_text
-
-    def _resolve_url_sync(self, url: str) -> UrlResults:
+    def _resolve_url_sync(self, url: str) -> UrlResult:
+        # Updated to include image data
         self._get_page_sync(url)
         self._cloudfare_sync()
 
@@ -195,11 +264,15 @@ class LinkResolver:
         if not content:
             raise Exception("Content could not be loaded")
 
-        text, metadata = self._resolve_text_w_metadata(content)
+        text, metadata, image_data = self._resolve_text_w_metadata_sync(content)
 
-        formatted_text = self._format_content_sync(text)
+        results = self._build_results(
+            url, resolved_url, content, text, metadata, image_data
+        )
 
-        return self._build_results(url, resolved_url, text, formatted_text, metadata)
+        self.page.close()
+
+        return results
 
     async def _get_page_async(self, url):
         self.async_page = await self.async_browser.new_page()
@@ -242,11 +315,10 @@ class LinkResolver:
             )
 
         content = await self.async_page.content()
-        await self.async_page.close()
 
         return resolved_url, content
 
-    async def _resolve_url_async(self, url: str) -> UrlResults:
+    async def _resolve_url_async(self, url: str) -> UrlResult:
         if not self.async_playwright:
             self.async_playwright = await async_playwright().start()
             self.async_browser = await self.async_playwright.chromium.launch()
@@ -259,23 +331,15 @@ class LinkResolver:
         if not content:
             raise Exception("Content could not be loaded")
 
-        text, metadata = self._resolve_text_w_metadata(content)
+        text, metadata, image_data = await self._resolve_text_w_metadata_async(content)
 
-        formatted_text = await self._format_content_async(text)
+        results = self._build_results(
+            url, resolved_url, content, text, metadata, image_data
+        )
 
-        await self.async_browser.close()
-        await self.async_playwright.stop()
+        await self.async_page.close()
 
-        return self._build_results(url, resolved_url, text, formatted_text, metadata)
-
-    async def _format_content_async(self, text):
-        formatted_text = None
-        if self.reformat_text:
-            try:
-                formatted_text = await rewrite_text(text)
-            except Exception as e:
-                logger.error(f"Failed to format text: {e}")
-        return formatted_text
+        return results
 
     async def async_close(self):
         if self.async_browser is not None:
@@ -296,7 +360,7 @@ class LinkResolver:
             if self.playwright is not None:
                 self.playwright.stop()
 
-    def resolve_url(self, url: str) -> UrlResults:
+    def resolve_url(self, url: str) -> UrlResult:
         if self.is_async:
             if asyncio.get_event_loop().is_running():
                 nest_asyncio.apply()
