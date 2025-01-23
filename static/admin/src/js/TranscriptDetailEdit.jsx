@@ -94,19 +94,18 @@ function TranscriptDetailEdit({
                     </Form.Group>
                     <Form.Group controlId="wordCount" className="mb-4">
                         <Form.Label className="font-semibold">
-                            Requested length (up to around 5 min for short
-                            form):
+                            Requested length (up to around 20 min):
                         </Form.Label>
                         <Form.Control
                             type="range"
                             min={100}
-                            max={4000}
+                            max={20000}
                             step={100}
                             value={wordCount}
                             onChange={(e) => setWordCount(e.target.value)}
                             className="w-full"
                         />
-                        <div>{getWordCountDescription(wordCount, 4000)}</div>
+                        <div>{getWordCountDescription(wordCount, 20000)}</div>
                     </Form.Group>
                     <Form.Group controlId="creativity" className="mb-4">
                         <Form.Label className="font-semibold">

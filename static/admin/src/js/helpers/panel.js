@@ -1,4 +1,32 @@
-import { createPanel, createTranscript, createAudio } from "./fetch.js";
+import {
+    createPanel,
+    createTranscript,
+    createAudio,
+    deleteAudio,
+    deleteTranscript
+} from "./fetch.js";
+let dialogManager = {
+    toggleDialog: null
+};
+
+export const setToggleDialog = (toggleDialog) => {
+    dialogManager.toggleDialog = toggleDialog;
+};
+
+export const getToggleDialog = () => {
+    return dialogManager.toggleDialog;
+};
+
+export const showConfirmationDialog = (message, onConfirm) => {
+    const toggleDialog = getToggleDialog();
+    if (toggleDialog) {
+        toggleDialog(message, onConfirm);
+    } else {
+        console.error(
+            "toggleDialog is not set. Please initialize it in App.jsx."
+        );
+    }
+};
 
 export const handleCreatePanel = async (params) => {
     const linksArray = params.links
@@ -47,33 +75,33 @@ export const handleCreateTranscript = async (params) => {
     const linksArray = params.discussionData?.metadata?.input_source || [];
     const googleNewsArray = params.discussionData?.metadata?.google_news || [];
     const yleNewsArray = params.discussionData?.metadata?.yle_news || [];
+    const techCrunchNewsArray =
+        params.discussionData?.metadata?.techcrunch_news || [];
+    const hackerNewsArray = params.discussionData?.metadata?.hackernews || [];
     const inputText = params.discussionData?.metadata?.input_text || "";
-    const articleCount = Math.max(
-        (googleNewsArray.reduce((val, config) => val + config.articles, 0) ||
-            0) +
-            (yleNewsArray.reduce((val, config) => val + config.articles, 0) ||
-                0) +
-            (googleNewsArray.reduce(
-                (val, config) => val + config.articles,
-                0
-            ) || 0) +
-            (linksArray || []).length,
-        1
-    );
+    const newsSources = [
+        googleNewsArray,
+        yleNewsArray,
+        techCrunchNewsArray,
+        hackerNewsArray
+    ];
+    let totalArticles = 0;
+    newsSources.forEach((sourceArray) => {
+        totalArticles +=
+            sourceArray.reduce((val, config) => val + config.articles, 0) || 0;
+    });
+    const articleCount = Math.max(totalArticles + (linksArray || []).length, 1);
     const maxNumChunks = Math.max(
         longForm ? Math.ceil((params.wordCount * 5) / 8192) : 1,
         longForm ? articleCount : 1
     );
     const minChunkSize = Math.max(
         Math.min(300, params.wordCount),
-        Math.min(
-            Math.floor((params.wordCount / (longForm ? articleCount : 1)) * 3),
-            8192
-        )
+        Math.min(Math.floor((params.wordCount / articleCount) * 3), 8192)
     );
     const targetWordCount =
-        (params.wordCount / (longForm ? articleCount : 1)) * 2 < 8192
-            ? params.wordCount / (longForm ? articleCount : 1)
+        (params.wordCount / articleCount) * 2 < 8192
+            ? params.wordCount / articleCount
             : Math.ceil(8192 / 2);
     try {
         const taskId = await createTranscript({
@@ -89,12 +117,14 @@ export const handleCreateTranscript = async (params) => {
                 dialogue_structure: params.dialogueStructure,
                 engagement_techniques: params.engagementTechniques,
                 user_instructions:
-                    `Use ${longForm ? "up to" : "at least"} ${targetWordCount} words when generating the response. Make sure to ${longForm ? "fit your response into" : "not use less than"} ${targetWordCount} words! ` +
-                    (params.outputLanguage !== "English"
-                        ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
-                        : "") +
-                    params.userInstructions +
-                    ` Generate the response with ${targetWordCount} words.`,
+                    params.outputLanguage !== "English" &&
+                    params.userInstructions.indexOf(
+                        "Make sure to write numbers as text in the specified language"
+                    ) !== -1
+                        ? params.userInstructions
+                        : (params.outputLanguage !== "English"
+                              ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
+                              : "") + params.userInstructions,
                 output_language: params.outputLanguage,
                 max_num_chunks: maxNumChunks,
                 min_chunk_size: minChunkSize
@@ -148,5 +178,27 @@ export const handleCreateAudio = async (params) => {
         console.error("Error creating audio.", error);
         alert("Failed to create audio.");
         return { success: false };
+    }
+};
+
+export const handleDeleteItem = async (deleteTarget, refreshCallback) => {
+    try {
+        if (deleteTarget.type === "audio") {
+            await deleteAudio(deleteTarget.id);
+        } else if (deleteTarget.type === "transcript") {
+            await deleteTranscript(deleteTarget.id);
+        } else {
+            throw new Error(
+                `Unsupported delete target type: ${deleteTarget.type}`
+            );
+        }
+        if (refreshCallback) {
+            refreshCallback();
+        }
+    } catch (error) {
+        console.error(
+            `Error deleting ${deleteTarget.type} with ID ${deleteTarget.id}:`,
+            error
+        );
     }
 };

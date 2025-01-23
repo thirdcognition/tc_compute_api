@@ -80,7 +80,16 @@ from source.prompts.concepts import (
 )
 from source.prompts.chat import chat, question, helper
 from source.prompts.hyde import hyde, hyde_document
-from source.prompts.panel import verify_transcript_quality
+from source.prompts.panel import (
+    verify_transcript_quality,
+    transcript_rewriter,
+    transcript_combiner,
+    transcript_writer,
+    transcript_combined_rewriter,
+    transcript_bridge_writer,
+    transcript_intro_writer,
+    transcript_conclusion_writer,
+)
 
 # from source.chains.prompt_generator import journey_prompts
 
@@ -321,7 +330,8 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "action": ("instruct_0", action, False, False),
     "grader": ("structured", grader, False, False),
     "check": ("instruct_0", check, False, False),
-    "text_formatter_simple": ("instruct", text_formatter_simple, False, True),
+    "text_formatter_simple": ("instruct", text_formatter_simple, False, False),
+    "text_formatter_simple_sync": ("instruct", text_formatter_simple, False, True),
     "text_formatter": ("instruct", text_formatter, False, False),
     "text_formatter_compress": ("instruct", text_formatter_compress, False, False),
     "text_formatter_guided": (
@@ -427,9 +437,51 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "helper": ("chat", helper, False, False),
     "chat": ("chat", chat, False, False),
     "question_classification": ("tester", question_classifier, False, False),
+    "transcript_writer": (
+        "instruct_detailed",
+        transcript_writer,
+        True,
+        True,
+    ),
     "verify_transcript_quality": (
-        "instruct_detailed_0",
+        "instruct_detailed",
         verify_transcript_quality,
+        False,
+        True,
+    ),
+    "transcript_rewriter": (
+        "instruct_detailed",
+        transcript_rewriter,
+        True,
+        True,
+    ),
+    "transcript_combiner": (
+        "instruct",
+        transcript_combiner,
+        True,
+        True,
+    ),
+    "transcript_combined_rewriter": (
+        "instruct_detailed",
+        transcript_combined_rewriter,
+        True,
+        True,
+    ),
+    "transcript_bridge_writer": (
+        "instruct",
+        transcript_bridge_writer,
+        False,
+        True,
+    ),
+    "transcript_intro_writer": (
+        "instruct",
+        transcript_intro_writer,
+        False,
+        True,
+    ),
+    "transcript_conclusion_writer": (
+        "instruct",
+        transcript_conclusion_writer,
         False,
         True,
     ),

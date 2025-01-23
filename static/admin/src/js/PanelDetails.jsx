@@ -1,9 +1,15 @@
 import PanelDetailDisplay from "./PanelDetailDisplay.jsx";
 import TranscriptDetailDisplay from "./TranscriptDetailDisplay.jsx";
-import { fetchPanelTranscripts } from "./helpers/fetch.js";
+import {
+    fetchPanelTranscripts,
+    deleteTranscript,
+    deleteAudio
+} from "./helpers/fetch.js";
+import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
 import { Card } from "react-bootstrap";
 import { Navigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { FaTrash } from "react-icons/fa";
 
 function PanelDetails({ panel }) {
     const [transcripts, setTranscripts] = useState([]);
@@ -24,6 +30,18 @@ function PanelDetails({ panel }) {
             );
     }, [panel]);
 
+    const refreshTranscripts = () => {
+        fetchPanelTranscripts(panel.id)
+            .then((data) => setTranscripts(data))
+            .catch((error) =>
+                console.error("Error refreshing transcripts:", error)
+            );
+    };
+
+    const handleDelete = (deleteTarget) => {
+        handleDeleteItem(deleteTarget, refreshTranscripts);
+    };
+
     if (redirectToEdit) {
         return <Navigate to={`/panel/${panel.id}/edit`} />;
     }
@@ -42,7 +60,23 @@ function PanelDetails({ panel }) {
                 <Card.Body>
                     <PanelDetailDisplay panel={panel} />
                     {transcripts.map((transcript) => (
-                        <div key={transcript.id} className="mb-4">
+                        <div key={transcript.id} className="mb-4 relative">
+                            <button
+                                onClick={() =>
+                                    showConfirmationDialog(
+                                        "Are you sure you want to delete this transcript? This action cannot be undone.",
+                                        () =>
+                                            handleDelete({
+                                                type: "transcript",
+                                                id: transcript.id
+                                            })
+                                    )
+                                }
+                                className="absolute top-0 right-0 p-2 text-red-500 hover:text-red-700"
+                                aria-label="Delete Transcript"
+                            >
+                                <FaTrash />
+                            </button>
                             <TranscriptDetailDisplay transcript={transcript} />
                         </div>
                     ))}

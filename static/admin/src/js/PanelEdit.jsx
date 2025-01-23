@@ -8,7 +8,13 @@ import TranscriptDetailDisplay from "./TranscriptDetailDisplay.jsx";
 import AudioDetailEdit from "./AudioDetailEdit.jsx";
 import { urlFormatter } from "./helpers/url.js";
 import { pollTaskStatus } from "./helpers/pollState.js";
-import { fetchPanelDetails } from "./helpers/fetch.js";
+import {
+    fetchPanelDetails,
+    deleteTranscript,
+    deleteAudio
+} from "./helpers/fetch.js";
+import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
+import { FaTrash } from "react-icons/fa";
 
 import { getStatusBarStyle, getStatusSymbol } from "./helpers/ui.js";
 
@@ -93,6 +99,10 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
         }, 1000);
     };
 
+    const handleDelete = (deleteTarget) => {
+        handleDeleteItem(deleteTarget, () => handleRefreshPanelData(panelId));
+    };
+
     if (redirectToPanel) {
         return <Navigate to={`/panel/${panelId}`} />;
     }
@@ -134,13 +144,30 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
             )}
             {transcriptData &&
                 transcriptData.map((transcript) => (
-                    <TranscriptDetailDisplay
-                        key={transcript.id}
-                        transcript={transcript}
-                        transcriptUrls={transcriptUrls}
-                        existingAudio={existingAudio}
-                        audioUrls={audioUrls}
-                    />
+                    <div key={transcript.id} className="relative">
+                        <button
+                            onClick={() =>
+                                showConfirmationDialog(
+                                    "Are you sure you want to delete this transcript? This action cannot be undone.",
+                                    () =>
+                                        handleDelete({
+                                            type: "transcript",
+                                            id: transcript.id
+                                        })
+                                )
+                            }
+                            className="absolute top-0 right-0 p-2 text-red-500 hover:text-red-700"
+                            aria-label="Delete Transcript"
+                        >
+                            <FaTrash />
+                        </button>
+                        <TranscriptDetailDisplay
+                            transcript={transcript}
+                            transcriptUrls={transcriptUrls}
+                            existingAudio={existingAudio}
+                            audioUrls={audioUrls}
+                        />
+                    </div>
                 ))}
             {taskStatus !== "idle" &&
             taskStatus !== "success" &&

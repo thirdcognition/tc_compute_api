@@ -20,7 +20,7 @@ celery_app = Celery(
     "tc_compute_api",
     broker=SETTINGS.redis_broker_url,
     backend=SETTINGS.redis_backend_url,
-    include=["source.helpers.panel", "source.helpers.communication"],
+    include=["source.panel.tasks", "source.helpers.communication"],
     log="source.models.config.logging.CeleryLogger",
 )
 
@@ -93,7 +93,7 @@ celery_app.conf.update(
 # Schedule the generate_transcripts_task to run daily at 9am
 celery_app.conf.beat_schedule = {
     "generate-transcripts-every-day-at-9am": {
-        "task": "source.helpers.panel.generate_transcripts_task",
+        "task": "source.panel.tasks.generate_transcripts_task",
         # "schedule": crontab(hour=4, minute=30),
         "schedule": crontab(minute="*/30"),
         "args": (

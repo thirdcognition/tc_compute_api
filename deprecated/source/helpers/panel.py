@@ -4,12 +4,11 @@ import os
 import tempfile
 from typing import Optional, Tuple, Union, List
 from uuid import UUID
-from podcastfy.client import generate_podcast
 from supabase import Client
 from celery import Task
 from celery.worker.request import Request
-
 from pydantic import BaseModel
+from podcastfy.client import generate_podcast
 
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_client, get_sync_supabase_service_client
@@ -24,7 +23,7 @@ from source.helpers.news.hackernews import (
     HackerNewsConfig,
 )
 
-from source.llm_exec.panel_exec import verify_transcript_quality
+from source.llm_exec.panel_exec import generate_and_verify_transcript
 from source.models.data.news_item import NewsItem
 from source.models.config.logging import logger
 from source.helpers.communication import send_email_about_new_shows_task
@@ -300,9 +299,6 @@ def create_panel_transcript(
     )
     input_text = request_data.input_text or metadata.get("input_text", "")
 
-    # Concatenate article contents to input_text
-    input_text += "\n\n" + "\n\n".join(article_contents)
-
     # Construct title
     title_elements = [
         f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
@@ -378,42 +374,40 @@ def create_panel_transcript(
     )
     panel_transcript.file = bucket_transcript_file
     panel_transcript.update_sync(supabase=supabase_client)
+    final_transcript_content: str = None
 
     try:
-        retry_count = 0
-        max_count = 3
-        check_passed = False
-        orig_user_instructions = conversation_config["user_instructions"]
+        # Collect all generated transcript contents
+        all_transcripts = []
 
-        print(
-            f"Creating transcript with longform={longform} and conversation_config={conversation_config}"
-        )
-        while not check_passed and retry_count < max_count:
-            if retry_count > 0:
-                print(f"Retrying transcript generation, attempt {retry_count}.")
-
-            transcript_file: str = generate_podcast(
-                urls=(
-                    input_source if isinstance(input_source, list) else [input_source]
-                ),
-                transcript_only=True,
-                longform=longform,
-                conversation_config=conversation_config,
-                text=input_text,
-            )
-            with open(transcript_file, "rb") as transcript_src:
-                check_passed, guidance = verify_transcript_quality(
-                    transcript=transcript_src,
+        # Generate transcript for each input source, input text, and article content
+        for source in input_source:
+            if source:
+                transcript_file = generate_and_verify_transcript(
+                    conversation_config=conversation_config,
                     content=input_text,
-                    config=conversation_config,
+                    urls=[source],
                 )
-                conversation_config[
-                    "user_instructions"
-                ] = f"{orig_user_instructions}\n\nGenerated transcript does not follow the required configuration. Follow this guidance when re-generating the transcript.\n\nGuidance: {guidance}. \n\nUse the previously generated transcript as base when regenerating the transcript:\n\nPrevious transcript:\n{transcript_src}"
-                print(
-                    f"Transcript check result {'passed' if check_passed else 'failed'}. Because {guidance}"
+                with open(transcript_file, "r") as file:
+                    all_transcripts.append(file.read())
+
+        if input_text:
+            transcript_file = generate_and_verify_transcript(
+                conversation_config=conversation_config, content=input_text, urls=[]
+            )
+            with open(transcript_file, "r") as file:
+                all_transcripts.append(file.read())
+
+        for content in article_contents:
+            if content:
+                transcript_file = generate_and_verify_transcript(
+                    conversation_config=conversation_config, content=content, urls=[]
                 )
-            retry_count += 1
+                with open(transcript_file, "r") as file:
+                    all_transcripts.append(file.read())
+
+        # Join all transcripts into a single content
+        final_transcript_content = "\n\n".join(all_transcripts)
 
     except Exception as e:
         panel_transcript.process_state = ProcessState.failed
@@ -422,13 +416,14 @@ def create_panel_transcript(
         print(f"Error during transcript generation: {e}")
         raise RuntimeError("Failed to generate podcast transcript") from e
 
-    with open(transcript_file, "rb") as transcript_src:
-        supabase_client.storage.from_(request_data.bucket_name).upload(
-            bucket_transcript_file, transcript_src
-        )
+    # with open(bucket_transcript_file, "rb") as transcript_src:
+
+    supabase_client.storage.from_(request_data.bucket_name).upload(
+        bucket_transcript_file, final_transcript_content
+    )
     panel_transcript.process_state = ProcessState.done
     print(
-        f"Uploading transcript file: {transcript_file} to bucket: {request_data.bucket_name}"
+        f"Uploading transcript file: {bucket_transcript_file} to bucket: {request_data.bucket_name}"
     )
     panel_transcript.update_sync(supabase=supabase_client)
     print("Panel Transcript process state updated to done.")

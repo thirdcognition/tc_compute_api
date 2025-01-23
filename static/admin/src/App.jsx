@@ -14,6 +14,8 @@ import PanelEdit from "./js/PanelEdit.jsx";
 import PanelDetails from "./js/PanelDetails.jsx";
 import session from "./js/helpers/session.js";
 import { fetchPublicPanels } from "./js/helpers/fetch.js";
+import ConfirmationDialog from "./js/components/ConfirmationDialog.jsx";
+import { setToggleDialog } from "./js/helpers/panel.js";
 
 function App() {
     return (
@@ -28,6 +30,20 @@ function AppContent() {
     const [selectedPanel, setSelectedPanel] = useState("new");
     const [loading, setLoading] = useState(true);
 
+    const [confirmationDialog, setConfirmationDialog] = useState({
+        show: false,
+        message: "",
+        onConfirm: null
+    });
+
+    const toggleConfirmationDialog = (message, onConfirm) => {
+        setConfirmationDialog({ show: true, message, onConfirm });
+    };
+
+    const closeConfirmationDialog = () => {
+        setConfirmationDialog({ show: false, message: "", onConfirm: null });
+    };
+
     const navigate = useNavigate();
     const curLocation = useLocation();
     const { id: routeIdFromParams } = useParams();
@@ -36,6 +52,7 @@ function AppContent() {
 
     useEffect(() => {
         session.setNavigate(navigate);
+        setToggleDialog(toggleConfirmationDialog);
     }, [navigate]);
 
     useEffect(() => {
@@ -110,6 +127,17 @@ function AppContent() {
 
     return (
         <Container>
+            <ConfirmationDialog
+                show={confirmationDialog.show}
+                message={confirmationDialog.message}
+                onConfirm={() => {
+                    if (confirmationDialog.onConfirm) {
+                        confirmationDialog.onConfirm();
+                    }
+                    closeConfirmationDialog();
+                }}
+                onHide={closeConfirmationDialog}
+            />
             <Row>
                 <Col md={12}>
                     <div className="flex justify-between items-center mb-5 p-2 bg-gray-100 border-b border-gray-300">

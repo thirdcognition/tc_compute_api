@@ -28,10 +28,10 @@ DEBUGMODE = os.getenv("LLM_DEBUG", "True") == "True" or False
 DEVMODE = os.getenv("LLM_DEV", "True") == "True" or False
 IN_PRODUCTION = os.getenv("TC_PRODUCTION", "False") == "True" or False
 
-LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2", "False") == "True" or False
-LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY", "")
-LANGCHAIN_PROJECT = os.getenv("LANGCHAIN_PROJECT", "")
-LANGCHAIN_ENDPOINT = os.getenv("LANGCHAIN_ENDPOINT", "")
+LANGSMITH_TRACING_V2 = os.getenv("LANGSMITH_TRACING_V2", "False") == "True" or False
+LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY", "")
+LANGSMITH_PROJECT = os.getenv("LANGSMITH_PROJECT", "")
+LANGSMITH_ENDPOINT = os.getenv("LANGSMITH_ENDPOINT", "")
 
 set_debug(DEBUGMODE)
 set_verbose(DEBUGMODE)

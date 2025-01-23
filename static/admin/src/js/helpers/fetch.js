@@ -46,6 +46,10 @@ export async function fetchData(endpoint, options = {}) {
         throw new Error("Unauthorized access - redirecting to login.");
     }
 
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     return response.json();
 }
 
@@ -199,6 +203,34 @@ export async function createAudio(data) {
         return result.task_id;
     } catch (error) {
         console.error("Error creating audio.", error);
+        throw error;
+    }
+}
+
+export async function deleteTranscript(transcriptId) {
+    try {
+        await fetchData(`/panel/transcript/${transcriptId}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${session.getAccessToken()}`
+            }
+        });
+    } catch (error) {
+        console.error("Error deleting transcript:", error);
+        throw error;
+    }
+}
+
+export async function deleteAudio(audioId) {
+    try {
+        await fetchData(`/panel/audio/${audioId}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${session.getAccessToken()}`
+            }
+        });
+    } catch (error) {
+        console.error("Error deleting audio:", error);
         throw error;
     }
 }

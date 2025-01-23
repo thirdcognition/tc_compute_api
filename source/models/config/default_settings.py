@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     embeddings: List[EmbeddingProviderSettings] = []
     default_embedding_provider: Optional[EmbeddingProviderSettings] = None
     default_embeddings: Optional[EmbeddingDefaults] = None
+    podcastfy_llm_api_key_label: str = Field(
+        default_factory=lambda: os.getenv("PODCASTFY_API_KEY", "AZURE_API_KEY")
+    )
+    podcastfy_llm_model: str = Field(
+        default_factory=lambda: os.getenv("PODCASTFY_MODEL", "azure/gpt-4o")
+    )
     server_port: int = Field(default_factory=lambda: os.getenv("SERVER_PORT", 8000))
     server_host: Union[IPvAnyAddress, Literal["localhost"]] = Field(
         default_factory=lambda: os.getenv("SERVER_HOST", "0.0.0.0")

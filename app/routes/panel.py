@@ -1,6 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
-from app.core.supabase import SupaClientDep, allow_anonymous_login, get_supabase_tokens
+from app.core.supabase import (
+    SupaClientDep,
+    allow_anonymous_login,
+    get_supabase_tokens,
+    get_sync_supabase_client,
+)
+from source.helpers.sources import GoogleNewsConfig, fetch_links
 from source.helpers.routes import handle_exception
 from source.api.panel.read import (
     PanelDetailsResponse,
@@ -22,15 +28,18 @@ from source.api.panel.update import (
     update_panel_transcript,
     update_panel_audio,
 )
+from source.api.panel.delete import (
+    delete_panel,
+    delete_panel_transcript,
+    delete_panel_audio,
+)
+from source.models.structures.panel import PanelRequestData
 from source.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
-from source.helpers.panel import (
-    PanelRequestData,
-    create_panel,
+from source.panel.panel import create_panel
+from source.panel.tasks import (
     create_panel_audio_task,
     create_panel_task,
     create_panel_transcription_task,
-    fetch_google_news_links,
-    GoogleNewsConfig,
     generate_transcripts_task,
 )
 
@@ -42,9 +51,14 @@ allow_anonymous_login("/panel", ["GET"])
 @router.post("/panel/news_links")
 async def api_fetch_news_links(
     config: GoogleNewsConfig,
+    supabase: SupaClientDep,
 ):
     try:
-        news_links = fetch_google_news_links(config)
+        tokens = await get_supabase_tokens(supabase)
+        supabase_sync = get_sync_supabase_client(
+            access_token=tokens[0], refresh_token=tokens[1]
+        )
+        news_links = fetch_links(supabase_sync, [config])
         return {"news_links": news_links}
     except Exception as e:
         raise handle_exception(e, "Failed to fetch news links")
@@ -318,3 +332,45 @@ async def api_generate_transcripts(
         return {"task_id": task.id}
     except Exception as e:
         raise handle_exception(e, "Failed to generate transcripts", 500)
+
+
+@router.delete("/panel/{panel_id}")
+async def api_delete_panel(
+    panel_id: str,
+    supabase: SupaClientDep,
+):
+    try:
+        await delete_panel(supabase, panel_id)
+        return {"message": "Panel deleted successfully"}
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise handle_exception(e, "Failed to delete panel", 500)
+
+
+@router.delete("/panel/transcript/{transcript_id}")
+async def api_delete_panel_transcript(
+    transcript_id: str,
+    supabase: SupaClientDep,
+):
+    try:
+        await delete_panel_transcript(supabase, transcript_id)
+        return {"message": "Panel transcript deleted successfully"}
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise handle_exception(e, "Failed to delete panel transcript", 500)
+
+
+@router.delete("/panel/audio/{audio_id}")
+async def api_delete_panel_audio(
+    audio_id: str,
+    supabase: SupaClientDep,
+):
+    try:
+        await delete_panel_audio(supabase, audio_id)
+        return {"message": "Panel audio deleted successfully"}
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise handle_exception(e, "Failed to delete panel audio", 500)

@@ -4,8 +4,11 @@ import { handleCreateTranscript } from "./helpers/panel.js";
 import {
     fetchPanelDetails,
     fetchTranscriptContent,
-    updateTranscript
+    updateTranscript,
+    deleteAudio
 } from "./helpers/fetch.js";
+import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
+import { FaTrash } from "react-icons/fa";
 import {
     processStateIcon,
     formatUpdateCycle,
@@ -187,6 +190,16 @@ const TranscriptDetailDisplay = ({ transcript }) => {
         }, 1000);
     };
 
+    const refreshAudios = () => {
+        fetchPanelDetails(transcript.panel_id).then((response) => {
+            setAudios(response.audioData);
+        });
+    };
+
+    const handleDeleteAudio = (audioId) => {
+        handleDeleteItem({ type: "audio", id: audioId }, refreshAudios);
+    };
+
     return (
         <div className="transcript-detail-display border p-3 mb-4 rounded">
             <h5 className="font-bold mb-2">{transcript.title}</h5>
@@ -328,6 +341,14 @@ const TranscriptDetailDisplay = ({ transcript }) => {
             </button>
             {isTranscriptVisible && (
                 <div className="mt-4">
+                    <p className="mb-2">
+                        Word Count:{" "}
+                        {
+                            transcriptContent
+                                .replace(/<\/?person\d+>/gi, "")
+                                .split(/\s+/).length
+                        }
+                    </p>
                     {renderTranscript(transcriptContent)}
                 </div>
             )}
@@ -349,11 +370,24 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                 audios
                     .filter((audio) => audio.transcript_id === transcript.id)
                     .map((audio) => (
-                        <AudioDetailDisplay
-                            key={audio.id}
-                            audio={audio}
-                            audioUrl={audioUrls[audio.id]}
-                        />
+                        <div key={audio.id} className="relative">
+                            <button
+                                onClick={() =>
+                                    showConfirmationDialog(
+                                        "Are you sure you want to delete this audio? This action cannot be undone.",
+                                        () => handleDeleteAudio(audio.id)
+                                    )
+                                }
+                                className="absolute top-0 right-0 p-2 text-red-500 hover:text-red-700"
+                                aria-label="Delete Audio"
+                            >
+                                <FaTrash />
+                            </button>
+                            <AudioDetailDisplay
+                                audio={audio}
+                                audioUrl={audioUrls[audio.id]}
+                            />
+                        </div>
                     ))}
         </div>
     );
