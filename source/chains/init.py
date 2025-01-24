@@ -91,7 +91,7 @@ from source.prompts.panel import (
     transcript_conclusion_writer,
     transcript_summary_formatter,
 )
-from source.prompts.web_source import web_source_builder
+from source.prompts.web_source import web_source_builder, group_web_sources
 
 # from source.chains.prompt_generator import journey_prompts
 
@@ -148,7 +148,7 @@ def init_llm(
             model_id=model.model,
             region_name=provider.region,
             model_kwargs={"temperature": temperature},
-            timeout=30000,
+            timeout=60,
             max_tokens=model.max_tokens,
             max_retries=2,
             **common_kwargs,
@@ -164,7 +164,7 @@ def init_llm(
                 if "structured" in model.type
                 else {}
             ),
-            timeout=60000,
+            # timeout=60000,
             request_timeout=120,
             max_tokens=model.max_tokens,
             max_retries=2,
@@ -178,7 +178,7 @@ def init_llm(
             endpoint_api_key=model.api_key,
             content_formatter=CustomOpenAIChatContentFormatter(),
             model_kwargs={"temperature": temperature},
-            timeout=1000,
+            timeout=10,
             max_tokens=model.max_tokens,
             max_retries=2,
             **common_kwargs,
@@ -196,7 +196,7 @@ def init_llm(
             num_ctx=model.context_size,
             num_predict=model.context_size,
             repeat_penalty=2,
-            timeout=30000,
+            timeout=30,
             max_retries=2,
             max_tokens=model.max_tokens,
             **common_kwargs,
@@ -212,7 +212,7 @@ def init_llm(
                 if "structured" in model.type
                 else {}
             ),
-            timeout=30000,
+            timeout=30,
             max_retries=2,
             max_tokens=model.max_tokens,
             **common_kwargs,
@@ -499,6 +499,18 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         "structured_warm",
         transcript_summary_formatter,
         True,
+        True,
+    ),
+    "group_web_sources": (
+        "instruct_detailed",
+        group_web_sources,
+        False,
+        False,
+    ),
+    "group_web_sources_sync": (
+        "instruct_detailed",
+        group_web_sources,
+        False,
         True,
     ),
 }

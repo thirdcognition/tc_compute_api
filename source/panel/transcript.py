@@ -5,7 +5,9 @@ from uuid import UUID
 from supabase import Client
 
 from app.core.supabase import get_sync_supabase_client
+from source.chains.init import get_chain
 from source.models.data.web_source import WebSource
+from source.models.structures.web_source_structure import WebSourceCollection
 from source.models.supabase.panel import ProcessState, PanelDiscussion, PanelTranscript
 from source.models.structures.panel import PanelRequestData, custom_config
 
@@ -22,6 +24,7 @@ from source.llm_exec.panel_exec import (
     transcript_summary_writer,
 )
 from source.models.data.user import UserIDs
+from source.prompts.web_source import WebSourceGrouping
 
 
 def initialize_supabase_client(
@@ -161,7 +164,7 @@ def create_and_update_panel_transcript(
 def generate_transcripts(
     conversation_config: dict,
     input_text: str,
-    sources: List[WebSource],
+    sources: List[WebSourceCollection],
     longform: bool,
 ) -> Tuple[List[str], str]:
     all_transcripts = []
@@ -179,16 +182,15 @@ def generate_transcripts(
             combined_sources.append(input_text)
             all_transcripts.append(transcript)
 
-        for source in sources:
-            if source:
-                transcript = generate_and_verify_transcript(
-                    conversation_config=conversation_config,
-                    source=source,
-                    urls=[],
-                    total_count=total_count,
-                )
-                all_transcripts.append(transcript)
-                combined_sources.append(source)
+        for source_collection in sources:
+            transcript = generate_and_verify_transcript(
+                conversation_config=conversation_config,
+                source=source_collection,
+                urls=[],
+                total_count=total_count,
+            )
+            all_transcripts.append(transcript)
+            combined_sources.append(source_collection)
     else:
         combined_sources = sources
         all_transcripts = [
@@ -199,9 +201,52 @@ def generate_transcripts(
                 total_count=1,
             )
         ]
-        # all_transcripts = article_contents
 
     return all_transcripts, combined_sources
+
+
+def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]:
+    # Create a list of source IDs as strings
+    source_ids = {str(source.source_id) for source in web_sources}
+
+    grouping: WebSourceGrouping = get_chain("group_web_sources_sync").invoke(
+        {
+            "web_sources": "\n\n".join(
+                source.to_simple_str() for source in web_sources
+            ),
+            "start_with": "Humor or funny topic if available",
+            "end_with": "Lighthearted, or funny topic if available",
+        }
+    )
+
+    source_collections: List[WebSourceCollection] = []
+    main_item = int(grouping.main_group)
+    i = 0
+    for group in grouping.ordered_groups:
+        # Convert group IDs to strings
+        filtered_sources = [
+            source for source in web_sources if str(source.source_id) in group
+        ]
+        # Remove used IDs from the list
+        source_ids -= {str(source.source_id) for source in filtered_sources}
+        coll = WebSourceCollection(filtered_sources)
+        if i == main_item:
+            coll.main_item = True
+        source_collections.append(coll)
+        i += 1
+
+    # print(f"Missing ids {source_ids=}, grouping ids {grouping.all_ids=}")
+
+    # Handle any remaining IDs that were not grouped
+    for remaining_id in source_ids:
+        remaining_source = next(
+            (source for source in web_sources if str(source.source_id) == remaining_id),
+            None,
+        )
+        if remaining_source:
+            source_collections.append(WebSourceCollection([remaining_source]))
+
+    return source_collections
 
 
 def upload_transcript_to_supabase(
@@ -288,11 +333,16 @@ def create_panel_transcript(
             supabase_client, panel_transcript
         )
 
+    ordered_groups = group_web_sources(web_sources)
+
+    # for col in ordered_groups:
+    #     print(str(col))
+
     try:
         all_transcripts, combined_sources = generate_transcripts(
             conversation_config,
             request_data.input_text or "",
-            web_sources,
+            ordered_groups,
             request_data.longform,
         )
         final_transcript = transcript_combiner(
@@ -309,9 +359,12 @@ def create_panel_transcript(
         if "images" not in panel_transcript.metadata:
             panel_transcript.metadata["images"] = []
 
-        for source in combined_sources:
-            if isinstance(source, WebSource) and source.image:
-                panel_transcript.metadata["images"].append(str(source.image))
+        panel_transcript.metadata["images"] = [
+            str(web_source.image)
+            for collection in combined_sources
+            for web_source in collection.web_sources
+            if web_source.image
+        ]
 
         upload_transcript_to_supabase(
             supabase_client,

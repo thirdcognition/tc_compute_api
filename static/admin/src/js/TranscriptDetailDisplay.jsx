@@ -151,7 +151,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                 outputLanguage:
                     transcript.metadata?.conversation_config?.output_language ||
                     "English",
-                longForm: false,
+                longForm: transcript.metadata?.longform,
                 updateCycle: updateCycle
             });
             if (success && taskId) {

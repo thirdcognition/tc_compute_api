@@ -35,6 +35,7 @@ class WebSource(BaseModel):
     metadata: Optional[dict] = None
     owner_id: Optional[str] = None
     organization_id: Optional[str] = None
+    main_item: bool = False
 
     def _verify_image(self, article_image) -> bool:
         """
@@ -234,6 +235,35 @@ class WebSource(BaseModel):
             on_conflict=["source_id", "related_source_id"],
         )
 
+    def _get_field(self, article_attr, url_result_attr, self_attr):
+        """
+        Helper function to return the first non-None value in priority order:
+        NewsArticle -> UrlResult -> WebSource.
+        Handles attribute availability checks.
+        """
+        article_value = (
+            getattr(self.article, article_attr, None) if self.article else None
+        )
+        url_result_value = (
+            getattr(self.url_result, url_result_attr, None) if self.url_result else None
+        )
+        self_value = getattr(self, self_attr, None)
+        return article_value or url_result_value or self_value
+
+    def to_simple_str(self):
+        title = self._get_field("title", "title", "title")
+        topic = self.article.topic if self.article else ""
+        summary = self._get_field("summary", "description", "description")
+        categories = self._get_field("categories", "categories", "categories")
+        id = self.source_id
+
+        return (
+            f"ID({id}), Categories({str(categories)})"
+            + (f" Topic({topic})" if topic else "")
+            + f"\n Title: {title}"
+            + f"\n Summary: {summary}"
+        )
+
     def __str__(self):
         """
         Generate a string representation of the WebSource instance.
@@ -241,28 +271,13 @@ class WebSource(BaseModel):
         Data is prioritized from NewsArticle, then UrlResult, and finally WebSource itself.
         """
 
-        def get_field(article_attr, url_result_attr, self_attr):
-            """
-            Helper function to return the first non-None value in priority order:
-            NewsArticle -> UrlResult -> WebSource.
-            Handles attribute availability checks.
-            """
-            article_value = (
-                getattr(self.article, article_attr, None) if self.article else None
-            )
-            url_result_value = (
-                getattr(self.url_result, url_result_attr, None)
-                if self.url_result
-                else None
-            )
-            self_value = getattr(self, self_attr, None)
-            return article_value or url_result_value or self_value
-
         # Construct the string representation
-        title = get_field("title", "title", "title")
-        description = get_field("description", "description", "description")
-        content = get_field("article", "human_readable_content", "original_content")
-        categories = get_field("categories", "categories", "categories")
+        title = self._get_field("title", "title", "title")
+        description = self._get_field("description", "description", "description")
+        content = self._get_field(
+            "article", "human_readable_content", "original_content"
+        )
+        categories = self._get_field("categories", "categories", "categories")
 
         # Format categories if they exist
         if categories and isinstance(categories, list):
@@ -389,23 +404,23 @@ class WebSource(BaseModel):
             self.load_from_supabase_sync(supabase)
             return True
         else:
-            # try:
-            print(f"Resolving URL: {self.original_source}")
-            url_result = resolver.resolve_url(str(self.original_source))
-            self.url_result = url_result
-            if len(url_result.human_readable_content) > 500:
-                self._update_from_(url_result)  # Replaced manual updates
-                self.build_article()  # Update article
-                if user_ids is not None:
-                    self.owner_id = user_ids.user_id
-                    self.organization_id = user_ids.organization_id
-                print(
-                    f"Resolved URL successfully, saving source for: {self.title} ({self.original_source})"
-                )
-                self.create_and_save_source_sync(supabase)
-                return True
-            # except Exception as e:
-            #     print(f"Failed to resolve {self.original_source}: {e}")
+            try:
+                print(f"Resolving URL: {self.original_source}")
+                url_result = resolver.resolve_url(str(self.original_source))
+                self.url_result = url_result
+                if len(url_result.human_readable_content) > 500:
+                    self._update_from_(url_result)  # Replaced manual updates
+                    self.build_article()  # Update article
+                    if user_ids is not None:
+                        self.owner_id = user_ids.user_id
+                        self.organization_id = user_ids.organization_id
+                    print(
+                        f"Resolved URL successfully, saving source for: {self.title} ({self.original_source})"
+                    )
+                    self.create_and_save_source_sync(supabase)
+                    return True
+            except Exception as e:
+                print(f"Failed to resolve {self.original_source}: {e}")
             # finally:
             #     print(f"Closing resolver for: {self.original_source}")
         return False

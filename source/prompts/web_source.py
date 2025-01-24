@@ -1,12 +1,18 @@
+import collections
 from enum import Enum
 import json
 import textwrap
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from langchain.output_parsers import PydanticOutputParser
+from langchain_core.exceptions import OutputParserException
 from source.prompts.base import (
+    ACTOR_INTRODUCTIONS,
+    KEEP_PRE_THINK_TOGETHER,
     MAINTAIN_CONTENT_AND_USER_LANGUAGE,
+    PRE_THINK_INSTRUCT,
     PromptFormatter,
+    TagsParser,
 )
 
 
@@ -129,3 +135,103 @@ class ConvertAndParseWrapper:
 
 
 web_source_builder.parser = ConvertAndParseWrapper()
+
+
+# Define the Pydantic model for the output structure
+class WebSourceGrouping(BaseModel):
+    all_ids: List[str] = Field(..., description="A list of all available IDs")
+    ordered_groups: List[List[str]] = Field(
+        ...,
+        description="An ordered list of lists of IDs grouped by title and summary connection and sorted by topical and categorical similarity.",
+    )
+    main_group: int = Field(
+        ...,
+        description="The index of the group which is considered to be the most important group in the groups",
+    )
+
+
+# Create the PydanticOutputParser for the WebSourceGrouping model
+web_source_grouping_parser = PydanticOutputParser(pydantic_object=WebSourceGrouping)
+
+
+class WebSourceGroupingValidator:
+    def __init__(self):
+        self.cleaner = TagsParser(tags=["thinking", "reflection"], return_tag=False)
+
+    def parse(self, raw_input: str) -> WebSourceGrouping:
+        # Clean the <thinking> and <reflection> tags
+        cleaned_input = self.cleaner.parse(raw_input)
+        # print(f"{cleaned_input=}")
+
+        # Parse the cleaned input into a WebSourceGrouping object
+        parsed_response = web_source_grouping_parser.parse(cleaned_input)
+
+        # Flatten the grouped IDs from the parsed response
+        grouped_ids = {id for group in parsed_response.ordered_groups for id in group}
+
+        original_ids = parsed_response.all_ids
+
+        # Check for duplicate IDs
+        if len(grouped_ids) != len(original_ids):
+            duplicates = set(
+                id
+                for id, count in collections.Counter(original_ids).items()
+                if count > 1
+            )
+            raise OutputParserException(
+                f"The following IDs are duplicated in the LLM response: {', '.join(duplicates)}"
+            )
+
+        # Find missing IDs
+        missing_ids = set(original_ids) - grouped_ids
+
+        if missing_ids:
+            raise OutputParserException(
+                f"The following IDs are missing from the LLM response: {', '.join(missing_ids)}"
+            )
+
+        return parsed_response
+
+
+# Create the PromptFormatter for the LLM
+group_web_sources = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        {PRE_THINK_INSTRUCT}
+        {KEEP_PRE_THINK_TOGETHER}
+
+        You are tasked with analyzing a list of articles and then grouping and sorting them based on their topical or categorical connections.
+        Instructions:
+        - Group articles into lists of IDs based on their categories, topic, title and summary.
+        - Each group must be directly connected by categories, topic and title or summary.
+        - Do not group items just by topic or category.
+        - Sorting of the groups should be based on categories and topics.
+        - Make sure to sort groups through similarity of topics/categories.
+        - Use the `start_with` and `end_with` parameters to determine which items to place at the beginning and end of the ordered groups.
+        - Ensure all provided IDs are included in the output.
+        - Return the result as a JSON object using the specified format.
+        - Do not use one ID more than once in the groups.
+
+        Format instructions:
+        <thinking>Place your thinking here</thinking>
+        <output>
+        {web_source_grouping_parser.get_format_instructions()}
+        </output>
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Articles:
+        {web_sources}
+
+        Parameters:
+        Start with: {start_with}
+        End with: {end_with}
+
+        Group the articles and return the result.
+        """
+    ),
+)
+
+group_web_sources.parser = WebSourceGroupingValidator()

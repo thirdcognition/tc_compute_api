@@ -104,6 +104,15 @@ verify_transcript_quality = PromptFormatter(
         - Use details between content start and content end to verify that the transcript uses the specified information.
         - Transcript language can be different than content language, especially if Language configuration is set.
         - Transcript should be in the language defined in Transcript configuration.
+        - The transcript might be marked as the main item, in which case it should be highlighted as such.
+        - Transcript cover all the content.
+        - Transcript should include every aspect of available content.
+        - There should be discussion about every title and topic from the provided content.
+        - There should not be any messages about episode ending, or farewells, etc in the middle of the transcript.
+        - If there are any discussion ending, or conclusion messages in the middle of the transcript, those must be removed.
+        - There is a field for specifying if the transcript length is enough. Make sure to incorporate the requirements in your feedback.
+        - If the transcript is not long enough as defined by transcript length, make sure to fail the transcript and instruct on how to make the transcript longer.
+        - If the transcript should be longer give specific instructions on how to make the transcript longer.
 
         Allow for:
         - Long transcript. Do not critisize long transcripts as long as the conversation is natural.
@@ -134,6 +143,12 @@ verify_transcript_quality = PromptFormatter(
         Dialogue Structure: {dialogue_structure}
         Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
+
+        Main Item:
+        {main_item}
+
+        Transcript length:
+        {transcript_length}
 
         Respond with "yes" or "no" and add a list of details for what to fix.
         """
@@ -167,6 +182,8 @@ transcript_rewriter = PromptFormatter(
         - The resulting transcript should be as long as the previous transcript if available, unless explicitly instructed otherwise.
         - If the feedback requests longer transcript follow the instruction explicitly and entirely. Make the transcript longer.
         - The transcript should always have a proper conclusion.
+        - The content might be labeled as the Main Item, meaning that the emphasis for the episode should be on this content.
+        - If the Main item config is set to true, make sure to highlight that this is the topic of this episode.
 
         FEWSHOT EXAMPLES:
 
@@ -215,6 +232,9 @@ transcript_rewriter = PromptFormatter(
         Dialogue Structure: {dialogue_structure}
         Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
+
+        Main Item:
+        {main_item}
 
         Feedback (did the transcript pass the check?):
         {feedback}
@@ -385,6 +405,8 @@ transcript_writer = PromptFormatter(
         - Ensure the conversation adheres to the input content and configuration provided.
         - Maintain a balance between comprehensive coverage of the content and engaging dialogue.
         - The conversation must start with <Person1> and end with <Person2>.
+        - The content might be labeled as the Main Item, meaning that the emphasis for the episode should be on this content.
+        - If the Main item config is set to true, make sure to highlight that this is the topic of this episode.
 
 
         FORMAT:
@@ -473,9 +495,12 @@ transcript_writer = PromptFormatter(
         Additional instructions:
         {user_instructions}
 
-        Discussion content:
+        Content:
         {content}
         Content end.
+
+        Main Item:
+        {main_item}
         """
     ),
 )
@@ -505,6 +530,9 @@ transcript_bridge_writer = PromptFormatter(
         - Ensure the conversation adheres to the input content and configuration provided.
         - Maintain a balance between comprehensive coverage of the content and engaging dialogue.
         - The conversation must start with <Person1> and end with <Person2>.
+        - Only write the bridge between Transcript 1 and Transcript 2. Do not repeat the content from the transcripts.
+        - You need to only write a bridge for Transcript 1 and Transcript 2 so that there's a natural transition between the topics.
+        - Try to keep the bridge short. Do not write more than 6 dialogue items.
 
         FORMAT:
         - Output format should be the same as input format, i.e., a conversation where each speaker's turn is enclosed in tags, <Person1> and <Person2>.

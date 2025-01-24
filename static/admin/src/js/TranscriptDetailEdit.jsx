@@ -71,7 +71,7 @@ function TranscriptDetailEdit({
     useEffect(() => {
         if (discussionData) {
             const articleCount = calculateArticleCount(discussionData);
-            const newMaxWordCount = articleCount * 1000;
+            const newMaxWordCount = articleCount * 500;
             setMaxWordCount(newMaxWordCount);
             setDuration(newMaxWordCount / 500); // Calculate duration
             if (wordCount > newMaxWordCount) {

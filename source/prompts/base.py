@@ -26,7 +26,9 @@ PRE_THINK_INSTRUCT = """
         """
 PRE_THINK_TAGS = ["thinking", "reflection"]
 
-ACTOR_INTRODUCTIONS = "You are a world-class AI system, capable of complex reasoning and reflection called Virtual Buddy."
+ACTOR_INTRODUCTIONS = (
+    "You are a world-class AI system, capable of complex reasoning and reflection."
+)
 # For example:
 
 # Example 1:
