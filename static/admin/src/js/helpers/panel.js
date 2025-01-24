@@ -99,10 +99,6 @@ export const handleCreateTranscript = async (params) => {
         Math.min(300, params.wordCount),
         Math.min(Math.floor((params.wordCount / articleCount) * 3), 8192)
     );
-    const targetWordCount =
-        (params.wordCount / articleCount) * 2 < 8192
-            ? params.wordCount / articleCount
-            : Math.ceil(8192 / 2);
     try {
         const taskId = await createTranscript({
             title: params.title,

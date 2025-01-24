@@ -42,66 +42,6 @@ function GoogleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
         setConfigFields(newConfigFields);
     };
 
-    const convertHoursToTimeFormat = (hours) => {
-        const days = Math.floor(hours / 24);
-        const remainingHours = hours % 24;
-        const months = Math.floor(days / 30);
-        const remainingDays = days % 30;
-        let result = "";
-        if (months > 0) result += `${months}m `;
-        if (remainingDays > 0) result += `${remainingDays}d `;
-        if (remainingHours > 0) result += `${remainingHours}h`;
-        return result.trim();
-    };
-
-    const convertTimeFormatToHours = (timeFormat) => {
-        if (typeof timeFormat !== "string") {
-            console.error(
-                "Expected a string for timeFormat, but received:",
-                timeFormat
-            );
-            return 0; // or handle the error as needed
-        }
-        const timeParts = timeFormat.split(" ");
-        let totalHours = 0;
-        timeParts.forEach((part) => {
-            if (part.endsWith("m")) {
-                totalHours += parseInt(part) * 30 * 24;
-            } else if (part.endsWith("d")) {
-                totalHours += parseInt(part) * 24;
-            } else if (part.endsWith("h")) {
-                totalHours += parseInt(part);
-            }
-        });
-        return totalHours;
-    };
-
-    const nordicCountries = [
-        { code: "SE", name: "Sweden" },
-        { code: "NO", name: "Norway" },
-        { code: "FI", name: "Finland" },
-        { code: "DK", name: "Denmark" },
-        { code: "IS", name: "Iceland" }
-    ];
-
-    const euCountries = [
-        { code: "DE", name: "Germany" },
-        { code: "FR", name: "France" },
-        { code: "IT", name: "Italy" },
-        { code: "ES", name: "Spain" },
-        { code: "PL", name: "Poland" }
-    ];
-
-    const usCountries = [{ code: "US", name: "United States" }];
-
-    const languages = [
-        { code: "en", name: "English" },
-        { code: "sv", name: "Swedish" },
-        { code: "no", name: "Norwegian" },
-        { code: "fi", name: "Finnish" },
-        { code: "da", name: "Danish" }
-    ];
-
     return (
         <Form.Group controlId="googleNewsConfigs">
             <Form.Label className="font-semibold">

@@ -54,13 +54,13 @@ export const formatUpdateCycle = (seconds) => {
 
 export const getWordCountDescription = (wordCount, maxWordCount) => {
     const percentage = (wordCount / maxWordCount) * 100;
-    if (percentage <= 10) return "shortest";
-    if (percentage <= 20) return "shorter";
-    if (percentage <= 30) return "short";
-    if (percentage <= 40) return "medium -";
-    if (percentage <= 60) return "medium";
-    if (percentage <= 70) return "medium +";
-    if (percentage <= 80) return "long";
-    if (percentage <= 90) return "longer";
-    return "longest";
+    if (percentage <= 10) return `shortest (${wordCount} words)`;
+    if (percentage <= 20) return `shorter (${wordCount} words)`;
+    if (percentage <= 30) return `short (${wordCount} words)`;
+    if (percentage <= 40) return `medium - (${wordCount} words)`;
+    if (percentage <= 60) return `medium (${wordCount} words)`;
+    if (percentage <= 70) return `medium + (${wordCount} words)`;
+    if (percentage <= 80) return `long (${wordCount} words)`;
+    if (percentage <= 90) return `longer (${wordCount} words)`;
+    return `longest (${wordCount} words)`;
 };

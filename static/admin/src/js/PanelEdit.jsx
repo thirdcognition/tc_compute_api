@@ -1,4 +1,4 @@
-import { Form, Button, Spinner } from "react-bootstrap";
+import { Spinner } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import PanelDetailEdit from "./PanelDetailEdit.jsx";
@@ -8,11 +8,7 @@ import TranscriptDetailDisplay from "./TranscriptDetailDisplay.jsx";
 import AudioDetailEdit from "./AudioDetailEdit.jsx";
 import { urlFormatter } from "./helpers/url.js";
 import { pollTaskStatus } from "./helpers/pollState.js";
-import {
-    fetchPanelDetails,
-    deleteTranscript,
-    deleteAudio
-} from "./helpers/fetch.js";
+import { fetchPanelDetails } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
 import { FaTrash } from "react-icons/fa";
 
@@ -47,13 +43,8 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
 
     const handleRefreshPanelData = async (panelId) => {
         try {
-            const {
-                discussionData,
-                transcriptData,
-                audioData,
-                filesData,
-                sourceData
-            } = await fetchPanelDetails(panelId);
+            const { discussionData, transcriptData, audioData, filesData } =
+                await fetchPanelDetails(panelId);
             setDiscussionData(discussionData);
             if (transcriptData.length > 0) {
                 setTranscriptData(transcriptData);

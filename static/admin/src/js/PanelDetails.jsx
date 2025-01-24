@@ -1,10 +1,6 @@
 import PanelDetailDisplay from "./PanelDetailDisplay.jsx";
 import TranscriptDetailDisplay from "./TranscriptDetailDisplay.jsx";
-import {
-    fetchPanelTranscripts,
-    deleteTranscript,
-    deleteAudio
-} from "./helpers/fetch.js";
+import { fetchPanelTranscripts } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
 import { Card } from "react-bootstrap";
 import { Navigate, Link } from "react-router-dom";

@@ -21,7 +21,7 @@ function TranscriptDetailEdit({
     const [wordCount, setWordCount] = useState(2500);
     const [maxWordCount, setMaxWordCount] = useState(20000); // Dynamically updated max
     const [duration, setDuration] = useState(20); // Duration in minutes
-    const [creativity, setCreativity] = useState(0.7);
+    const [creativity] = useState(0.7);
     const [conversationStyle, setConversationStyle] = useState([
         "engaging",
         "fast-paced",
@@ -78,7 +78,7 @@ function TranscriptDetailEdit({
                 setWordCount(newMaxWordCount); // Adjust wordCount if it exceeds max
             }
         }
-    }, [discussionData]);
+    }, [discussionData, wordCount]);
 
     const handleTranscriptSubmit = async (e) => {
         e.preventDefault();

@@ -4,8 +4,7 @@ import { handleCreateTranscript } from "./helpers/panel.js";
 import {
     fetchPanelDetails,
     fetchTranscriptContent,
-    updateTranscript,
-    deleteAudio
+    updateTranscript
 } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
 import { FaTrash } from "react-icons/fa";
@@ -42,7 +41,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                 response.transcriptSources[transcript.id] || []
             );
         });
-    }, [transcript.panel_id]);
+    }, [transcript.panel_id, transcript.id]);
 
     const toggleTranscriptVisibility = (transcriptId) => {
         if (!isTranscriptVisible && transcriptUrls[transcriptId]) {
