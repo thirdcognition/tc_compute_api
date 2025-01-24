@@ -24,7 +24,8 @@ trap cleanup SIGINT
 
 # Check if running inside Docker
 if [ -f /.dockerenv ]; then
-    playwright install-deps chromium
+    playwright install chromium
+    playwright install-deps
 
     echo "Running inside Docker, starting server without reload."
     uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --log-config logging_prod.ini &
@@ -45,7 +46,8 @@ else
 
     docker start tc-redis
 
-    .venv/bin/playwright install-deps chromium
+    .venv/bin/playwright install chromium
+    .venv/bin/playwright install-deps
 
     echo "Not running inside Docker, starting server with reload."
     .venv/bin/uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload --log-config logging.ini &
