@@ -26,17 +26,28 @@ function AudioDetailEdit({
     }, [ttsModel]);
 
     useEffect(() => {
-        if (transcriptData && transcriptData.length === 1) {
+        if (transcriptData && transcriptData.length > 0) {
             setTranscriptId(transcriptData[0].id);
         }
     }, [transcriptData]);
 
+    useEffect(() => {
+        if (!ttsModel) {
+            setTtsModel(defaultTtsModelOptions[0].value);
+        }
+    }, []);
+
     const handleAudioSubmit = async (e) => {
         e.preventDefault();
+        if (!transcriptId) {
+            console.error("Transcript ID is not selected.");
+            return;
+        }
+        console.log("PanelId", panelId, "TranscriptId", transcriptId);
         if (panelId && transcriptId) {
             handleCreateAudio({
                 panelId,
-                transcriptId,
+                transcriptId, // Ensure UUID is passed as-is
                 ttsModel,
                 defaultVoiceQuestion,
                 defaultVoiceAnswer
@@ -61,7 +72,7 @@ function AudioDetailEdit({
                                 </label>
                                 <select
                                     id="transcriptSelect"
-                                    value={transcriptId || ""}
+                                    value={transcriptId}
                                     onChange={(e) =>
                                         setTranscriptId(e.target.value)
                                     }
@@ -85,7 +96,7 @@ function AudioDetailEdit({
                         </Form.Label>
                         <Form.Control
                             as="select"
-                            value={ttsModel}
+                            value={ttsModel || defaultTtsModelOptions[0].value}
                             onChange={(e) => setTtsModel(e.target.value)}
                             className="w-full"
                         >
