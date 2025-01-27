@@ -71,7 +71,7 @@ function TranscriptDetailEdit({
         if (discussionData) {
             const articleCount = calculateArticleCount(discussionData);
             const newMaxWordCount =
-                articleCount * (longForm || articleCount == 1 ? 500 : 300);
+                articleCount * (longForm || articleCount === 1 ? 500 : 300);
             setMaxWordCount(newMaxWordCount);
             // setDuration(newMaxWordCount / 200); // Calculate duration
             if (wordCount > newMaxWordCount) {

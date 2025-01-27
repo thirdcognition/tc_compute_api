@@ -35,7 +35,7 @@ function AudioDetailEdit({
         if (!ttsModel) {
             setTtsModel(defaultTtsModelOptions[0].value);
         }
-    }, []);
+    }, [ttsModel]);
 
     const handleAudioSubmit = async (e) => {
         e.preventDefault();

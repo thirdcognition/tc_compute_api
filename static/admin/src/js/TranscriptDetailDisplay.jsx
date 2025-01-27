@@ -28,9 +28,9 @@ const TranscriptDetailDisplay = ({ transcript }) => {
     const [transcriptUrls, setTranscriptUrls] = useState({});
     const [audioUrls, setAudioUrls] = useState({});
     const [transcriptSources, setTranscriptSources] = useState([]);
+    const [, setIsPolling] = useState(false);
     const [isSourcesVisible, setIsSourcesVisible] = useState(false);
     const [taskStatus, setTaskStatus] = useState("idle");
-    const [isPolling, setIsPolling] = useState(false);
 
     useEffect(() => {
         fetchPanelDetails(transcript.panel_id).then((response) => {
