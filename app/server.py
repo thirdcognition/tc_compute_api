@@ -15,6 +15,7 @@ from app.routes.profile import router as profile_router
 from app.routes.system import router as system_router
 from app.routes.panel import router as panel_router
 from app.core.init_app import init_app
+from app.routes.communication import router as communication_router
 from source.load_env import SETTINGS
 from source.models.config.logging import logger
 
@@ -104,6 +105,7 @@ app.include_router(auth_router)
 app.include_router(organization_router)
 app.include_router(organization_user_router)
 # app.include_router(journey_router)
+app.include_router(communication_router)
 app.include_router(profile_router)
 app.include_router(system_router)
 app.include_router(panel_router)

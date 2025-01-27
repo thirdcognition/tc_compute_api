@@ -1,0 +1,27 @@
+@host = http://127.0.0.1
+@port = 4000
+@email = markus@thirdcognition.com
+@password = password123
+
+### Login request
+# @name login
+POST {{host}}:{{port}}/auth/login HTTP/1.1
+Content-Type: application/json
+Accept: application/json
+
+{"email":"{{email}}", "password": "{{password}}"}
+
+### Response
+@accessToken = {{login.response.body.$.access_token}}
+
+### Fetch Mailchimp Lists request
+# @name fetchMailchimpLists
+GET {{host}}:{{port}}/communication/mailchimp/lists HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### Fetch Mailchimp Templates request
+# @name fetchMailchimpTemplates
+GET {{host}}:{{port}}/communication/mailchimp/templates HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}

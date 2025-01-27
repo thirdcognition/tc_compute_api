@@ -1,6 +1,8 @@
 import requests
 from typing import List
 from supabase import Client
+import mailchimp_marketing as MailchimpMarketing
+from mailchimp_marketing.api_client import ApiClientError
 
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_service_client
@@ -8,6 +10,8 @@ from source.load_env import SETTINGS
 
 # from source.models.config.logging import logger
 from postgrest.base_request_builder import APIResponse
+
+from source.prompts.panel import TranscriptSummary
 
 
 # Assuming a function to get the Supabase client
@@ -17,6 +21,10 @@ def get_supabase_client() -> Client:
 
 
 def send_email_about_new_shows(panels: List[str]):
+    if not SETTINGS.send_emails:
+        print("Email sending is disabled.")
+        return
+
     supabase = get_sync_supabase_service_client()
     # Fetch all users
     users: APIResponse = (
@@ -42,7 +50,9 @@ def send_email_about_new_shows(panels: List[str]):
 @celery_app.task
 def send_new_shows_email_task(email: str, panels: List[str]):
     print(f"{email=}")
-    return
+    if not SETTINGS.send_emails:
+        print("Email sending is disabled.")
+        return
 
     if email is None or len(panels) == 0:
         print("No email defined or length of panels is 0, skipping email sending")
@@ -77,3 +87,64 @@ def send_new_shows_email_task(email: str, panels: List[str]):
 @celery_app.task
 def send_email_about_new_shows_task(panels: list[str]):
     send_email_about_new_shows(panels)
+
+
+def send_email_to_mailchimp_group(
+    transcript_summary: TranscriptSummary, list_id: str, template_id: str
+):
+    if not SETTINGS.enable_mailchimp:
+        print("Mailchimp integration is disabled.")
+        return
+
+    client = MailchimpMarketing.Client()
+    client.set_config(
+        {
+            "api_key": SETTINGS.mailchimp_api_key,
+            "server": SETTINGS.mailchimp_server_prefix,
+        }
+    )
+
+    # Extract fields from TranscriptSummary
+    episode_title = transcript_summary.title
+    episode_summary = transcript_summary.description
+
+    try:
+        # Create campaign using a predefined template
+        response = client.campaigns.create(
+            {
+                "type": "regular",
+                "recipients": {"list_id": list_id},
+                "settings": {
+                    "subject_line": episode_title,
+                    "title": episode_title,
+                    "from_name": "Your Name",
+                    "reply_to": "your-email@example.com",
+                    "template_id": template_id,  # Use the provided template ID
+                },
+            }
+        )
+
+        # Populate specific fields in the template
+        client.campaigns.set_content(
+            response["id"],
+            {
+                "template": {
+                    "id": template_id,
+                    "sections": {
+                        "episode_title": episode_title,  # Field for the episode title
+                        "episode_summary": episode_summary,  # Field for the episode summary
+                    },
+                }
+            },
+        )
+
+        print("Campaign created successfully: {}".format(response))
+    except ApiClientError as error:
+        print("An error occurred: {}".format(error.text))
+
+
+@celery_app.task
+def send_email_to_mailchimp_group_task(
+    transcript_details: str, sources: List[str], list_id: str
+):
+    send_email_to_mailchimp_group(transcript_details, sources, list_id)
