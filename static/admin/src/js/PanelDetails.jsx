@@ -16,7 +16,10 @@ function PanelDetails({ panel }) {
 
         fetchPanelTranscripts(panel.id)
             .then((data) => {
-                setTranscripts(data);
+                const sortedData = data.sort(
+                    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+                setTranscripts(sortedData);
                 if (data.length === 0) {
                     setRedirectToEdit(true);
                 }
@@ -28,7 +31,12 @@ function PanelDetails({ panel }) {
 
     const refreshTranscripts = () => {
         fetchPanelTranscripts(panel.id)
-            .then((data) => setTranscripts(data))
+            .then((data) => {
+                const sortedData = data.sort(
+                    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+                setTranscripts(sortedData);
+            })
             .catch((error) =>
                 console.error("Error refreshing transcripts:", error)
             );
@@ -44,10 +52,18 @@ function PanelDetails({ panel }) {
 
     return (
         <div className="max-h-screen overflow-y-auto">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center text-center">
+                <a
+                    href={`/player/panel/${panel.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary w-full py-2 mb-4 flex items-center justify-center mr-2"
+                >
+                    View in Player
+                </a>
                 <Link
                     to={`/panel/${panel.id}/edit`}
-                    className="btn btn-primary w-full py-2 mb-4 flex items-center"
+                    className="btn btn-primary w-full py-2 mb-4 flex items-center justify-center"
                 >
                     Edit Show
                 </Link>

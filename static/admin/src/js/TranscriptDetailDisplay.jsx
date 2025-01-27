@@ -7,22 +7,23 @@ import {
     updateTranscript
 } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaClock, FaRegStar } from "react-icons/fa";
 import {
     processStateIcon,
-    formatUpdateCycle,
-    getWordCountDescription
+    getWordCountDescription,
+    formatCronjob
 } from "./helpers/ui.js";
+import { FaSyncAlt } from "react-icons/fa";
+import CronjobComponent from "./components/CronjobComponent.jsx";
 import { pollTaskStatus } from "./helpers/pollState.js";
 
 const TranscriptDetailDisplay = ({ transcript }) => {
     const [showDetails, setShowDetails] = useState(false);
     const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
     const [transcriptContent, setTranscriptContent] = useState("");
-    const [updateCycle, setUpdateCycle] = useState(
-        (transcript.metadata?.update_cycle ?? transcript.generation_interval) ||
-            0
-    ); // Editable updateCycle in seconds
+    const [cronjob, setCronjob] = useState(
+        transcript.generation_cronjob || transcript.metadata?.cronjob || ""
+    ); // Editable cronjob in seconds
     const config = transcript.metadata?.conversation_config || {};
     const [audios, setAudios] = useState([]);
     const [transcriptUrls, setTranscriptUrls] = useState({});
@@ -105,14 +106,14 @@ const TranscriptDetailDisplay = ({ transcript }) => {
         setIsSourcesVisible(!isSourcesVisible);
     };
 
-    const handleUpdateTranscript = async (newUpdateCycle) => {
+    const handleUpdateTranscript = async (newCronjob) => {
         try {
             const updatedTranscript = await updateTranscript(
                 transcript.id,
                 transcript,
-                newUpdateCycle
+                newCronjob
             );
-            setUpdateCycle(updatedTranscript.metadata.update_cycle || 0);
+            setCronjob(updatedTranscript.generation_cronjob || "");
         } catch (error) {
             console.error("Error updating transcript:", error);
         }
@@ -151,7 +152,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     transcript.metadata?.conversation_config?.output_language ||
                     "English",
                 longForm: transcript.metadata?.longform,
-                updateCycle: updateCycle
+                cronjob: cronjob
             });
             if (success && taskId) {
                 console.log(
@@ -201,7 +202,26 @@ const TranscriptDetailDisplay = ({ transcript }) => {
 
     return (
         <div className="transcript-detail-display border p-3 mb-4 rounded">
-            <h5 className="font-bold mb-2">{transcript.title}</h5>
+            <h5 className="font-bold mb-2">
+                {transcript.generation_parent && (
+                    <FaSyncAlt
+                        className="inline-block mr-2 text-blue-500"
+                        title="Recurring Generation"
+                    />
+                )}
+                {transcript.generation_cronjob ? (
+                    <FaClock
+                        className="inline-block mr-2 text-green-500"
+                        title="Scheduled Generation"
+                    />
+                ) : (
+                    <FaRegStar
+                        className="inline-block mr-2 text-gray-500"
+                        title="No Update Cycle"
+                    />
+                )}
+                {transcript.title}
+            </h5>
             <p className="mb-2 flex items-center">
                 <span className="mr-2">
                     {processStateIcon(transcript.process_state)}
@@ -218,20 +238,22 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     Error: {transcript.process_fail_message}
                 </p>
             )}
-            <button
-                onClick={handleDuplicateTranscript}
-                className={`w-full py-2 mb-4 flex items-center justify-center rounded ${
-                    taskStatus === "processing"
-                        ? "bg-gray-500 text-white"
-                        : "bg-green-500 text-white"
-                }`}
-                disabled={taskStatus === "processing"}
-            >
-                {taskStatus === "idle" && "Recreate Transcript"}
-                {taskStatus === "processing" && "Processing..."}
-                {taskStatus === "success" && "Success"}
-                {taskStatus === "failure" && "Failed"}
-            </button>
+            {!transcript.generation_parent && (
+                <button
+                    onClick={handleDuplicateTranscript}
+                    className={`w-full py-2 mb-4 flex items-center justify-center rounded ${
+                        taskStatus === "processing"
+                            ? "bg-gray-500 text-white"
+                            : "bg-green-500 text-white"
+                    }`}
+                    disabled={taskStatus === "processing"}
+                >
+                    {taskStatus === "idle" && "Recreate Transcript"}
+                    {taskStatus === "processing" && "Processing..."}
+                    {taskStatus === "success" && "Success"}
+                    {taskStatus === "failure" && "Failed"}
+                </button>
+            )}
             <button
                 onClick={() => setShowDetails(!showDetails)}
                 className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
@@ -290,41 +312,41 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                             Output Language: {config.output_language}
                         </p>
                     )}
-                    <label className="font-semibold mb-1 block">
-                        Update Cycle:
-                    </label>
-                    <div className="mb-2 flex items-center space-x-2">
-                        <input
-                            type="range"
-                            min={0}
-                            max={3600 * 24 * 14} //14 * 24 * 3600, // 2 weeks in seconds
-                            step={3600} //12 * 3600, // 12 hours in seconds
-                            value={updateCycle}
-                            onChange={(e) =>
-                                setUpdateCycle(Number(e.target.value))
-                            }
-                            className="flex-grow"
-                        />
-                        <span className="ml-2">
-                            {formatUpdateCycle(updateCycle)}
-                        </span>
-                        <button
-                            onClick={() =>
-                                handleUpdateTranscript(
-                                    updateCycle === 0 ? null : updateCycle
-                                )
-                            }
-                            className="bg-blue-500 text-white py-1 px-3 rounded"
-                        >
-                            Update
-                        </button>
-                        <button
-                            onClick={() => handleUpdateTranscript(null)}
-                            className="bg-red-500 text-white py-1 px-3 rounded"
-                        >
-                            Remove
-                        </button>
-                    </div>
+                    {!transcript.generation_parent && (
+                        <>
+                            {transcript.generation_cronjob && cronjob ? (
+                                <div className="mb-4">
+                                    <p className="mb-2">
+                                        Scheduled: {formatCronjob(cronjob)}
+                                    </p>
+                                    <button
+                                        onClick={() => setCronjob("")}
+                                        className="bg-red-500 text-white py-1 px-3 rounded"
+                                    >
+                                        Clear Schedule
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <label className="font-semibold mb-1 block">
+                                        Update Cycle:
+                                    </label>
+                                    <CronjobComponent
+                                        value={cronjob}
+                                        onChange={setCronjob}
+                                    />
+                                    <button
+                                        onClick={() =>
+                                            handleUpdateTranscript(cronjob)
+                                        }
+                                        className="bg-blue-500 text-white py-1 px-3 rounded"
+                                    >
+                                        Update
+                                    </button>
+                                </>
+                            )}
+                        </>
+                    )}
                 </div>
             )}
             <button

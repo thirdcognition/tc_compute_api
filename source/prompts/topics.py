@@ -10,7 +10,7 @@ from source.prompts.base import (
 )
 
 PAGE_INSTRUCT = """
-        Use <thinking>-tag to consider the contents of the page and how to rewrite them. Explain your reasoning using
+        Use <think>-tag to consider the contents of the page and how to rewrite them. Explain your reasoning using
         <reflect>-tag and make sure to cover all of the content.
 
         Rewrite the page in a way that contains all the information about the topic that is available within the context.
@@ -43,7 +43,7 @@ PAGE_INSTRUCT = """
         """
 PAGE_INSTRUCT_TAGS = ["topic", "id", "instruct", "summary"]
 TOPIC_INSTRUCT = """
-        Use <thinking>-tag to identify different topics that are contained within the page. Explain your reasoning using
+        Use <think>-tag to identify different topics that are contained within the page. Explain your reasoning using
         <reflect>-tag and make sure to cover all topics separately.
 
         For each topic write content that covers all the information about the topic that is available within the context.
@@ -104,7 +104,7 @@ topic_formatter = PromptFormatter(
 topic_formatter.parser = TagsParser(
     min_len=100,
     tags=TOPIC_INSTRUCT_TAGS,
-    optional_tags=["thinking", "reflection"],
+    optional_tags=["think", "reflection"],
     all_tags_required=True,
     return_tag=True,
 )
@@ -141,7 +141,7 @@ topic_formatter_guided = PromptFormatter(
 topic_formatter_guided.parser = TagsParser(
     min_len=100,
     tags=TOPIC_INSTRUCT_TAGS,
-    optional_tags=["thinking", "reflection"],
+    optional_tags=["think", "reflection"],
     all_tags_required=True,
     return_tag=True,
 )
@@ -234,7 +234,7 @@ page_formatter = PromptFormatter(
 page_formatter.parser = TagsParser(
     min_len=100,
     tags=PAGE_INSTRUCT_TAGS,
-    optional_tags=["thinking", "reflection"],
+    optional_tags=["think", "reflection"],
     all_tags_required=True,
     return_tag=True,
 )
@@ -270,7 +270,7 @@ page_formatter_guided = PromptFormatter(
 page_formatter_guided.parser = TagsParser(
     min_len=100,
     tags=PAGE_INSTRUCT_TAGS,
-    optional_tags=["thinking", "reflection"],
+    optional_tags=["think", "reflection"],
     all_tags_required=True,
     return_tag=True,
 )

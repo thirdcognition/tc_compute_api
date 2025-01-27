@@ -28,7 +28,10 @@ async def update_panel_transcript(
         raise ValueError("Panel transcript not found")
 
     for key, value in request_data.model_dump(exclude_unset=False).items():
-        setattr(existing_transcript, key, value)
+        if key == "generation_cronjob" and value is None:
+            setattr(existing_transcript, key, None)
+        else:
+            setattr(existing_transcript, key, value)
 
     await existing_transcript.update(supabase)
     return existing_transcript

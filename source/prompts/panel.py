@@ -1,11 +1,15 @@
 import re
+from source.prompts.base import clean_tags
 import textwrap
-from typing import List
+from typing import List, Union
 from pydantic import BaseModel, Field
 from langchain_core.exceptions import OutputParserException
 from langchain.output_parsers import PydanticOutputParser
+from langchain_core.messages import BaseMessage
 from source.prompts.actions import QuestionClassifierParser
 from source.prompts.base import (
+    ACTOR_INTRODUCTIONS,
+    PRE_THINK_INSTRUCT,
     BaseOutputParser,
     PromptFormatter,
 )
@@ -17,79 +21,111 @@ from source.prompts.base import (
 
 
 class TranscriptParser(BaseOutputParser[str]):
-    """Custom parser to fix alternating tags and validate format."""
+    """Custom parser to process and validate podcast transcripts."""
 
-    def _fix_alternating_tags(self, transcript: str) -> str:
-        pattern = r"(<Person[12]>.*?</Person[12]>)"
-        blocks = re.split(pattern, transcript, flags=re.DOTALL)
+    def _strip_tags(self, text: str, tag: str) -> str:
+        """Remove specific tags but keep their content."""
+        return re.sub(rf"</?{tag}.*?>", "", text, flags=re.IGNORECASE)
 
-        # Filter out empty/whitespace blocks
-        blocks = [b.strip() for b in blocks if b.strip()]
+    def _split_blocks(self, text: str) -> List[str]:
+        """Split text into blocks based on <personN> tags, allowing for properties and whitespace."""
+        pattern = r"(<person\d+.*?>.*?</person\d+>)"
+        blocks = re.split(pattern, text, flags=re.DOTALL | re.IGNORECASE)
+        return [block.strip() for block in blocks if block.strip()]
 
+    def _validate_and_merge_blocks(self, blocks: List[str]) -> List[str]:
+        """Validate and merge consecutive blocks for the same speaker."""
         merged_blocks = []
+        current_speaker = None
         current_content = []
-        current_person = None
 
         for block in blocks:
-            # Extract person number and content
-            match = re.match(r"<Person([12])>(.*?)</Person\1>", block, re.DOTALL)
+            match = re.match(
+                r"<person(\d+)(.*?)>(.*?)</person\1>", block, re.DOTALL | re.IGNORECASE
+            )
             if not match:
-                continue
+                raise OutputParserException(f"Malformed block: {block}")
 
-            person_num, content = match.groups()
+            speaker, properties, content = match.groups()
             content = content.strip()
 
-            if current_person == person_num:
-                # Same person - append content
+            if speaker == current_speaker:
                 current_content.append(content)
             else:
-                # Different person - flush current content if any
                 if current_content:
-                    merged_text = " ".join(current_content)
                     merged_blocks.append(
-                        "<Person{0}>{1}</Person{0}>".format(current_person, merged_text)
+                        f"<Person{current_speaker}{properties}>{' '.join(current_content)}</Person{current_speaker}>"
                     )
-                # Start new person
-                current_person = person_num
+                current_speaker = speaker
                 current_content = [content]
 
-        # Flush final content
         if current_content:
-            merged_text = " ".join(current_content)
             merged_blocks.append(
-                f"<Person{current_person}>{merged_text}</Person{current_person}>"
+                f"<Person{current_speaker}{properties}>{' '.join(current_content)}</Person{current_speaker}>"
             )
 
-        return "\n".join(merged_blocks)
+        return merged_blocks
 
-    def parse(self, text: str) -> str:
-        # Fix alternating tags
-        fixed_text = self._fix_alternating_tags(text)
+    def _ensure_alternating_speakers(self, blocks: List[str]) -> List[str]:
+        """Ensure the transcript alternates between speakers."""
+        if not blocks:
+            return blocks
 
-        # Validate format
-        invalid_blocks = [
-            block
-            for block in re.split(
-                r"(<Person[12]>.*?</Person[12]>)", fixed_text, flags=re.DOTALL
-            )
-            if block.strip()
-            and not re.match(r"<Person[12]>.*?</Person[12]>", block, re.DOTALL)
-        ]
-        if invalid_blocks:
+        first_speaker_match = re.match(r"<person(\d+)", blocks[0], re.IGNORECASE)
+        last_speaker_match = re.match(r"<person(\d+)", blocks[-1], re.IGNORECASE)
+
+        if not first_speaker_match or not last_speaker_match:
             raise OutputParserException(
-                f"Transcript format is invalid. The following blocks are not properly enclosed: {invalid_blocks}"
+                "Transcript must start and end with valid <personN> tags."
             )
 
-        return fixed_text
+        first_speaker = first_speaker_match.group(1)
+        last_speaker = last_speaker_match.group(1)
+
+        if first_speaker == last_speaker:
+            raise OutputParserException(
+                "Transcript must alternate between speakers and end with a different speaker."
+            )
+
+        return blocks
+
+    def parse(self, text: Union[str, BaseMessage]) -> str:
+        """Parse input, handling both strings and BaseMessage objects."""
+        if isinstance(text, BaseMessage):
+            text = text.content
+        elif not isinstance(text, (str, bytes)):
+            raise TypeError(
+                f"Expected string, bytes, or BaseMessage, got {type(text).__name__}"
+            )
+
+        # Step 1: Remove <think> and <reflection> tags and their content
+        text = clean_tags(text, ["think", "reflection"])
+
+        # Step 2: Remove <output> tags but keep their content
+        text = self._strip_tags(text, "output")
+
+        # Step 3: Split text into blocks and validate formatting
+        blocks = self._split_blocks(text)
+
+        # Step 4: Validate and merge consecutive blocks for the same speaker
+        blocks = self._validate_and_merge_blocks(blocks)
+
+        # Step 5: Ensure the transcript alternates between speakers
+        blocks = self._ensure_alternating_speakers(blocks)
+
+        return "\n".join(blocks)
 
 
 verify_transcript_quality = PromptFormatter(
     system=textwrap.dedent(
-        """
+        f"""
+        {ACTOR_INTRODUCTIONS}
         Act as a transcript quality verifier.
         You will get a transcript in a format:
         <Person1>Person 1 dialog</Person1>
         <Person2>Person 2 dialog</Person2>
+
+        {PRE_THINK_INSTRUCT}
 
         Instructions:
         - Transcript should use mostly natural non repetitive language.
@@ -113,6 +149,11 @@ verify_transcript_quality = PromptFormatter(
         - There is a field for specifying if the transcript length is enough. Make sure to incorporate the requirements in your feedback.
         - If the transcript is not long enough as defined by transcript length, make sure to fail the transcript and instruct on how to make the transcript longer.
         - If the transcript should be longer give specific instructions on how to make the transcript longer.
+        - Make sure to reveal your reasoning for rejecting the transcript after think-tags.
+        - Do not place your reasoning for rejection within <reflection>-tags.
+        - Do not use <reflection>-tags outside of <think>-tags
+        - Place your reasoning always within <output>-tags.
+        - Do not just reply with 'no'
 
         Allow for:
         - Long transcript. Do not critisize long transcripts as long as the conversation is natural.
@@ -159,10 +200,13 @@ verify_transcript_quality.parser = QuestionClassifierParser()
 
 transcript_rewriter = PromptFormatter(
     system=textwrap.dedent(
-        """
+        f"""
+        {ACTOR_INTRODUCTIONS}
         IDENTITY:
         You are an international oscar winning screenwriter.
         You have been working with multiple award winning podcasters.
+
+        {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
         - You will get a transcript, the content it was built from, specific configuration what to follow and feedback on for fixing the transcript.
@@ -247,10 +291,13 @@ transcript_rewriter.parser = TranscriptParser()
 
 transcript_combiner = PromptFormatter(
     system=textwrap.dedent(
-        """
+        f"""
+        {ACTOR_INTRODUCTIONS}
         IDENTITY:
         You are an international oscar winning screenwriter.
         You have been working with multiple award winning podcasters.
+
+        {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
         - You will get an ordered set of transcripts, the content they were built from, a specific configuration what to follow for the podcast.
@@ -325,10 +372,13 @@ transcript_combiner.parser = TranscriptParser()
 
 transcript_combined_rewriter = PromptFormatter(
     system=textwrap.dedent(
-        """
+        f"""
+        {ACTOR_INTRODUCTIONS}
         IDENTITY:
         You are an international oscar winning screenwriter.
         You have been working with multiple award winning podcasters.
+
+        {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
         - You will get a transcript, the content it was built from, specific configuration what to follow and feedback on for fixing the transcript.
@@ -384,10 +434,13 @@ transcript_combined_rewriter.parser = TranscriptParser()
 
 transcript_writer = PromptFormatter(
     system=textwrap.dedent(
-        """
+        f"""
+        {ACTOR_INTRODUCTIONS}
         IDENTITY:
         You are an international Oscar-winning screenwriter.
         You have been working with multiple award-winning podcasters.
+
+        {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
         - Your task is to create a podcast transcript optimized for AI Text-To-Speech (TTS) pipelines.
@@ -509,10 +562,13 @@ transcript_writer.parser = TranscriptParser()
 
 transcript_bridge_writer = PromptFormatter(
     system=textwrap.dedent(
-        """
+        f"""
+        {ACTOR_INTRODUCTIONS}
         IDENTITY:
         You are an international Oscar-winning screenwriter.
         You have been working with multiple award-winning podcasters.
+
+        {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
         - Your task is to create a conversational bridge between two podcast transcripts.
@@ -615,10 +671,13 @@ transcript_bridge_writer.parser = TranscriptParser()
 
 transcript_intro_writer = PromptFormatter(
     system=textwrap.dedent(
-        """
+        f"""
+        {ACTOR_INTRODUCTIONS}
         IDENTITY:
         You are an international Oscar-winning screenwriter.
         You have been working with multiple award-winning podcasters.
+
+        {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
         - Your task is to create an engaging introduction for a podcast.
@@ -684,15 +743,18 @@ transcript_intro_writer.parser = TranscriptParser()
 
 transcript_conclusion_writer = PromptFormatter(
     system=textwrap.dedent(
-        """
+        f"""
+        {ACTOR_INTRODUCTIONS}
         IDENTITY:
         You are an expert podcast scriptwriter.
+
+        {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
         - Your task is to write a conclusion for a podcast.
         - Use the provided previous dialogue to generate a summary of the topics discussed.
         - Provide a conclusion and ending for the podcast in the following dialogue format:
-          <Person1> "Well, that wraps up today's episode of {podcast_name}. We covered [summary of topics]."</Person1>
+          <Person1> "Well, that wraps up today's episode of [podcast_name]. We covered [summary of topics]."</Person1>
           <Person2> "It was a great discussion! [Additional concluding remarks]."</Person2>
           <Person1> "Thanks for sharing your thoughts on [specific topic or reflection]."</Person1>
           <Person2> "Bye!"</Person2>

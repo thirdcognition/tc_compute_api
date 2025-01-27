@@ -92,7 +92,7 @@ celery_app.conf.update(
 
 # Schedule the generate_transcripts_task to run daily at 9am
 celery_app.conf.beat_schedule = {
-    "generate-transcripts-every-day-at-9am": {
+    "generate-transcripts-every-30min": {
         "task": "source.panel.tasks.generate_transcripts_task",
         # "schedule": crontab(hour=4, minute=30),
         "schedule": crontab(minute="*/30"),

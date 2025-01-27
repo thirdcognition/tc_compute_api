@@ -20,13 +20,13 @@ const SpeedPopup: React.FC<SpeedPopupProps> = ({
         >
             <div className="text-center mb-4">
                 <span className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-                    {playbackSpeed}x
+                    {playbackSpeed.toFixed(2)}x
                 </span>
             </div>
 
             <div className="flex items-center justify-between mb-4">
                 <button
-                    onClick={() => handleSpeedChange(playbackSpeed - 0.25)}
+                    onClick={() => handleSpeedChange(playbackSpeed - 0.1)}
                     className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                     <HiMinus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -36,7 +36,7 @@ const SpeedPopup: React.FC<SpeedPopupProps> = ({
                     type="range"
                     min="0.75"
                     max="2"
-                    step="0.25"
+                    step="0.1"
                     value={playbackSpeed}
                     onChange={(e) =>
                         handleSpeedChange(parseFloat(e.target.value))
@@ -45,7 +45,7 @@ const SpeedPopup: React.FC<SpeedPopupProps> = ({
                 />
 
                 <button
-                    onClick={() => handleSpeedChange(playbackSpeed + 0.25)}
+                    onClick={() => handleSpeedChange(playbackSpeed + 0.1)}
                     className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                     <HiPlus className="w-5 h-5 text-gray-600 dark:text-gray-400" />

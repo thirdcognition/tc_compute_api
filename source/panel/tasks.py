@@ -3,6 +3,7 @@ from typing import Tuple
 from uuid import UUID
 from celery import Task
 from supabase import Client
+from croniter import croniter
 
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_client, get_sync_supabase_service_client
@@ -70,10 +71,17 @@ def generate_transcripts_task(
             access_token=tokens[0], refresh_token=tokens[1]
         )
 
-    # Fetch all PanelTranscripts with generation_interval set
-    transcripts_with_interval = PanelTranscript.fetch_existing_from_supabase_sync(
-        supabase_client, filter={"generation_interval": {"neq": None}}
+    # Fetch all PanelTranscripts with generation_cronjob set
+    transcripts_with_cronjob = PanelTranscript.fetch_existing_from_supabase_sync(
+        supabase_client, filter={"generation_cronjob": {"neq": None}}
     )
+
+    # Skip entries with empty string as generation_cronjob
+    transcripts_with_cronjob = [
+        transcript
+        for transcript in transcripts_with_cronjob
+        if transcript.generation_cronjob != ""
+    ]
 
     # Fetch all PanelTranscripts and map them by panelId
     all_transcripts_with_parent = PanelTranscript.fetch_existing_from_supabase_sync(
@@ -96,7 +104,7 @@ def generate_transcripts_task(
 
     new_titles = []  # List to store titles of newly generated transcripts
 
-    for transcript in transcripts_with_interval:
+    for transcript in transcripts_with_cronjob:
         transcript_id = transcript.id
         panel_id = transcript.panel_id
         latest_transcript: PanelTranscript = transcripts_by_parent.get(
@@ -108,97 +116,49 @@ def generate_transcripts_task(
 
         if latest_transcript:
             now_aware = datetime.datetime.now(datetime.timezone.utc)
-            time_since_creation = now_aware - latest_transcript.created_at
-            if time_since_creation > datetime.timedelta(
-                seconds=transcript.generation_interval
-            ) - datetime.timedelta(minutes=10):
+            cron = croniter(
+                transcript.generation_cronjob,
+                latest_transcript.created_at.astimezone(datetime.timezone.utc),
+            )
+            prev_scheduled_time = datetime.datetime.fromtimestamp(
+                cron.get_prev(float)
+            ).astimezone(datetime.timezone.utc)
+            next_scheduled_time = datetime.datetime.fromtimestamp(
+                cron.get_next(float)
+            ).astimezone(datetime.timezone.utc)
+
+            print(
+                f"Debug: Transcript {transcript.id} - now: {now_aware}, "
+                f"next: {next_scheduled_time}, prev: {prev_scheduled_time}, "
+                f"created_at: {latest_transcript.created_at}"
+            )
+            if (
+                now_aware
+                >= next_scheduled_time
+                # and latest_transcript.created_at <= prev_scheduled_time
+            ):
                 # Fetch the matching PanelDiscussion model
                 panel = PanelDiscussion.fetch_from_supabase_sync(
                     supabase_client, panel_id
                 )
                 metadata = (panel.metadata or {}) if panel is not None else {}
 
-                # Extend the metadata with the PanelTranscript model
-                transcript_metadata = (
-                    (transcript.metadata or {}) if transcript is not None else {}
+                # Call the helper function to process transcript generation
+                process_transcript_generation(
+                    tokens, transcript, panel, metadata, supabase_client, new_titles
                 )
-
-                # Fetch the connected PanelAudio model
-                audio = PanelAudio.fetch_from_supabase_sync(
-                    supabase_client, transcript.id, id_column="transcript_id"
-                )
-                audio_metadata = (audio.metadata or {}) if audio is not None else {}
-
-                # Separate and extend conversation_config
-                conversation_config: dict = metadata.get("conversation_config", {})
-                conversation_config.update(
-                    transcript_metadata.get("conversation_config", {})
-                )
-                metadata.update(transcript_metadata)
-                metadata["conversation_config"] = conversation_config
-
-                new_transcript_data = PanelRequestData(
-                    title=panel.title,
-                    input_source=metadata.get("input_source", ""),
-                    input_text=metadata.get("input_text", ""),
-                    longform=metadata.get("longform", False),
-                    bucket_name=metadata.get("bucket_name", "public_panels"),
-                    conversation_config=metadata.get(
-                        "conversation_config", custom_config
-                    ),
-                    panel_id=panel_id,
-                    google_news=metadata.get("google_news", None),
-                    yle_news=metadata.get("yle_news", None),
-                    techcrunch_news=metadata.get("techcrunch_news", None),
-                    hackernews=metadata.get("hackernews", None),
-                    owner_id=str(panel.owner_id),
-                    organization_id=str(panel.organization_id),
-                    transcript_parent_id=str(transcript_id),
-                )
-
-                print(
-                    f"Generating timed transcript for {transcript.id} after {time_since_creation}."
-                )
-                if tokens is not None:
-                    transcript_id = create_panel_transcript(tokens, new_transcript_data)
-                else:
-                    transcript_id = create_panel_transcript(
-                        tokens, new_transcript_data, supabase_client
-                    )
-                # Add the title and panelId of the newly generated transcript to the list
-                new_titles.append(
-                    f"{panel.id}: {panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}"
-                )
-
-                metadata.update(audio_metadata)
-                conversation_config.update(
-                    audio_metadata.get("conversation_config", {})
-                )
-                metadata["conversation_config"] = conversation_config
-                new_transcript_data.tts_model = audio_metadata.get(
-                    "tts_model", "gemini"
-                )
-
-                new_transcript_data.transcript_id = transcript_id
-                new_transcript_data.conversation_config = conversation_config
-                if tokens is not None:
-                    create_panel_audio(tokens, new_transcript_data)
-                else:
-                    create_panel_audio(tokens, new_transcript_data, supabase_client)
                 new_transcripts_generated = True
-                # Set flag to true if a new transcript is generated
 
             else:
-                time_since_creation_str = str(time_since_creation).split(".")[
-                    0
-                ]  # Remove microseconds
-                generation_interval_str = str(
-                    datetime.timedelta(seconds=transcript.generation_interval)
+                time_since_creation_str = str(
+                    now_aware - latest_transcript.created_at
                 ).split(".")[
                     0
                 ]  # Remove microseconds
                 print(
-                    f"Skip generation for {transcript.id} because time since creation is {time_since_creation_str} and minimum generation interval is {generation_interval_str}"
+                    f"Skip generation for {transcript.id} because time since creation is {time_since_creation_str}, "
+                    f"current time is {now_aware}, next scheduled time is {next_scheduled_time}, "
+                    f"and previous scheduled time is {prev_scheduled_time}"
                 )
 
     # After processing all transcripts, check the flag and send emails if needed
@@ -206,3 +166,63 @@ def generate_transcripts_task(
         send_email_about_new_shows_task.delay(
             new_titles
         )  # Send emails with the new titles
+
+
+def process_transcript_generation(
+    tokens, transcript, panel, metadata, supabase_client, new_titles
+):
+    # Extend the metadata with the PanelTranscript model
+    transcript_metadata = (transcript.metadata or {}) if transcript is not None else {}
+
+    # Fetch the connected PanelAudio model
+    audio = PanelAudio.fetch_from_supabase_sync(
+        supabase_client, transcript.id, id_column="transcript_id"
+    )
+    audio_metadata = (audio.metadata or {}) if audio is not None else {}
+
+    # Separate and extend conversation_config
+    conversation_config: dict = metadata.get("conversation_config", {})
+    conversation_config.update(transcript_metadata.get("conversation_config", {}))
+    metadata.update(transcript_metadata)
+    metadata["conversation_config"] = conversation_config
+
+    new_transcript_data = PanelRequestData(
+        title=panel.title,
+        input_source=metadata.get("input_source", ""),
+        input_text=metadata.get("input_text", ""),
+        longform=metadata.get("longform", False),
+        bucket_name=metadata.get("bucket_name", "public_panels"),
+        conversation_config=metadata.get("conversation_config", custom_config),
+        panel_id=panel.id,
+        google_news=metadata.get("google_news", None),
+        yle_news=metadata.get("yle_news", None),
+        techcrunch_news=metadata.get("techcrunch_news", None),
+        hackernews=metadata.get("hackernews", None),
+        owner_id=str(panel.owner_id),
+        organization_id=str(panel.organization_id),
+        transcript_parent_id=str(transcript.id),
+    )
+
+    print(f"Generating timed transcript for {transcript.id}.")
+    if tokens is not None:
+        transcript_id = create_panel_transcript(tokens, new_transcript_data)
+    else:
+        transcript_id = create_panel_transcript(
+            tokens, new_transcript_data, supabase_client
+        )
+    # Add the title and panelId of the newly generated transcript to the list
+    new_titles.append(
+        f"{panel.id}: {panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}"
+    )
+
+    metadata.update(audio_metadata)
+    conversation_config.update(audio_metadata.get("conversation_config", {}))
+    metadata["conversation_config"] = conversation_config
+    new_transcript_data.tts_model = audio_metadata.get("tts_model", "gemini")
+
+    new_transcript_data.transcript_id = transcript_id
+    new_transcript_data.conversation_config = conversation_config
+    if tokens is not None:
+        create_panel_audio(tokens, new_transcript_data)
+    else:
+        create_panel_audio(tokens, new_transcript_data, supabase_client)

@@ -147,11 +147,7 @@ def create_and_update_panel_transcript(
             "longform": longform,
             "conversation_config": conversation_config,
         },
-        generation_interval=(
-            request_data.update_cycle
-            if request_data.update_cycle is None or request_data.update_cycle > 0
-            else None
-        ),
+        generation_cronjob=request_data.cronjob,
         generation_parent=request_data.transcript_parent_id,
         is_public=True,
         owner_id=request_data.owner_id,

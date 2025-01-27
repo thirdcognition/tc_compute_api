@@ -9,7 +9,8 @@ import {
     engagementTechniquesOptions,
     outputLanguageOptions
 } from "./options.js";
-import { formatUpdateCycle, getWordCountDescription } from "./helpers/ui.js";
+import { getWordCountDescription } from "./helpers/ui.js";
+import CronjobComponent from "./components/CronjobComponent.jsx";
 
 function TranscriptDetailEdit({
     panelId,
@@ -42,7 +43,7 @@ function TranscriptDetailEdit({
     ]);
     const [userInstructions, setUserInstructions] = useState("");
     const [outputLanguage, setOutputLanguage] = useState("English");
-    const [updateCycle, setUpdateCycle] = useState(0); // Default to 0 if not defined
+    const [cronjob, setCronjob] = useState(""); // Default to empty string if not defined
     const [longForm, setLongForm] = useState(false);
 
     // Utility function to calculate article count
@@ -99,7 +100,7 @@ function TranscriptDetailEdit({
                 userInstructions,
                 outputLanguage,
                 longForm,
-                updateCycle
+                cronjob
             }).then(({ taskId, success }) => {
                 if (success && taskId) {
                     initiatePolling(taskId, "transcript");
@@ -113,24 +114,21 @@ function TranscriptDetailEdit({
             <div className="transcript-container border p-3 mb-4 rounded">
                 <h3 className="font-bold mb-3">Create Transcript</h3>
                 <Form onSubmit={handleTranscriptSubmit}>
-                    <Form.Group controlId="updateCycle" className="mb-4">
+                    <Form.Group controlId="cronjob" className="mb-4">
                         <Form.Label className="font-semibold">
                             Update Cycle:
                         </Form.Label>
-                        <Form.Control
-                            type="range"
-                            min={0}
-                            max={3600 * 24 * 14}
-                            step={3600}
-                            value={updateCycle}
-                            onChange={(e) =>
-                                setUpdateCycle(Number(e.target.value))
-                            }
-                            className="w-full"
+                        <CronjobComponent
+                            value={cronjob}
+                            onChange={setCronjob}
                         />
-                        <div className="mt-2">
-                            {formatUpdateCycle(updateCycle)}
-                        </div>
+                        {/* <Button
+                            variant="danger"
+                            onClick={() => setCronjob("")}
+                            className="mt-2"
+                        >
+                            Clear Schedule
+                        </Button> */}
                     </Form.Group>
                     <Form.Group controlId="wordCount" className="mb-4">
                         <Form.Label className="font-semibold">

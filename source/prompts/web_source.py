@@ -156,10 +156,10 @@ web_source_grouping_parser = PydanticOutputParser(pydantic_object=WebSourceGroup
 
 class WebSourceGroupingValidator:
     def __init__(self):
-        self.cleaner = TagsParser(tags=["thinking", "reflection"], return_tag=False)
+        self.cleaner = TagsParser(tags=["think", "reflection"], return_tag=False)
 
     def parse(self, raw_input: str) -> WebSourceGrouping:
-        # Clean the <thinking> and <reflection> tags
+        # Clean the <think> and <reflection> tags
         cleaned_input = self.cleaner.parse(raw_input)
         # print(f"{cleaned_input=}")
 
@@ -214,7 +214,7 @@ group_web_sources = PromptFormatter(
         - Do not use one ID more than once in the groups.
 
         Format instructions:
-        <thinking>Place your thinking here</thinking>
+        <think>Place your think here</think>
         <output>
         {web_source_grouping_parser.get_format_instructions()}
         </output>

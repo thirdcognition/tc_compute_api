@@ -456,8 +456,8 @@ def parse_topic_items(
 
     if "tags" in response:
         tags = response["tags"]
-        if "thinking" in tags:
-            metadata["thinking"] = tags["thinking"]
+        if "think" in tags:
+            metadata["think"] = tags["think"]
 
     if "parsed" in response:
         parsed_content = parse_topic_dict(response["parsed"])

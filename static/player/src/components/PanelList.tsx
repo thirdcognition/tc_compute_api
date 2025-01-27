@@ -21,7 +21,13 @@ const PanelList: React.FC = () => {
                     name: panel.title || "Unnamed Show",
                     date: new Date(panel.created_at).toLocaleDateString()
                 }));
-                setPanels(formattedPanels);
+                setPanels(
+                    formattedPanels.sort(
+                        (a, b) =>
+                            new Date(b.date).getTime() -
+                            new Date(a.date).getTime()
+                    )
+                );
             } catch (error) {
                 console.error("Error fetching panels:", error);
             }

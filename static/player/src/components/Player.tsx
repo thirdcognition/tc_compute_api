@@ -81,6 +81,8 @@ const Player: React.FC<PlayerProps> = ({
     const [showSpeedPopup, setShowSpeedPopup] = useState(false);
     const [showSourcesPopup, setShowSourcesPopup] = useState(false);
     const speedPopupRef = useRef<HTMLDivElement>(null);
+    const [volume, setVolume] = useState(1); // Volume state (default: max volume)
+    const [muted, setMuted] = useState(false); // Mute state
     const sourcesPopupRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -89,7 +91,10 @@ const Player: React.FC<PlayerProps> = ({
         } else {
             document.documentElement.classList.remove("dark");
         }
-    }, [isDark]);
+        if (audioRef.current) {
+            audioRef.current.volume = muted ? 0 : volume; // Update audio volume
+        }
+    }, [isDark, volume, muted]);
 
     const togglePlay = () => {
         if (audioRef.current) {
@@ -245,7 +250,7 @@ const Player: React.FC<PlayerProps> = ({
                       text-gray-700 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400
                       transition-colors duration-200 font-medium"
                     >
-                        {playbackSpeed}x
+                        {playbackSpeed.toFixed(2)}x
                     </button>
                     {showSpeedPopup && (
                         <SpeedPopup
@@ -324,7 +329,39 @@ const Player: React.FC<PlayerProps> = ({
                     </button>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-4">
+                    {/* Volume Controls */}
+                    <div className="space-y-2">
+                        <div className="flex items-center space-x-4">
+                            <button
+                                onClick={() => setMuted(!muted)}
+                                className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
+                                title={muted ? "Unmute" : "Mute"}
+                            >
+                                {muted ? (
+                                    <span className="text-red-500">🔇</span>
+                                ) : (
+                                    <span className="text-blue-500">🔊</span>
+                                )}
+                            </button>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={muted ? 0 : volume}
+                                onChange={(e) =>
+                                    setVolume(parseFloat(e.target.value))
+                                }
+                                disabled={muted}
+                                className="flex-1 h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                            />
+                        </div>
+                        <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                            <span>Mute</span>
+                            <span>Max</span>
+                        </div>
+                    </div>
                     <input
                         type="range"
                         min="0"

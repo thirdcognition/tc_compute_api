@@ -129,7 +129,7 @@ export const handleCreateTranscript = async (params) => {
             longform: params.longForm,
             bucket_name: "public_panels",
             panel_id: params.panelId,
-            update_cycle: params.updateCycle
+            cronjob: params.cronjob
         });
         return { taskId, success: true };
     } catch (error) {

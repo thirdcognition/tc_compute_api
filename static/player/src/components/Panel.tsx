@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, ChangeEvent } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchPanelDetails } from "../helpers/fetch.ts";
 import { urlFormatter } from "../helpers/url.ts";
@@ -16,9 +16,25 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
     const [transcriptId, setTranscriptId] = useState<string | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [audioOptions, setAudioOptions] = useState<
-        { url: string; date: string; transcript_id: string }[]
+        {
+            url: string;
+            date: string;
+            transcript_id: string;
+            title: string;
+            thumbnail?: string;
+        }[]
     >([]);
-    const [transcriptSources, setTranscriptSources] = useState([]);
+    const [transcriptSources, setTranscriptSources] = useState<
+        Array<{
+            id: string;
+            data: {
+                url: string;
+                title: string;
+                publish_date: string;
+                image: string;
+            };
+        }>
+    >([]);
 
     useEffect(() => {
         if (!panelId) {
@@ -40,22 +56,65 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                     audioData,
                     filesData
                 } = await fetchPanelDetails(panelId);
-                setTranscriptSources(transcriptSources); // Set transcript sources
+
+                setTranscriptSources(
+                    Object.entries(transcriptSources || {}).map(
+                        ([id, sources]: [string, any]) => ({
+                            id,
+                            data: {
+                                url: sources[0]?.data?.url || "",
+                                title: sources[0]?.data?.title || "Untitled",
+                                publish_date:
+                                    sources[0]?.data?.publish_date || "",
+                                image: sources[0]?.data?.image || ""
+                            }
+                        })
+                    ) as Array<{
+                        id: string;
+                        data: {
+                            url: string;
+                            title: string;
+                            publish_date: string;
+                            image: string;
+                        };
+                    }>
+                );
+
                 if (audioData && filesData && filesData.audio_urls) {
                     const formattedAudioUrls = urlFormatter(
                         filesData.audio_urls
                     );
-                    const audioEntries = audioData.map((audio) => ({
-                        transcript_id: audio.transcript_id,
-                        url: formattedAudioUrls[audio.id],
-                        date: new Date(audio.created_at).toLocaleDateString()
-                    }));
+                    const audioEntries = audioData
+                        .map((audio) => {
+                            const transcript = transcriptData.filter(
+                                (t) => t.id === audio.transcript_id
+                            )[0];
+                            const sources =
+                                transcriptSources[audio.transcript_id] || [];
+                            const thumbnail =
+                                sources.length > 0
+                                    ? sources[0].data?.image
+                                    : null;
+                            return {
+                                transcript_id: audio.transcript_id,
+                                url: formattedAudioUrls[audio.id],
+                                date: new Date(
+                                    audio.created_at
+                                ).toLocaleDateString(undefined, {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric"
+                                }),
+                                title: transcript?.title || "Untitled",
+                                thumbnail,
+                                created_at: new Date(audio.created_at).getTime()
+                            };
+                        })
+                        .sort((a, b) => b.created_at - a.created_at); // Sort by created_at descending
                     setAudioOptions(audioEntries);
                     if (audioEntries.length > 0) {
-                        setAudioUrl(audioEntries[audioEntries.length - 1].url); // Default to the latest
-                        setTranscriptId(
-                            audioEntries[audioEntries.length - 1].transcript_id
-                        );
+                        setAudioUrl(audioEntries[0].url); // Default to the latest
+                        setTranscriptId(audioEntries[0].transcript_id);
                     }
                 }
             } catch (error) {
@@ -78,9 +137,7 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                                 (option) => option.url === audioUrl
                             )?.date || ""
                         }
-                        transcriptSources={
-                            transcriptId && transcriptSources[transcriptId]
-                        } // Pass sources as a prop
+                        transcriptSources={transcriptSources} // Pass sources as a prop
                     />
                     {/* <CommentsSection
                         userId={userId}
@@ -92,35 +149,48 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                             Episodes
                         </h3>
                         <div className="space-y-2">
-                            {audioOptions
-                                .slice()
-                                .reverse()
-                                .map((option) => (
-                                    <div
-                                        key={option.url}
-                                        className={`p-2 rounded-md cursor-pointer ${
-                                            audioUrl === option.url
-                                                ? "bg-blue-100 dark:bg-gray-700"
-                                                : "bg-white dark:bg-gray-800"
-                                        }`}
-                                        onClick={() => {
-                                            setAudioUrl(option.url);
-                                            setTranscriptId(
-                                                option.transcript_id
-                                            );
-                                        }}
-                                    >
+                            {audioOptions.map((option) => (
+                                <div
+                                    key={option.url}
+                                    className={`flex items-start p-2 rounded-md cursor-pointer ${
+                                        audioUrl === option.url
+                                            ? "bg-blue-100 dark:bg-gray-700"
+                                            : "bg-white dark:bg-gray-800"
+                                    }`}
+                                    onClick={() => {
+                                        setAudioUrl(option.url);
+                                        setTranscriptId(option.transcript_id);
+                                    }}
+                                >
+                                    {option.thumbnail && (
+                                        <img
+                                            src={option.thumbnail}
+                                            alt={option.title}
+                                            className="w-12 h-12 mr-4 rounded object-cover"
+                                        />
+                                    )}
+                                    <div className="flex-1">
                                         <span
-                                            className={`text-sm font-medium text-center block ${
+                                            className={`block text-sm font-medium ${
                                                 audioUrl === option.url
                                                     ? "text-blue-600 dark:text-blue-400"
                                                     : "text-gray-700 dark:text-gray-300"
                                             }`}
                                         >
+                                            {option.title}
+                                        </span>
+                                        <span
+                                            className={`block text-xs ${
+                                                audioUrl === option.url
+                                                    ? "text-blue-500 dark:text-blue-300"
+                                                    : "text-gray-500 dark:text-gray-400"
+                                            } text-right`}
+                                        >
                                             {option.date}
                                         </span>
                                     </div>
-                                ))}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

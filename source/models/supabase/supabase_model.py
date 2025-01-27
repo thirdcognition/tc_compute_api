@@ -24,6 +24,25 @@ class SupabaseModel(BaseModel):
                 self.dirty = True
         super().__setattr__(name, value)
 
+    @classmethod
+    def filter_required_fields(
+        cls, data: Dict[str, Any], model_fields: Dict[str, FieldInfo]
+    ) -> Dict[str, Any]:
+        """
+        Filter out required fields with None values from the data dictionary.
+        Optional fields explicitly allowed to be None are preserved.
+        """
+        return {
+            key: value
+            for key, value in data.items()
+            if not (
+                key in model_fields
+                and model_fields[key].default is None
+                and not model_fields[key].annotation.__origin__ == Union
+                and value is None
+            )
+        }
+
     async def create(self, supabase: AsyncClient) -> T:
         """Create a new record in the database."""
         return await self.save_to_supabase(supabase, self)
@@ -106,7 +125,10 @@ class SupabaseModel(BaseModel):
         upsert_data = []
         for instance in instances:
             if instance.dirty:
-                data = instance._model_dump(exclude_none=True, exclude_unset=True)
+                data = cls.filter_required_fields(
+                    instance._model_dump(exclude_none=False, exclude_unset=True),
+                    instance.model_fields,
+                )
                 for key, value in data.items():
                     if isinstance(value, enum.Enum):
                         data[key] = value.name
@@ -163,7 +185,10 @@ class SupabaseModel(BaseModel):
         upsert_data = []
         for instance in instances:
             if instance.dirty:
-                data = instance._model_dump(exclude_none=True, exclude_unset=True)
+                data = cls.filter_required_fields(
+                    instance._model_dump(exclude_none=False, exclude_unset=True),
+                    instance.model_fields,
+                )
                 for key, value in data.items():
                     if isinstance(value, enum.Enum):
                         data[key] = value.name
@@ -214,7 +239,10 @@ class SupabaseModel(BaseModel):
         on_conflict: List[str] = ["id"],
     ) -> T:
         if instance.dirty:
-            data = instance._model_dump(exclude_none=True, exclude_unset=True)
+            data = cls.filter_required_fields(
+                instance._model_dump(exclude_none=False, exclude_unset=True),
+                instance.model_fields,
+            )
             for key, value in data.items():
                 if isinstance(value, enum.Enum):
                     data[key] = value.name
@@ -257,7 +285,10 @@ class SupabaseModel(BaseModel):
         on_conflict: List[str] = ["id"],
     ) -> T:
         if instance.dirty:
-            data = instance._model_dump(exclude_none=True, exclude_unset=True)
+            data = cls.filter_required_fields(
+                instance._model_dump(exclude_none=False, exclude_unset=True),
+                instance.model_fields,
+            )
             for key, value in data.items():
                 if isinstance(value, enum.Enum):
                     data[key] = value.name

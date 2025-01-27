@@ -111,7 +111,7 @@ export async function fetchTranscriptContent(
 export async function updateTranscript(
     transcriptId: string,
     transcript: any,
-    newUpdateCycle: any
+    newCronjob: any
 ): Promise<any> {
     const response = await fetchData(`/panel/transcript/${transcriptId}`, {
         method: "PUT",
@@ -121,10 +121,10 @@ export async function updateTranscript(
         },
         body: JSON.stringify({
             ...transcript,
-            generation_interval: newUpdateCycle || null,
+            generation_cronjob: newCronjob || null,
             metadata: {
                 ...transcript.metadata,
-                update_cycle: newUpdateCycle || null
+                cronjob: newCronjob || null
             }
         })
     });

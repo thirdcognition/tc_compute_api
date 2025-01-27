@@ -1,3 +1,5 @@
+import re
+from source.prompts.base import clean_tags
 import textwrap
 from typing import Union
 from langchain_core.exceptions import OutputParserException
@@ -100,7 +102,10 @@ class QuestionClassifierParser(BaseOutputParser[tuple[bool, BaseMessage]]):
         if isinstance(text, BaseMessage):
             text = text.content
 
-        # Extract all floats from the text using regular expressions
+        # Remove <think> tags and <output> tags (keeping their content) before processing
+        if isinstance(text, str):
+            text = clean_tags(text, ["think", "reflection"]).strip()
+            text = re.sub(r"</?output>", "", text, flags=re.IGNORECASE).strip()
         # Check if 'yes' exists on the first line of text
         first_line = text.split("\n")[0].strip().lower()
         if "yes" in first_line:

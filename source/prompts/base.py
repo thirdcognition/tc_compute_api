@@ -20,11 +20,43 @@ from source.helpers.shared import pretty_print
 
 # from fewshot_data import FewShotItem, example_tasks
 
+import re
+
+
+def clean_tags(text: str, tags: list[str]) -> str:
+    """
+    Cleans up specified tags and their content from the input text,
+    but only if the tags are correctly closed.
+
+    Args:
+        text (str): The input text containing tags.
+        tags (list[str]): A list of tags to clean (e.g., ["think", "reflection"]).
+
+    Returns:
+        str: The cleaned text with specified tags and their content removed.
+
+    Raises:
+        OutputParserException: If any of the specified tags are not properly closed.
+    """
+    for tag in tags:
+        # Check for unclosed tags
+        open_tags = len(re.findall(rf"<{tag}.*?>", text, flags=re.IGNORECASE))
+        close_tags = len(re.findall(rf"</{tag}>", text, flags=re.IGNORECASE))
+        if open_tags != close_tags:
+            raise OutputParserException(f"Unclosed <{tag}> tags detected in the text.")
+
+        # Remove properly closed tags and their content
+        text = re.sub(
+            rf"<{tag}.*?>.*?</{tag}>", "", text, flags=re.DOTALL | re.IGNORECASE
+        )
+    return text
+
+
 PRE_THINK_INSTRUCT = """
-        Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags.
+        Reason through the query inside <think> tags, and then provide your final response inside <output> tags.
         If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.
         """
-PRE_THINK_TAGS = ["thinking", "reflection"]
+PRE_THINK_TAGS = ["think", "reflection"]
 
 ACTOR_INTRODUCTIONS = (
     "You are a world-class AI system, capable of complex reasoning and reflection."
@@ -33,8 +65,8 @@ ACTOR_INTRODUCTIONS = (
 
 # Example 1:
 
-# <thinking> I have a long article about a recent scientific discovery. I will generate a summary
-# that highlights the main findings, the method used, and the implications of the discovery. </thinking>
+# <think> I have a long article about a recent scientific discovery. I will generate a summary
+# that highlights the main findings, the method used, and the implications of the discovery. </think>
 
 # A recent study published in the Journal of Neuroscience revealed that prolonged exposure to blue light
 # before sleep can disrupt circadian rhythms and lead to sleep disorders. The research, conducted on mice,
@@ -44,8 +76,8 @@ ACTOR_INTRODUCTIONS = (
 
 # Example 2:
 
-# <thinking> I have a lengthy book review. I will create a summary that captures the main points of the book,
-# the author's style, and the reviewer's overall opinion. </thinking>
+# <think> I have a lengthy book review. I will create a summary that captures the main points of the book,
+# the author's style, and the reviewer's overall opinion. </think>
 
 # In 'The Catcher in the Rye', J.D. Salinger explores the disillusionment and alienation of a teenager named Holden Caulfield.
 # Through Holden's first-person narrative, the novel delves into themes of adolescence, identity, and the struggle for authenticity.
@@ -53,8 +85,8 @@ ACTOR_INTRODUCTIONS = (
 
 # Example 3:
 
-# <thinking> I have several research papers on a specific topic. I will generate a comprehensive report that synthesizes
-# the findings from each paper, identifies common themes, and discusses any discrepancies. </thinking>
+# <think> I have several research papers on a specific topic. I will generate a comprehensive report that synthesizes
+# the findings from each paper, identifies common themes, and discusses any discrepancies. </think>
 
 # A comprehensive analysis of the effects of climate change on global food security was conducted by synthesizing data from
 # multiple research papers. The synthesis revealed that climate change is likely to have a significant negative impact on food
@@ -210,7 +242,7 @@ class TagsParser(BaseOutputParser[Union[str, Dict]]):
     """Custom parser to clean specified tag from results."""
 
     min_len: int = Field(default=10)
-    tags: List[str] = Field(default_factory=lambda: ["thinking", "reflection"])
+    tags: List[str] = Field(default_factory=lambda: ["think", "reflection"])
     content_tags: List[str] = Field(default_factory=lambda: ["root", "output"])
     optional_tags: Optional[List[str]] = Field(default=None)
     return_tag: bool = Field(default=False)
