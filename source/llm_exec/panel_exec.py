@@ -279,25 +279,29 @@ def check_transcript_length(
     word_count: str | int,
 ) -> tuple[bool, str]:
     # Compare with specified word_count and update user_instructions
-    make_longer = False
+    change_length = False
     length_instruction = ""
     content_word_count = count_words(content)
 
     print(f"Word count: Check transcript length: {word_count=} {content_word_count=}")
     if word_count is not None:
         word_count_in_transcript = count_words(transcript)
-        make_longer = True
+        change_length = True
         target_word_count = int(word_count) // total_count // 1.25
         print(
             f"Word count: Checking for target word count: {word_count_in_transcript=} {target_word_count=}"
         )
-        if content_word_count < target_word_count and word_count_in_transcript > (
-            content_word_count // 1.25
-        ):
-            print("Word count: Length suffices.")
-            return False, ""
-        if word_count_in_transcript < target_word_count:
-            multiplier = target_word_count / word_count_in_transcript
+        # if (
+        #     content_word_count < target_word_count
+        #     and word_count_in_transcript > (content_word_count // 1.25)
+        # ) and (
+        #     content_word_count > target_word_count
+        #     and word_count_in_transcript < (content_word_count * 1.25)
+        # ):
+        #     print("Word count: Length suffices.")
+        #     return False, ""
+        multiplier = target_word_count / word_count_in_transcript
+        if multiplier > 1.15:
             if multiplier > 2:
                 length_instruction = "The transcript is too short. It should be at least three times as long. Give extensive feedback on the possible ways to extend the transcript."
                 #  Try to extend on details, content, considerations and explanation. The transcript needs to be considerably longer. The transcript is too short, add more details. Write a longer version of the transcript. Do not return the same transcript. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details.
@@ -310,10 +314,20 @@ def check_transcript_length(
             # conversation_config["user_instructions"] = (
             #     f"{orig_user_instr} {length_instruction}."
             # )
+        elif multiplier < 0.85:
+            if multiplier < 0.33:
+                length_instruction = "The transcript is too long. It should be at least three times shorter. Give extensive feedback on the possible ways to shorten the transcript."
+                #  Try to extend on details, content, considerations and explanation. The transcript needs to be considerably longer. The transcript is too short, add more details. Write a longer version of the transcript. Do not return the same transcript. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details.
+            elif multiplier < 0.5:
+                length_instruction = "The transcript is too long. It should be half the length. Give feedback on the possible ways to shorten the transcript."
+
+                # Try to extend on details from content and discussion of the topic. The transcript needs to be longer. The transcript is too long, write a longer version of it. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details.
+            else:
+                length_instruction = "The transcript is too long. It should be slightly shorter. Give feedback on how to shorten the dialogue."
         else:
-            print("Word count: Longer than target")
+            print("Word count: Matches target")
             return False, ""
-    return make_longer, length_instruction
+    return change_length, length_instruction
 
 
 def generate_and_verify_transcript(
@@ -345,21 +359,6 @@ def generate_and_verify_transcript(
             content = "\n\n".join(map(str, sources))
 
     print(f"Generate transcript with: {conversation_config=}")
-    # print(f"Generation content {content=}")
-
-    # Generate the initial transcript - unable to configure open ai so it's google.
-    # transcript_file: str = generate_podcast(
-    #     urls=urls,
-    #     transcript_only=True,
-    #     longform=conversation_config.get("longform", False),
-    #     config=config,
-    #     conversation_config=conversation_config,
-    #     text=content,
-    # )
-
-    # # Read the transcript file once
-    # with open(transcript_file, "r") as transcript_src:
-    #     orig_transcript_content = transcript_src.read()
 
     main_item = False
     if source is not None and (
@@ -375,12 +374,12 @@ def generate_and_verify_transcript(
 
     retry_count = 0
     check_passed = False
-    make_longer = True
+    change_length = True
 
-    while (not check_passed or make_longer) and retry_count < max_count:
+    while (not check_passed or change_length) and retry_count < max_count:
         length_instructions = ""
         if conversation_config.get("word_count") is not None:
-            make_longer, length_instructions = check_transcript_length(
+            change_length, length_instructions = check_transcript_length(
                 transcript_content,
                 content,
                 total_count,
@@ -394,13 +393,13 @@ def generate_and_verify_transcript(
             conversation_config=conversation_config,
             main_item=main_item,
             length_instructions=(
-                length_instructions if make_longer else "Transcript length is good."
+                length_instructions if change_length else "Transcript length is good."
             ),
         )
 
-        if not check_passed or make_longer:
+        if not check_passed or change_length:
             feedback = (
-                (length_instructions if make_longer else "")
+                (length_instructions if change_length else "")
                 if check_passed
                 else guidance
             )
@@ -445,10 +444,13 @@ def transcript_combiner(
     # Initialize a list to hold the combined transcripts with bridges
     combined_transcripts = []
     content = ""
+    article_count = 1
     if sources is not None:
         content = "\n\n".join(map(str, sources))
+        article_count = len(sources)
     else:
         raise "Sources needed for combining resulting transcripts."
+
     combined_transcripts.append(transcript_intro_writer(content, conversation_config))
 
     # Iterate through the transcripts and add bridges between them
@@ -516,13 +518,17 @@ def transcript_combiner(
     max_count = 6
     retry_count = 0
     check_passed = False
-    make_longer = True
-
-    while (not check_passed or make_longer) and retry_count < max_count:
-        word_count = conversation_config.get("word_count")
-        make_longer = False
+    change_length = True
+    word_count = conversation_config.get("word_count")
+    word_count = (
+        (word_count * article_count) // 2
+        if word_count is not None and conversation_config.get("longform", False)
+        else word_count
+    )
+    while (not check_passed or change_length) and retry_count < max_count:
+        change_length = False
         if word_count is not None:
-            make_longer, length_instructions = check_transcript_length(
+            change_length, length_instructions = check_transcript_length(
                 transcript_content,
                 content,
                 1,
@@ -534,13 +540,13 @@ def transcript_combiner(
             content=content,
             conversation_config=conversation_config,
             length_instructions=(
-                length_instructions if make_longer else "Transcript length is good."
+                length_instructions if change_length else "Transcript length is good."
             ),
         )
 
-        if not check_passed or make_longer:
+        if not check_passed or change_length:
             feedback = (
-                (length_instructions if make_longer else "")
+                (length_instructions if change_length else "")
                 if check_passed
                 else guidance
             )

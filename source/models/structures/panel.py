@@ -9,6 +9,7 @@ from source.helpers.sources import (
     TechCrunchNewsConfig,
     HackerNewsConfig,
 )
+from source.load_env import SETTINGS
 
 # Load custom_config from environment variables with defaults
 custom_config = {
@@ -16,10 +17,8 @@ custom_config = {
     "conversation_style": os.getenv(
         "panel_defaults_conversation_style", "casual,humorous"
     ).split(","),
-    "podcast_name": os.getenv("panel_defaults_podcast_name", "Morning Show"),
-    "podcast_tagline": os.getenv(
-        "panel_defaults_podcast_tagline", "Your Personal Morning Podcast"
-    ),
+    "podcast_name": SETTINGS.podcast_name,
+    "podcast_tagline": SETTINGS.podcast_tagline,
     "creativity": float(os.getenv("panel_defaults_creativity", 0.7)),
 }
 

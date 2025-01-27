@@ -90,3 +90,24 @@ class Settings(BaseSettings):
             os.getenv("tc_org_id", "34303437-3164-6431-6439-393230626365")
         )
     )
+    send_emails: bool = Field(
+        default_factory=lambda: os.getenv("SEND_EMAILS", "false").lower() == "true"
+    )
+    mailchimp_api_key: str = Field(
+        default_factory=lambda: os.getenv("MAILCHIMP_API_KEY", "")
+    )
+    mailchimp_server_prefix: str = Field(
+        default_factory=lambda: os.getenv("MAILCHIMP_SERVER_PREFIX", "")
+    )
+    enable_mailchimp: bool = Field(
+        default_factory=lambda: os.getenv("ENABLE_MAILCHIMP", "false").lower() == "true"
+    )
+
+    podcast_name: str = Field(
+        default_factory=lambda: os.getenv("panel_defaults_podcast_name", "Morning Show")
+    )
+    podcast_tagline: str = Field(
+        default_factory=lambda: os.getenv(
+            "panel_defaults_podcast_tagline", "Your Personal Morning Podcast"
+        )
+    )

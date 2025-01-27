@@ -11,7 +11,7 @@ async def update_panel(
     if not existing_discussion:
         raise ValueError("Panel discussion not found")
 
-    for key, value in request_data.model_dump(exclude_unset=True).items():
+    for key, value in request_data.model_dump(exclude_unset=False).items():
         setattr(existing_discussion, key, value)
 
     await existing_discussion.update(supabase)
@@ -27,7 +27,7 @@ async def update_panel_transcript(
     if not existing_transcript:
         raise ValueError("Panel transcript not found")
 
-    for key, value in request_data.model_dump(exclude_unset=True).items():
+    for key, value in request_data.model_dump(exclude_unset=False).items():
         setattr(existing_transcript, key, value)
 
     await existing_transcript.update(supabase)
@@ -41,7 +41,7 @@ async def update_panel_audio(
     if not existing_audio:
         raise ValueError("Panel audio not found")
 
-    for key, value in request_data.model_dump(exclude_unset=True).items():
+    for key, value in request_data.model_dump(exclude_unset=False).items():
         setattr(existing_audio, key, value)
 
     await existing_audio.update(supabase)

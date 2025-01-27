@@ -83,7 +83,7 @@ def create_panel_audio(
         title=title,
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
-        metadata={"conversation_config": conversation_config},
+        metadata={"conversation_config": conversation_config, "tts_model": tts_model},
         is_public=True,
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,

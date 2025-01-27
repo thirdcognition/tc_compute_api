@@ -192,11 +192,11 @@ def generate_transcripts(
             all_transcripts.append(transcript)
             combined_sources.append(source_collection)
     else:
-        combined_sources = sources
+        combined_sources = [input_text] + sources if input_text else sources
         all_transcripts = [
             generate_and_verify_transcript(
                 conversation_config=conversation_config,
-                sources=sources,
+                sources=combined_sources,
                 urls=[],
                 total_count=1,
             )
@@ -341,13 +341,20 @@ def create_panel_transcript(
     try:
         all_transcripts, combined_sources = generate_transcripts(
             conversation_config,
-            request_data.input_text or "",
+            (
+                request_data.input_text
+                if request_data.input_text
+                else metadata.get("input_text", "")
+            ),
             ordered_groups,
             request_data.longform,
         )
-        final_transcript = transcript_combiner(
-            all_transcripts, combined_sources, conversation_config
-        )
+        if len(combined_sources) > 1:
+            final_transcript = transcript_combiner(
+                all_transcripts, combined_sources, conversation_config
+            )
+        else:
+            final_transcript = "\n\n".join(all_transcripts)
 
         transcript_summaries = transcript_summary_writer(final_transcript)
 
@@ -362,8 +369,9 @@ def create_panel_transcript(
         panel_transcript.metadata["images"] = [
             str(web_source.image)
             for collection in combined_sources
+            if isinstance(collection, WebSourceCollection)
             for web_source in collection.web_sources
-            if web_source.image
+            if isinstance(web_source, WebSource) and web_source.image
         ]
 
         upload_transcript_to_supabase(

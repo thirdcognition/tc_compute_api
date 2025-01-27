@@ -18,9 +18,9 @@ function TranscriptDetailEdit({
     initiatePolling
 }) {
     const [showDetails, setShowDetails] = useState(false);
-    const [wordCount, setWordCount] = useState(2500);
-    const [maxWordCount, setMaxWordCount] = useState(20000); // Dynamically updated max
-    const [duration, setDuration] = useState(20); // Duration in minutes
+    const [wordCount, setWordCount] = useState(1000);
+    const [maxWordCount, setMaxWordCount] = useState(2500); // Dynamically updated max
+    // const [duration, setDuration] = useState(20); // Duration in minutes
     const [creativity] = useState(0.7);
     const [conversationStyle, setConversationStyle] = useState([
         "engaging",
@@ -67,18 +67,21 @@ function TranscriptDetailEdit({
         return Math.max(totalArticles + linksArray.length, 1);
     };
 
-    // Effect to update maxWordCount and duration based on article count
-    useEffect(() => {
+    const updateMaxWordCount = () => {
         if (discussionData) {
             const articleCount = calculateArticleCount(discussionData);
-            const newMaxWordCount = articleCount * 500;
+            const newMaxWordCount =
+                articleCount * (longForm || articleCount == 1 ? 500 : 300);
             setMaxWordCount(newMaxWordCount);
-            setDuration(newMaxWordCount / 500); // Calculate duration
+            // setDuration(newMaxWordCount / 200); // Calculate duration
             if (wordCount > newMaxWordCount) {
                 setWordCount(newMaxWordCount); // Adjust wordCount if it exceeds max
             }
         }
-    }, [discussionData, wordCount]);
+    };
+
+    // Effect to update maxWordCount and duration based on article count
+    useEffect(updateMaxWordCount, [discussionData, wordCount, longForm]);
 
     const handleTranscriptSubmit = async (e) => {
         e.preventDefault();
@@ -131,8 +134,7 @@ function TranscriptDetailEdit({
                     </Form.Group>
                     <Form.Group controlId="wordCount" className="mb-4">
                         <Form.Label className="font-semibold">
-                            Requested length (up to around {duration.toFixed(0)}{" "}
-                            min):
+                            Requested length):
                         </Form.Label>
                         <Form.Control
                             type="range"
@@ -162,22 +164,24 @@ function TranscriptDetailEdit({
                         />
                         <div>{`${creativity}`}</div>
                     </Form.Group> */}
-                    <Form.Group controlId="longForm" className="mb-4">
-                        <div className="flex items-center mb-2.5">
-                            <label className="mr-2.5">
-                                <input
-                                    type="checkbox"
-                                    checked={longForm}
-                                    onChange={(e) =>
-                                        setLongForm(e.target.checked)
+                    {calculateArticleCount(discussionData) > 1 && (
+                        <Form.Group controlId="longForm" className="mb-4">
+                            <div className="flex items-center mb-2.5">
+                                <label className="mr-2.5">
+                                    <input
+                                        type="checkbox"
+                                        checked={longForm}
+                                        onChange={(e) =>
+                                            setLongForm(e.target.checked)
+                                        }
+                                    />
+                                    {
+                                        " Process every article separately. (higher quality, longer process time)"
                                     }
-                                />
-                                {
-                                    " Process every article separately. (higher quality, longer process time)"
-                                }
-                            </label>
-                        </div>
-                    </Form.Group>
+                                </label>
+                            </div>
+                        </Form.Group>
+                    )}
                     <Button
                         onClick={() => setShowDetails(!showDetails)}
                         className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
