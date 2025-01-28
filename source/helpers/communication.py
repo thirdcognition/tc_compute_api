@@ -43,11 +43,11 @@ def send_email_about_new_shows(transcript_ids: List[str]):
         .eq("organization_users.organization_id", SETTINGS.tc_org_id)
         .execute()
     )
-    email = ", ".join(
+    email = [
         (user["email"] if user is not None and user["email"] is not None else "")
         for user in users.data
         if user is not None and user["email"] is not None
-    )
+    ]
     # email = "markus@thirdcognition.com"
     if email is not None:
         send_new_shows_email_task.delay(email, transcript_ids)
@@ -295,7 +295,7 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
 
     params: resend.Emails.SendParams = {
         "from": "show@thirdcognition.app",
-        "to": [email],
+        "to": email if isinstance(email, list) else [email],
         "subject": email_title,
         "html": email_html,
         "text": email_text,  # Include the text alternative
