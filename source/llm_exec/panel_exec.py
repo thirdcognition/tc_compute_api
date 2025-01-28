@@ -1,6 +1,6 @@
 # import os
 import re
-from typing import List
+from typing import List, Union
 from source.chains.init import get_chain
 from source.models.data.web_source import WebSource
 from source.models.structures.web_source_structure import WebSourceCollection
@@ -241,7 +241,9 @@ def transcript_conclusion_writer(
 
 
 def transcript_summary_writer(
-    transcript: str, conversation_config: dict = {}
+    transcript: str,
+    sources: List[Union[WebSource, WebSourceCollection, str]],
+    conversation_config: dict = {},
 ) -> TranscriptSummary:
     """
     Generate a title, subjects, and description from a transcript using the transcript_summary_formatter.
@@ -252,6 +254,15 @@ def transcript_summary_writer(
     print(
         f"transcript_summary_writer - Starting with transcript ({count_words(transcript)} words)"
     )
+
+    subjects = "- " + "\n- ".join(
+        [
+            source.title
+            for source in sources
+            if isinstance(source, WebSource) or isinstance(source, WebSourceCollection)
+        ]
+    )
+
     retries = 3
     result = None
     while not result and retries > 0:
@@ -259,6 +270,7 @@ def transcript_summary_writer(
         result = get_chain("transcript_summary_formatter_sync").invoke(
             {
                 "transcript": transcript,
+                "subjects": subjects,
                 "podcast_name": conversation_config.get("podcast_name", ""),
                 "podcast_tagline": conversation_config.get("podcast_tagline", ""),
                 "output_language": conversation_config.get("output_language", ""),

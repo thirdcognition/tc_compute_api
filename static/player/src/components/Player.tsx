@@ -1,13 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-    BsFillPlayFill,
-    BsPauseFill,
-    BsMoonFill,
-    BsSunFill,
-    BsFillInfoCircleFill // New icon for Sources button
+    BsFillPlayFill as PlayIcon,
+    BsPauseFill as PauseIcon,
+    BsMoonFill as MoonIcon,
+    BsSunFill as SunIcon,
+    BsFillInfoCircleFill as InfoIcon
 } from "react-icons/bs";
-import { FiRotateCcw, FiRotateCw } from "react-icons/fi";
-import { TbClearAll } from "react-icons/tb";
+import {
+    FiRotateCcw as RewindIcon,
+    FiRotateCw as ForwardIcon
+} from "react-icons/fi";
+import {
+    TbClearAll as ClearIcon,
+    TbVolumeOff as VolumeMuteIcon,
+    TbVolume as VolumeUpIcon
+} from "react-icons/tb";
 import SpeedPopup from "./SpeedPopup.tsx";
 import LikeDislikeSection from "./LikeDislikeSection.tsx";
 import { trackEvent, Session } from "../helpers/gaTracking.ts";
@@ -265,7 +272,7 @@ const Player: React.FC<PlayerProps> = ({
                         className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400   transition-colors duration-200"
                         title="Show sources"
                     >
-                        <BsFillInfoCircleFill className="w-5 h-5" />
+                        <InfoIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         {showSourcesPopup && (
                             <SourcesPopup
                                 transcriptSources={transcriptSources}
@@ -274,20 +281,13 @@ const Player: React.FC<PlayerProps> = ({
                     </button>
 
                     <button
-                        onClick={clearUserData}
-                        className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200"
-                        title="Clear all interactions"
-                    >
-                        <TbClearAll className="w-5 h-5" />
-                    </button>
-                    <button
                         onClick={toggleTheme}
                         className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
                     >
                         {isDark ? (
-                            <BsSunFill className="w-5 h-5 text-yellow-400" />
+                            <SunIcon className="w-5 h-5 text-yellow-400" />
                         ) : (
-                            <BsMoonFill className="w-5 h-5 text-gray-600" />
+                            <MoonIcon className="w-5 h-5 text-gray-600" />
                         )}
                     </button>
                 </div>
@@ -307,7 +307,7 @@ const Player: React.FC<PlayerProps> = ({
                         onClick={() => skip(-15)}
                         className="p-3 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
                     >
-                        <FiRotateCcw className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        <RewindIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </button>
 
                     <button
@@ -315,9 +315,9 @@ const Player: React.FC<PlayerProps> = ({
                         className="p-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
                     >
                         {isPlaying ? (
-                            <BsPauseFill className="w-8 h-8" />
+                            <PauseIcon className="w-8 h-8" />
                         ) : (
-                            <BsFillPlayFill className="w-8 h-8" />
+                            <PlayIcon className="w-8 h-8" />
                         )}
                     </button>
 
@@ -325,7 +325,7 @@ const Player: React.FC<PlayerProps> = ({
                         onClick={() => skip(15)}
                         className="p-3 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
                     >
-                        <FiRotateCw className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        <ForwardIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </button>
                 </div>
 
@@ -339,9 +339,9 @@ const Player: React.FC<PlayerProps> = ({
                                 title={muted ? "Unmute" : "Mute"}
                             >
                                 {muted ? (
-                                    <span className="text-red-500">🔇</span>
+                                    <VolumeMuteIcon className="w-5 h-5 text-red-500" />
                                 ) : (
-                                    <span className="text-blue-500">🔊</span>
+                                    <VolumeUpIcon className="w-5 h-5 text-blue-500" />
                                 )}
                             </button>
                             <input

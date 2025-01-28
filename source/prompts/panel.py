@@ -79,13 +79,13 @@ class TranscriptParser(BaseOutputParser[str]):
                 "Transcript must start and end with valid <personN> tags."
             )
 
-        first_speaker = first_speaker_match.group(1)
-        last_speaker = last_speaker_match.group(1)
+        # first_speaker = first_speaker_match.group(1)
+        # last_speaker = last_speaker_match.group(1)
 
-        if first_speaker == last_speaker:
-            raise OutputParserException(
-                "Transcript must alternate between speakers and end with a different speaker."
-            )
+        # if first_speaker == last_speaker:
+        #     raise OutputParserException(
+        #         "Transcript must alternate between speakers and end with a different speaker."
+        #     )
 
         return blocks
 
@@ -814,9 +814,6 @@ transcript_conclusion_writer.parser = TranscriptParser()
 
 
 class TranscriptSummary(BaseModel):
-    title: str = Field(
-        ..., title="Title", description="Generated title for the transcript."
-    )
     main_subject: str = Field(
         ..., title="Main subject", description="Main or most important subject."
     )
@@ -827,16 +824,40 @@ class TranscriptSummary(BaseModel):
         ...,
         title="Description",
         description="2-3 sentence description of the transcript.",
+        max_length=300,
+    )
+    title: str = Field(
+        ...,
+        title="Title",
+        description="Generated title for the transcript.",
+        max_length=90,
     )
 
 
 transcript_summary_parser = PydanticOutputParser(pydantic_object=TranscriptSummary)
 
+
+class TranscriptSummaryValidator:
+    def parse(self, raw_input: str) -> TranscriptSummary:
+        # Clean the <think> and <reflection> tags
+        print(f"{raw_input=}")
+        cleaned_input = raw_input
+        if isinstance(raw_input, BaseMessage):
+            cleaned_input = raw_input.content
+
+        # cleaned_input = self.cleaner.parse(raw_input)
+
+        # Parse the cleaned input into a WebSourceGrouping object
+        parsed_response = transcript_summary_parser.parse(cleaned_input)
+
+        return parsed_response
+
+
 transcript_summary_formatter = PromptFormatter(
     system=textwrap.dedent(
         f"""
         You are an expert summarizer. Your task is to analyze the provided transcript and generate:
-        - A concise and engaging title.
+        - A concise and engaging title summarizing subjects with max 90 chars.
         - Do not use generalizations in title.
         - A main subject that's the most important one.
         - A list of subjects/topics covered in the transcript.
@@ -844,12 +865,49 @@ transcript_summary_formatter = PromptFormatter(
         - Make sure to not use podcast_name or podcast_tagline in your words.
         - Use the defined language.
 
+        Here's a few examples of generated title with subjects:
+
+        Example 1:
+
+        Subjects:
+        - Journalist slipped into the underworld of human trafficking – Rovaniemi's human trafficking situation is exposed through Telegram
+        - Trump has "the strongest possible card" – he could force Putin to end the war, says a Russian professor
+        - The impact of inheritance taxes on economic growth divides opinions in Finland
+        - Serhij returned to Kamyanets after being released and stepped into a mine
+        - Research reveals: Elderly care burden is shifted increasingly from older people to younger ones, especially women
+
+        Title: Drug trade through Telegram, the "Ultimate Trump Card", Debate over Inheritance Tax & more!
+
+        Example 2:
+        Subjects:
+        - Trump wants Greenland, but also something very valuable from Finland - the battle has already begun
+        - Trump again fell in love with Finnish forestry on Fox News interview
+        - So Finland ended up leading a group where Russia spreads its propaganda
+        - The most expensive pedestrian crossing in Finland is actually Turun railway station and passengers are thinking: "I don't want to mix this up here"
+        - A majority of sixth-graders got at least a basic level in their native language - but only one out of six reached good proficiency
+
+        Title: Trump wants Greenland, Talks about Finnish Forestry, Finnish leadership & more!
+
+        Example 3:
+
+        Subjects
+        - Alcohol causes thousands of cancers in Finland every year - expert and Päivi Räsänen suggest a strict solution
+        - The closure of an area near the eastern border became a target for adventurers - "The anger is immediate reaction", says border guard
+        - Biden warned in a congratulatory speech: "Oligarchy is forming in America"
+        - Klaus Härö's film tells about Finland's involvement in the Holocaust - Ville Virtanen: Today resembles the late 1930s
+        - NBC: The Biden administration plans to try to keep TikTok active despite the ban
+
+        Title: Ireland's alcohol warnings, Biden’s farewell speech, Klaus Härö's movie & more!
+
         Format your output as follows:
         {transcript_summary_parser.get_format_instructions()}
         """
     ),
     user=textwrap.dedent(
         """
+        Subjects:
+        {subjects}
+
         Transcript:
         {transcript}
 
@@ -857,9 +915,9 @@ transcript_summary_formatter = PromptFormatter(
         Podcast name: {podcast_name}
         Podcast tagline: {podcast_tagline}
 
-        Generate a title, subjects, and description based on the transcript.
+        Generate a title, subjects, and description based on the transcript and subjects.
         """
     ),
 )
 
-transcript_summary_formatter.parser = transcript_summary_parser
+transcript_summary_formatter.parser = TranscriptSummaryValidator()

@@ -312,6 +312,11 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                             Output Language: {config.output_language}
                         </p>
                     )}
+                    <p className="mb-2">
+                        Process every article separately. (higher quality,
+                        longer process time):{" "}
+                        {transcript.metadata?.longform ? "Yes" : "No"}
+                    </p>
                     {!transcript.generation_parent && (
                         <>
                             {transcript.generation_cronjob && cronjob ? (

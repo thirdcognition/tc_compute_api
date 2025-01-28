@@ -144,6 +144,10 @@ class WebSourceGrouping(BaseModel):
         ...,
         description="An ordered list of lists of IDs grouped by title and summary connection and sorted by topical and categorical similarity.",
     )
+    ordered_group_titles: List[str] = Field(
+        ...,
+        description="An ordered list of titles for ordered_groups.",
+    )
     main_group: int = Field(
         ...,
         description="The index of the group which is considered to be the most important group in the groups",

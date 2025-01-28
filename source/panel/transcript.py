@@ -218,14 +218,15 @@ def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]
     source_collections: List[WebSourceCollection] = []
     main_item = int(grouping.main_group)
     i = 0
-    for group in grouping.ordered_groups:
+    for i, group in enumerate(grouping.ordered_groups):
         # Convert group IDs to strings
         filtered_sources = [
             source for source in web_sources if str(source.source_id) in group
         ]
+
         # Remove used IDs from the list
         source_ids -= {str(source.source_id) for source in filtered_sources}
-        coll = WebSourceCollection(filtered_sources)
+        coll = WebSourceCollection(filtered_sources, grouping.ordered_group_titles[i])
         if i == main_item:
             coll.main_item = True
         source_collections.append(coll)
@@ -352,7 +353,9 @@ def create_panel_transcript(
         else:
             final_transcript = "\n\n".join(all_transcripts)
 
-        transcript_summaries = transcript_summary_writer(final_transcript)
+        transcript_summaries = transcript_summary_writer(
+            final_transcript, combined_sources, conversation_config
+        )
 
         panel_transcript.title = transcript_summaries.title
         panel_transcript.metadata["subjects"] = transcript_summaries.subjects

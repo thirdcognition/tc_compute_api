@@ -38,7 +38,12 @@ def create_panel_w_transcript_task(
 @celery_app.task
 def create_panel_audio_task(tokens: Tuple[str, str], request_data_json):
     request_data = PanelRequestData.model_validate_json(request_data_json)
-    return create_panel_audio(tokens, request_data)
+    audio_id = create_panel_audio(tokens, request_data)
+
+    if audio_id:
+        send_email_about_new_shows_task([str(request_data.transcript_id)])
+
+    return audio_id
 
 
 @celery_app.task(bind=True)
@@ -102,7 +107,7 @@ def generate_transcripts_task(
 
     new_transcripts_generated = False  # Flag to track new transcript generation
 
-    new_titles = []  # List to store titles of newly generated transcripts
+    new_transcript_ids = []  # List to store IDs of newly generated transcripts
 
     for transcript in transcripts_with_cronjob:
         transcript_id = transcript.id
@@ -144,9 +149,10 @@ def generate_transcripts_task(
                 metadata = (panel.metadata or {}) if panel is not None else {}
 
                 # Call the helper function to process transcript generation
-                process_transcript_generation(
-                    tokens, transcript, panel, metadata, supabase_client, new_titles
+                transcript_id = process_transcript_generation(
+                    tokens, transcript, panel, metadata, supabase_client
                 )
+                new_transcript_ids.append(str(transcript_id))
                 new_transcripts_generated = True
 
             else:
@@ -163,14 +169,10 @@ def generate_transcripts_task(
 
     # After processing all transcripts, check the flag and send emails if needed
     if new_transcripts_generated:
-        send_email_about_new_shows_task.delay(
-            new_titles
-        )  # Send emails with the new titles
+        send_email_about_new_shows_task.delay(new_transcript_ids)
 
 
-def process_transcript_generation(
-    tokens, transcript, panel, metadata, supabase_client, new_titles
-):
+def process_transcript_generation(tokens, transcript, panel, metadata, supabase_client):
     # Extend the metadata with the PanelTranscript model
     transcript_metadata = (transcript.metadata or {}) if transcript is not None else {}
 
@@ -210,10 +212,6 @@ def process_transcript_generation(
         transcript_id = create_panel_transcript(
             tokens, new_transcript_data, supabase_client
         )
-    # Add the title and panelId of the newly generated transcript to the list
-    new_titles.append(
-        f"{panel.id}: {panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}"
-    )
 
     metadata.update(audio_metadata)
     conversation_config.update(audio_metadata.get("conversation_config", {}))
@@ -226,3 +224,5 @@ def process_transcript_generation(
         create_panel_audio(tokens, new_transcript_data)
     else:
         create_panel_audio(tokens, new_transcript_data, supabase_client)
+
+    return transcript_id

@@ -1,6 +1,7 @@
 import os
 import tempfile
 import datetime
+import time
 from typing import Tuple
 from uuid import UUID
 from supabase import Client
@@ -104,10 +105,21 @@ def create_panel_audio(
         )
     except Exception as e:
         print(f"Error during audio generation: {e}")
-        panel_audio.process_state = ProcessState.failed
-        panel_audio.process_fail_message = str(e)
-        panel_audio.update_sync(supabase=supabase_client)
-        raise RuntimeError("Failed to generate podcast audio") from e
+
+        # Retry logic
+        try:
+            time.sleep(60)  # Wait for 60 seconds before retrying
+            audio_file: str = generate_podcast(
+                transcript_file=transcript_file,
+                tts_model=tts_model,
+                conversation_config=conversation_config,
+            )
+        except Exception as e:
+            print(f"Error during second attempt of audio generation: {e}")
+            panel_audio.process_state = ProcessState.failed
+            panel_audio.process_fail_message = str(e)
+            panel_audio.update_sync(supabase=supabase_client)
+            raise RuntimeError("Failed to generate podcast audio after retry") from e
 
     os.remove(transcript_file)
     with open(audio_file, "rb") as audio_src:

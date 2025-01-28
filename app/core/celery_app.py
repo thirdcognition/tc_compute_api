@@ -8,6 +8,7 @@ from celery import Celery, Task
 from typing import Any, Callable, Coroutine, ParamSpec, TypeVar
 from celery.schedules import crontab
 from asgiref import sync
+from source.models.config.default_env import IN_PRODUCTION
 from source.load_env import SETTINGS
 from source.models.config.logging import log_format, ColoredFormatter
 from celery.signals import after_setup_logger
@@ -95,7 +96,7 @@ celery_app.conf.beat_schedule = {
     "generate-transcripts-every-30min": {
         "task": "source.panel.tasks.generate_transcripts_task",
         # "schedule": crontab(hour=4, minute=30),
-        "schedule": crontab(minute="*/30"),
+        "schedule": crontab(minute="*/30") if IN_PRODUCTION else crontab(minute="*/2"),
         "args": (
             None,
             True,

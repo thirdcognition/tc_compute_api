@@ -218,7 +218,7 @@ function CronjobComponent({ value, onChange }) {
                     )}
                     <Form.Group controlId="time" className="mb-2">
                         <Form.Label className="font-semibold">
-                            Add Time
+                            Add Time (UTC)
                         </Form.Label>
                         <div className="flex items-center gap-2">
                             <Form.Control
@@ -283,7 +283,7 @@ function CronjobComponent({ value, onChange }) {
                     </div>
                     <Form.Group controlId="time" className="mt-4">
                         <Form.Label className="font-semibold">
-                            Time of Day
+                            Time of Day (UTC)
                         </Form.Label>
                         <Form.Control
                             type="time"

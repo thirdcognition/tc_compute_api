@@ -25,6 +25,8 @@ set_debug(True)
 
 excempt_from_auth_check_with_prefix("/static", ["GET"])
 app.mount("/static", StaticFiles(directory="static", html=True), name="static")
+excempt_from_auth_check_with_prefix("/assets", ["GET"])
+app.mount("/assets", StaticFiles(directory="assets", html=True), name="assets")
 
 excempt_from_auth_check("/", ["GET"])
 
@@ -100,7 +102,14 @@ async def serve_player_root(path_name: str):
     return serve_static_file("../static/player/build", path_name)
 
 
-# Include routers
+excempt_from_auth_check("/favicon.ico", ["GET"])
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse(os.path.join(script_dir, "../assets", "favicon.ico"))
+
+
 app.include_router(auth_router)
 app.include_router(organization_router)
 app.include_router(organization_user_router)

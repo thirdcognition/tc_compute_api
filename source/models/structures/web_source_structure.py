@@ -5,13 +5,16 @@ from source.models.data.web_source import WebSource
 class WebSourceCollection:
     main_item: bool = False
 
-    def __init__(self, web_sources: Optional[List[WebSource]] = None):
+    def __init__(
+        self, web_sources: Optional[List[WebSource]] = None, title: str = None
+    ):
         """
         Initialize the collection with an optional list of WebSource objects.
 
         :param web_sources: A list of WebSource objects to initialize the collection with.
         """
         self.web_sources: List[WebSource] = web_sources if web_sources else []
+        self.title: str = title
 
     def add_web_source(self, web_source: WebSource):
         """

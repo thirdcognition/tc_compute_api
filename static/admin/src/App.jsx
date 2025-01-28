@@ -141,7 +141,9 @@ function AppContent() {
             <Row>
                 <Col md={12}>
                     <div className="flex justify-between items-center mb-5 p-2 bg-gray-100 border-b border-gray-300">
-                        <h1 className="m-0">My Morning Show</h1>
+                        <h1 className="m-0">
+                            {process.env.REACT_APP_PODCAST_NAME}
+                        </h1>
                         {session.isAuthenticated() && (
                             <Button variant="secondary" onClick={logout}>
                                 Logout

@@ -25,3 +25,13 @@ Authorization: Bearer {{accessToken}}
 GET {{host}}:{{port}}/communication/mailchimp/templates HTTP/1.1
 Accept: application/json
 Authorization: Bearer {{accessToken}}
+
+@transcript_id = 52a69cd8-3818-46aa-a3d7-302b5b17271c
+
+### Fetch Mailchimp Templates request
+# @name sendTranscriptEmail
+POST {{host}}:{{port}}/communication/send-transcript-email HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+["{{transcript_id}}"]

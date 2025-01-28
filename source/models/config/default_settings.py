@@ -111,3 +111,14 @@ class Settings(BaseSettings):
             "panel_defaults_podcast_tagline", "Your Personal Morning Podcast"
         )
     )
+    public_host_address: str = Field(
+        default_factory=lambda: os.getenv(
+            "PUBLIC_HOST_ADDRESS", "https://show.thirdcognition.app"
+        )
+    )
+    admin_uri_path: str = Field(
+        default_factory=lambda: os.getenv("ADMIN_URI_PATH", "/admin/")
+    )
+    player_uri_path: str = Field(
+        default_factory=lambda: os.getenv("PLAYER_URI_PATH", "/player/")
+    )

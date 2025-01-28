@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from source.api.mailchimp.read import get_lists, get_templates
+from source.helpers.communication import send_email_about_new_shows_task
 
 router = APIRouter()
 
@@ -26,5 +27,17 @@ async def fetch_mailchimp_templates():
         return await get_templates()
     except HTTPException as e:
         raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/communication/send-transcript-email")
+async def send_email_about_new_shows(transcript_ids: list[str]):
+    """
+    Endpoint to send an email about specified transcript IDs.
+    """
+    try:
+        send_email_about_new_shows_task.delay(transcript_ids)
+        return {"message": "Email task initiated successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
