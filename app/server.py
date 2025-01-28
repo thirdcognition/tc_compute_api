@@ -107,7 +107,7 @@ excempt_from_auth_check("/favicon.ico", ["GET"])
 
 @app.get("/favicon.ico")
 async def favicon():
-    return FileResponse(os.path.join(script_dir, "../assets", "favicon.ico"))
+    return FileResponse(os.path.join(script_dir, "../assets/icons", "favicon.ico"))
 
 
 app.include_router(auth_router)
