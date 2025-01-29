@@ -167,7 +167,7 @@ const Player: React.FC<PlayerProps> = ({
     return (
         <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl mb-4 overflow-hidden">
             <div
-                className="relative w-full h-[500px] bg-top bg-contain bg-no-repeat"
+                className="relative w-full h-[520px] bg-top bg-contain bg-no-repeat"
                 style={{
                     ...(transcript.metadata.images[0] && {
                         backgroundImage: `url(${transcript.metadata.images[0]})`
@@ -265,7 +265,7 @@ const Player: React.FC<PlayerProps> = ({
 
                             <button
                                 onClick={togglePlay}
-                                className="p-4 rounded-full bg-[#FD7E61] hover:bg-[#E96A50] text-white"
+                                className="p-4 rounded-full  bg-[#FD7E61] hover:bg-[#E96A50] text-white"
                             >
                                 {isPlaying ? (
                                     <PauseIcon className="w-8 h-8" />
