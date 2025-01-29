@@ -40,7 +40,19 @@ const Player: React.FC<PlayerProps> = ({
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
     const [showSpeedPopup, setShowSpeedPopup] = useState(false);
     const speedPopupRef = useRef<HTMLDivElement>(null);
-    const [volume, setVolume] = useState(1); // Volume state (default: max volume)
+    const [volume, setVolumeState] = useState(1); // Volume state (default: max volume)
+
+    const setVolume = (newVolume: number) => {
+        setVolumeState(newVolume);
+        if (audioRef.current) {
+            if (/iP(hone|od|ad)/.test(navigator.userAgent)) {
+                // iOS workaround: Use muted property
+                audioRef.current.muted = newVolume === 0;
+            } else {
+                audioRef.current.volume = newVolume;
+            }
+        }
+    };
     const [muted, setMuted] = useState(false); // Mute state
 
     useEffect(() => {
@@ -48,6 +60,49 @@ const Player: React.FC<PlayerProps> = ({
             audioRef.current.volume = muted ? 0 : volume;
         }
     }, [volume, muted]);
+
+    useEffect(() => {
+        if ("mediaSession" in navigator && audioRef.current) {
+            const artwork = transcript.metadata.images[0]
+                ? [
+                      {
+                          src: transcript.metadata.images[0],
+                          sizes: "512x512",
+                          type: "image/png"
+                      }
+                  ]
+                : [
+                      {
+                          src: "/assets/icons/apple-touch-icon.png",
+                          sizes: "512x512",
+                          type: "image/png"
+                      }
+                  ];
+
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: transcript.title,
+                artwork: artwork
+            });
+
+            navigator.mediaSession.setActionHandler("play", () => {
+                audioRef.current?.play();
+                setIsPlaying(true);
+            });
+
+            navigator.mediaSession.setActionHandler("pause", () => {
+                audioRef.current?.pause();
+                setIsPlaying(false);
+            });
+
+            navigator.mediaSession.setActionHandler("seekbackward", () => {
+                skip(-10);
+            });
+
+            navigator.mediaSession.setActionHandler("seekforward", () => {
+                skip(10);
+            });
+        }
+    }, [transcript, audioRef]);
 
     const togglePlay = () => {
         if (audioRef.current) {

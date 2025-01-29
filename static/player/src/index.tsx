@@ -24,6 +24,23 @@ window
         }
     });
 
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+        .register("/service-worker.js")
+        .then((registration) => {
+            registration.onupdatefound = () => {
+                const installingWorker = registration.installing;
+                if (installingWorker) {
+                    installingWorker.onstatechange = () => {
+                        if (installingWorker.state === "activated") {
+                            window.location.reload();
+                        }
+                    };
+                }
+            };
+        });
+}
+
 const root = ReactDOM.createRoot(
     document.getElementById("root") as HTMLElement
 );
