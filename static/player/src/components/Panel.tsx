@@ -110,7 +110,8 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                                 created_at: new Date(audio.created_at).getTime()
                             };
                         })
-                        .sort((a, b) => b.created_at - a.created_at); // Sort by created_at descending
+                        .sort((a, b) => b.created_at - a.created_at) // Sort by created_at descending
+                        .slice(0, 5); // Limit to 5 most recent episodes
                     setAudioOptions(audioEntries);
                     if (audioEntries.length > 0) {
                         setAudioUrl(audioEntries[0].url); // Default to the latest
@@ -124,6 +125,24 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
         fetchData();
     }, [panelId]);
 
+    const getTranscript = () => {
+        const currentAudio = audioOptions.find(
+            (option) => option.url === audioUrl
+        );
+        const currentSource = transcriptSources.find(
+            (source) => source.id === transcriptId
+        );
+
+        return {
+            title: currentAudio?.title || "Untitled",
+            metadata: {
+                images: currentSource?.data.image
+                    ? [currentSource.data.image]
+                    : []
+            }
+        };
+    };
+
     return (
         <div>
             {audioUrl ? (
@@ -132,20 +151,15 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                         userId={userId}
                         sessionRef={sessionRef}
                         audioSrc={audioUrl}
-                        audioDate={
-                            audioOptions.find(
-                                (option) => option.url === audioUrl
-                            )?.date || ""
-                        }
-                        transcriptSources={transcriptSources} // Pass sources as a prop
+                        transcript={getTranscript()} // Pass transcript as a prop
                     />
                     {/* <CommentsSection
                         userId={userId}
                         sessionRef={sessionRef}
                         audioUrl={audioUrl}
                     /> */}
-                    <div className="mt-4 bg-blue-50 dark:bg-gray-800 rounded-lg shadow-xl p-4">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    <div className="mt-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl p-4">
+                        <h3 className="text-lg font-medium text-gray-800 dark:text-gray-400 mb-2">
                             Episodes
                         </h3>
                         <div className="space-y-2">
@@ -154,8 +168,8 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                                     key={option.url}
                                     className={`flex items-start p-2 rounded-md cursor-pointer ${
                                         audioUrl === option.url
-                                            ? "bg-blue-100 dark:bg-gray-700"
-                                            : "bg-white dark:bg-gray-800"
+                                            ? "bg-gray-100 border-2 border-[#FD7E61] dark:bg-gray-700 dark:border-[#FD7E61]"
+                                            : "bg-white dark:bg-gray-900"
                                     }`}
                                     onClick={() => {
                                         setAudioUrl(option.url);
@@ -171,18 +185,14 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                                     )}
                                     <div className="flex-1">
                                         <span
-                                            className={`block text-sm font-medium ${
-                                                audioUrl === option.url
-                                                    ? "text-blue-600 dark:text-blue-400"
-                                                    : "text-gray-700 dark:text-gray-300"
-                                            }`}
+                                            className={`block text-sm font-medium text-gray-800 dark:text-gray-400`}
                                         >
                                             {option.title}
                                         </span>
                                         <span
                                             className={`block text-xs ${
                                                 audioUrl === option.url
-                                                    ? "text-blue-500 dark:text-blue-300"
+                                                    ? "text-[#FD7E61]"
                                                     : "text-gray-500 dark:text-gray-400"
                                             } text-right`}
                                         >
@@ -195,7 +205,7 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                     </div>
                 </div>
             ) : (
-                <div className="w-full max-w-2xl bg-blue-50 dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-4">
+                <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-4">
                     <p className="text-gray-600 dark:text-gray-400">
                         {audioUrl === null
                             ? "Loading audio..."

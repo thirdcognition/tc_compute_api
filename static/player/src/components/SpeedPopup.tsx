@@ -19,7 +19,7 @@ const SpeedPopup: React.FC<SpeedPopupProps> = ({
             className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 w-64 z-50"
         >
             <div className="text-center mb-4">
-                <span className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                <span className="text-2xl font-semibold text-gray-800 dark:text-gray-400">
                     {playbackSpeed.toFixed(2)}x
                 </span>
             </div>
@@ -41,7 +41,7 @@ const SpeedPopup: React.FC<SpeedPopupProps> = ({
                     onChange={(e) =>
                         handleSpeedChange(parseFloat(e.target.value))
                     }
-                    className="flex-1 mx-4 h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                    className="flex-1 mx-4 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                 />
 
                 <button
@@ -59,8 +59,8 @@ const SpeedPopup: React.FC<SpeedPopupProps> = ({
                         onClick={() => handleSpeedChange(speed)}
                         className={`px-3 py-1 rounded-full text-sm transition-colors duration-200 ${
                             playbackSpeed === speed
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                                ? "bg-[#FD7E61] text-white"
+                                : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
                         }`}
                     >
                         {speed === 1 ? "Normal" : `${speed}x`}

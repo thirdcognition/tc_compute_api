@@ -4,45 +4,61 @@
 
 /* Custom styles for range input */
 input[type="range"] {
-  @apply appearance-none bg-blue-200 dark:bg-gray-700 h-2 rounded-lg;
+    @apply appearance-none bg-gray-200 dark:bg-gray-700 h-2 rounded-lg;
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  @apply appearance-none w-4 h-4 rounded-full bg-blue-600 cursor-pointer;
+    @apply appearance-none w-4 h-4 rounded-full bg-[#FD7E61] cursor-pointer;
 }
 
 input[type="range"]::-moz-range-thumb {
-  @apply w-4 h-4 rounded-full bg-blue-600 cursor-pointer border-none;
+    @apply w-4 h-4 rounded-full bg-[#FD7E61] cursor-pointer border-none;
 }
 
 /* Smooth transitions for dark mode */
 .dark {
-  @apply transition-colors duration-200;
+    @apply transition-colors duration-200;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  @apply w-2;
+    @apply w-2;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+    @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-blue-200 dark:bg-gray-700 rounded-full;
+    @apply bg-gray-200 dark:bg-gray-700 rounded-full;
 }
 
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+        "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+        "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    @apply bg-gray-100 dark:bg-gray-900;
+}
+
+body.iframe-mode {
+    background-color: transparent;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+        monospace;
+}
+
+/* Hero image gradient */
+.hero-image-gradient {
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 1) 25%,
+        rgba(255, 255, 255, 1) 100%
+    );
+    @apply dark:bg-gradient-to-b dark:from-transparent dark:via-gray-900 dark:to-gray-900;
 }

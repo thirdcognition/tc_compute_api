@@ -146,24 +146,24 @@ const LikeDislikeSection: React.FC<LikeDislikeSectionProps> = ({
     };
 
     return (
-        <div className="border-t dark:border-gray-700 pt-4 mt-4">
+        <div className="pt-4 mt-4">
             <div className="flex justify-center space-x-8">
                 <button
                     onClick={handleLike}
-                    className="flex items-center p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 >
                     {isLiked ? (
-                        <AiFillLike className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        <AiFillLike className="w-6 h-6 text-[#FD7E61]" />
                     ) : (
                         <AiOutlineLike className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                     )}
                 </button>
                 <button
                     onClick={handleDislike}
-                    className="flex items-center p-2 rounded-lg hover:bg-red-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                    className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
                 >
                     {isDisliked ? (
-                        <AiFillDislike className="w-6 h-6 text-red-600 dark:text-red-400" />
+                        <AiFillDislike className="w-6 h-6 text-[#E96A50]" />
                     ) : (
                         <AiOutlineDislike className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                     )}

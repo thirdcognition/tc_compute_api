@@ -82,11 +82,11 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     };
 
     return (
-        <div className="w-full max-w-2xl bg-blue-50 dark:bg-gray-800 rounded-lg shadow-xl p-6 overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+        <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl p-6 overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-400">
                 Feedback
             </h3>
-            <small className="text-gray-700 dark:text-gray-300 mt-2 mb-4 block">
+            <small className="text-gray-800 dark:text-gray-400 mt-2 mb-4 block">
                 Feedback is only visible for you.
             </small>
 
@@ -98,13 +98,13 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Send feedback..."
-                        className="flex-1 px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400"
+                        className="flex-1 px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-400 focus:outline-none focus:border-[#FD7E61] dark:focus:border-[#FD7E61]"
                         maxLength={500}
                     />
                     <button
                         type="submit"
                         disabled={!newComment.trim() || isSubmitting}
-                        className="p-2 rounded-full transition-colors duration-200 disabled:text-gray-400 dark:disabled:text-gray-600 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:hover:text-gray-400 dark:disabled:hover:text-gray-600"
+                        className="p-2 rounded-full transition-colors duration-200 disabled:text-gray-400 dark:disabled:text-gray-600 text-[#FD7E61] hover:text-[#E96A50] dark:hover:text-[#E96A50] disabled:hover:text-gray-400 dark:disabled:hover:text-gray-600"
                     >
                         <IoSendSharp className="w-5 h-5" />
                     </button>
@@ -118,7 +118,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                         key={comment.id}
                         className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow-sm"
                     >
-                        <p className="text-gray-700 dark:text-gray-300 mb-2">
+                        <p className="text-gray-800 dark:text-gray-400 mb-2">
                             {comment.text}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -132,7 +132,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
             {hasMoreComments && (
                 <button
                     onClick={() => setShowAllComments(!showAllComments)}
-                    className="mt-4 flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                    className="mt-4 flex items-center space-x-2 text-[#FD7E61] hover:text-[#E96A50] dark:text-[#FD7E61] dark:hover:text-[#E96A50] transition-colors duration-200"
                 >
                     <span>{showAllComments ? "Show Less" : "Show More"}</span>
                     {showAllComments ? (

@@ -1,17 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
     BsFillPlayFill as PlayIcon,
-    BsPauseFill as PauseIcon,
-    BsMoonFill as MoonIcon,
-    BsSunFill as SunIcon,
-    BsFillInfoCircleFill as InfoIcon
+    BsPauseFill as PauseIcon
 } from "react-icons/bs";
 import {
     FiRotateCcw as RewindIcon,
     FiRotateCw as ForwardIcon
 } from "react-icons/fi";
 import {
-    TbClearAll as ClearIcon,
     TbVolumeOff as VolumeMuteIcon,
     TbVolume as VolumeUpIcon
 } from "react-icons/tb";
@@ -23,85 +19,35 @@ interface PlayerProps {
     userId: React.RefObject<string>;
     sessionRef: React.RefObject<Session | null>;
     audioSrc: string;
-    audioDate: string; // New prop for audio date
-    transcriptSources: Array<{
-        id: string;
-        data: {
-            url: string;
-            title: string;
-            publish_date: string;
-            image: string;
+    transcript: {
+        title: string;
+        metadata: {
+            images: string[];
         };
-    }>; // New prop for sources
+    };
 }
-
-const SourcesPopup: React.FC<{
-    transcriptSources: PlayerProps["transcriptSources"];
-}> = ({ transcriptSources }) => {
-    const sources = Array.isArray(transcriptSources) ? transcriptSources : []; // Ensure sources is an array
-
-    return (
-        <div className="absolute z-10  bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg p-4 w-96 divide-y divide-dashed">
-            {sources.map((source) => (
-                <div key={source.id} className="p-4 flex items-start">
-                    <img
-                        src={source.data.image}
-                        alt={source.data.title}
-                        className="h-12 mt-2 mr-4 border rounded"
-                    />
-                    <h6 className="text-left">
-                        {source.data.url ? (
-                            <a
-                                href={source.data.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {source.data.title}
-                            </a>
-                        ) : (
-                            source.data.title
-                        )}
-                    </h6>
-                    {/* <p>{new Date(source.data.publish_date).toLocaleString()}</p> */}
-                </div>
-            ))}
-        </div>
-    );
-};
 
 const Player: React.FC<PlayerProps> = ({
     userId,
     sessionRef,
     audioSrc,
-    audioDate,
-    transcriptSources
+    transcript
 }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [isDark, setIsDark] = useState(() => {
-        const savedTheme = localStorage.getItem("theme");
-        return savedTheme ? JSON.parse(savedTheme) : false;
-    });
     const audioRef = useRef<HTMLAudioElement>(null);
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
     const [showSpeedPopup, setShowSpeedPopup] = useState(false);
-    const [showSourcesPopup, setShowSourcesPopup] = useState(false);
     const speedPopupRef = useRef<HTMLDivElement>(null);
     const [volume, setVolume] = useState(1); // Volume state (default: max volume)
     const [muted, setMuted] = useState(false); // Mute state
-    const sourcesPopupRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (isDark) {
-            document.documentElement.classList.add("dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-        }
         if (audioRef.current) {
-            audioRef.current.volume = muted ? 0 : volume; // Update audio volume
+            audioRef.current.volume = muted ? 0 : volume;
         }
-    }, [isDark, volume, muted]);
+    }, [volume, muted]);
 
     const togglePlay = () => {
         if (audioRef.current) {
@@ -171,12 +117,6 @@ const Player: React.FC<PlayerProps> = ({
         }
     };
 
-    const clearUserData = () => {
-        localStorage.removeItem(`totalLikes_${audioSrc}`);
-        localStorage.removeItem(`totalDislikes_${audioSrc}`);
-        localStorage.removeItem(`vote_${userId.current}_${audioSrc}`);
-    };
-
     const handleSpeedChange = (newSpeed: number) => {
         setPlaybackSpeed(newSpeed);
         if (audioRef.current) {
@@ -202,19 +142,6 @@ const Player: React.FC<PlayerProps> = ({
         }
     };
 
-    const toggleTheme = () => {
-        const newTheme = !isDark;
-        setIsDark(newTheme);
-        localStorage.setItem("theme", JSON.stringify(newTheme));
-        trackEvent(
-            "theme_toggle",
-            "UI",
-            `Theme: ${newTheme ? "Dark" : "Light"}`,
-            userId,
-            sessionRef
-        );
-    };
-
     const formatTime = (time: number) => {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
@@ -229,12 +156,6 @@ const Player: React.FC<PlayerProps> = ({
             ) {
                 setShowSpeedPopup(false);
             }
-            if (
-                sourcesPopupRef.current &&
-                !sourcesPopupRef.current.contains(event.target as Node)
-            ) {
-                setShowSourcesPopup(false);
-            }
         }
 
         document.addEventListener("mousedown", handleClickOutside);
@@ -244,144 +165,132 @@ const Player: React.FC<PlayerProps> = ({
     }, []);
 
     return (
-        <div className="w-full max-w-2xl bg-blue-50 dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-4">
-            {/* Episode title */}
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 text-center">
-                Episode: {audioDate}
-            </h2>
-            <div className="flex justify-between mb-4">
-                <div className="relative">
-                    <button
-                        onClick={() => setShowSpeedPopup(!showSpeedPopup)}
-                        className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
-                      text-gray-700 dark:text-gray-300 hover:border-blue-500 dark:hover:border-blue-400
-                      transition-colors duration-200 font-medium"
-                    >
-                        {playbackSpeed.toFixed(2)}x
-                    </button>
-                    {showSpeedPopup && (
-                        <SpeedPopup
-                            playbackSpeed={playbackSpeed}
-                            handleSpeedChange={handleSpeedChange}
-                        />
-                    )}
-                </div>
-                <div className="flex space-x-2">
-                    <button
-                        onClick={() => setShowSourcesPopup(!showSourcesPopup)}
-                        className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400   transition-colors duration-200"
-                        title="Show sources"
-                    >
-                        <InfoIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                        {showSourcesPopup && (
-                            <SourcesPopup
-                                transcriptSources={transcriptSources}
-                            />
-                        )}
-                    </button>
+        <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl mb-4 overflow-hidden">
+            <div
+                className="relative w-full h-[500px] bg-top bg-contain bg-no-repeat"
+                style={{
+                    ...(transcript.metadata.images[0] && {
+                        backgroundImage: `url(${transcript.metadata.images[0]})`
+                    })
+                }}
+            >
+                <div className="absolute bottom-0 w-full p-6 hero-image-gradient">
+                    <p className="text-sm font-normal text-gray-800 dark:text-gray-300">
+                        Latest episode:
+                    </p>
 
-                    <button
-                        onClick={toggleTheme}
-                        className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
-                    >
-                        {isDark ? (
-                            <SunIcon className="w-5 h-5 text-yellow-400" />
-                        ) : (
-                            <MoonIcon className="w-5 h-5 text-gray-600" />
-                        )}
-                    </button>
-                </div>
-            </div>
+                    <h2 className="text-lg font-medium text-gray-800 dark:text-gray-300 mb-10">
+                        {transcript.title}
+                    </h2>
 
-            <audio
-                ref={audioRef}
-                src={audioSrc}
-                onLoadedMetadata={handleLoadedMetadata}
-                onTimeUpdate={handleTimeUpdate}
-            />
+                    <audio
+                        ref={audioRef}
+                        src={audioSrc}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onTimeUpdate={handleTimeUpdate}
+                    />
 
-            {/* Player Controls */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-center space-x-6">
-                    <button
-                        onClick={() => skip(-15)}
-                        className="p-3 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
-                    >
-                        <RewindIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                    </button>
-
-                    <button
-                        onClick={togglePlay}
-                        className="p-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                        {isPlaying ? (
-                            <PauseIcon className="w-8 h-8" />
-                        ) : (
-                            <PlayIcon className="w-8 h-8" />
-                        )}
-                    </button>
-
-                    <button
-                        onClick={() => skip(15)}
-                        className="p-3 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
-                    >
-                        <ForwardIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                    </button>
-                </div>
-
-                <div className="space-y-4">
-                    {/* Volume Controls */}
-                    <div className="space-y-2">
-                        <div className="flex items-center space-x-4">
-                            <button
-                                onClick={() => setMuted(!muted)}
-                                className="p-2 rounded-full hover:bg-blue-100 dark:hover:bg-gray-700"
-                                title={muted ? "Unmute" : "Mute"}
-                            >
-                                {muted ? (
-                                    <VolumeMuteIcon className="w-5 h-5 text-red-500" />
-                                ) : (
-                                    <VolumeUpIcon className="w-5 h-5 text-blue-500" />
+                    <div className="space-y-4">
+                        {/* Row 2: Playback Speed - Volume Controls */}
+                        <div className="flex justify-between items-center">
+                            <div className="relative">
+                                <button
+                                    onClick={() =>
+                                        setShowSpeedPopup(!showSpeedPopup)
+                                    }
+                                    className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
+                                    text-gray-800 dark:text-gray-300 hover:border-gray-500 dark:hover:border-gray-500
+                                    transition-colors duration-200 font-medium"
+                                >
+                                    {playbackSpeed.toFixed(2)}x
+                                </button>
+                                {showSpeedPopup && (
+                                    <SpeedPopup
+                                        playbackSpeed={playbackSpeed}
+                                        handleSpeedChange={handleSpeedChange}
+                                    />
                                 )}
-                            </button>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={() => setMuted(!muted)}
+                                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    title={muted ? "Unmute" : "Mute"}
+                                >
+                                    {muted ? (
+                                        <VolumeMuteIcon className="w-5 h-5 text-red-500" />
+                                    ) : (
+                                        <VolumeUpIcon className="w-5 h-5 text-[#FD7E61]" />
+                                    )}
+                                </button>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.01"
+                                    value={muted ? 0 : volume}
+                                    onChange={(e) =>
+                                        setVolume(parseFloat(e.target.value))
+                                    }
+                                    disabled={muted}
+                                    className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Row 3: Playback Track Slider */}
+                        <div>
                             <input
                                 type="range"
                                 min="0"
-                                max="1"
-                                step="0.01"
-                                value={muted ? 0 : volume}
-                                onChange={(e) =>
-                                    setVolume(parseFloat(e.target.value))
-                                }
-                                disabled={muted}
-                                className="flex-1 h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                max={duration}
+                                value={currentTime}
+                                onChange={handleSliderChange}
+                                className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
                             />
+                            <div className="flex justify-between text-sm text-gray-800 dark:text-gray-300">
+                                <span>{formatTime(currentTime)}</span>
+                                <span>{formatTime(duration)}</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                            <span>Mute</span>
-                            <span>Max</span>
+
+                        {/* Row 4: Skip Backwards - Play Button - Skip Forwards */}
+                        <div className="flex items-center justify-center space-x-6">
+                            <button
+                                onClick={() => skip(-15)}
+                                className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <RewindIcon className="w-6 h-6 text-[#FD7E61]" />
+                            </button>
+
+                            <button
+                                onClick={togglePlay}
+                                className="p-4 rounded-full bg-[#FD7E61] hover:bg-[#E96A50] text-white"
+                            >
+                                {isPlaying ? (
+                                    <PauseIcon className="w-8 h-8" />
+                                ) : (
+                                    <PlayIcon className="w-8 h-8" />
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => skip(15)}
+                                className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <ForwardIcon className="w-6 h-6 text-[#FD7E61]" />
+                            </button>
                         </div>
-                    </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max={duration}
-                        value={currentTime}
-                        onChange={handleSliderChange}
-                        className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                    />
-                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>{formatTime(currentTime)}</span>
-                        <span>{formatTime(duration)}</span>
+
+                        {/* Row 1: Empty - Thumb Up - Thumb Down - Share */}
+
+                        <LikeDislikeSection
+                            userId={userId}
+                            sessionRef={sessionRef}
+                            audioSrc={audioSrc}
+                        />
                     </div>
                 </div>
-
-                {/* Like/Dislike Section */}
-                <LikeDislikeSection
-                    userId={userId}
-                    sessionRef={sessionRef}
-                    audioSrc={audioSrc}
-                />
             </div>
         </div>
     );

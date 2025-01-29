@@ -18,10 +18,12 @@ function App() {
         initializeAnalytics(sessionRef, userId);
     }, []);
 
+    // "bg-gray-100 dark:bg-gray-800
+
     return (
         <Router basename="/player">
             <div className="min-h-screen">
-                <div className="bg-white dark:bg-gray-900 min-h-screen flex flex-col items-center p-8 w-full">
+                <div className="min-h-screen flex flex-col items-center p-8 w-full">
                     <Routes>
                         <Route path="/" element={<PanelList />} />
                         <Route
