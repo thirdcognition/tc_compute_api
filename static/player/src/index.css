@@ -62,3 +62,12 @@ code {
     );
     @apply dark:bg-gradient-to-b dark:from-transparent dark:via-gray-900 dark:to-gray-900;
 }
+
+.dark .hero-image-gradient {
+    background: linear-gradient(
+        to bottom,
+        #1f293700 0%,
+        #1f2937 15%,
+        #1f2937 100%
+    );
+}
