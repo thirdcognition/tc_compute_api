@@ -27,6 +27,8 @@ class GoogleNewsConfig(BaseModel):
 
 
 def parse_since_value(since_value):
+    if since_value is None:
+        return None
     print(f"GoogleNews: Parsing since value: {since_value}")
     pattern = r"(\d+)([hdm])"
     matches = re.findall(pattern, since_value)
