@@ -27,6 +27,25 @@ def web_source_article_builder_sync(data: UrlResult) -> NewsArticle:
 
 
 # New Functions for Validating News Articles
+async def text_format(content: str) -> str:
+    """
+    Asynchronous function to validate if the content is a valid news article.
+    Returns a tuple: (is_valid: bool, explanation: str).
+    """
+    payload = {"context": content}
+    return await get_chain("text_formatter_simple").ainvoke(payload)
+
+
+def text_format_sync(content: str) -> str:
+    """
+    Synchronous function to validate if the content is a valid news article.
+    Returns a tuple: (is_valid: bool, explanation: str).
+    """
+    payload = {"context": content}
+    return get_chain("text_formatter_simple_sync").invoke(payload)
+
+
+# New Functions for Validating News Articles
 async def validate_news_article(
     content: str, title: str, description: str
 ) -> Tuple[bool, str]:

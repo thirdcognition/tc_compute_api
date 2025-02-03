@@ -1,7 +1,7 @@
 import base64
 from datetime import datetime
 import json
-
+from urllib.parse import urljoin, urlparse
 from playwright.sync_api import sync_playwright, Page, Playwright, Browser
 from playwright.async_api import (
     async_playwright,
@@ -15,7 +15,12 @@ import asyncio
 import nest_asyncio
 
 from source.models.structures.url_result import UrlResult
-from source.llm_exec.news_exec import validate_news_article, validate_news_article_sync
+from source.llm_exec.news_exec import (
+    text_format,
+    text_format_sync,
+    validate_news_article,
+    validate_news_article_sync,
+)
 
 
 def parse_publish_date(date_str):
@@ -176,6 +181,9 @@ class LinkResolver:
                 logger.info(f"Adding inline/data image as is: {img_src}")
                 image_data.append({"index": index, "url": img_src, "data": img_src})
                 continue
+            if not img_src.startswith("http") and self.page.url:
+                host = f"{urlparse(self.page.url).scheme}://{urlparse(self.page.url).netloc}"
+                img_src = urljoin(host, img_src)
             for attempt in range(max_retries):
                 try:
                     with self.page.expect_response(img_src) as response_info:
@@ -212,6 +220,9 @@ class LinkResolver:
                 logger.info(f"Adding inline/data image as is: {img_src}")
                 image_data.append({"index": index, "url": img_src, "data": img_src})
                 continue
+            if not img_src.startswith("http") and self.async_page.url:
+                host = f"{urlparse(self.async_page.url).scheme}://{urlparse(self.async_page.url).netloc}"
+                img_src = urljoin(host, img_src)
             for attempt in range(max_retries):
                 try:
                     async with self.async_page.expect_response(
@@ -249,6 +260,8 @@ class LinkResolver:
         title = title or metadata.get("title", "")
         description = description or metadata.get("description", "")
 
+        text = text_format_sync(text)
+
         # Validate content
         is_valid, explanation = validate_news_article_sync(text, title, description)
         if not is_valid:
@@ -263,6 +276,8 @@ class LinkResolver:
         text, metadata, image_urls = self._parse_content_with_soup(content)
         title = title or metadata.get("title", "")
         description = description or metadata.get("description", "")
+
+        text = await text_format(text)
 
         # Validate content
         is_valid, explanation = await validate_news_article(text, title, description)
