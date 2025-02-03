@@ -174,7 +174,7 @@ class BaseParserChain(BaseChain):
                 content="I seem to be having some trouble answering, please try again a bit later."
             )
         )
-        self.chain = self.chain.with_fallbacks([fallback_chain])
+        self.chain = self.chain.with_fallbacks([self.chain, fallback_chain])
         self.chain.name = f"{self.name}-parser"
 
         return self.chain
