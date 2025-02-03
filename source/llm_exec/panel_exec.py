@@ -304,7 +304,7 @@ def check_transcript_length(
     if word_count is not None:
         word_count_in_transcript = count_words(transcript)
         change_length = True
-        target_word_count = int(word_count) // total_count // 1.25
+        target_word_count = max(int(word_count) // total_count // 1.25, 300)
         print(
             f"Word count: Checking for target word count: {word_count_in_transcript=} {target_word_count=}"
         )

@@ -406,7 +406,11 @@ class WebSource(BaseModel):
         else:
             try:
                 print(f"Resolving URL: {self.original_source}")
-                url_result = resolver.resolve_url(str(self.original_source))
+                url_result = resolver.resolve_url(
+                    str(self.original_source),
+                    title=self.title,
+                    description=self.description,
+                )
                 self.url_result = url_result
                 if len(url_result.human_readable_content) > 500:
                     self._update_from_(url_result)  # Replaced manual updates

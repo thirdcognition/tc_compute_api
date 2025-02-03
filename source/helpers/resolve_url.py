@@ -15,6 +15,7 @@ import asyncio
 import nest_asyncio
 
 from source.models.structures.url_result import UrlResult
+from source.llm_exec.news_exec import validate_news_article, validate_news_article_sync
 
 
 def parse_publish_date(date_str):
@@ -241,15 +242,33 @@ class LinkResolver:
                         )
         return image_data
 
-    def _resolve_text_w_metadata_sync(self, content) -> tuple[str, dict, list[dict]]:
+    def _resolve_text_w_metadata_sync(
+        self, content, title=None, description=None
+    ) -> tuple[str, dict, list[dict]]:
         text, metadata, image_urls = self._parse_content_with_soup(content)
+        title = title or metadata.get("title", "")
+        description = description or metadata.get("description", "")
+
+        # Validate content
+        is_valid, explanation = validate_news_article_sync(text, title, description)
+        if not is_valid:
+            raise Exception(f"Content validation failed: {explanation}")
+
         image_data = self._fetch_images_sync(image_urls)
         return text, metadata, image_data
 
     async def _resolve_text_w_metadata_async(
-        self, content
+        self, content, title=None, description=None
     ) -> tuple[str, dict, list[dict]]:
         text, metadata, image_urls = self._parse_content_with_soup(content)
+        title = title or metadata.get("title", "")
+        description = description or metadata.get("description", "")
+
+        # Validate content
+        is_valid, explanation = await validate_news_article(text, title, description)
+        if not is_valid:
+            raise Exception(f"Content validation failed: {explanation}")
+
         image_data = await self._fetch_images_async(image_urls)
         return text, metadata, image_data
 
@@ -272,7 +291,7 @@ class LinkResolver:
             image_data=image_data,
         )
 
-    def _resolve_url_sync(self, url: str) -> UrlResult:
+    def _resolve_url_sync(self, url: str, title=None, description=None) -> UrlResult:
         # Updated to include image data
         self._get_page_sync(url)
         self._cloudfare_sync()
@@ -282,7 +301,9 @@ class LinkResolver:
         if not content:
             raise Exception("Content could not be loaded")
 
-        text, metadata, image_data = self._resolve_text_w_metadata_sync(content)
+        text, metadata, image_data = self._resolve_text_w_metadata_sync(
+            content, title, description
+        )
 
         results = self._build_results(
             url, resolved_url, content, text, metadata, image_data
@@ -336,7 +357,9 @@ class LinkResolver:
 
         return resolved_url, content
 
-    async def _resolve_url_async(self, url: str) -> UrlResult:
+    async def _resolve_url_async(
+        self, url: str, title=None, description=None
+    ) -> UrlResult:
         if not self.async_playwright:
             self.async_playwright = await async_playwright().start()
             self.async_browser = await self.async_playwright.chromium.launch()
@@ -349,7 +372,9 @@ class LinkResolver:
         if not content:
             raise Exception("Content could not be loaded")
 
-        text, metadata, image_data = await self._resolve_text_w_metadata_async(content)
+        text, metadata, image_data = await self._resolve_text_w_metadata_async(
+            content, title, description
+        )
 
         results = self._build_results(
             url, resolved_url, content, text, metadata, image_data
@@ -378,12 +403,14 @@ class LinkResolver:
             if self.playwright is not None:
                 self.playwright.stop()
 
-    def resolve_url(self, url: str) -> UrlResult:
+    def resolve_url(
+        self, url: str, title: str = None, description: str = None
+    ) -> UrlResult:
         if self.is_async:
             if asyncio.get_event_loop().is_running():
                 nest_asyncio.apply()
-                return asyncio.run(self._resolve_url_async(url))
+                return asyncio.run(self._resolve_url_async(url, title, description))
             else:
-                return asyncio.run(self._resolve_url_async(url))
+                return asyncio.run(self._resolve_url_async(url, title, description))
         else:
-            return self._resolve_url_sync(url)
+            return self._resolve_url_sync(url, title, description)

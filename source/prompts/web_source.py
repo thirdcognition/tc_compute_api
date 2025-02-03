@@ -6,6 +6,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
+from source.prompts.actions import QuestionClassifierParser
 from source.prompts.base import (
     ACTOR_INTRODUCTIONS,
     KEEP_PRE_THINK_TOGETHER,
@@ -239,3 +240,41 @@ group_web_sources = PromptFormatter(
 )
 
 group_web_sources.parser = WebSourceGroupingValidator()
+
+# New Prompt: Validate News Article
+validate_news_article = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        Act as a news article validator.
+
+        {PRE_THINK_INSTRUCT}
+
+        Instructions:
+        - Validate the provided content/HTML for:
+          - Presence of the original article information.
+          - Alignment with the provided title and description.
+          - Allowance of mentions of content policies, privacy policies, or automated system responses, as long as the original article is present.
+        - Return "yes" if the content is valid and meets all criteria, otherwise return "no" with a list of issues.
+        - If the content does not contain the original article information, fail the validation.
+
+        Format your response as follows:
+        - "yes" or "no".
+        - If "no", include a list of issues and suggestions for improvement.
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Content start:
+        {content}
+        Content end.
+
+        Title: {title}
+        Description: {description}
+
+        Validate the content against the title and description and return the result.
+        """
+    ),
+)
+
+validate_news_article.parser = QuestionClassifierParser()

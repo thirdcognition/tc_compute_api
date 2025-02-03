@@ -91,7 +91,11 @@ from source.prompts.panel import (
     transcript_conclusion_writer,
     transcript_summary_formatter,
 )
-from source.prompts.web_source import web_source_builder, group_web_sources
+from source.prompts.web_source import (
+    web_source_builder,
+    group_web_sources,
+    validate_news_article,
+)
 
 # from source.chains.prompt_generator import journey_prompts
 
@@ -510,6 +514,18 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "group_web_sources_sync": (
         "instruct_detailed",
         group_web_sources,
+        False,
+        True,
+    ),
+    "validate_news_article": (
+        "instruct",
+        validate_news_article,
+        False,
+        False,
+    ),
+    "validate_news_article_sync": (
+        "instruct",
+        validate_news_article,
         False,
         True,
     ),
