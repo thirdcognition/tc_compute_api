@@ -171,15 +171,24 @@ class LinkResolver:
         image_data = []
         for index, img_src in image_urls:
             max_retries = 3
+            if img_src.startswith("data:"):
+                logger.info(f"Adding inline/data image as is: {img_src}")
+                image_data.append({"index": index, "url": img_src, "data": img_src})
+                continue
             for attempt in range(max_retries):
                 try:
                     with self.page.expect_response(img_src) as response_info:
                         self.page.goto(img_src)
                     response = response_info.value
                     if response.ok:
+                        mime_type = response.headers.get("content-type", "image/jpeg")
                         base64_data = base64.b64encode(response.body()).decode("utf-8")
                         image_data.append(
-                            {"index": index, "url": img_src, "data": base64_data}
+                            {
+                                "index": index,
+                                "url": img_src,
+                                "data": f"data:{mime_type};base64,{base64_data}",
+                            }
                         )
                         break
                 except Exception as e:
@@ -198,6 +207,10 @@ class LinkResolver:
         image_data = []
         for index, img_src in image_urls:
             max_retries = 3
+            if img_src.startswith("data:"):
+                logger.info(f"Adding inline/data image as is: {img_src}")
+                image_data.append({"index": index, "url": img_src, "data": img_src})
+                continue
             for attempt in range(max_retries):
                 try:
                     async with self.async_page.expect_response(
@@ -206,11 +219,16 @@ class LinkResolver:
                         await self.async_page.goto(img_src)
                     response = await response_info.value
                     if response.ok:
+                        mime_type = response.headers.get("content-type", "image/jpeg")
                         base64_data = base64.b64encode(await response.body()).decode(
                             "utf-8"
                         )
                         image_data.append(
-                            {"index": index, "url": img_src, "data": base64_data}
+                            {
+                                "index": index,
+                                "url": img_src,
+                                "data": f"data:{mime_type};base64,{base64_data}",
+                            }
                         )
                         break
                 except Exception as e:
