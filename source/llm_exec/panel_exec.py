@@ -1,23 +1,13 @@
-# import os
 import re
 from typing import List, Union
+from langchain_core.messages import BaseMessage
 from source.chains.init import get_chain
 from source.models.data.web_source import WebSource
 from source.models.structures.web_source_structure import WebSourceCollection
 from source.prompts.panel import TranscriptSummary
 
-# from podcastfy.client import generate_podcast
-
-# from source.load_env import SETTINGS
-
 
 def count_words(text: str) -> int:
-    """
-    Count the number of words in a given text, excluding special tags like <person1> or <person2>.
-
-    :param text: The input text to count words in.
-    :return: The word count as an integer.
-    """
     cleaned_text = re.sub(r"</?person\d+>", "", text, flags=re.IGNORECASE)
     return len(cleaned_text.split())
 
@@ -51,6 +41,9 @@ def verify_transcript_quality(
         }
     )
 
+    if isinstance(result, BaseMessage):
+        raise ValueError("Generation failed: Received a BaseMessage.")
+
     passed: bool = False
     response: str = None
     if isinstance(result, tuple):
@@ -58,7 +51,7 @@ def verify_transcript_quality(
 
     print(f"LLM result {passed=}")
 
-    return passed, response  # Pass supabase
+    return passed, response
 
 
 def transcript_rewriter(
@@ -99,9 +92,12 @@ def transcript_rewriter(
             }
         )
 
+        if isinstance(result, BaseMessage):
+            raise ValueError("Generation failed: Received a BaseMessage.")
+
     print(f"LLM result {count_words(result)=}")
 
-    return result  # Pass supabase
+    return result
 
 
 def transcript_writer(
@@ -136,9 +132,12 @@ def transcript_writer(
             }
         )
 
+        if isinstance(result, BaseMessage):
+            raise ValueError("Generation failed: Received a BaseMessage.")
+
     print(f"transcript_writer - Completed with result ({count_words(result)})")
 
-    return result  # Pass supabase
+    return result
 
 
 def transcript_bridge_writer(
@@ -167,9 +166,12 @@ def transcript_bridge_writer(
             }
         )
 
+        if isinstance(result, BaseMessage):
+            raise ValueError("Generation failed: Received a BaseMessage.")
+
     print(f"transcript_bridge_writer - Completed with result ({count_words(result)})")
 
-    return result  # Pass supabase
+    return result
 
 
 def transcript_intro_writer(
@@ -200,9 +202,12 @@ def transcript_intro_writer(
             }
         )
 
+        if isinstance(result, BaseMessage):
+            raise ValueError("Generation failed: Received a BaseMessage.")
+
     print(f"transcript_intro_writer - Completed with result ({count_words(result)})")
 
-    return result  # Pass supabase
+    return result
 
 
 def transcript_conclusion_writer(
@@ -233,11 +238,14 @@ def transcript_conclusion_writer(
             }
         )
 
+        if isinstance(result, BaseMessage):
+            raise ValueError("Generation failed: Received a BaseMessage.")
+
     print(
         f"transcript_conclusion_writer - Completed with result ({count_words(result)})"
     )
 
-    return result  # Pass supabase
+    return result
 
 
 def transcript_summary_writer(
@@ -245,12 +253,6 @@ def transcript_summary_writer(
     sources: List[Union[WebSource, WebSourceCollection, str]],
     conversation_config: dict = {},
 ) -> TranscriptSummary:
-    """
-    Generate a title, subjects, and description from a transcript using the transcript_summary_formatter.
-
-    :param transcript: The transcript to summarize.
-    :return: A TranscriptSummary object containing the title, subjects, and description.
-    """
     print(
         f"transcript_summary_writer - Starting with transcript ({count_words(transcript)} words)"
     )
@@ -276,6 +278,9 @@ def transcript_summary_writer(
                 "output_language": conversation_config.get("output_language", ""),
             }
         )
+
+        if isinstance(result, BaseMessage):
+            raise ValueError("Generation failed: Received a BaseMessage.")
 
     if not result:
         raise ValueError("Failed to generate transcript summary after retries.")
@@ -453,7 +458,6 @@ def transcript_combiner(
     sources: List[WebSource | WebSourceCollection | str],
     conversation_config: dict = {},
 ) -> str:
-    # Initialize a list to hold the combined transcripts with bridges
     combined_transcripts = []
     content = ""
     article_count = 1
@@ -461,35 +465,36 @@ def transcript_combiner(
         content = "\n\n".join(map(str, sources))
         article_count = len(sources)
     else:
-        raise "Sources needed for combining resulting transcripts."
+        raise ValueError("Sources needed for combining resulting transcripts.")
 
     combined_transcripts.append(transcript_intro_writer(content, conversation_config))
 
-    # Iterate through the transcripts and add bridges between them
     for i in range(len(transcripts) - 1):
-        # Add the current transcript
-        combined_transcripts.append(f"Topic {str(i + 1)}:\n\n{transcripts[i]}")
+        try:
+            combined_transcripts.append(f"Topic {str(i + 1)}:\n\n{transcripts[i]}")
 
-        # Generate a bridge between the current and the next transcript
-        bridge = transcript_bridge_writer(
-            transcript_1=transcripts[i],
-            transcript_2=transcripts[i + 1],
-            conversation_config=conversation_config,
-        )
+            bridge = transcript_bridge_writer(
+                transcript_1=transcripts[i],
+                transcript_2=transcripts[i + 1],
+                conversation_config=conversation_config,
+            )
 
-        # Add the generated bridge
-        combined_transcripts.append(
-            f"Bridge for Topic {str(i + 1)} and Topic {str(i + 2)}:\n\n{bridge}"
-        )
+            combined_transcripts.append(
+                f"Bridge for Topic {str(i + 1)} and Topic {str(i + 2)}:\n\n{bridge}"
+            )
+        except ValueError as e:
+            print(
+                f"Skipping bridge generation for topics {i + 1} and {i + 2} due to error: {e}"
+            )
+            continue
 
-    # Add the last transcript (no bridge needed after the last one)
     if transcripts:
         combined_transcripts.append(
             f"Topic {str(len(transcripts))}:\n\n{transcripts[-1]}"
         )
     else:
         print("Error: No transcripts provided to combine.")
-        return "Error: No transcripts provided to combine."
+        raise ValueError("No transcripts provided to combine.")
 
     combined_transcripts.append(
         transcript_conclusion_writer(
@@ -497,31 +502,37 @@ def transcript_combiner(
         )
     )
 
-    # Combine all transcripts and bridges into a single string
     orig_transcript = "\n".join(combined_transcripts)
 
     print(
         f"Combine transcripts ({len(transcripts)=} = {count_words(orig_transcript)=} chars) into one with: {conversation_config=}"
     )
 
-    # Process the combined transcript using the transcript_combiner chain
-    transcript_content = get_chain("transcript_combiner").invoke(
-        {
-            "content": content,
-            "transcript": orig_transcript,
-            "output_language": conversation_config.get("output_language", ""),
-            "conversation_style": conversation_config.get("conversation_style", ""),
-            "roles_person1": conversation_config.get("roles_person1", ""),
-            "roles_person2": conversation_config.get("roles_person2", ""),
-            "dialogue_structure": conversation_config.get("dialogue_structure", ""),
-            "engagement_techniques": conversation_config.get(
-                "engagement_techniques", ""
-            ),
-            "user_instructions": conversation_config.get("user_instructions"),
-            "podcast_name": conversation_config.get("podcast_name", ""),
-            "podcast_tagline": conversation_config.get("podcast_tagline", ""),
-        }
-    )
+    try:
+        transcript_content = get_chain("transcript_combiner").invoke(
+            {
+                "content": content,
+                "transcript": orig_transcript,
+                "output_language": conversation_config.get("output_language", ""),
+                "conversation_style": conversation_config.get("conversation_style", ""),
+                "roles_person1": conversation_config.get("roles_person1", ""),
+                "roles_person2": conversation_config.get("roles_person2", ""),
+                "dialogue_structure": conversation_config.get("dialogue_structure", ""),
+                "engagement_techniques": conversation_config.get(
+                    "engagement_techniques", ""
+                ),
+                "user_instructions": conversation_config.get("user_instructions"),
+                "podcast_name": conversation_config.get("podcast_name", ""),
+                "podcast_tagline": conversation_config.get("podcast_tagline", ""),
+            }
+        )
+
+        if isinstance(transcript_content, BaseMessage):
+            raise ValueError("Generation failed: Received a BaseMessage.")
+
+    except ValueError as e:
+        print(f"Error during transcript combination: {e}")
+        raise
 
     print("Combiner result:")
     print(f"Input ({count_words(orig_transcript)=})")
@@ -565,16 +576,24 @@ def transcript_combiner(
             print(f"Rewrite transcript due to failed check. {feedback=}")
             prev_content = transcript_content
             prev_len = count_words(transcript_content)
-            transcript_content = transcript_rewriter(
-                transcript=transcript_content,
-                content=content,
-                feedback=feedback,
-                conversation_config=conversation_config,
-                previous_transcript=(
-                    orig_transcript if transcript_content is not orig_transcript else ""
-                ),
-                chain="transcript_combined_rewriter",
-            )
+
+            try:
+                transcript_content = transcript_rewriter(
+                    transcript=transcript_content,
+                    content=content,
+                    feedback=feedback,
+                    conversation_config=conversation_config,
+                    previous_transcript=(
+                        orig_transcript
+                        if transcript_content is not orig_transcript
+                        else ""
+                    ),
+                    chain="transcript_combined_rewriter",
+                )
+            except ValueError as e:
+                print(f"Error during transcript rewrite: {e}")
+                transcript_content = prev_content
+
             print(f"Rewritten transcript ({count_words(transcript_content)=})")
             if (
                 check_passed
@@ -586,6 +605,4 @@ def transcript_combiner(
 
         retry_count += 1
 
-    # print(f"LLM result {count_words(transcript_content)=}")
-
-    return transcript_content  # Pass supabase
+    return transcript_content

@@ -169,26 +169,37 @@ def generate_transcripts(
 
     if longform:
         if input_text:
-            transcript = generate_and_verify_transcript(
-                conversation_config=conversation_config,
-                content=input_text,
-                urls=[],
-                total_count=total_count,
-            )
-            combined_sources.append(input_text)
-            all_transcripts.append(transcript)
+            try:
+                transcript = generate_and_verify_transcript(
+                    conversation_config=conversation_config,
+                    content=input_text,
+                    urls=[],
+                    total_count=total_count,
+                )
+                combined_sources.append(input_text)
+                all_transcripts.append(transcript)
+            except ValueError as e:
+                print(
+                    f"Skipping transcript generation for input_text due to error: {e}"
+                )
 
         for source_collection in sources:
-            transcript = generate_and_verify_transcript(
-                conversation_config=conversation_config,
-                source=source_collection,
-                urls=[],
-                total_count=total_count,
-            )
-            all_transcripts.append(transcript)
-            combined_sources.append(source_collection)
+            try:
+                transcript = generate_and_verify_transcript(
+                    conversation_config=conversation_config,
+                    source=source_collection,
+                    urls=[],
+                    total_count=total_count,
+                )
+                all_transcripts.append(transcript)
+                combined_sources.append(source_collection)
+            except ValueError as e:
+                print(
+                    f"Skipping transcript generation for source_collection due to error: {e}"
+                )
     else:
         combined_sources = [input_text] + sources if input_text else sources
+        # try:
         all_transcripts = [
             generate_and_verify_transcript(
                 conversation_config=conversation_config,
@@ -197,12 +208,15 @@ def generate_transcripts(
                 total_count=1,
             )
         ]
+        # except ValueError as e:
+        #     print(
+        #         f"Skipping transcript generation for combined_sources due to error: {e}"
+        #     )
 
     return all_transcripts, combined_sources
 
 
 def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]:
-    # Create a list of source IDs as strings
     source_ids = {str(source.source_id) for source in web_sources}
 
     grouping: WebSourceGrouping = get_chain("group_web_sources_sync").invoke(
@@ -219,12 +233,10 @@ def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]
     main_item = int(grouping.main_group)
     i = 0
     for i, group in enumerate(grouping.ordered_groups):
-        # Convert group IDs to strings
         filtered_sources = [
             source for source in web_sources if str(source.source_id) in group
         ]
 
-        # Remove used IDs from the list
         source_ids -= {str(source.source_id) for source in filtered_sources}
         coll = WebSourceCollection(filtered_sources, grouping.ordered_group_titles[i])
         if i == main_item:
@@ -232,9 +244,6 @@ def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]
         source_collections.append(coll)
         i += 1
 
-    # print(f"Missing ids {source_ids=}, grouping ids {grouping.all_ids=}")
-
-    # Handle any remaining IDs that were not grouped
     for remaining_id in source_ids:
         remaining_source = next(
             (source for source in web_sources if str(source.source_id) == remaining_id),
@@ -332,9 +341,6 @@ def create_panel_transcript(
 
     ordered_groups = group_web_sources(web_sources)
 
-    # for col in ordered_groups:
-    #     print(str(col))
-
     try:
         all_transcripts, combined_sources = generate_transcripts(
             conversation_config,
@@ -347,9 +353,13 @@ def create_panel_transcript(
             request_data.longform,
         )
         if len(combined_sources) > 1:
-            final_transcript = transcript_combiner(
-                all_transcripts, combined_sources, conversation_config
-            )
+            try:
+                final_transcript = transcript_combiner(
+                    all_transcripts, combined_sources, conversation_config
+                )
+            except ValueError as e:
+                print(f"Skipping transcript combination due to error: {e}")
+                final_transcript = "\n\n".join(all_transcripts)
         else:
             final_transcript = "\n\n".join(all_transcripts)
 
@@ -361,7 +371,6 @@ def create_panel_transcript(
         panel_transcript.metadata["subjects"] = transcript_summaries.subjects
         panel_transcript.metadata["description"] = transcript_summaries.description
 
-        # New code to add images to metadata
         if "images" not in panel_transcript.metadata:
             panel_transcript.metadata["images"] = []
 

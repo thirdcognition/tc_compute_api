@@ -442,7 +442,7 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "web_source_builder": ("structured_detailed", web_source_builder, True, False),
     "web_source_builder_sync": ("structured_detailed", web_source_builder, True, True),
     "transcript_writer": (
-        "instruct_detailed",
+        "instruct_detailed_warm",
         transcript_writer,
         True,
         True,
@@ -460,7 +460,7 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
     ),
     "transcript_combiner": (
-        "instruct",
+        "instruct_detailed_warm",
         transcript_combiner,
         True,
         True,
@@ -478,13 +478,13 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
     ),
     "transcript_intro_writer": (
-        "instruct",
+        "instruct_detailed",
         transcript_intro_writer,
         False,
         True,
     ),
     "transcript_conclusion_writer": (
-        "instruct",
+        "instruct_detailed",
         transcript_conclusion_writer,
         False,
         True,
