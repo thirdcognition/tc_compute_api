@@ -451,6 +451,7 @@ class WebSource(BaseModel):
                     title=self.title,
                     description=self.description,
                 )
+                resolver.close()
                 self.url_result = url_result
                 if len(url_result.human_readable_content) > 500:
                     self._update_from_(url_result)  # Replaced manual updates
