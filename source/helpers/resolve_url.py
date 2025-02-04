@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup, Tag
 from source.models.config.logging import logger
 import asyncio
 import nest_asyncio
+from PIL import Image
+import io
 
 from source.models.structures.url_result import UrlResult
 from source.llm_exec.news_exec import (
@@ -30,8 +32,27 @@ def parse_publish_date(date_str):
         try:
             return datetime.strptime(date_str, "%a, %d %b %Y %H:%M:%S %z")
         except ValueError:
-            logger.error(f"Invalid date format: {date_str}")
-            return None
+            try:
+                return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            except ValueError:
+                logger.error(f"Invalid date format: {date_str}")
+                return None
+
+
+def process_image(image_data: bytes) -> bytes:
+    """Rescale and convert image to JPG format."""
+    with Image.open(io.BytesIO(image_data)) as img:
+        if img.format not in ["JPEG", "PNG", "WEBP", "GIF"]:
+            return image_data  # Skip unsupported formats
+
+        # Rescale if larger than 512x512
+        if img.width > 512 or img.height > 512:
+            img.thumbnail((512, 512))
+
+        # Convert to JPG
+        output = io.BytesIO()
+        img.convert("RGB").save(output, format="JPEG")
+        return output.getvalue()
 
 
 class LinkResolver:
@@ -191,7 +212,9 @@ class LinkResolver:
                     response = response_info.value
                     if response.ok:
                         mime_type = response.headers.get("content-type", "image/jpeg")
-                        base64_data = base64.b64encode(response.body()).decode("utf-8")
+                        image_bytes = response.body()
+                        image_bytes = process_image(image_bytes)
+                        base64_data = base64.b64encode(image_bytes).decode("utf-8")
                         image_data.append(
                             {
                                 "index": index,
@@ -232,9 +255,9 @@ class LinkResolver:
                     response = await response_info.value
                     if response.ok:
                         mime_type = response.headers.get("content-type", "image/jpeg")
-                        base64_data = base64.b64encode(await response.body()).decode(
-                            "utf-8"
-                        )
+                        image_bytes = await response.body()
+                        image_bytes = process_image(image_bytes)
+                        base64_data = base64.b64encode(image_bytes).decode("utf-8")
                         image_data.append(
                             {
                                 "index": index,
@@ -254,7 +277,7 @@ class LinkResolver:
         return image_data
 
     def _resolve_text_w_metadata_sync(
-        self, content, title=None, description=None
+        self, content, title=None, description=None, resolve_images: bool = False
     ) -> tuple[str, dict, list[dict]]:
         text, metadata, image_urls = self._parse_content_with_soup(content)
         title = title or metadata.get("title", "")
@@ -267,11 +290,14 @@ class LinkResolver:
         if not is_valid:
             raise Exception(f"Content validation failed: {explanation}")
 
-        image_data = self._fetch_images_sync(image_urls)
+        if resolve_images:
+            image_data = self._fetch_images_sync(image_urls)
+        else:
+            image_data = None
         return text, metadata, image_data
 
     async def _resolve_text_w_metadata_async(
-        self, content, title=None, description=None
+        self, content, title=None, description=None, resolve_images: bool = False
     ) -> tuple[str, dict, list[dict]]:
         text, metadata, image_urls = self._parse_content_with_soup(content)
         title = title or metadata.get("title", "")
@@ -284,7 +310,10 @@ class LinkResolver:
         if not is_valid:
             raise Exception(f"Content validation failed: {explanation}")
 
-        image_data = await self._fetch_images_async(image_urls)
+        if resolve_images:
+            image_data = await self._fetch_images_async(image_urls)
+        else:
+            image_data = None
         return text, metadata, image_data
 
     def _build_results(self, url, resolved_url, content, text, metadata, image_data):
@@ -306,7 +335,9 @@ class LinkResolver:
             image_data=image_data,
         )
 
-    def _resolve_url_sync(self, url: str, title=None, description=None) -> UrlResult:
+    def _resolve_url_sync(
+        self, url: str, title=None, description=None, resolve_images: bool = False
+    ) -> UrlResult:
         # Updated to include image data
         self._get_page_sync(url)
         self._cloudfare_sync()
@@ -317,7 +348,7 @@ class LinkResolver:
             raise Exception("Content could not be loaded")
 
         text, metadata, image_data = self._resolve_text_w_metadata_sync(
-            content, title, description
+            content, title, description, resolve_images
         )
 
         results = self._build_results(
@@ -373,7 +404,7 @@ class LinkResolver:
         return resolved_url, content
 
     async def _resolve_url_async(
-        self, url: str, title=None, description=None
+        self, url: str, title=None, description=None, resolve_images: bool = False
     ) -> UrlResult:
         if not self.async_playwright:
             self.async_playwright = await async_playwright().start()
@@ -388,7 +419,7 @@ class LinkResolver:
             raise Exception("Content could not be loaded")
 
         text, metadata, image_data = await self._resolve_text_w_metadata_async(
-            content, title, description
+            content, title, description, resolve_images
         )
 
         results = self._build_results(
@@ -419,13 +450,21 @@ class LinkResolver:
                 self.playwright.stop()
 
     def resolve_url(
-        self, url: str, title: str = None, description: str = None
+        self,
+        url: str,
+        title: str = None,
+        description: str = None,
+        resolve_images: bool = False,
     ) -> UrlResult:
         if self.is_async:
             if asyncio.get_event_loop().is_running():
                 nest_asyncio.apply()
-                return asyncio.run(self._resolve_url_async(url, title, description))
+                return asyncio.run(
+                    self._resolve_url_async(url, title, description, resolve_images)
+                )
             else:
-                return asyncio.run(self._resolve_url_async(url, title, description))
+                return asyncio.run(
+                    self._resolve_url_async(url, title, description, resolve_images)
+                )
         else:
-            return self._resolve_url_sync(url, title, description)
+            return self._resolve_url_sync(url, title, description, resolve_images)

@@ -30,15 +30,6 @@ from source.models.config.llm_settings import (
 )
 from source.prompts.base import PromptFormatter
 
-# from source.prompts.journey import (
-#     plan,
-#     module_intro,
-#     action_details,
-#     module_actions,
-#     module_content,
-#     journey_template_selector,
-# )
-# from source.prompts.journey_structured import module_structured
 from source.prompts.actions import (
     action,
     summary,
@@ -83,9 +74,10 @@ from source.prompts.hyde import hyde, hyde_document
 from source.prompts.panel import (
     verify_transcript_quality,
     transcript_rewriter,
+    transcript_rewriter_extend,
+    transcript_rewriter_reduce,
     transcript_combiner,
     transcript_writer,
-    transcript_combined_rewriter,
     transcript_bridge_writer,
     transcript_intro_writer,
     transcript_conclusion_writer,
@@ -245,10 +237,10 @@ def get_llm(
     if temperature is None:
         if "_0" in id:
             temperature = "zero"
-            llm_type.replace("_0", "")
+            llm_type = llm_type.replace("_0", "")
         elif "_warm" in id:
             temperature = "warm"
-            llm_type.replace("_warm", "")
+            llm_type = llm_type.replace("_warm", "")
         else:
             temperature = "default"
 
@@ -281,8 +273,10 @@ def get_llm(
         if hasattr(SETTINGS.default_llms, llm_type):
             llm_config = SETTINGS.default_llms.__getattribute__(llm_type)
         else:
+            print("use default llm", llm_type)
             llm_config = SETTINGS.default_llms.default
 
+    # pretty_print(llm_config, f"init {llm_type}", True, print)
     llms[id] = init_llm(
         provider=provider_config, model=llm_config, temperature=temperature_value
     )
@@ -385,28 +379,8 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         False,
         False,
     ),
-    # "taxonomy": (
-    #     "instruct",
-    #     taxonomy,
-    #     False,
-    # , False),
-    # "taxonomy_hierarchy": (
-    #     "structured_detailed" if not DEVMODE else "structured",
-    #     taxonomy_hierarchy,
-    #     True,
-    # , False),
-    # "taxonomy_combiner": (
-    #     "structured_detailed" if not DEVMODE else "structured",
-    #     taxonomy_combiner,
-    #     False,
-    # , False),
     "concept_structured": ("structured", concept_structured, False, False),
     "concept_more": ("structured", concept_more, False, False),
-    # "concept_unique": (
-    #     "structured_detailed" if not DEVMODE else "structured",
-    #     concept_unique,
-    #     True,
-    # , False),
     "concept_hierarchy": (
         "structured_detailed" if not DEVMODE else "structured",
         concept_hierarchy,
@@ -419,26 +393,6 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         False,
         False,
     ),
-    # "journey_prompt_generator": (
-    #     "structured_detailed" if not DEVMODE else "structured",
-    #     journey_prompts,
-    #     True,
-    # , False),
-    # "module_structured": ("structured", module_structured, False, False),
-    # "plan": (
-    #     "structured_detailed" if not DEVMODE else "structured",
-    #     plan,
-    #     True,
-    # , False),
-    # "module_content": ("instruct_detailed_warm", module_content, True, False),
-    # "module_intro": ("instruct_warm", module_intro, True, False),
-    # "module_actions": (
-    #     "instruct_detailed" if not DEVMODE else "instruct",
-    #     module_actions,
-    #     True,
-    # , False),
-    # "journey_template_selector": ("instruct", journey_template_selector, True, False),
-    # "action_details": ("instruct_warm", action_details, True, False),
     "question": ("chat", question, True, False),
     "helper": ("chat", helper, False, False),
     "chat": ("chat", chat, False, False),
@@ -446,7 +400,7 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "web_source_builder": ("structured_detailed", web_source_builder, True, False),
     "web_source_builder_sync": ("structured_detailed", web_source_builder, True, True),
     "transcript_writer": (
-        "instruct_detailed_warm",
+        "instruct_warm",
         transcript_writer,
         True,
         True,
@@ -463,15 +417,21 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
         True,
     ),
-    "transcript_combiner": (
+    "transcript_rewriter_extend": (
         "instruct_detailed_warm",
-        transcript_combiner,
+        transcript_rewriter_extend,
         True,
         True,
     ),
-    "transcript_combined_rewriter": (
+    "transcript_rewriter_reduce": (
         "instruct_detailed_warm",
-        transcript_combined_rewriter,
+        transcript_rewriter_reduce,
+        True,
+        True,
+    ),
+    "transcript_combiner": (
+        "instruct_detailed_warm",
+        transcript_combiner,
         True,
         True,
     ),
@@ -482,13 +442,13 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
     ),
     "transcript_intro_writer": (
-        "instruct_detailed",
+        "instruct",
         transcript_intro_writer,
         False,
         True,
     ),
     "transcript_conclusion_writer": (
-        "instruct_detailed",
+        "instruct",
         transcript_conclusion_writer,
         False,
         True,

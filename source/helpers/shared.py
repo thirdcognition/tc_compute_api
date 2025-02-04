@@ -32,7 +32,11 @@ def pretty_print(obj, msg=None, force=DEBUGMODE, method=logger.debug):
         if obj is None:
             method("obj = None")
         elif isinstance(obj, BaseModel):
-            method(obj.model_dump_json(indent=2))
+            try:
+                method(obj.model_dump_json(indent=2))
+            except Exception as e:
+                method(f"Failed to serialize BaseModel: {e}")
+                method(repr(obj))
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
                 method(f"\n{i}:\n")
@@ -41,8 +45,14 @@ def pretty_print(obj, msg=None, force=DEBUGMODE, method=logger.debug):
                     method("\n\n")
                 else:
                     pp.pprint(item)
+        elif isinstance(obj, type):
+            method(f"Non-serializable type: {obj}")
         else:
-            pp.pprint(obj)
+            try:
+                pp.pprint(obj)
+            except Exception as e:
+                method(f"Failed to pretty print object: {e}")
+                method(repr(obj))
         method("\n\n")
 
 
