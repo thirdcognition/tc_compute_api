@@ -3,7 +3,8 @@ import {
     createTranscript,
     createAudio,
     deleteAudio,
-    deleteTranscript
+    deleteTranscript,
+    updatePanel
 } from "./fetch.js";
 let dialogManager = {
     toggleDialog: null
@@ -66,6 +67,58 @@ export const handleCreatePanel = async (params) => {
     } catch (error) {
         console.error("Error creating panel:", error);
         alert("Failed to create panel.");
+        return { success: false };
+    }
+};
+
+export const handleUpdatePanel = async (panelId, params) => {
+    const linksArray = params.links
+        ? params.links.filter((link) => link.trim() !== "")
+        : [];
+    const googleNewsArray = params.googleNewsConfigs
+        ? params.googleNewsConfigs.filter(
+              (config) => Object.keys(config).length > 0
+          )
+        : [];
+    const yleNewsArray = params.yleNewsConfigs
+        ? params.yleNewsConfigs.filter(
+              (config) => Object.keys(config).length > 0
+          )
+        : [];
+    const techCrunchNewsArray = params.techCrunchNewsConfigs
+        ? params.techCrunchNewsConfigs.filter(
+              (config) => Object.keys(config).length > 0
+          )
+        : [];
+    const hackerNewsArray = params.hackerNewsConfigs
+        ? params.hackerNewsConfigs.filter(
+              (config) => Object.keys(config).length > 0
+          )
+        : [];
+    try {
+        const panelData = {
+            title: params.title,
+            input_text: params.inputText,
+            input_source: linksArray,
+            metadata: {
+                ...params.metadata,
+                google_news: googleNewsArray,
+                yle_news: yleNewsArray,
+                techcrunch_news: techCrunchNewsArray,
+                hackernews: hackerNewsArray
+            },
+            ...(params.is_public !== undefined && {
+                is_public: params.is_public
+            }),
+            ...(params.disabled !== undefined && { disabled: params.disabled })
+        };
+
+        const results = await updatePanel(panelId, panelData);
+        console.log(results);
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating panel:", error);
+        alert("Failed to update panel.");
         return { success: false };
     }
 };

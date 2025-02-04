@@ -1,7 +1,9 @@
 import { useState } from "react";
+import PanelDetailEdit from "./PanelDetailEdit";
 
-const PanelDetailDisplay = ({ panel }) => {
+const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
     const [showDetails, setShowDetails] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     if (!panel) {
         return (
@@ -17,6 +19,17 @@ const PanelDetailDisplay = ({ panel }) => {
     const yleNewsConfigs = metadata.yle_news || [];
     const techCrunchNewsConfigs = metadata.techcrunch_news || [];
     const inputText = panel.inputText || "";
+
+    console.log("panel", panel);
+
+    if (isEditing) {
+        return (
+            <PanelDetailEdit
+                panel={panel}
+                onCancel={() => setIsEditing(false)}
+            />
+        );
+    }
 
     return (
         <div className="panel-detail-display border p-3 mb-4 rounded">
@@ -155,6 +168,19 @@ const PanelDetailDisplay = ({ panel }) => {
                         </div>
                     )}
                 </div>
+            )}
+            {isEditMode && (
+                <button
+                    onClick={() => setIsEditing(true)}
+                    disabled={taskStatus !== "idle"}
+                    className={`w-full py-2 mb-4 flex items-center justify-center rounded ${
+                        taskStatus === "idle"
+                            ? "bg-green-500 text-white"
+                            : "bg-gray-500 text-gray-300"
+                    }`}
+                >
+                    Edit Configuration
+                </button>
             )}
         </div>
     );

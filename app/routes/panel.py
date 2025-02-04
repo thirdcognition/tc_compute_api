@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
+from typing import List
 from app.core.supabase import (
     SupaClientDep,
     allow_anonymous_login,
     get_supabase_tokens,
     get_sync_supabase_client,
 )
-from source.helpers.sources import GoogleNewsConfig, fetch_links
 from source.helpers.routes import handle_exception
 from source.api.panel.read import (
     PanelDetailsResponse,
@@ -43,6 +43,12 @@ from source.panel.tasks import (
     generate_transcripts_task,
 )
 
+from source.helpers.sources import (
+    fetch_links,
+    manage_news_sources,
+)
+from source.models.data.web_source import WebSource
+
 router = APIRouter()
 
 allow_anonymous_login("/panel", ["GET"])
@@ -50,7 +56,7 @@ allow_anonymous_login("/panel", ["GET"])
 
 @router.post("/panel/news_links")
 async def api_fetch_news_links(
-    config: GoogleNewsConfig,
+    configs: dict,
     supabase: SupaClientDep,
 ):
     try:
@@ -58,8 +64,11 @@ async def api_fetch_news_links(
         supabase_sync = get_sync_supabase_client(
             access_token=tokens[0], refresh_token=tokens[1]
         )
-        news_links = fetch_links(supabase_sync, [config])
-        return {"news_links": news_links}
+
+        sources = manage_news_sources(metadata=configs)
+
+        news_links: List[WebSource] = fetch_links(supabase_sync, sources, dry_run=True)
+        return {"news_links": [link.model_dump() for link in news_links]}
     except Exception as e:
         raise handle_exception(e, "Failed to fetch news links")
 

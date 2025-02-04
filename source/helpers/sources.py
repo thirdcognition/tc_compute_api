@@ -1,29 +1,25 @@
 import datetime
 import json
 import re
-from typing import List, Optional, Union
-from pydantic import BaseModel
-from enum import Enum
+from typing import List, Optional, Type, Union
+
 import feedparser
 from pygooglenews import GoogleNews
 from supabase import Client
 from source.helpers.resolve_url import LinkResolver, parse_publish_date
 from source.models.data.user import UserIDs
 from source.models.data.web_source import WebSource
+from source.models.structures.panel import PanelRequestData
+from source.models.structures.sources import (
+    GoogleNewsConfig,
+    HackerNewsConfig,
+    HackerNewsFeedType,
+    TechCrunchNewsConfig,
+    YleNewsConfig,
+)
 
 
 # Google News
-class GoogleNewsConfig(BaseModel):
-    lang: Optional[str] = "en"
-    country: Optional[str] = "US"
-    topic: Optional[Union[str, List[str]]] = None
-    query: Optional[str] = None
-    location: Optional[Union[str, List[str]]] = None
-    since: Optional[str] = "1d"
-    articles: Optional[int] = 5
-
-    def to_json(self):
-        return json.dumps(self.model_dump(), default=str)
 
 
 def parse_since_value(since_value):
@@ -116,27 +112,6 @@ def fetch_google_news_items(config: GoogleNewsConfig) -> List[WebSource]:
 
 
 # Hacker News
-class HackerNewsFeedType(str, Enum):
-    NEWEST = "newest"
-    NEWCOMMENTS = "newcomments"
-    FRONT_PAGE = "frontpage"
-    BEST_COMMENTS = "bestcomments"
-    ASK = "ask"
-    SHOW = "show"
-    POLLS = "polls"
-    JOBS = "jobs"
-    WHOISHIRING = "whoishiring"
-
-
-class HackerNewsConfig(BaseModel):
-    feed_type: HackerNewsFeedType
-    query: Optional[str] = None
-    points: Optional[int] = None
-    comments: Optional[int] = None
-    articles: Optional[int] = 5
-
-    def to_json(self):
-        return json.dumps(self.model_dump(), default=str)
 
 
 def construct_hackernews_feed_url(config: HackerNewsConfig) -> str:
@@ -182,8 +157,6 @@ def fetch_hackernews_items(config: HackerNewsConfig) -> List[WebSource]:
 
 
 # TechCrunch
-class TechCrunchNewsConfig(BaseModel):
-    articles: int
 
 
 def fetch_techcrunch_news_items(config: TechCrunchNewsConfig) -> List[WebSource]:
@@ -203,14 +176,6 @@ def fetch_techcrunch_news_items(config: TechCrunchNewsConfig) -> List[WebSource]
 
 
 # Yle
-class YleFeedType(str, Enum):
-    MAJOR_HEADLINES = "majorHeadlines"
-    MOST_READ = "mostRead"
-
-
-class YleNewsConfig(BaseModel):
-    type: YleFeedType
-    articles: int
 
 
 def fetch_yle_news_items(config: YleNewsConfig) -> List[WebSource]:
@@ -268,6 +233,7 @@ def fetch_links(
         ]
     ],
     user_ids: UserIDs = None,
+    dry_run: bool = False,
 ) -> List["WebSource"]:
     print(f"Fetching links for sources: {sources}")
     all_resolved_links = []
@@ -302,14 +268,76 @@ def fetch_links(
             continue
 
         resolved_count = 0
-        for item in items:
-            print(f"news count {resolved_count=} {source.articles=}")
-            if urls is None and resolved_count >= source.articles:
-                break
-            print(f"Resolving and storing link for item: {item.title}")
-            if item.resolve_and_store_link(supabase, user_ids):
-                all_resolved_links.append(item)
-                resolved_count += 1
+        if not dry_run:
+            for item in items:
+                print(f"news count {resolved_count=} {source.articles=}")
+                if urls is None and resolved_count >= source.articles:
+                    break
+                print(f"Resolving and storing link for item: {item.title}")
+                if item.resolve_and_store_link(supabase, user_ids):
+                    all_resolved_links.append(item)
+                    resolved_count += 1
+        else:
+            all_resolved_links.extend(items)
 
     print(f"Total resolved links: {len(all_resolved_links)}")
     return all_resolved_links
+
+
+def deduplicate_and_validate_configs(
+    configs_json: List[dict],
+    config_class: Union[
+        Type[GoogleNewsConfig],
+        Type[YleNewsConfig],
+        Type[TechCrunchNewsConfig],
+        Type[HackerNewsConfig],
+    ],
+) -> List:
+    unique_configs = list(
+        {
+            json.dumps(
+                (
+                    config.model_dump(mode="json")
+                    if isinstance(config, config_class)
+                    else config
+                ),
+                sort_keys=True,
+            )
+            for config in configs_json
+        }
+    )
+    return [
+        config_class.model_validate(json.loads(config)) for config in unique_configs
+    ]
+
+
+def manage_news_sources(
+    request_data: PanelRequestData = PanelRequestData(), metadata: dict = {}
+):
+    sources = []
+
+    sources.extend(
+        deduplicate_and_validate_configs(
+            metadata.get("google_news", []) + (request_data.google_news or []),
+            GoogleNewsConfig,
+        )
+    )
+    sources.extend(
+        deduplicate_and_validate_configs(
+            metadata.get("yle_news", []) + (request_data.yle_news or []), YleNewsConfig
+        )
+    )
+    sources.extend(
+        deduplicate_and_validate_configs(
+            metadata.get("techcrunch_news", []) + (request_data.techcrunch_news or []),
+            TechCrunchNewsConfig,
+        )
+    )
+    sources.extend(
+        deduplicate_and_validate_configs(
+            metadata.get("hackernews", []) + (request_data.hackernews or []),
+            HackerNewsConfig,
+        )
+    )
+
+    return sources

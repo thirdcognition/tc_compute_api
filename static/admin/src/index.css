@@ -48,3 +48,23 @@ code {
 }
 
 /* New styles extracted from App.jsx */
+
+.formatted-description {
+    @apply mt-2 text-gray-700 text-sm;
+}
+
+.formatted-description ol {
+    @apply list-decimal pl-6 mt-2 mb-2;
+}
+
+.formatted-description li {
+    @apply mb-1;
+}
+
+.formatted-description a {
+    @apply text-blue-500 underline hover:text-blue-600;
+}
+
+.formatted-description font {
+    @apply text-gray-500 text-xs;
+}

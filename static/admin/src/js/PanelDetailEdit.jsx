@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Form, Button } from "react-bootstrap";
-import { handleCreatePanel } from "./helpers/panel.js";
+import { handleCreatePanel, handleUpdatePanel } from "./helpers/panel.js";
+import { fetchNewsLinks } from "./helpers/fetch.js";
 import LinkForm from "./news_config/LinkForm";
 import GoogleNewsConfigForm from "./news_config/GoogleNewsConfigForm";
 import YleNewsConfigForm from "./news_config/YleNewsConfigForm";
@@ -8,25 +9,39 @@ import TechCrunchNewsConfigForm from "./news_config/TechCrunchNewsConfigForm";
 import HackerNewsConfigForm from "./news_config/HackerNewsConfigForm";
 import InputTextForm from "./news_config/InputTextForm";
 
+import PropTypes from "prop-types";
+
 function PanelDetailEdit({
+    panel = {},
     setPanelId,
     taskStatus,
     setSelectedPanel,
     fetchPanels,
     handleRefreshPanelData,
-    setRedirectToPanel
+    setRedirectToPanel,
+    onCancel
 }) {
-    const [title, setTitle] = useState("");
-    const [links, setLinks] = useState([]);
-    const [googleNewsConfigs, setGoogleNewsConfigs] = useState([]);
-    const [techCrunchNewsConfigs, setTechCrunchNewsConfigs] = useState([]);
-    const [hackerNewsConfigs, setHackerNewsConfigs] = useState([]);
-    const [inputText, setInputText] = useState("");
-    const [yleNewsConfigs, setYleNewsConfigs] = useState([]);
+    const [title, setTitle] = useState(panel.title || "");
+    const [links, setLinks] = useState(panel.links || []);
+    const [googleNewsConfigs, setGoogleNewsConfigs] = useState(
+        panel.metadata?.google_news || []
+    );
+    const [techCrunchNewsConfigs, setTechCrunchNewsConfigs] = useState(
+        panel.metadata?.techcrunch_news || []
+    );
+    const [hackerNewsConfigs, setHackerNewsConfigs] = useState(
+        panel.metadata?.hacker_news || []
+    );
+    const [inputText, setInputText] = useState(panel.inputText || "");
+    const [yleNewsConfigs, setYleNewsConfigs] = useState(
+        panel.metadata?.yle_news || []
+    );
+    const [newsLinks, setNewsLinks] = useState([]);
+    const [error, setError] = useState(null);
 
     const handlePanelSubmit = async (e) => {
         e.preventDefault();
-        handleCreatePanel({
+        const panelData = {
             title,
             inputText,
             links,
@@ -34,23 +49,76 @@ function PanelDetailEdit({
             yleNewsConfigs,
             techCrunchNewsConfigs,
             hackerNewsConfigs
-        }).then(({ panelId, success }) => {
-            if (success && panelId) {
-                setSelectedPanel(panelId);
-                setPanelId(panelId);
-                handleRefreshPanelData(panelId);
-                fetchPanels();
-                setRedirectToPanel(true);
-            } else {
-                alert("Error while creating panel.");
-            }
-        });
+        };
+
+        if (panel.id) {
+            // Update existing panel
+            handleUpdatePanel(panel.id, {
+                ...panel,
+                ...panelData
+            })
+                .then((response) => {
+                    console.log("handleUpdatePanel response:", response); // Debugging log
+                    const { success } = response;
+                    if (success) {
+                        if (handleRefreshPanelData)
+                            handleRefreshPanelData(panel.id);
+                        if (fetchPanels) fetchPanels();
+                        if (onCancel) onCancel();
+                    } else {
+                        console.log("Update panel success:", success); // Debugging log
+                        alert("Error while updating panel.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error in handlePanelSubmit:", error); // Debugging log
+                    alert("Error while updating panel.");
+                });
+        } else {
+            // Create new panel
+            handleCreatePanel(panelData).then((response) => {
+                console.log("handleCreatePanel response:", response); // Debugging log
+                const { panelId, success } = response;
+                if (success && panelId) {
+                    if (setSelectedPanel) setSelectedPanel(panelId);
+                    if (setPanelId) setPanelId(panelId);
+                    if (handleRefreshPanelData) handleRefreshPanelData(panelId);
+                    if (fetchPanels) fetchPanels();
+                    if (setRedirectToPanel) setRedirectToPanel(true);
+                } else {
+                    alert("Error while creating panel.");
+                }
+            });
+        }
+    };
+
+    const handleTestConfigs = async () => {
+        const configs = {
+            google_news: googleNewsConfigs,
+            yle_news: yleNewsConfigs,
+            techcrunch_news: techCrunchNewsConfigs,
+            hacker_news: hackerNewsConfigs
+        };
+
+        try {
+            const response = await fetchNewsLinks(configs);
+            console.log("News links", response);
+            setNewsLinks(response || []);
+            setError(null);
+        } catch (err) {
+            setError(
+                "Failed to fetch news links. Please check your configurations."
+            );
+            setNewsLinks([]);
+        }
     };
 
     return (
         <>
             <div className="panel-container border p-3 mb-4 rounded">
-                <h3 className="font-bold mb-3">Create Panel</h3>
+                <h3 className="font-bold mb-3">
+                    {panel.id ? "Edit Panel" : "Create Panel"}
+                </h3>
                 <Form onSubmit={handlePanelSubmit}>
                     <Form.Group controlId="title">
                         <Form.Label className="font-semibold">
@@ -86,22 +154,102 @@ function PanelDetailEdit({
                         onTextChange={setInputText}
                     />
                     <Button
-                        variant="primary"
-                        type="submit"
-                        className="w-full py-2"
-                        disabled={
-                            taskStatus === "idle"
-                                ? false
-                                : taskStatus !== "failure" &&
-                                  taskStatus !== "success"
-                        }
+                        variant="info"
+                        onClick={handleTestConfigs}
+                        className="py-2 mt-3 w-full bg-green-500 text-white"
                     >
-                        Create Panel
+                        Test Configs
                     </Button>
+                    {error && <p className="text-danger mt-2">{error}</p>}
+                    {newsLinks.length > 0 && (
+                        <div className="mt-4">
+                            <h5>Fetched News Links:</h5>
+                            <div className="grid grid-cols-1 gap-4">
+                                {newsLinks.map((link, index) => (
+                                    <div
+                                        key={index}
+                                        className="border p-4 rounded shadow"
+                                    >
+                                        <div className="flex gap-4 items-start">
+                                            {link.image && (
+                                                <img
+                                                    src={link.image}
+                                                    alt={link.title}
+                                                    className="w-32 h-32 object-cover rounded"
+                                                />
+                                            )}
+                                            <div className="flex-1">
+                                                <h6 className="font-bold text-lg">
+                                                    <a
+                                                        href={
+                                                            link.original_source
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-500 underline"
+                                                    >
+                                                        {link.title}
+                                                    </a>
+                                                </h6>
+                                                {link.source && (
+                                                    <p className="text-gray-500 text-sm">
+                                                        Source: {link.source}
+                                                    </p>
+                                                )}
+                                                {link.publish_date && (
+                                                    <p className="text-gray-400 text-xs">
+                                                        Published:{" "}
+                                                        {new Date(
+                                                            link.publish_date
+                                                        ).toLocaleDateString()}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {link.description && (
+                                            <div className="formatted-description mt-2">
+                                                <div
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: link.description
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    <div className="flex justify-between mt-4">
+                        <Button
+                            variant="secondary"
+                            onClick={onCancel}
+                            className="py-2"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            className="py-2"
+                            disabled={
+                                !panel.id &&
+                                taskStatus !== "idle" &&
+                                taskStatus !== "failure" &&
+                                taskStatus !== "success"
+                            }
+                        >
+                            {panel.id ? "Update Panel" : "Create Panel"}
+                        </Button>
+                    </div>
                 </Form>
             </div>
         </>
     );
 }
+
+PanelDetailEdit.propTypes = {
+    onCancel: PropTypes.func.isRequired
+};
 
 export default PanelDetailEdit;

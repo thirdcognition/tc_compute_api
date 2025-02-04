@@ -114,11 +114,10 @@ export async function updateTranscript(transcriptId, transcript, newCronjob) {
         })
     });
 
-    if (!response.ok) {
-        throw new Error("Failed to update transcript");
+    if (response) {
+        return { success: true, response: response };
     }
-
-    return response.json();
+    throw new Error("Failed to update transcript");
 }
 
 export async function fetchPanelDetails(panelId) {
@@ -166,6 +165,31 @@ export async function createPanel(data) {
     } catch (error) {
         console.error("Error creating panel:", error);
         throw error;
+    }
+}
+
+export async function updatePanel(panelId, data) {
+    try {
+        const response = await fetchData(`/panel/${panelId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.getAccessToken()}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        console.log("response", response);
+
+        if (response) {
+            return { success: true, response: response };
+        } else {
+            console.error("Failed to update panel:", response);
+            return { success: false };
+        }
+    } catch (error) {
+        console.error("Error updating panel:", error);
+        return { success: false };
     }
 }
 
@@ -226,7 +250,24 @@ export async function deleteAudio(audioId) {
             }
         });
     } catch (error) {
-        console.error("Error deleting audio:", error);
+        console.error("Error deleting audio.", error);
+        throw error;
+    }
+}
+
+export async function fetchNewsLinks(configs) {
+    try {
+        const response = await fetchData("/panel/news_links", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.getAccessToken()}`
+            },
+            body: JSON.stringify(configs)
+        });
+        return response.news_links;
+    } catch (error) {
+        console.error("Error fetching news links:", error);
         throw error;
     }
 }

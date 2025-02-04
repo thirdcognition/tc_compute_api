@@ -3,7 +3,7 @@ import json
 from typing import Optional, Union, List
 from uuid import UUID
 from pydantic import BaseModel
-from source.helpers.sources import (
+from source.models.structures.sources import (
     GoogleNewsConfig,
     YleNewsConfig,
     TechCrunchNewsConfig,

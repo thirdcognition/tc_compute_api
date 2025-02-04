@@ -1,6 +1,5 @@
 import datetime
-from json import dumps, loads
-from typing import List, Tuple, Union, Type
+from typing import List, Tuple
 from uuid import UUID
 from supabase import Client
 
@@ -12,11 +11,8 @@ from source.models.supabase.panel import ProcessState, PanelDiscussion, PanelTra
 from source.models.structures.panel import PanelRequestData, custom_config
 
 from source.helpers.sources import (
-    GoogleNewsConfig,
-    YleNewsConfig,
-    TechCrunchNewsConfig,
-    HackerNewsConfig,
     fetch_links,
+    manage_news_sources,
 )
 from source.llm_exec.panel_exec import (
     generate_and_verify_transcript,
@@ -50,31 +46,6 @@ def fetch_panel_metadata_and_config(
         conversation_config["output_language"] or "English"
     )
     return conversation_config, metadata, panel
-
-
-def deduplicate_and_validate_configs(
-    configs_json: List[dict],
-    config_class: Union[
-        Type[GoogleNewsConfig],
-        Type[YleNewsConfig],
-        Type[TechCrunchNewsConfig],
-        Type[HackerNewsConfig],
-    ],
-) -> List:
-    unique_configs = list(
-        {
-            dumps(
-                (
-                    config.model_dump(mode="json")
-                    if isinstance(config, config_class)
-                    else config
-                ),
-                sort_keys=True,
-            )
-            for config in configs_json
-        }
-    )
-    return [config_class.model_validate(loads(config)) for config in unique_configs]
 
 
 def fetch_links_and_process_articles(
@@ -290,30 +261,7 @@ def create_panel_transcript(
         else None
     )
 
-    sources = []
-    sources.extend(
-        deduplicate_and_validate_configs(
-            metadata.get("google_news", []) + (request_data.google_news or []),
-            GoogleNewsConfig,
-        )
-    )
-    sources.extend(
-        deduplicate_and_validate_configs(
-            metadata.get("yle_news", []) + (request_data.yle_news or []), YleNewsConfig
-        )
-    )
-    sources.extend(
-        deduplicate_and_validate_configs(
-            metadata.get("techcrunch_news", []) + (request_data.techcrunch_news or []),
-            TechCrunchNewsConfig,
-        )
-    )
-    sources.extend(
-        deduplicate_and_validate_configs(
-            metadata.get("hackernews", []) + (request_data.hackernews or []),
-            HackerNewsConfig,
-        )
-    )
+    sources = manage_news_sources(request_data, metadata)
 
     if request_data.input_source:
         sources.extend(

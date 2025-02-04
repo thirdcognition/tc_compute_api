@@ -131,7 +131,11 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                 />
             )}
             {panelId && discussionData && (
-                <PanelDetailDisplay panel={discussionData} />
+                <PanelDetailDisplay
+                    panel={discussionData}
+                    isEditMode={true}
+                    taskStatus={taskStatus}
+                />
             )}
             {transcriptData &&
                 transcriptData.map((transcript) => (
