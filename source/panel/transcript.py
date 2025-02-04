@@ -4,7 +4,8 @@ from uuid import UUID
 from supabase import Client
 
 from app.core.supabase import get_sync_supabase_client
-from source.chains.init import get_chain
+
+# from source.llm_exec.websource_exec import group_web_sources
 from source.models.data.web_source import WebSource
 from source.models.structures.web_source_structure import WebSourceCollection
 from source.models.supabase.panel import ProcessState, PanelDiscussion, PanelTranscript
@@ -20,7 +21,6 @@ from source.llm_exec.panel_exec import (
     transcript_summary_writer,
 )
 from source.models.data.user import UserIDs
-from source.prompts.web_source import WebSourceGrouping
 
 
 def initialize_supabase_client(
@@ -49,10 +49,20 @@ def fetch_panel_metadata_and_config(
 
 
 def fetch_links_and_process_articles(
-    supabase_client: Client, sources: List, user_ids: UserIDs = None
-) -> List[WebSource]:
+    supabase_client: Client,
+    sources: List,
+    user_ids: UserIDs = None,
+    guidance="",
+    max_items=5,
+) -> List[WebSource | WebSourceCollection]:
     article_news_items = []
-    for news_item in fetch_links(supabase_client, sources, user_ids=user_ids):
+    for news_item in fetch_links(
+        supabase_client,
+        sources,
+        user_ids=user_ids,
+        guidance=guidance,
+        max_items=max_items,
+    ):
         article_news_items.append(news_item)
     return article_news_items
 
@@ -187,45 +197,6 @@ def generate_transcripts(
     return all_transcripts, combined_sources
 
 
-def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]:
-    source_ids = {str(source.source_id) for source in web_sources}
-
-    grouping: WebSourceGrouping = get_chain("group_web_sources_sync").invoke(
-        {
-            "web_sources": "\n\n".join(
-                source.to_simple_str() for source in web_sources
-            ),
-            "start_with": "Humor or funny topic if available",
-            "end_with": "Lighthearted, or funny topic if available",
-        }
-    )
-
-    source_collections: List[WebSourceCollection] = []
-    main_item = int(grouping.main_group)
-    i = 0
-    for i, group in enumerate(grouping.ordered_groups):
-        filtered_sources = [
-            source for source in web_sources if str(source.source_id) in group
-        ]
-
-        source_ids -= {str(source.source_id) for source in filtered_sources}
-        coll = WebSourceCollection(filtered_sources, grouping.ordered_group_titles[i])
-        if i == main_item:
-            coll.main_item = True
-        source_collections.append(coll)
-        i += 1
-
-    for remaining_id in source_ids:
-        remaining_source = next(
-            (source for source in web_sources if str(source.source_id) == remaining_id),
-            None,
-        )
-        if remaining_source:
-            source_collections.append(WebSourceCollection([remaining_source]))
-
-    return source_collections
-
-
 def upload_transcript_to_supabase(
     supabase_client: Client,
     panel_transcript: PanelTranscript,
@@ -276,18 +247,24 @@ def create_panel_transcript(
             else [metadata["urls"]]
         )
 
-    web_sources = fetch_links_and_process_articles(supabase_client, sources, user_ids)
+    ordered_groups = fetch_links_and_process_articles(
+        supabase_client,
+        sources,
+        user_ids,
+        guidance=request_data.news_guidance,
+        max_items=request_data.news_items,
+    )
     title = construct_transcript_title(panel, conversation_config, request_data)
     panel_transcript = create_and_update_panel_transcript(
         supabase_client, request_data, title, conversation_config, request_data.longform
     )
 
-    for source in web_sources:
-        source.create_panel_transcript_source_reference_sync(
+    for item in ordered_groups:
+        item.create_panel_transcript_source_reference_sync(
             supabase_client, panel_transcript
         )
 
-    ordered_groups = group_web_sources(web_sources)
+    # ordered_groups = group_web_sources(web_sources)
 
     try:
         all_transcripts, combined_sources = generate_transcripts(

@@ -86,6 +86,7 @@ from source.prompts.panel import (
 from source.prompts.web_source import (
     web_source_builder,
     group_web_sources,
+    group_rss_items,
     validate_news_article,
 )
 
@@ -466,14 +467,26 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
     ),
     "group_web_sources": (
-        "instruct_detailed",
+        "instruct",
         group_web_sources,
         False,
         False,
     ),
     "group_web_sources_sync": (
-        "instruct_detailed",
+        "instruct",
         group_web_sources,
+        False,
+        True,
+    ),
+    "group_rss_items": (
+        "instruct_detailed",
+        group_rss_items,
+        False,
+        False,
+    ),
+    "group_rss_items_sync": (
+        "instruct_detailed",
+        group_rss_items,
         False,
         True,
     ),

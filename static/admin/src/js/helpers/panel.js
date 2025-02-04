@@ -61,7 +61,9 @@ export const handleCreatePanel = async (params) => {
             google_news: googleNewsArray,
             yle_news: yleNewsArray,
             techcrunch_news: techCrunchNewsArray,
-            hackernews: hackerNewsArray
+            hackernews: hackerNewsArray,
+            news_guidance: params.newsGuidance,
+            news_items: params.newsItems
         });
         return { panelId, success: true };
     } catch (error) {
@@ -102,6 +104,8 @@ export const handleUpdatePanel = async (panelId, params) => {
             input_source: linksArray,
             metadata: {
                 ...params.metadata,
+                news_guidance: params.newsGuidance,
+                news_items: params.newsItems,
                 google_news: googleNewsArray,
                 yle_news: yleNewsArray,
                 techcrunch_news: techCrunchNewsArray,

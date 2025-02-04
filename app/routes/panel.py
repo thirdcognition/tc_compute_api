@@ -34,6 +34,7 @@ from source.api.panel.delete import (
     delete_panel_audio,
 )
 from source.models.structures.panel import PanelRequestData
+from source.models.structures.web_source_structure import WebSourceCollection
 from source.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
 from source.panel.panel import create_panel
 from source.panel.tasks import (
@@ -60,6 +61,7 @@ async def api_fetch_news_links(
     supabase: SupaClientDep,
 ):
     try:
+        print(f"{configs=}")
         tokens = await get_supabase_tokens(supabase)
         supabase_sync = get_sync_supabase_client(
             access_token=tokens[0], refresh_token=tokens[1]
@@ -67,8 +69,18 @@ async def api_fetch_news_links(
 
         sources = manage_news_sources(metadata=configs)
 
-        news_links: List[WebSource] = fetch_links(supabase_sync, sources, dry_run=True)
-        return {"news_links": [link.model_dump() for link in news_links]}
+        news_links: List[WebSourceCollection | WebSource] = fetch_links(
+            supabase_sync,
+            sources,
+            dry_run=True,
+            guidance=configs.get("news_guidance", ""),
+            max_items=configs.get("news_items", 5),
+        )
+        return {
+            "news_links": [
+                {"title": link.title, "data": link.model_dump()} for link in news_links
+            ]
+        }
     except Exception as e:
         raise handle_exception(e, "Failed to fetch news links")
 

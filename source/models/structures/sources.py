@@ -11,7 +11,7 @@ class GoogleNewsConfig(BaseModel):
     query: Optional[str] = None
     location: Optional[Union[str, List[str]]] = None
     since: Optional[str] = "1d"
-    articles: Optional[int] = 5
+    articles: Optional[int] = None
 
     def to_json(self):
         return json.dumps(self.model_dump(), default=str)
@@ -34,14 +34,14 @@ class HackerNewsConfig(BaseModel):
     query: Optional[str] = None
     points: Optional[int] = None
     comments: Optional[int] = None
-    articles: Optional[int] = 5
+    articles: Optional[int] = None
 
     def to_json(self):
         return json.dumps(self.model_dump(), default=str)
 
 
 class TechCrunchNewsConfig(BaseModel):
-    articles: int
+    articles: Optional[int] = None
 
 
 class YleFeedType(str, Enum):
@@ -51,4 +51,4 @@ class YleFeedType(str, Enum):
 
 class YleNewsConfig(BaseModel):
     type: YleFeedType
-    articles: int
+    articles: Optional[int] = None

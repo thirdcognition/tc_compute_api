@@ -146,12 +146,12 @@ function GoogleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                             handleConfigChange(index, "since", value)
                         }
                     />
-                    <ArticleCountComponent
+                    {/* <ArticleCountComponent
                         value={config.articles}
                         onChange={(value) =>
                             handleConfigChange(index, "articles", value)
                         }
-                    />
+                    /> */}
                     <LanguageComponent
                         value={config.lang}
                         onChange={(value) =>

@@ -45,12 +45,12 @@ function TechCrunchNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                             Remove Config
                         </Button>
                     </div>
-                    <ArticleCountComponent
+                    {/* <ArticleCountComponent
                         value={config.articles}
                         onChange={(value) =>
                             handleConfigChange(index, "articles", value)
                         }
-                    />
+                    /> */}
                 </div>
             ))}
             <Button

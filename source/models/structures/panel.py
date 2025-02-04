@@ -40,6 +40,8 @@ class PanelRequestData(BaseModel):
         Union[TechCrunchNewsConfig, List[TechCrunchNewsConfig]]
     ] = None
     hackernews: Optional[Union[HackerNewsConfig, List[HackerNewsConfig]]] = None
+    news_guidance: Optional[str] = None
+    news_items: Optional[int] = 5
     cronjob: Optional[str] = None
     owner_id: Optional[str] = None
     organization_id: Optional[str] = None

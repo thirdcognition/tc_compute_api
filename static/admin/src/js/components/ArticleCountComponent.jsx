@@ -4,7 +4,7 @@ import { Form } from "react-bootstrap";
 function ArticleCountComponent({ value, onChange }) {
     return (
         <div className="flex items-start mb-4 flex-col w-full">
-            <label className="mb-1 self-start">Maximum articles</label>
+            <label className="mb-1 self-start">Maximum news items</label>
             <div className="flex items-center w-full">
                 <Form.Control
                     type="range"

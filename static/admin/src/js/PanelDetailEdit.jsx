@@ -8,6 +8,7 @@ import YleNewsConfigForm from "./news_config/YleNewsConfigForm";
 import TechCrunchNewsConfigForm from "./news_config/TechCrunchNewsConfigForm";
 import HackerNewsConfigForm from "./news_config/HackerNewsConfigForm";
 import InputTextForm from "./news_config/InputTextForm";
+import ArticleCountComponent from "./components/ArticleCountComponent";
 
 import PropTypes from "prop-types";
 
@@ -38,6 +39,10 @@ function PanelDetailEdit({
     );
     const [newsLinks, setNewsLinks] = useState([]);
     const [error, setError] = useState(null);
+    const [expandedDescriptionIndex, setExpandedDescriptionIndex] =
+        useState(null);
+    const [newsGuidance, setNewsGuidance] = useState(null);
+    const [newsItems, setNewsItems] = useState(5);
 
     const handlePanelSubmit = async (e) => {
         e.preventDefault();
@@ -48,7 +53,9 @@ function PanelDetailEdit({
             googleNewsConfigs,
             yleNewsConfigs,
             techCrunchNewsConfigs,
-            hackerNewsConfigs
+            hackerNewsConfigs,
+            newsGuidance,
+            newsItems
         };
 
         if (panel.id) {
@@ -132,6 +139,15 @@ function PanelDetailEdit({
                             className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                         />
                     </Form.Group>
+                    <InputTextForm
+                        label="Guidance for LLM when organizing and filtering news items:"
+                        initialText={newsGuidance}
+                        onTextChange={setNewsGuidance}
+                    />
+                    <ArticleCountComponent
+                        value={newsItems}
+                        onChange={(value) => setNewsItems(value)}
+                    />
                     <LinkForm initialLinks={links} onLinksChange={setLinks} />
                     <YleNewsConfigForm
                         initialConfigs={yleNewsConfigs}
@@ -152,6 +168,7 @@ function PanelDetailEdit({
                     <InputTextForm
                         initialText={inputText}
                         onTextChange={setInputText}
+                        label="Static text content to include in show content:"
                     />
                     <Button
                         variant="info"
@@ -165,56 +182,86 @@ function PanelDetailEdit({
                         <div className="mt-4">
                             <h5>Fetched News Links:</h5>
                             <div className="grid grid-cols-1 gap-4">
-                                {newsLinks.map((link, index) => (
+                                {newsLinks.map((group, groupIndex) => (
                                     <div
-                                        key={index}
-                                        className="border p-4 rounded shadow"
+                                        key={groupIndex}
+                                        className="news-group"
                                     >
-                                        <div className="flex gap-4 items-start">
-                                            {link.image && (
-                                                <img
-                                                    src={link.image}
-                                                    alt={link.title}
-                                                    className="w-32 h-32 object-cover rounded"
-                                                />
-                                            )}
-                                            <div className="flex-1">
-                                                <h6 className="font-bold text-lg">
-                                                    <a
-                                                        href={
-                                                            link.original_source
-                                                        }
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-blue-500 underline"
-                                                    >
-                                                        {link.title}
-                                                    </a>
-                                                </h6>
-                                                {link.source && (
-                                                    <p className="text-gray-500 text-sm">
-                                                        Source: {link.source}
-                                                    </p>
-                                                )}
-                                                {link.publish_date && (
-                                                    <p className="text-gray-400 text-xs">
-                                                        Published:{" "}
-                                                        {new Date(
-                                                            link.publish_date
-                                                        ).toLocaleDateString()}
-                                                    </p>
-                                                )}
+                                        <h6>
+                                            {group.title ||
+                                                "Group " + groupIndex}
+                                        </h6>
+                                        {group.data.map((link, index) => (
+                                            <div
+                                                key={index}
+                                                className="border p-4 rounded shadow"
+                                            >
+                                                <div className="flex gap-4 items-start">
+                                                    {link.image && (
+                                                        <img
+                                                            src={link.image}
+                                                            alt={link.title}
+                                                            className="w-32 h-32 object-cover rounded"
+                                                        />
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <p className="font-medium text-base flex items-center">
+                                                            <Button
+                                                                className="text-blue-500  hover:text-blue-300 text-sm mr-2 bg-transparent border-none align-top"
+                                                                onClick={() =>
+                                                                    setExpandedDescriptionIndex(
+                                                                        expandedDescriptionIndex ===
+                                                                            index
+                                                                            ? null
+                                                                            : index
+                                                                    )
+                                                                }
+                                                            >
+                                                                {expandedDescriptionIndex ===
+                                                                index
+                                                                    ? "▼"
+                                                                    : "▶"}
+                                                            </Button>
+                                                            <a
+                                                                href={
+                                                                    link.original_source
+                                                                }
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-500 underline"
+                                                            >
+                                                                {link.title}
+                                                            </a>
+                                                        </p>
+                                                        {link.source && (
+                                                            <p className="text-gray-500 text-sm ml-12 mt-2">
+                                                                Source:{" "}
+                                                                {link.source}
+                                                            </p>
+                                                        )}
+                                                        {link.publish_date && (
+                                                            <p className="text-gray-400 text-xs ml-12">
+                                                                Published:{" "}
+                                                                {new Date(
+                                                                    link.publish_date
+                                                                ).toLocaleDateString()}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {link.description &&
+                                                    expandedDescriptionIndex ===
+                                                        index && (
+                                                        <div className="formatted-description mt-2">
+                                                            <div
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html: link.description
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    )}
                                             </div>
-                                        </div>
-                                        {link.description && (
-                                            <div className="formatted-description mt-2">
-                                                <div
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: link.description
-                                                    }}
-                                                />
-                                            </div>
-                                        )}
+                                        ))}
                                     </div>
                                 ))}
                             </div>

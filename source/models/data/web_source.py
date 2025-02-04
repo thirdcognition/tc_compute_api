@@ -1,5 +1,6 @@
 import hashlib
-from typing import List, Optional, Union
+import re
+from typing import Any, List, Optional, Union
 from supabase.client import AsyncClient, Client
 
 # from source.helpers.shared import pretty_print
@@ -36,6 +37,10 @@ class WebSource(BaseModel):
     owner_id: Optional[str] = None
     organization_id: Optional[str] = None
     main_item: bool = False
+
+    rss_item: Any = None
+
+    _sorting_id: str = None
 
     def _verify_image(self, article_image) -> bool:
         """
@@ -255,7 +260,7 @@ class WebSource(BaseModel):
         topic = self.article.topic if self.article else ""
         summary = self._get_field("summary", "description", "description")
         categories = self._get_field("categories", "categories", "categories")
-        id = self.source_id
+        id = self.get_sorting_id()
 
         return (
             f"ID({id}), Categories({str(categories)})"
@@ -263,6 +268,41 @@ class WebSource(BaseModel):
             + f"\n Title: {title}"
             + f"\n Summary: {summary}"
         )
+
+    def get_sorting_id(self):
+        if self._sorting_id is None:
+            self._sorting_id = hashlib.md5(
+                str(self.original_source).encode("utf-8")
+            ).hexdigest()
+        return self._sorting_id
+
+    def to_sorting_str(self):
+        if self.rss_item is None:
+            return self.to_simple_str()
+
+        id = self.get_sorting_id()
+
+        str_rep = f"ID({id}):\n"
+        if "tags" in self.rss_item and len(self.rss_item["tags"]) > 0:
+            str_rep += f"Categories: {', '.join([tag['term'] for tag in self.rss_item['tags']])}\n"
+
+        str_rep += f"Title: {self.rss_item['title']}\n"
+        if (
+            "<ol><li>" in self.rss_item["summary"]
+            or 'href="http' in self.rss_item["summary"]
+        ):
+            links = re.findall(r'href="(.*?)"', self.rss_item["summary"])
+            links = [
+                hashlib.md5(str(link).encode("utf-8")).hexdigest()
+                for link in links
+                if link != self.rss_item["link"]
+            ]
+            if len(links) > 0:
+                str_rep += f"Alternative source: \n - {'\n - '.join(links)}\n\n"
+        else:
+            str_rep += f"Description: {self.rss_item['summary']}\n\n"
+
+        return str_rep
 
     def __str__(self):
         """

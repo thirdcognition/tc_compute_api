@@ -7,6 +7,7 @@ import feedparser
 from pygooglenews import GoogleNews
 from supabase import Client
 from source.helpers.resolve_url import LinkResolver, parse_publish_date
+from source.llm_exec.websource_exec import group_rss_items
 from source.models.data.user import UserIDs
 from source.models.data.web_source import WebSource
 from source.models.structures.panel import PanelRequestData
@@ -17,6 +18,7 @@ from source.models.structures.sources import (
     TechCrunchNewsConfig,
     YleNewsConfig,
 )
+from source.models.structures.web_source_structure import WebSourceCollection
 
 
 # Google News
@@ -45,7 +47,7 @@ def parse_since_value(since_value):
 
 
 def create_web_source(
-    entry, source: str, lang: str, original_source: Optional[str] = None
+    entry, source: str, lang: str, original_source: Optional[str] = None, category=None
 ) -> WebSource | None:
     """
     Helper function to create a WebSource object from an entry.
@@ -70,8 +72,11 @@ def create_web_source(
                 [category.term for category in entry.tags]
                 if hasattr(entry, "tags")
                 else []
+                if category is None
+                else [category]
             ),
             lang=lang,
+            rss_item=entry,
         )
         return result
     except Exception as e:
@@ -234,9 +239,12 @@ def fetch_links(
     ],
     user_ids: UserIDs = None,
     dry_run: bool = False,
-) -> List["WebSource"]:
+    guidance: str = None,
+    max_items=5,
+) -> List[WebSourceCollection | WebSource]:
     print(f"Fetching links for sources: {sources}")
-    all_resolved_links = []
+    all_resolved_links: List[WebSourceCollection | WebSource] = []
+    all_items = []
     for source in sources:
         urls = None
         if isinstance(source, str):
@@ -267,18 +275,21 @@ def fetch_links(
         else:
             continue
 
-        resolved_count = 0
-        if not dry_run:
-            for item in items:
-                print(f"news count {resolved_count=} {source.articles=}")
-                if urls is None and resolved_count >= source.articles:
-                    break
-                print(f"Resolving and storing link for item: {item.title}")
-                if item.resolve_and_store_link(supabase, user_ids):
-                    all_resolved_links.append(item)
-                    resolved_count += 1
-        else:
-            all_resolved_links.extend(items)
+        all_items += items
+
+    resolved_count = 0
+    resolve_items: List[WebSourceCollection] = group_rss_items(all_items, guidance)
+    if not dry_run:
+        for item in resolve_items:
+            print(f"Resolving and storing link for item: {item.title}")
+            if item.resolve_and_store_link(supabase, user_ids):
+                all_resolved_links.append(item)
+                resolved_count += 1
+            if resolved_count >= max_items:
+                break
+
+    else:
+        all_resolved_links.extend(resolve_items[:max_items])
 
     print(f"Total resolved links: {len(all_resolved_links)}")
     return all_resolved_links

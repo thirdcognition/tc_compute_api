@@ -61,12 +61,12 @@ function YleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                         <option value="majorHeadlines">Major Headlines</option>
                         <option value="mostRead">Most Read</option>
                     </Form.Control>
-                    <ArticleCountComponent
+                    {/* <ArticleCountComponent
                         value={config.articles}
                         onChange={(value) =>
                             handleConfigChange(index, "articles", value)
                         }
-                    />
+                    /> */}
                 </div>
             ))}
             <Button

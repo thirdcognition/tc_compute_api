@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Form } from "react-bootstrap";
 
-function InputTextForm({ initialText = "", onTextChange }) {
+function InputTextForm({
+    initialText = "",
+    onTextChange,
+    label = "Input Text:"
+}) {
     const [text, setText] = useState(initialText);
 
     useEffect(() => {
@@ -10,7 +14,7 @@ function InputTextForm({ initialText = "", onTextChange }) {
 
     return (
         <Form.Group controlId="inputText">
-            <Form.Label className="font-semibold">Input Text:</Form.Label>
+            <Form.Label className="font-semibold">{label}</Form.Label>
             <Form.Control
                 as="textarea"
                 rows={5}

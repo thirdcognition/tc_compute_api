@@ -138,20 +138,33 @@ class ConvertAndParseWrapper:
 web_source_builder.parser = ConvertAndParseWrapper()
 
 
+# class WebSourceGroupingItem(BaseModel):
+#     id: str = Field(
+#         ...,
+#         description="ID of the original item derived from ID([ID]) at the beginning of the item.",
+#     )
+#     categories: List[str] = Field(
+#         ..., description="A list of specified or assigned categories"
+#     )
+
+
 # Define the Pydantic model for the output structure
 class WebSourceGrouping(BaseModel):
-    all_ids: List[str] = Field(..., description="A list of all available IDs")
     ordered_groups: List[List[str]] = Field(
-        ...,
-        description="An ordered list of lists of IDs grouped by title and summary connection and sorted by topical and categorical similarity.",
+        ..., description="An ordered list of lists of grouped IDs.", min_length=5
     )
     ordered_group_titles: List[str] = Field(
         ...,
-        description="An ordered list of titles for ordered_groups.",
+        description="An ordered list of titles for ordered_groups based on the titles of the items within the group.",
+        min_length=5,
     )
     main_group: int = Field(
         ...,
         description="The index of the group which is considered to be the most important group in the groups",
+    )
+    all_ids: List[str] = Field(
+        ...,
+        description="A list of all IDs derived from ID([ID]) at the beginning of each item.",
     )
 
 
@@ -172,25 +185,30 @@ class WebSourceGroupingValidator:
         parsed_response = web_source_grouping_parser.parse(cleaned_input)
 
         # Flatten the grouped IDs from the parsed response
-        grouped_ids = {id for group in parsed_response.ordered_groups for id in group}
+        grouped_ids = {
+            item for group in parsed_response.ordered_groups for item in group
+        }
 
         original_ids = parsed_response.all_ids
+
+        tolerance = max(len(grouped_ids), len(original_ids)) // 5
 
         # Check for duplicate IDs
         if len(grouped_ids) != len(original_ids):
             duplicates = set(
                 id
                 for id, count in collections.Counter(original_ids).items()
-                if count > 1
+                if count > 1 and len(str(id).strip()) > 0
             )
-            raise OutputParserException(
-                f"The following IDs are duplicated in the LLM response: {', '.join(duplicates)}"
-            )
+            if len(duplicates) > 0:
+                raise OutputParserException(
+                    f"The following IDs are duplicated in the LLM response: {', '.join(duplicates)}"
+                )
 
         # Find missing IDs
         missing_ids = set(original_ids) - grouped_ids
 
-        if missing_ids:
+        if len(missing_ids) > tolerance:
             raise OutputParserException(
                 f"The following IDs are missing from the LLM response: {', '.join(missing_ids)}"
             )
@@ -240,6 +258,56 @@ group_web_sources = PromptFormatter(
 )
 
 group_web_sources.parser = WebSourceGroupingValidator()
+
+group_rss_items = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        {PRE_THINK_INSTRUCT}
+        {KEEP_PRE_THINK_TOGETHER}
+
+        You are tasked with analyzing a list of rss items and then grouping and sorting them based on their title, alternative sources and/or categorical connections.
+        Instructions:
+        - Group rss items into lists of IDs based on their categories, title and description.
+        - Each group must be directly connected by categories, alternative sources or description.
+        - If the a list of alternative sources are specified use that to connect matching items where possible.
+        - Do not group items just by title or category. Grouped item must share the same description, be of the same news item or be linked directly.
+        - Make sure to sort groups through similarity of titles/categories.
+        - Sorting of the groups should be based on importance or significance of the news.
+        - If defined use Instructions determine which items to place at the beginning and end of the ordered groups.
+        - Ensure all IDs are included in the output.
+        - Every id from the All IDs list must be included in the ordered_groups.
+        - Return the result as a JSON object using the specified format.
+        - If you are given instructions follow them as closely as possible.
+        - ordered_groups and ordered_groups_titles cannot be empty. They must have the groups defined in them.
+
+        Format instructions:
+        <think>Place your thinking here.</think>
+        <output>
+        {web_source_grouping_parser.get_format_instructions()}
+        </output>
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        All IDs:
+        {all_ids}
+
+        RSS Items:
+        {web_sources}
+
+        Instructions:
+        {instructions}
+
+        Group and sort the RSS Items and return the result.
+
+        Make sure to include every id from the All IDs in the ordered_groups.
+        ordered_groups and ordered_groups_titles cannot be empty. They must have the groups defined in them.
+        """
+    ),
+)
+
+group_rss_items.parser = WebSourceGroupingValidator()
 
 # New Prompt: Validate News Article
 validate_news_article = PromptFormatter(

@@ -57,28 +57,42 @@ Authorization: Bearer {{accessToken}}
       "lang": "en",
       "country": "US",
       "topic": "technology",
-      "since": "1d",
-      "articles": 5
+      "since": "1d"
     }
   ],
-  "yle_news": [
-    {
-      "type": "majorHeadlines",
-      "articles": 3
-    }
-  ],
-  "techcrunch_news": [
-    {
-      "articles": 2
-    }
-  ],
-  "hackernews": [
-    {
-      "feed_type": "frontpage",
-      "articles": 3
-    }
-  ]
+  "news_guidance": "Prioritize topics around new technologies and advancements in technology. Place these first. Place any adverticements, prodcut placement, etc. last.",
+  "news_items": 5
 }
+
+
+# {
+#   "google_news": [
+#     {
+#       "lang": "en",
+#       "country": "US",
+#       "topic": "technology",
+#       "since": "1d",
+#       "articles": 5
+#     }
+#   ],
+#   "yle_news": [
+#     {
+#       "type": "majorHeadlines",
+#       "articles": 3
+#     }
+#   ],
+#   "techcrunch_news": [
+#     {
+#       "articles": 2
+#     }
+#   ],
+#   "hackernews": [
+#     {
+#       "feed_type": "frontpage",
+#       "articles": 3
+#     }
+#   ]
+# }
 
 ### Generate Transcripts Task request
 # @name generateTranscriptsTask
