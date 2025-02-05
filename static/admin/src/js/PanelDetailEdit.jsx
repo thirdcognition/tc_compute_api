@@ -43,6 +43,7 @@ function PanelDetailEdit({
         useState(null);
     const [newsGuidance, setNewsGuidance] = useState(null);
     const [newsItems, setNewsItems] = useState(5);
+    const [runningConfigTest, setRunningConfigTest] = useState(false);
 
     const handlePanelSubmit = async (e) => {
         e.preventDefault();
@@ -100,6 +101,7 @@ function PanelDetailEdit({
     };
 
     const handleTestConfigs = async () => {
+        setRunningConfigTest(true); // Start the progress indicator
         const configs = {
             google_news: googleNewsConfigs,
             yle_news: yleNewsConfigs,
@@ -117,6 +119,8 @@ function PanelDetailEdit({
                 "Failed to fetch news links. Please check your configurations."
             );
             setNewsLinks([]);
+        } finally {
+            setRunningConfigTest(false); // Stop the progress indicator
         }
     };
 
@@ -174,8 +178,9 @@ function PanelDetailEdit({
                         variant="info"
                         onClick={handleTestConfigs}
                         className="py-2 mt-3 w-full bg-green-500 text-white"
+                        disabled={runningConfigTest} // Disable the button while testing
                     >
-                        Test Configs
+                        {runningConfigTest ? "Processing..." : "Test Configs"}{" "}
                     </Button>
                     {error && <p className="text-danger mt-2">{error}</p>}
                     {newsLinks.length > 0 && (
