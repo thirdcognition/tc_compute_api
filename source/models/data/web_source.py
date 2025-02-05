@@ -398,12 +398,12 @@ class WebSource(BaseModel):
         self, supabase: Client, user_ids: UserIDs = None
     ) -> bool:
         print(f"Resolving and storing link for: {self.original_source}")
-        resolver = LinkResolver(reformat_text=True)
         if self.check_if_exists_sync(supabase):
             print(f"Source exists, loading from Supabase for: {self.original_source}")
             self.load_from_supabase_sync(supabase)
             return True
         else:
+            resolver = LinkResolver(reformat_text=True)
             try:
                 print(f"Resolving URL: {self.original_source}")
                 url_result = resolver.resolve_url(
@@ -411,7 +411,6 @@ class WebSource(BaseModel):
                     title=self.title,
                     description=self.description,
                 )
-                resolver.close()
                 self.url_result = url_result
                 if len(url_result.human_readable_content) > 500:
                     self._update_from_(url_result)  # Replaced manual updates
@@ -426,8 +425,9 @@ class WebSource(BaseModel):
                     return True
             except Exception as e:
                 print(f"Failed to resolve {self.original_source}: {e}")
-            # finally:
-            #     print(f"Closing resolver for: {self.original_source}")
+            finally:
+                print(f"Closing resolver for: {self.original_source}")
+                resolver.close()
         return False
 
     def build_article(self):
