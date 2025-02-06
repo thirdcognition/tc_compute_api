@@ -282,7 +282,7 @@ class WebSource(BaseModel):
 
         id = self.get_sorting_id()
 
-        str_rep = f"ID({id}):\n"
+        str_rep = f"ID({id}) - Published({str(self.publish_date)}):\n"
         if "tags" in self.rss_item and len(self.rss_item["tags"]) > 0:
             str_rep += f"Categories: {', '.join([tag['term'] for tag in self.rss_item['tags']])}\n"
 

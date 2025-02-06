@@ -245,6 +245,9 @@ group_web_sources = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
+        Current date and time:
+        {datetime}
+
         Articles:
         {web_sources}
 
@@ -290,6 +293,9 @@ group_rss_items = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
+        Current date and time:
+        {datetime}
+
         All IDs:
         {all_ids}
 
