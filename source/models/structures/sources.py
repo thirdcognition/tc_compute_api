@@ -12,7 +12,7 @@ class GooglenewsFeedType(str, Enum):
 
 
 class GoogleNewsConfig(BaseModel):
-    feed_type: GooglenewsFeedType
+    feed_type: Optional[GooglenewsFeedType] = None
     lang: Optional[str] = "en"
     country: Optional[str] = "US"
     topic: Optional[Union[str, List[str]]] = None
