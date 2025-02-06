@@ -60,6 +60,9 @@ def create_panel(
     if request_data.news_guidance:
         metadata["news_guidance"] = request_data.news_guidance
 
+    if request_data.news_items:
+        metadata["news_items"] = request_data.news_items
+
     panel: PanelDiscussion = PanelDiscussion(
         title=request_data.title,
         metadata=metadata,

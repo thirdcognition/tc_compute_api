@@ -13,9 +13,12 @@ from source.models.data.web_source import WebSource
 from source.models.structures.panel import PanelRequestData
 from source.models.structures.sources import (
     GoogleNewsConfig,
+    GooglenewsFeedType,
     HackerNewsConfig,
     HackerNewsFeedType,
     TechCrunchNewsConfig,
+    YleFeedType,
+    YleLanguage,
     YleNewsConfig,
 )
 from source.models.structures.web_source_structure import WebSourceCollection
@@ -89,15 +92,18 @@ def fetch_google_news_items(config: GoogleNewsConfig) -> List[WebSource]:
     time_span = parse_since_value(config.since)
 
     print(f"GoogleNews: Time span for news items: {time_span}")
-    if config.query:
+    if config.feed_type == GooglenewsFeedType.SEARCH or config.query:
+        config.feed_type = GooglenewsFeedType.SEARCH
         print(f"GoogleNews: Searching news with query: {config.query}")
         news = gn.search(config.query, when=config.since)
-    elif config.location:
+    elif config.feed_type == GooglenewsFeedType.LOCATION or config.location:
+        config.feed_type = GooglenewsFeedType.LOCATION
         if isinstance(config.location, list):
             news = gn.geo_multiple_headlines(config.location)
         else:
             news = gn.geo_headlines(config.location)
-    elif config.topic:
+    elif config.feed_type == GooglenewsFeedType.TOPIC or config.topic:
+        config.feed_type = GooglenewsFeedType.TOPIC
         if isinstance(config.topic, list):
             news = gn.topic_multiple_headlines(config.topic, time_span=time_span)
         else:
@@ -184,7 +190,14 @@ def fetch_techcrunch_news_items(config: TechCrunchNewsConfig) -> List[WebSource]
 
 
 def fetch_yle_news_items(config: YleNewsConfig) -> List[WebSource]:
-    feed_url = f"https://feeds.yle.fi/uutiset/v1/{config.type.value}/YLE_UUTISET.rss"
+    source = "YLE_UUTISET" if config.lang == YleLanguage.FI else "YLE_NEWS"
+    feed_url = f"https://feeds.yle.fi/uutiset/v1/{(config.feed_type or config.type).value}/YLE_UUTISET.rss"
+
+    if config.feed_type == YleFeedType.TOPICS:
+        feed_url = f"https://feeds.yle.fi/uutiset/v1/recent.rss?publisherIds={source}"
+        concepts = (config.topics or []) + (config.locations or [])
+        if len(concepts) > 0:
+            feed_url += "&concepts=" + ",".join(concepts)
 
     print(f"Yle: Fetching Yle news items from URL: {feed_url}")
     feed = feedparser.parse(feed_url)
@@ -242,7 +255,8 @@ def fetch_links(
     guidance: str = None,
     max_items=5,
 ) -> List[WebSourceCollection | WebSource]:
-    print(f"Fetching links for sources: {sources}")
+    max_items = int(max_items)
+    print(f"Fetching links for sources ({max_items}): {sources}")
     all_resolved_links: List[WebSourceCollection | WebSource] = []
     all_items = []
     for source in sources:

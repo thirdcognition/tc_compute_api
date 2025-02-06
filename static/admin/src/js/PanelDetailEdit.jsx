@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Form, Button } from "react-bootstrap";
 import { handleCreatePanel, handleUpdatePanel } from "./helpers/panel.js";
-import { fetchNewsLinks } from "./helpers/fetch.js";
 import LinkForm from "./news_config/LinkForm";
 import GoogleNewsConfigForm from "./news_config/GoogleNewsConfigForm";
 import YleNewsConfigForm from "./news_config/YleNewsConfigForm";
@@ -31,19 +30,20 @@ function PanelDetailEdit({
         panel.metadata?.techcrunch_news || []
     );
     const [hackerNewsConfigs, setHackerNewsConfigs] = useState(
-        panel.metadata?.hacker_news || []
+        panel.metadata?.hackernews || []
     );
     const [inputText, setInputText] = useState(panel.inputText || "");
     const [yleNewsConfigs, setYleNewsConfigs] = useState(
         panel.metadata?.yle_news || []
     );
-    const [newsLinks, setNewsLinks] = useState([]);
-    const [error, setError] = useState(null);
     const [expandedDescriptionIndex, setExpandedDescriptionIndex] =
         useState(null);
-    const [newsGuidance, setNewsGuidance] = useState(null);
-    const [newsItems, setNewsItems] = useState(5);
-    const [runningConfigTest, setRunningConfigTest] = useState(false);
+    const [newsGuidance, setNewsGuidance] = useState(
+        panel.metadata?.news_guidance || ""
+    );
+    const [newsItems, setNewsItems] = useState(
+        parseInt(panel.metadata?.news_items || 5)
+    );
 
     const handlePanelSubmit = async (e) => {
         e.preventDefault();
@@ -81,46 +81,34 @@ function PanelDetailEdit({
                 .catch((error) => {
                     console.error("Error in handlePanelSubmit:", error); // Debugging log
                     alert("Error while updating panel.");
+                })
+                .finally(() => {
+                    window.location.reload();
                 });
         } else {
             // Create new panel
-            handleCreatePanel(panelData).then((response) => {
-                console.log("handleCreatePanel response:", response); // Debugging log
-                const { panelId, success } = response;
-                if (success && panelId) {
-                    if (setSelectedPanel) setSelectedPanel(panelId);
-                    if (setPanelId) setPanelId(panelId);
-                    if (handleRefreshPanelData) handleRefreshPanelData(panelId);
-                    if (fetchPanels) fetchPanels();
-                    if (setRedirectToPanel) setRedirectToPanel(true);
-                } else {
+            handleCreatePanel(panelData)
+                .then((response) => {
+                    console.log("handleCreatePanel response:", response); // Debugging log
+                    const { panelId, success } = response;
+                    if (success && panelId) {
+                        if (setSelectedPanel) setSelectedPanel(panelId);
+                        if (setPanelId) setPanelId(panelId);
+                        if (handleRefreshPanelData)
+                            handleRefreshPanelData(panelId);
+                        if (fetchPanels) fetchPanels();
+                        if (setRedirectToPanel) setRedirectToPanel(true);
+                    } else {
+                        alert("Error while creating panel.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Error in handleCreatePanel:", error); // Debugging log
                     alert("Error while creating panel.");
-                }
-            });
-        }
-    };
-
-    const handleTestConfigs = async () => {
-        setRunningConfigTest(true); // Start the progress indicator
-        const configs = {
-            google_news: googleNewsConfigs,
-            yle_news: yleNewsConfigs,
-            techcrunch_news: techCrunchNewsConfigs,
-            hacker_news: hackerNewsConfigs
-        };
-
-        try {
-            const response = await fetchNewsLinks(configs);
-            console.log("News links", response);
-            setNewsLinks(response || []);
-            setError(null);
-        } catch (err) {
-            setError(
-                "Failed to fetch news links. Please check your configurations."
-            );
-            setNewsLinks([]);
-        } finally {
-            setRunningConfigTest(false); // Stop the progress indicator
+                })
+                .finally(() => {
+                    window.location.reload();
+                });
         }
     };
 
@@ -174,104 +162,6 @@ function PanelDetailEdit({
                         onTextChange={setInputText}
                         label="Static text content to include in show content:"
                     />
-                    <Button
-                        variant="info"
-                        onClick={handleTestConfigs}
-                        className="py-2 mt-3 w-full bg-green-500 text-white"
-                        disabled={runningConfigTest} // Disable the button while testing
-                    >
-                        {runningConfigTest ? "Processing..." : "Test Configs"}{" "}
-                    </Button>
-                    {error && <p className="text-danger mt-2">{error}</p>}
-                    {newsLinks.length > 0 && (
-                        <div className="mt-4">
-                            <h5>Fetched News Links:</h5>
-                            <div className="grid grid-cols-1 gap-4">
-                                {newsLinks.map((group, groupIndex) => (
-                                    <div
-                                        key={groupIndex}
-                                        className="news-group"
-                                    >
-                                        <h6>
-                                            {group.title ||
-                                                "Group " + groupIndex}
-                                        </h6>
-                                        {group.data.map((link, index) => (
-                                            <div
-                                                key={index}
-                                                className="border p-4 rounded shadow"
-                                            >
-                                                <div className="flex gap-4 items-start">
-                                                    {link.image && (
-                                                        <img
-                                                            src={link.image}
-                                                            alt={link.title}
-                                                            className="w-32 h-32 object-cover rounded"
-                                                        />
-                                                    )}
-                                                    <div className="flex-1">
-                                                        <p className="font-medium text-base flex items-center">
-                                                            <Button
-                                                                className="text-blue-500  hover:text-blue-300 text-sm mr-2 bg-transparent border-none align-top"
-                                                                onClick={() =>
-                                                                    setExpandedDescriptionIndex(
-                                                                        expandedDescriptionIndex ===
-                                                                            index
-                                                                            ? null
-                                                                            : index
-                                                                    )
-                                                                }
-                                                            >
-                                                                {expandedDescriptionIndex ===
-                                                                index
-                                                                    ? "▼"
-                                                                    : "▶"}
-                                                            </Button>
-                                                            <a
-                                                                href={
-                                                                    link.original_source
-                                                                }
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-blue-500 underline"
-                                                            >
-                                                                {link.title}
-                                                            </a>
-                                                        </p>
-                                                        {link.source && (
-                                                            <p className="text-gray-500 text-sm ml-12 mt-2">
-                                                                Source:{" "}
-                                                                {link.source}
-                                                            </p>
-                                                        )}
-                                                        {link.publish_date && (
-                                                            <p className="text-gray-400 text-xs ml-12">
-                                                                Published:{" "}
-                                                                {new Date(
-                                                                    link.publish_date
-                                                                ).toLocaleDateString()}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                {link.description &&
-                                                    expandedDescriptionIndex ===
-                                                        index && (
-                                                        <div className="formatted-description mt-2">
-                                                            <div
-                                                                dangerouslySetInnerHTML={{
-                                                                    __html: link.description
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                     <div className="flex justify-between mt-4">
                         <Button
                             variant="secondary"
