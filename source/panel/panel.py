@@ -34,8 +34,8 @@ def create_panel(
     metadata = {"task_id": task_request.id} if task_request else {}
 
     # Add additional fields to metadata if they are defined
-    if request_data.conversation_config:
-        metadata["conversation_config"] = request_data.conversation_config
+    if request_data.conversation_config is not None:
+        metadata["conversation_config"] = request_data.conversation_config.model_dump()
     if request_data.tts_model:
         metadata["tts_model"] = request_data.tts_model
     if request_data.input_source:

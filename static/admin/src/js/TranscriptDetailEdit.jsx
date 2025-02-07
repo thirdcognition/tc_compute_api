@@ -21,15 +21,22 @@ function TranscriptDetailEdit({
     const [showDetails, setShowDetails] = useState(false);
     const [wordCount, setWordCount] = useState(1000);
     const [maxWordCount, setMaxWordCount] = useState(2500); // Dynamically updated max
-    // const [duration, setDuration] = useState(20); // Duration in minutes
     const [creativity] = useState(0.7);
     const [conversationStyle, setConversationStyle] = useState([
         "engaging",
         "fast-paced",
         "enthusiastic"
     ]);
-    const [rolesPerson1, setRolesPerson1] = useState("main summarizer");
-    const [rolesPerson2, setRolesPerson2] = useState("questioner/clarifier");
+    const [rolesPerson1, setRolesPerson1] = useState({
+        name: "Elton",
+        persona: "",
+        role: "main summarizer"
+    });
+    const [rolesPerson2, setRolesPerson2] = useState({
+        name: "Julia",
+        persona: "",
+        role: "questioner/clarifier"
+    });
     const [dialogueStructure, setDialogueStructure] = useState([
         "Introduction",
         "Main Content Summary",
@@ -46,7 +53,6 @@ function TranscriptDetailEdit({
     const [cronjob, setCronjob] = useState(""); // Default to empty string if not defined
     const [longForm, setLongForm] = useState(false);
 
-    // Utility function to calculate article count
     const calculateArticleCount = (data) => {
         const linksArray = data?.metadata?.input_source || [];
         const googleNewsArray = data?.metadata?.google_news || [];
@@ -65,7 +71,11 @@ function TranscriptDetailEdit({
                 sourceArray.reduce((val, config) => val + config.articles, 0) ||
                 0;
         });
-        return Math.max(totalArticles + linksArray.length, 1);
+        return Math.max(
+            totalArticles + linksArray.length,
+            data?.metadata?.news_items || 1,
+            1
+        );
     };
 
     const updateMaxWordCount = () => {
@@ -74,14 +84,12 @@ function TranscriptDetailEdit({
             const newMaxWordCount =
                 articleCount * (longForm || articleCount === 1 ? 500 : 300);
             setMaxWordCount(newMaxWordCount);
-            // setDuration(newMaxWordCount / 200); // Calculate duration
             if (wordCount > newMaxWordCount) {
-                setWordCount(newMaxWordCount); // Adjust wordCount if it exceeds max
+                setWordCount(newMaxWordCount);
             }
         }
     };
 
-    // Effect to update maxWordCount and duration based on article count
     useEffect(updateMaxWordCount, [discussionData, wordCount, longForm]);
 
     const handleTranscriptSubmit = async (e) => {
@@ -122,17 +130,10 @@ function TranscriptDetailEdit({
                             value={cronjob}
                             onChange={setCronjob}
                         />
-                        {/* <Button
-                            variant="danger"
-                            onClick={() => setCronjob("")}
-                            className="mt-2"
-                        >
-                            Clear Schedule
-                        </Button> */}
                     </Form.Group>
                     <Form.Group controlId="wordCount" className="mb-4">
                         <Form.Label className="font-semibold">
-                            Requested length):
+                            Requested length:
                         </Form.Label>
                         <Form.Control
                             type="range"
@@ -147,21 +148,6 @@ function TranscriptDetailEdit({
                             {getWordCountDescription(wordCount, maxWordCount)}
                         </div>
                     </Form.Group>
-                    {/* <Form.Group controlId="creativity" className="mb-4">
-                        <Form.Label className="font-semibold">
-                            Creativity:
-                        </Form.Label>
-                        <Form.Control
-                            type="range"
-                            min={0}
-                            max={1}
-                            step={0.1}
-                            value={creativity}
-                            onChange={(e) => setCreativity(e.target.value)}
-                            className="w-full"
-                        />
-                        <div>{`${creativity}`}</div>
-                    </Form.Group> */}
                     {calculateArticleCount(discussionData) > 1 && (
                         <Form.Group controlId="longForm" className="mb-4">
                             <div className="flex items-center mb-2.5">
@@ -224,50 +210,142 @@ function TranscriptDetailEdit({
                                         )}
                                     </Form.Control>
                                 </Form.Group>
-                                <Form.Group
-                                    controlId="rolesPerson1"
-                                    className="mb-4"
-                                >
-                                    <Form.Label className="font-semibold">
-                                        Role for Person 1:
-                                    </Form.Label>
-                                    <Form.Control
-                                        as="select"
-                                        value={rolesPerson1}
-                                        onChange={(e) =>
-                                            setRolesPerson1(e.target.value)
-                                        }
-                                        className="w-full"
+                                <div className="mb-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                                    <h5 className="font-bold text-lg mb-3">
+                                        Person 1
+                                    </h5>
+                                    <Form.Group
+                                        controlId="rolesPerson1Name"
+                                        className="mb-3"
                                     >
-                                        {rolesPerson1Options.map((role) => (
-                                            <option value={role} key={role}>
-                                                {role}
-                                            </option>
-                                        ))}
-                                    </Form.Control>
-                                </Form.Group>
-                                <Form.Group
-                                    controlId="rolesPerson2"
-                                    className="mb-4"
-                                >
-                                    <Form.Label className="font-semibold">
-                                        Role for Person 2:
-                                    </Form.Label>
-                                    <Form.Control
-                                        as="select"
-                                        value={rolesPerson2}
-                                        onChange={(e) =>
-                                            setRolesPerson2(e.target.value)
-                                        }
-                                        className="w-full"
+                                        <Form.Label className="font-semibold">
+                                            Name:
+                                        </Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={rolesPerson1.name || "Elton"}
+                                            onChange={(e) =>
+                                                setRolesPerson1({
+                                                    ...rolesPerson1,
+                                                    name: e.target.value
+                                                })
+                                            }
+                                            className="w-full"
+                                        />
+                                    </Form.Group>
+                                    <Form.Group
+                                        controlId="rolesPerson1Persona"
+                                        className="mb-3"
                                     >
-                                        {rolesPerson2Options.map((role) => (
-                                            <option value={role} key={role}>
-                                                {role}
-                                            </option>
-                                        ))}
-                                    </Form.Control>
-                                </Form.Group>
+                                        <Form.Label className="font-semibold">
+                                            Persona:
+                                        </Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={rolesPerson1.persona || ""}
+                                            onChange={(e) =>
+                                                setRolesPerson1({
+                                                    ...rolesPerson1,
+                                                    persona: e.target.value
+                                                })
+                                            }
+                                            className="w-full"
+                                        />
+                                    </Form.Group>
+                                    <Form.Group
+                                        controlId="rolesPerson1Role"
+                                        className="mb-3"
+                                    >
+                                        <Form.Label className="font-semibold">
+                                            Role:
+                                        </Form.Label>
+                                        <Form.Control
+                                            as="select"
+                                            value={rolesPerson1.role}
+                                            onChange={(e) =>
+                                                setRolesPerson1({
+                                                    ...rolesPerson1,
+                                                    role: e.target.value
+                                                })
+                                            }
+                                            className="w-full"
+                                        >
+                                            {rolesPerson1Options.map((role) => (
+                                                <option value={role} key={role}>
+                                                    {role}
+                                                </option>
+                                            ))}
+                                        </Form.Control>
+                                    </Form.Group>
+                                </div>
+                                <div className="mb-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                                    <h5 className="font-bold text-lg mb-3">
+                                        Person 2
+                                    </h5>
+                                    <Form.Group
+                                        controlId="rolesPerson2Name"
+                                        className="mb-3"
+                                    >
+                                        <Form.Label className="font-semibold">
+                                            Name:
+                                        </Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={rolesPerson2.name || "Julia"}
+                                            onChange={(e) =>
+                                                setRolesPerson2({
+                                                    ...rolesPerson2,
+                                                    name: e.target.value
+                                                })
+                                            }
+                                            className="w-full"
+                                        />
+                                    </Form.Group>
+                                    <Form.Group
+                                        controlId="rolesPerson2Persona"
+                                        className="mb-3"
+                                    >
+                                        <Form.Label className="font-semibold">
+                                            Persona:
+                                        </Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={rolesPerson2.persona || ""}
+                                            onChange={(e) =>
+                                                setRolesPerson2({
+                                                    ...rolesPerson2,
+                                                    persona: e.target.value
+                                                })
+                                            }
+                                            className="w-full"
+                                        />
+                                    </Form.Group>
+                                    <Form.Group
+                                        controlId="rolesPerson2Role"
+                                        className="mb-3"
+                                    >
+                                        <Form.Label className="font-semibold">
+                                            Role:
+                                        </Form.Label>
+                                        <Form.Control
+                                            as="select"
+                                            value={rolesPerson2.role}
+                                            onChange={(e) =>
+                                                setRolesPerson2({
+                                                    ...rolesPerson2,
+                                                    role: e.target.value
+                                                })
+                                            }
+                                            className="w-full"
+                                        >
+                                            {rolesPerson2Options.map((role) => (
+                                                <option value={role} key={role}>
+                                                    {role}
+                                                </option>
+                                            ))}
+                                        </Form.Control>
+                                    </Form.Group>
+                                </div>
                                 <Form.Group
                                     controlId="dialogueStructure"
                                     className="mb-4"

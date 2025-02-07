@@ -281,14 +281,30 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                         </p>
                     )}
                     {config.roles_person1 && (
-                        <p className="mb-2">
-                            Role for Person 1: {config.roles_person1}
-                        </p>
+                        <div className="mb-2">
+                            <p>
+                                Name (Person 1):{" "}
+                                {config.roles_person1.name || "Elton"}
+                            </p>
+                            <p>
+                                Persona (Person 1):{" "}
+                                {config.roles_person1.persona || "Not set"}
+                            </p>
+                            <p>Role (Person 1): {config.roles_person1.role}</p>
+                        </div>
                     )}
                     {config.roles_person2 && (
-                        <p className="mb-2">
-                            Role for Person 2: {config.roles_person2}
-                        </p>
+                        <div className="mb-2">
+                            <p>
+                                Name (Person 2):{" "}
+                                {config.roles_person2.name || "Julia"}
+                            </p>
+                            <p>
+                                Persona (Person 2):{" "}
+                                {config.roles_person2.persona || "Not set"}
+                            </p>
+                            <p>Role (Person 2): {config.roles_person2.role}</p>
+                        </div>
                     )}
                     {config.dialogue_structure && (
                         <p className="mb-2">

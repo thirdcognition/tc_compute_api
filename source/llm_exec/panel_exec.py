@@ -5,6 +5,7 @@ from langchain_core.messages import BaseMessage
 from source.chains.init import get_chain
 from source.models.data.web_source import WebSource
 from source.models.structures.web_source_structure import WebSourceCollection
+from source.models.structures.panel import ConversationConfig
 from source.prompts.panel import TranscriptSummary
 
 
@@ -16,7 +17,7 @@ def count_words(text: str) -> int:
 def verify_transcript_quality(
     transcript: str,
     content: str,
-    conversation_config: dict = {},
+    conversation_config: ConversationConfig = ConversationConfig(),
     main_item: bool = False,
     length_instructions: str = "",
 ) -> tuple[bool, str]:
@@ -28,15 +29,13 @@ def verify_transcript_quality(
         {
             "content": content,
             "transcript": transcript,
-            "output_language": conversation_config.get("output_language", ""),
-            "conversation_style": conversation_config.get("conversation_style", ""),
-            "roles_person1": conversation_config.get("roles_person1", ""),
-            "roles_person2": conversation_config.get("roles_person2", ""),
-            "dialogue_structure": conversation_config.get("dialogue_structure", ""),
-            "engagement_techniques": conversation_config.get(
-                "engagement_techniques", ""
-            ),
-            "user_instructions": conversation_config.get("user_instructions"),
+            "output_language": conversation_config.output_language,
+            "conversation_style": conversation_config.conversation_style,
+            "roles_person1": str(conversation_config.roles_person1),
+            "roles_person2": str(conversation_config.roles_person2),
+            "dialogue_structure": conversation_config.dialogue_structure,
+            "engagement_techniques": conversation_config.engagement_techniques,
+            "user_instructions": conversation_config.user_instructions,
             "main_item": (
                 "This is the main item of the episode. Make sure to emphasise it."
                 if main_item
@@ -64,7 +63,7 @@ def verify_transcript_quality(
 def transcript_rewriter(
     content: str,
     orig_transcript: str,
-    conversation_config: dict[str, any],
+    conversation_config: ConversationConfig = ConversationConfig(),
     word_count: int = 300,
     max_retries: int = 3,
     main_item: bool = False,
@@ -150,7 +149,7 @@ def _transcript_rewriter(
     transcript: str,
     content: str,
     feedback: str,
-    conversation_config: dict = {},
+    conversation_config: ConversationConfig = ConversationConfig(),
     previous_transcript="",
     chain: str = "transcript_rewriter",
     main_item: bool = False,
@@ -166,19 +165,17 @@ def _transcript_rewriter(
             {
                 "content": content,
                 "transcript": transcript,
-                "output_language": conversation_config.get("output_language", ""),
-                "conversation_style": conversation_config.get("conversation_style", ""),
-                "roles_person1": conversation_config.get("roles_person1", ""),
-                "roles_person2": conversation_config.get("roles_person2", ""),
-                "dialogue_structure": conversation_config.get("dialogue_structure", ""),
-                "engagement_techniques": conversation_config.get(
-                    "engagement_techniques", ""
-                ),
-                "user_instructions": conversation_config.get("user_instructions"),
+                "output_language": conversation_config.output_language,
+                "conversation_style": conversation_config.conversation_style,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "dialogue_structure": conversation_config.dialogue_structure,
+                "engagement_techniques": conversation_config.engagement_techniques,
+                "user_instructions": conversation_config.user_instructions,
                 "feedback": feedback,
                 "previous_transcript": previous_transcript,
-                "podcast_name": conversation_config.get("podcast_name", ""),
-                "podcast_tagline": conversation_config.get("podcast_tagline", ""),
+                "podcast_name": conversation_config.podcast_name,
+                "podcast_tagline": conversation_config.podcast_tagline,
                 "main_item": (
                     "This is the main item of the episode. Make sure to emphasise it."
                     if main_item
@@ -198,7 +195,9 @@ def _transcript_rewriter(
 
 
 def transcript_writer(
-    content: str, conversation_config: dict = {}, main_item=False
+    content: str,
+    conversation_config: ConversationConfig = ConversationConfig(),
+    main_item=False,
 ) -> bool:
     print(
         f"transcript_writer - Starting with content ({count_words(content)}), conversation_config={conversation_config}"
@@ -213,17 +212,15 @@ def transcript_writer(
         result = get_chain("transcript_writer").invoke(
             {
                 "content": content,
-                "output_language": conversation_config.get("output_language", ""),
-                "conversation_style": conversation_config.get("conversation_style", ""),
-                "roles_person1": conversation_config.get("roles_person1", ""),
-                "roles_person2": conversation_config.get("roles_person2", ""),
-                "dialogue_structure": conversation_config.get("dialogue_structure", ""),
-                "engagement_techniques": conversation_config.get(
-                    "engagement_techniques", ""
-                ),
-                "user_instructions": conversation_config.get("user_instructions", ""),
-                "podcast_name": conversation_config.get("podcast_name", ""),
-                "podcast_tagline": conversation_config.get("podcast_tagline", ""),
+                "output_language": conversation_config.output_language,
+                "conversation_style": conversation_config.conversation_style,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "dialogue_structure": conversation_config.dialogue_structure,
+                "engagement_techniques": conversation_config.engagement_techniques,
+                "user_instructions": conversation_config.user_instructions,
+                "podcast_name": conversation_config.podcast_name,
+                "podcast_tagline": conversation_config.podcast_tagline,
                 "main_item": (
                     "This is the main item of the episode. Make sure to emphasise it."
                     if main_item
@@ -243,7 +240,9 @@ def transcript_writer(
 
 
 def transcript_bridge_writer(
-    transcript_1: str, transcript_2: str, conversation_config: dict = {}
+    transcript_1: str,
+    transcript_2: str,
+    conversation_config: ConversationConfig = ConversationConfig(),
 ) -> bool:
     print(
         f"transcript_bridge_writer - Starting with transcript_1 ({count_words(transcript_1)}), transcript_2 ({count_words(transcript_2)}), conversation_config={conversation_config}"
@@ -259,15 +258,13 @@ def transcript_bridge_writer(
             {
                 "transcript1": transcript_1,
                 "transcript2": transcript_2,
-                "output_language": conversation_config.get("output_language", ""),
-                "conversation_style": conversation_config.get("conversation_style", ""),
-                "roles_person1": conversation_config.get("roles_person1", ""),
-                "roles_person2": conversation_config.get("roles_person2", ""),
-                "dialogue_structure": conversation_config.get("dialogue_structure", ""),
-                "engagement_techniques": conversation_config.get(
-                    "engagement_techniques", ""
-                ),
-                "user_instructions": conversation_config.get("user_instructions"),
+                "output_language": conversation_config.output_language,
+                "conversation_style": conversation_config.conversation_style,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "dialogue_structure": conversation_config.dialogue_structure,
+                "engagement_techniques": conversation_config.engagement_techniques,
+                "user_instructions": conversation_config.user_instructions,
                 "date": current_date,
                 "time": current_time,
             }
@@ -283,7 +280,7 @@ def transcript_bridge_writer(
 
 def transcript_intro_writer(
     content: str,
-    conversation_config: dict = {},
+    conversation_config: ConversationConfig = ConversationConfig(),
 ) -> bool:
     print(
         f"transcript_intro_writer - Starting with content ({count_words(content)}), conversation_config={conversation_config}"
@@ -298,17 +295,15 @@ def transcript_intro_writer(
         result = get_chain("transcript_intro_writer").invoke(
             {
                 "content": content,
-                "output_language": conversation_config.get("output_language", ""),
-                "conversation_style": conversation_config.get("conversation_style", ""),
-                "roles_person1": conversation_config.get("roles_person1", ""),
-                "roles_person2": conversation_config.get("roles_person2", ""),
-                "dialogue_structure": conversation_config.get("dialogue_structure", ""),
-                "engagement_techniques": conversation_config.get(
-                    "engagement_techniques", ""
-                ),
-                "user_instructions": conversation_config.get("user_instructions", ""),
-                "podcast_name": conversation_config.get("podcast_name", ""),
-                "podcast_tagline": conversation_config.get("podcast_tagline", ""),
+                "output_language": conversation_config.output_language,
+                "conversation_style": conversation_config.conversation_style,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "dialogue_structure": conversation_config.dialogue_structure,
+                "engagement_techniques": conversation_config.engagement_techniques,
+                "user_instructions": conversation_config.user_instructions,
+                "podcast_name": conversation_config.podcast_name,
+                "podcast_tagline": conversation_config.podcast_tagline,
                 "date": current_date,
                 "time": current_time,
             }
@@ -324,7 +319,7 @@ def transcript_intro_writer(
 
 def transcript_conclusion_writer(
     previous_dialogue: str,
-    conversation_config: dict = {},
+    conversation_config: ConversationConfig = ConversationConfig(),
 ) -> bool:
     print(
         f"transcript_conclusion_writer - Starting with previous_dialogue ({count_words(previous_dialogue)}), conversation_config={conversation_config}"
@@ -339,17 +334,15 @@ def transcript_conclusion_writer(
         result = get_chain("transcript_conclusion_writer").invoke(
             {
                 "previous_dialogue": previous_dialogue,
-                "output_language": conversation_config.get("output_language", ""),
-                "conversation_style": conversation_config.get("conversation_style", ""),
-                "roles_person1": conversation_config.get("roles_person1", ""),
-                "roles_person2": conversation_config.get("roles_person2", ""),
-                "dialogue_structure": conversation_config.get("dialogue_structure", ""),
-                "engagement_techniques": conversation_config.get(
-                    "engagement_techniques", ""
-                ),
-                "user_instructions": conversation_config.get("user_instructions", ""),
-                "podcast_name": conversation_config.get("podcast_name", ""),
-                "podcast_tagline": conversation_config.get("podcast_tagline", ""),
+                "output_language": conversation_config.output_language,
+                "conversation_style": conversation_config.conversation_style,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "dialogue_structure": conversation_config.dialogue_structure,
+                "engagement_techniques": conversation_config.engagement_techniques,
+                "user_instructions": conversation_config.user_instructions,
+                "podcast_name": conversation_config.podcast_name,
+                "podcast_tagline": conversation_config.podcast_tagline,
                 "date": current_date,
                 "time": current_time,
             }
@@ -368,7 +361,7 @@ def transcript_conclusion_writer(
 def transcript_summary_writer(
     transcript: str,
     sources: List[Union[WebSource, WebSourceCollection, str]],
-    conversation_config: dict = {},
+    conversation_config: ConversationConfig = ConversationConfig(),
 ) -> TranscriptSummary:
     print(
         f"transcript_summary_writer - Starting with transcript ({count_words(transcript)} words)"
@@ -390,9 +383,9 @@ def transcript_summary_writer(
             {
                 "transcript": transcript,
                 "subjects": subjects,
-                "podcast_name": conversation_config.get("podcast_name", ""),
-                "podcast_tagline": conversation_config.get("podcast_tagline", ""),
-                "output_language": conversation_config.get("output_language", ""),
+                "podcast_name": conversation_config.podcast_name,
+                "podcast_tagline": conversation_config.podcast_tagline,
+                "output_language": conversation_config.output_language,
             }
         )
 
@@ -435,7 +428,7 @@ def check_transcript_length(
                 # Try to extend on details from content and discussion of the topic. The transcript needs to be longer. The transcript is too short, write a longer version of it. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details.
             else:
                 length_instruction = "The transcript is too short. It should be slightly longer. Give feedback on how to extend the dialogue."
-            # conversation_config["user_instructions"] = (
+            # conversation_config.user_instructions = (
             #     f"{orig_user_instr} {length_instruction}."
             # )
         elif multiplier < 0.75:
@@ -459,7 +452,7 @@ def check_transcript_length(
 
 def generate_and_verify_transcript(
     # config: dict,
-    conversation_config: dict,
+    conversation_config: ConversationConfig = ConversationConfig(),
     content: str = None,
     source: WebSource | WebSourceCollection | str = None,
     urls: list = None,
@@ -483,7 +476,7 @@ def generate_and_verify_transcript(
         elif sources is not None:
             content = "\n\n".join(map(str, sources))
 
-    print(f"Generate transcript with: {conversation_config=}")
+    print(f"Generate transcript with: {repr(conversation_config)=}")
 
     main_item = False
     if source is not None and (
@@ -498,9 +491,7 @@ def generate_and_verify_transcript(
     transcript_content = orig_transcript_content
 
     word_count = (
-        int(conversation_config.get("word_count"))
-        * (1 if not main_item else 2)
-        // total_count
+        int(conversation_config.word_count) * (1 if not main_item else 2) // total_count
     )
 
     try:
@@ -522,7 +513,7 @@ def generate_and_verify_transcript(
 def transcript_combiner(
     transcripts: List[str],
     sources: List[WebSource | WebSourceCollection | str],
-    conversation_config: dict = {},
+    conversation_config: ConversationConfig = ConversationConfig(),
 ) -> str:
     combined_transcripts = []
     content = ""
@@ -582,17 +573,15 @@ def transcript_combiner(
             {
                 "content": content,
                 "transcript": orig_transcript,
-                "output_language": conversation_config.get("output_language", ""),
-                "conversation_style": conversation_config.get("conversation_style", ""),
-                "roles_person1": conversation_config.get("roles_person1", ""),
-                "roles_person2": conversation_config.get("roles_person2", ""),
-                "dialogue_structure": conversation_config.get("dialogue_structure", ""),
-                "engagement_techniques": conversation_config.get(
-                    "engagement_techniques", ""
-                ),
-                "user_instructions": conversation_config.get("user_instructions"),
-                "podcast_name": conversation_config.get("podcast_name", ""),
-                "podcast_tagline": conversation_config.get("podcast_tagline", ""),
+                "output_language": conversation_config.output_language,
+                "conversation_style": conversation_config.conversation_style,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "dialogue_structure": conversation_config.dialogue_structure,
+                "engagement_techniques": conversation_config.engagement_techniques,
+                "user_instructions": conversation_config.user_instructions,
+                "podcast_name": conversation_config.podcast_name,
+                "podcast_tagline": conversation_config.podcast_tagline,
                 "date": current_date,
                 "time": current_time,
             }
@@ -609,10 +598,10 @@ def transcript_combiner(
     print(f"Input ({count_words(orig_transcript)=})")
     print(f"Output ({count_words(transcript_content)=})")
 
-    word_count = conversation_config.get("word_count")
+    word_count = conversation_config.word_count
     word_count = (
         (word_count * article_count) // 2
-        if word_count is not None and conversation_config.get("longform", False)
+        if word_count is not None and conversation_config.longform
         else word_count
     )
 

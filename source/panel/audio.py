@@ -14,7 +14,11 @@ from source.models.supabase.panel import (
     PanelTranscript,
     PanelAudio,
 )
-from source.models.structures.panel import PanelRequestData, custom_config
+from source.models.structures.panel import (
+    PanelRequestData,
+    custom_config,
+    ConversationConfig,
+)
 
 
 def create_panel_audio(
@@ -44,23 +48,25 @@ def create_panel_audio(
     # Load base conversation_config from PanelTranscript metadata
     base_conversation_config = metadata.get("conversation_config", {})
     # Extend with conversation_config from request_data and apply custom_config defaults
-    conversation_config = {
-        **custom_config,
-        **base_conversation_config,
-        **(request_data.conversation_config or {}),
-    }
+    conversation_config = ConversationConfig(
+        **{
+            **custom_config,
+            **base_conversation_config,
+            **(request_data.conversation_config.model_dump() or {}),
+        }
+    )
 
     tts_model = request_data.tts_model or metadata.get("tts_model", "geminimulti")
 
     # Construct title
     default_voices = (
-        conversation_config.get("text_to_speech", {})
-        .get(tts_model, {})
-        .get("default_voices", {})
+        conversation_config.text_to_speech.get(tts_model, {}).get("default_voices", {})
+        if conversation_config.text_to_speech is not None
+        else {}
     )
     title_elements = [
         f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
-        conversation_config.get("output_language"),
+        conversation_config.output_language,
         f"TTS Model: {tts_model}",
         (
             f"Voices: {default_voices.get('question')} (Q), {default_voices.get('answer')} (A)"
@@ -84,7 +90,10 @@ def create_panel_audio(
         title=title,
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
-        metadata={"conversation_config": conversation_config, "tts_model": tts_model},
+        metadata={
+            "conversation_config": conversation_config.model_dump(),
+            "tts_model": tts_model,
+        },
         is_public=True,
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
@@ -101,7 +110,7 @@ def create_panel_audio(
         audio_file: str = generate_podcast(
             transcript_file=transcript_file,
             tts_model=tts_model,
-            conversation_config=conversation_config,
+            conversation_config=conversation_config.model_dump(),
         )
     except Exception as e:
         print(f"Error during audio generation: {e}")
@@ -112,7 +121,7 @@ def create_panel_audio(
             audio_file: str = generate_podcast(
                 transcript_file=transcript_file,
                 tts_model=tts_model,
-                conversation_config=conversation_config,
+                conversation_config=conversation_config.model_dump(),
             )
         except Exception as e:
             print(f"Error during second attempt of audio generation: {e}")

@@ -19,6 +19,20 @@ from source.prompts.base import (
 # https://smith.langchain.com/hub/heurekalabs/podcastfy_multimodal_cleanmarkup_middle?organizationId=de27563a-abea-51c1-93ae-bc32bd8606e9
 # https://smith.langchain.com/hub/heurekalabs/podcastfy_multimodal_cleanmarkup_ending?organizationId=de27563a-abea-51c1-93ae-bc32bd8606e9
 
+ROLES_PERSON_INSTRUCT = """
+        When generating dialogue or content, use the roles defined in `Person N role` to shape the tone, style, and perspective of each speaker. Each role provides the following attributes:
+        - **Name**: The speaker's name, which should be used to personalize the dialogue.
+        - **Persona**: The speaker's personality traits or characteristics, which should influence their tone and style of speech.
+        - **Role**: The speaker's functional or thematic role in the conversation, which should guide the content and focus of their contributions.
+
+        Ensure that:
+        1. The dialogue reflects the unique persona and role of each speaker.
+        2. Person 1 references Person 2 by their Name, and Person 2 references Person 1 by their Name.
+        3. Both speakers address the audience as "you."
+        4. The content aligns with the specified conversation style and engagement techniques.
+        5. The roles are consistently applied throughout the conversation to maintain coherence and authenticity.
+        """
+
 
 class TranscriptParser(BaseOutputParser[str]):
     """Custom parser to process and validate podcast transcripts."""
@@ -156,6 +170,8 @@ verify_transcript_quality = PromptFormatter(
         - Do not use <reflection>-tags outside of <think>-tags
         - Place your reasoning always within <output>-tags.
         - Do not just reply with 'no'
+
+        {ROLES_PERSON_INSTRUCT}
 
         Allow for:
         - Long transcript. Do not critisize long transcripts as long as the conversation is natural.
@@ -421,6 +437,8 @@ transcript_combiner = PromptFormatter(
         - Add transitions to ensure the combined transcript feels seamless.
         - Maintain the language, tone, and style specified by the user.
 
+        {ROLES_PERSON_INSTRUCT}
+
         FORMAT:
         {transcript_template["format"]}
 
@@ -465,6 +483,7 @@ transcript_rewriter = PromptFormatter(
         INSTRUCTION:
         {transcript_template["instructions"]["rewriter"]}
         {transcript_template["length"]["maintain"]}
+        {ROLES_PERSON_INSTRUCT}
 
         FORMAT:
         {transcript_template["format"]}
@@ -518,6 +537,7 @@ transcript_rewriter_extend = PromptFormatter(
         INSTRUCTION:
         {transcript_template["instructions"]["rewriter"]}
         {transcript_template["length"]["extend"]}
+        {ROLES_PERSON_INSTRUCT}
 
         FORMAT:
         {transcript_template["format"]}
@@ -649,6 +669,7 @@ transcript_writer = PromptFormatter(
         - Add interruptions, interjections, and reactions to simulate a real conversation.
         - Maintain the language, tone, and style specified by the user.
 
+        {ROLES_PERSON_INSTRUCT}
 
         FORMAT:
         {transcript_template["format"]}
@@ -827,6 +848,8 @@ transcript_bridge_writer = PromptFormatter(
         - You need to only write a bridge for Transcript 1 and Transcript 2 so that there's a natural transition between the topics.
         - Try to keep the bridge short. Do not write more than 6 dialogue items.
 
+        {ROLES_PERSON_INSTRUCT}
+
         FORMAT:
         {transcript_template["format"]}
 
@@ -952,6 +975,8 @@ transcript_intro_writer = PromptFormatter(
         - Avoid repetitive phrases and ensure the dialogue flows naturally.
         - Incorporate engagement techniques to make the introduction dynamic and captivating.
 
+        {ROLES_PERSON_INSTRUCT}
+
         FORMAT:
         {transcript_template["format"]}
 
@@ -1052,6 +1077,8 @@ transcript_conclusion_writer = PromptFormatter(
         - Use advanced TTS-specific markup to enhance the naturalness of the conversation.
         - Avoid repetitive phrases and ensure the dialogue flows naturally.
         - Incorporate engagement techniques to make the conclusion dynamic and captivating.
+
+        {ROLES_PERSON_INSTRUCT}
 
         FORMAT:
         {transcript_template["format"]}

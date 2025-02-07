@@ -56,6 +56,8 @@ PRE_THINK_INSTRUCT = """
         Reason through the query inside <think> tags, and then provide your final response inside <output> tags.
         If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.
         """
+
+
 PRE_THINK_TAGS = ["think", "reflection"]
 
 ACTOR_INTRODUCTIONS = (

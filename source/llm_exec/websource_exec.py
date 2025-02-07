@@ -82,15 +82,6 @@ def group_rss_items(
             source for source in web_sources if str(source.get_sorting_id()) in group
         ]
 
-        # for source in filtered_sources:
-        #     if source.categories is None or len(source.categories) == 0:
-        #         source_item = next(
-        #             (item for item in group if str(source.get_sorting_id()) == item.id),
-        #             None,
-        #         )
-        #         if source_item is not None:
-        #             source.categories = source_item.categories
-
         source_ids -= {str(source.get_sorting_id()) for source in filtered_sources}
         coll = WebSourceCollection(
             filtered_sources,
@@ -99,6 +90,7 @@ def group_rss_items(
                 if (len(grouping.ordered_group_titles) > i)
                 else f"Group {i}"
             ),
+            max_amount=5,
         )
         if i == main_item:
             coll.main_item = True

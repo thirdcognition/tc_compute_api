@@ -9,7 +9,11 @@ from app.core.supabase import get_sync_supabase_client
 from source.models.data.web_source import WebSource
 from source.models.structures.web_source_structure import WebSourceCollection
 from source.models.supabase.panel import ProcessState, PanelDiscussion, PanelTranscript
-from source.models.structures.panel import PanelRequestData, custom_config
+from source.models.structures.panel import (
+    PanelRequestData,
+    custom_config,
+    ConversationConfig,
+)
 
 from source.helpers.sources import (
     fetch_links,
@@ -33,17 +37,19 @@ def initialize_supabase_client(
 
 def fetch_panel_metadata_and_config(
     supabase_client: Client, panel_id: UUID, request_data: PanelRequestData
-) -> Tuple[dict, dict, PanelDiscussion]:
+) -> Tuple[ConversationConfig, dict, PanelDiscussion]:
     panel = PanelDiscussion.fetch_from_supabase_sync(supabase_client, panel_id)
     metadata = panel.metadata or {}
     base_conversation_config = metadata.get("conversation_config", {})
-    conversation_config = {
-        **custom_config,
-        **base_conversation_config,
-        **(request_data.conversation_config or {}),
-    }
-    conversation_config["output_language"] = (
-        conversation_config["output_language"] or "English"
+    conversation_config = ConversationConfig(
+        **{
+            **custom_config,
+            **base_conversation_config,
+            **(request_data.conversation_config.model_dump() or {}),
+        }
+    )
+    conversation_config.output_language = (
+        conversation_config.output_language or "English"
     )
     return conversation_config, metadata, panel
 
@@ -68,40 +74,42 @@ def fetch_links_and_process_articles(
 
 
 def construct_transcript_title(
-    panel: PanelDiscussion, conversation_config: dict, request_data: PanelRequestData
+    panel: PanelDiscussion,
+    conversation_config: ConversationConfig,
+    request_data: PanelRequestData,
 ) -> str:
     title_elements = [
         f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
-        conversation_config.get("output_language"),
+        conversation_config.output_language,
         (
-            f"{conversation_config.get('word_count')} words"
-            if conversation_config.get("word_count")
+            f"{conversation_config.word_count} words"
+            if conversation_config.word_count
             else None
         ),
         (
-            f"Creativity: {conversation_config.get('creativity')}"
-            if conversation_config.get("creativity")
+            f"Creativity: {conversation_config.creativity}"
+            if conversation_config.creativity
             else None
         ),
         (
-            f"Roles: {conversation_config.get('roles_person1')}, {conversation_config.get('roles_person2')}"
-            if conversation_config.get("roles_person1")
-            and conversation_config.get("roles_person2")
+            f"Roles: {str(conversation_config.roles_person1)}, {str(conversation_config.roles_person2)}"
+            if str(conversation_config.roles_person1)
+            and str(conversation_config.roles_person2)
             else None
         ),
         (
-            f"Structure: {', '.join(conversation_config.get('dialogue_structure', []))}"
-            if conversation_config.get("dialogue_structure")
+            f"Structure: {', '.join(conversation_config.dialogue_structure)}"
+            if conversation_config.dialogue_structure
             else None
         ),
         (
-            f"Techniques: {', '.join(conversation_config.get('engagement_techniques', []))}"
-            if conversation_config.get("engagement_techniques")
+            f"Techniques: {', '.join(conversation_config.engagement_techniques)}"
+            if conversation_config.engagement_techniques
             else None
         ),
         (
-            f"[{', '.join(conversation_config.get('conversation_style', []))}]"
-            if conversation_config.get("conversation_style")
+            f"[{', '.join(conversation_config.conversation_style)}]"
+            if conversation_config.conversation_style
             else None
         ),
     ]
@@ -115,7 +123,7 @@ def create_and_update_panel_transcript(
     supabase_client: Client,
     request_data: PanelRequestData,
     title: str,
-    conversation_config: dict,
+    conversation_config: ConversationConfig,
     longform: bool,
 ) -> PanelTranscript:
     panel_transcript = PanelTranscript(
@@ -126,7 +134,7 @@ def create_and_update_panel_transcript(
         type="segment",
         metadata={
             "longform": longform,
-            "conversation_config": conversation_config,
+            "conversation_config": conversation_config.model_dump(),
         },
         generation_cronjob=request_data.cronjob,
         generation_parent=request_data.transcript_parent_id,
@@ -139,7 +147,7 @@ def create_and_update_panel_transcript(
 
 
 def generate_transcripts(
-    conversation_config: dict,
+    conversation_config: ConversationConfig,
     input_text: str,
     sources: List[WebSourceCollection],
     longform: bool,
@@ -224,49 +232,50 @@ def create_panel_transcript(
         supabase_client, request_data.panel_id, request_data
     )
 
-    user_ids = (
-        UserIDs(
-            user_id=request_data.owner_id, organization_id=request_data.organization_id
-        )
-        if request_data.organization_id
-        else None
-    )
-
-    sources = manage_news_sources(request_data, metadata)
-
-    if request_data.input_source:
-        sources.extend(
-            request_data.input_source
-            if isinstance(request_data.input_source, list)
-            else [request_data.input_source]
-        )
-    if metadata.get("urls"):
-        sources.extend(
-            metadata["urls"]
-            if isinstance(metadata["urls"], list)
-            else [metadata["urls"]]
-        )
-
-    ordered_groups = fetch_links_and_process_articles(
-        supabase_client,
-        sources,
-        user_ids,
-        guidance=request_data.news_guidance,
-        max_items=request_data.news_items,
-    )
     title = construct_transcript_title(panel, conversation_config, request_data)
     panel_transcript = create_and_update_panel_transcript(
         supabase_client, request_data, title, conversation_config, request_data.longform
     )
-
-    for item in ordered_groups:
-        item.create_panel_transcript_source_reference_sync(
-            supabase_client, panel_transcript
+    try:
+        user_ids = (
+            UserIDs(
+                user_id=request_data.owner_id,
+                organization_id=request_data.organization_id,
+            )
+            if request_data.organization_id
+            else None
         )
 
-    # ordered_groups = group_web_sources(web_sources)
+        sources = manage_news_sources(request_data, metadata)
 
-    try:
+        if request_data.input_source:
+            sources.extend(
+                request_data.input_source
+                if isinstance(request_data.input_source, list)
+                else [request_data.input_source]
+            )
+        if metadata.get("urls"):
+            sources.extend(
+                metadata["urls"]
+                if isinstance(metadata["urls"], list)
+                else [metadata["urls"]]
+            )
+
+        ordered_groups = fetch_links_and_process_articles(
+            supabase_client,
+            sources,
+            user_ids,
+            guidance=request_data.news_guidance,
+            max_items=request_data.news_items,
+        )
+
+        for item in ordered_groups:
+            item.create_panel_transcript_source_reference_sync(
+                supabase_client, panel_transcript
+            )
+
+        # ordered_groups = group_web_sources(web_sources)
+
         all_transcripts, combined_sources = generate_transcripts(
             conversation_config,
             (
