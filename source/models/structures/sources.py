@@ -64,7 +64,7 @@ class YleLanguage(str, Enum):
 
 
 class YleNewsConfig(BaseModel):
-    feed_type: YleFeedType
+    feed_type: Optional[YleFeedType] = None
     type: Optional[YleFeedType] = None
     articles: Optional[int] = None
     topics: Optional[List[str]] = None
