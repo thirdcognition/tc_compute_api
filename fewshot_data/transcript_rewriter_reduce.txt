@@ -1,0 +1,73 @@
+EXAMPLE 1:
+Input:
+<Person1>I went to the store earlier...</Person1>
+<Person2>Oh? What for?</Person2>
+<Person1>Just to pick up some apples.</Person1>
+<Person2>What kind of apples did you buy?</Person2>
+<Person1>Granny Smith. They’re my favorite for baking pies.</Person1>
+<Person2>Good choice. They’re perfect for that.</Person2>
+
+Output:
+<Person1>I went to the store and bought some apples.</Person1>
+<Person2>Granny Smith, for pies.</Person2>
+
+EXAMPLE 2:
+Input:
+<Person1>What kind of cheese do you like?</Person1>
+<Person2>I really like</Person2>
+<Person1>Wait, let me guess. Edam?</Person1>
+<Person2>Yes! How did you know?</Person2>
+<Person1>It’s a classic. I love it too, especially with crackers.</Person1>
+<Person2>Exactly! It’s simple but so good.</Person2>
+
+Output:
+<Person1>What kind of cheese do you like?</Person1>
+<Person2>Edam, it’s simple and good.</Person2>
+
+EXAMPLE 3:
+Input:
+<Person1>Have you ever been to Paris?</Person1>
+<Person2>No, but I’d love to visit someday.</Person2>
+<Person1>It’s amazing. The Eiffel Tower is breathtaking.</Person1>
+<Person2>I can only imagine. Did you go to the top?</Person2>
+<Person1>Yes, and the view was incredible. You can see the whole city.</Person1>
+<Person2>That sounds unforgettable. I hope I can experience it one day.</Person2>
+
+Output:
+<Person1>Have you ever been to Paris?</Person1>
+<Person2>No, but I’d love to visit.</Person2>
+
+EXAMPLE 4:
+Input:
+<Person1>Do you enjoy hiking?</Person1>
+<Person2>Yes, especially in the mountains.</Person2>
+<Person1>Same here! The views are always worth the effort.</Person1>
+<Person2>Absolutely. I recently hiked a trail with a waterfall at the end.</Person2>
+<Person1>That sounds amazing. I love trails with waterfalls.</Person1>
+<Person2>It was. The sound of the water was so calming after the hike.</Person2>
+
+Output:
+<Person1>Do you enjoy hiking?</Person1>
+<Person2>Yes, especially mountain trails.</Person2>
+
+EXAMPLE 5:
+Input:
+<Person1>I went to the store earlier...</Person1>
+<Person2>Oh? What for?</Person2>
+<Person1>Just to pick up some apples.</Person1>
+<Person2>What kind of apples did you buy?</Person2>
+
+Output:
+<Person1>I went to the store and bought some apples.</Person1>
+<Person2>Granny Smith, for pies.</Person2>
+
+EXAMPLE 6:
+Input:
+<Person1>Do you enjoy hiking?</Person1>
+<Person2>Yes, especially in the mountains.</Person2>
+<Person1>Same here! The views are always worth the effort.</Person1>
+<Person2>Absolutely. I recently hiked a trail with a waterfall at the end.</Person2>
+
+Output:
+<Person1>Do you enjoy hiking?</Person1>
+<Person2>Yes, especially mountain trails.</Person2>

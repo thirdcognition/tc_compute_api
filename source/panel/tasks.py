@@ -11,9 +11,11 @@ from source.panel.panel import create_panel
 from source.panel.transcript import create_panel_transcript
 from source.panel.audio import create_panel_audio
 from source.helpers.communication import send_email_about_new_shows_task
-from source.models.structures.panel import PanelRequestData
+from source.models.structures.panel import (
+    PanelRequestData,
+    ConversationConfig,
+)
 from source.models.supabase.panel import PanelTranscript, PanelDiscussion, PanelAudio
-from source.models.structures.panel import custom_config
 
 
 @celery_app.task
@@ -183,10 +185,16 @@ def process_transcript_generation(tokens, transcript, panel, metadata, supabase_
     audio_metadata = (audio.metadata or {}) if audio is not None else {}
 
     # Separate and extend conversation_config
-    conversation_config: dict = metadata.get("conversation_config", {})
-    conversation_config.update(transcript_metadata.get("conversation_config", {}))
+    conversation_config_data = metadata.get("conversation_config", {})
+    conversation_config = ConversationConfig.model_validate(conversation_config_data)
+
+    # Extend conversation_config with transcript_metadata
+    conversation_config = conversation_config.model_copy(
+        update=transcript_metadata.get("conversation_config", {})
+    )
+
     metadata.update(transcript_metadata)
-    metadata["conversation_config"] = conversation_config
+    metadata["conversation_config"] = conversation_config.model_dump()
 
     new_transcript_data = PanelRequestData(
         title=panel.title,
@@ -194,7 +202,7 @@ def process_transcript_generation(tokens, transcript, panel, metadata, supabase_
         input_text=metadata.get("input_text", ""),
         longform=metadata.get("longform", False),
         bucket_name=metadata.get("bucket_name", "public_panels"),
-        conversation_config=metadata.get("conversation_config", custom_config),
+        conversation_config=conversation_config,
         panel_id=panel.id,
         google_news=metadata.get("google_news", None),
         yle_news=metadata.get("yle_news", None),
@@ -214,8 +222,10 @@ def process_transcript_generation(tokens, transcript, panel, metadata, supabase_
         )
 
     metadata.update(audio_metadata)
-    conversation_config.update(audio_metadata.get("conversation_config", {}))
-    metadata["conversation_config"] = conversation_config
+    conversation_config = conversation_config.model_copy(
+        update=audio_metadata.get("conversation_config", {})
+    )
+    metadata["conversation_config"] = conversation_config.model_dump()
     new_transcript_data.tts_model = audio_metadata.get("tts_model", "gemini")
 
     new_transcript_data.transcript_id = transcript_id

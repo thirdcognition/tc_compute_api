@@ -20,6 +20,7 @@ def verify_transcript_quality(
     conversation_config: ConversationConfig = ConversationConfig(),
     main_item: bool = False,
     length_instructions: str = "",
+    previous_episodes: str = None,
 ) -> tuple[bool, str]:
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d")
@@ -42,6 +43,9 @@ def verify_transcript_quality(
                 else "False"
             ),
             "transcript_length": length_instructions,
+            "previous_episodes": (
+                previous_episodes if previous_episodes is not None else ""
+            ),
             "date": current_date,
             "time": current_time,
         }
@@ -67,6 +71,8 @@ def transcript_rewriter(
     word_count: int = 300,
     max_retries: int = 3,
     main_item: bool = False,
+    orig_combined_transcript=None,
+    previous_episodes: str = None,
 ):
     guidance = ""
     retry_count = 0
@@ -74,6 +80,12 @@ def transcript_rewriter(
     change_length = True
 
     transcript_content = orig_transcript
+
+    previous_transcripts = (
+        ""
+        if orig_combined_transcript is None
+        else "Original transcript:\n" + orig_combined_transcript
+    )
 
     while (not check_passed or change_length) and retry_count < max_retries:
         change_length = False
@@ -94,6 +106,7 @@ def transcript_rewriter(
             length_instructions=(
                 length_instructions if change_length else "Transcript length is good."
             ),
+            previous_episodes=previous_episodes,
         )
 
         if not check_passed or change_length:
@@ -112,11 +125,8 @@ def transcript_rewriter(
                     content=content,
                     feedback=feedback,
                     conversation_config=conversation_config,
-                    previous_transcript=(
-                        orig_transcript
-                        if transcript_content is not orig_transcript
-                        else ""
-                    ),
+                    previous_transcripts=previous_transcripts,
+                    previous_episodes=previous_episodes,
                     chain=(
                         "transcript_rewriter"
                         if change_length_int == 0
@@ -126,6 +136,10 @@ def transcript_rewriter(
                             else "transcript_rewriter_reduce"
                         )
                     ),
+                )
+                previous_transcripts += (
+                    f"\n\n{'Retry ' + str(retry_count) if retry_count > 0 else 'First version'}:\n"
+                    f"Input:\n{prev_content}\n\nIssues:\n{guidance}"
                 )
             except ValueError as e:
                 print(f"Error during transcript rewrite: {e}")
@@ -150,7 +164,8 @@ def _transcript_rewriter(
     content: str,
     feedback: str,
     conversation_config: ConversationConfig = ConversationConfig(),
-    previous_transcript="",
+    previous_transcripts="",
+    previous_episodes: str = None,
     chain: str = "transcript_rewriter",
     main_item: bool = False,
 ) -> bool:
@@ -173,7 +188,10 @@ def _transcript_rewriter(
                 "engagement_techniques": conversation_config.engagement_techniques,
                 "user_instructions": conversation_config.user_instructions,
                 "feedback": feedback,
-                "previous_transcript": previous_transcript,
+                "previous_transcripts": previous_transcripts,
+                "previous_episodes": (
+                    previous_episodes if previous_episodes is not None else ""
+                ),
                 "podcast_name": conversation_config.podcast_name,
                 "podcast_tagline": conversation_config.podcast_tagline,
                 "main_item": (
@@ -198,6 +216,8 @@ def transcript_writer(
     content: str,
     conversation_config: ConversationConfig = ConversationConfig(),
     main_item=False,
+    previous_transcripts: List[str] = None,
+    previous_episodes: str = None,
 ) -> bool:
     print(
         f"transcript_writer - Starting with content ({count_words(content)}), conversation_config={conversation_config}"
@@ -228,6 +248,14 @@ def transcript_writer(
                 ),
                 "date": current_date,
                 "time": current_time,
+                "previous_transcripts": (
+                    ""
+                    if previous_transcripts is None
+                    else "\n\n".join(previous_transcripts)
+                ),
+                "previous_episodes": (
+                    previous_episodes if previous_episodes is not None else ""
+                ),
             }
         )
 
@@ -281,6 +309,7 @@ def transcript_bridge_writer(
 def transcript_intro_writer(
     content: str,
     conversation_config: ConversationConfig = ConversationConfig(),
+    previous_episodes: str = None,
 ) -> bool:
     print(
         f"transcript_intro_writer - Starting with content ({count_words(content)}), conversation_config={conversation_config}"
@@ -304,6 +333,9 @@ def transcript_intro_writer(
                 "user_instructions": conversation_config.user_instructions,
                 "podcast_name": conversation_config.podcast_name,
                 "podcast_tagline": conversation_config.podcast_tagline,
+                "previous_episodes": (
+                    previous_episodes if previous_episodes is not None else ""
+                ),
                 "date": current_date,
                 "time": current_time,
             }
@@ -458,6 +490,8 @@ def generate_and_verify_transcript(
     urls: list = None,
     total_count=1,
     sources: List[WebSource | WebSourceCollection | str] = None,
+    previous_transcripts: List[str] = None,
+    previous_episodes: str = None,
 ) -> str:
     """
     Generate a podcast transcript and verify its quality.
@@ -484,7 +518,13 @@ def generate_and_verify_transcript(
     ):
         main_item = source.main_item
 
-    orig_transcript_content = transcript_writer(content, conversation_config, main_item)
+    orig_transcript_content = transcript_writer(
+        content,
+        conversation_config,
+        main_item,
+        previous_transcripts,
+        previous_episodes=previous_episodes,
+    )
 
     # print(f"Resulting initial transcript: {orig_transcript_content=}")
 
@@ -502,6 +542,7 @@ def generate_and_verify_transcript(
             word_count=word_count,
             max_retries=6 if total_count == 1 else 4,
             main_item=False,
+            previous_episodes=previous_episodes,
         )
     except Exception as e:
         print(f"Failed to rewrite the transcript: {e}")
@@ -514,6 +555,7 @@ def transcript_combiner(
     transcripts: List[str],
     sources: List[WebSource | WebSourceCollection | str],
     conversation_config: ConversationConfig = ConversationConfig(),
+    previous_episodes: str = None,
 ) -> str:
     combined_transcripts = []
     content = ""
@@ -584,8 +626,36 @@ def transcript_combiner(
                 "podcast_tagline": conversation_config.podcast_tagline,
                 "date": current_date,
                 "time": current_time,
+                "previous_episodes": (
+                    previous_episodes if previous_episodes is not None else ""
+                ),
             }
         )
+
+        if len(transcript_content) < (len(orig_transcript) // 2):
+            print(
+                f"Transcript shortened too much ({len(orig_transcript)} to {len(transcript_content)}), retry combiner."
+            )
+            transcript_content = get_chain("transcript_combiner").invoke(
+                {
+                    "content": content,
+                    "transcript": orig_transcript,
+                    "output_language": conversation_config.output_language,
+                    "conversation_style": conversation_config.conversation_style,
+                    "roles_person1": str(conversation_config.roles_person1),
+                    "roles_person2": str(conversation_config.roles_person2),
+                    "dialogue_structure": conversation_config.dialogue_structure,
+                    "engagement_techniques": conversation_config.engagement_techniques,
+                    "user_instructions": conversation_config.user_instructions,
+                    "podcast_name": conversation_config.podcast_name,
+                    "podcast_tagline": conversation_config.podcast_tagline,
+                    "date": current_date,
+                    "time": current_time,
+                    "previous_episodes": (
+                        previous_episodes if previous_episodes is not None else ""
+                    ),
+                }
+            )
 
         if isinstance(transcript_content, BaseMessage):
             raise ValueError("Generation failed: Received a BaseMessage.")
@@ -613,6 +683,8 @@ def transcript_combiner(
             word_count=word_count,
             max_retries=6,
             main_item=False,
+            orig_combined_transcript=orig_transcript,
+            previous_episodes=previous_episodes,
         )
     except Exception as e:
         print(f"Failed to rewrite the transcript: {e}")

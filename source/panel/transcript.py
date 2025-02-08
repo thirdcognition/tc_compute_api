@@ -151,6 +151,7 @@ def generate_transcripts(
     input_text: str,
     sources: List[WebSourceCollection],
     longform: bool,
+    previous_episodes: str = None,
 ) -> Tuple[List[str], str]:
     all_transcripts = []
     combined_sources = []
@@ -164,6 +165,7 @@ def generate_transcripts(
                     content=input_text,
                     urls=[],
                     total_count=total_count,
+                    previous_episodes=previous_episodes,
                 )
                 combined_sources.append(input_text)
                 all_transcripts.append(transcript)
@@ -179,6 +181,8 @@ def generate_transcripts(
                     source=source_collection,
                     urls=[],
                     total_count=total_count,
+                    previous_transcripts=all_transcripts,
+                    previous_episodes=previous_episodes,
                 )
                 all_transcripts.append(transcript)
                 combined_sources.append(source_collection)
@@ -195,6 +199,7 @@ def generate_transcripts(
                 sources=combined_sources,
                 urls=[],
                 total_count=1,
+                previous_episodes=previous_episodes,
             )
         ]
         # except ValueError as e:
@@ -276,6 +281,18 @@ def create_panel_transcript(
 
         # ordered_groups = group_web_sources(web_sources)
 
+        previous_transcripts_with_content = load_last_transcripts_with_content(
+            supabase_client, request_data.panel_id, 5
+        )
+
+        previous_episodes = ""
+
+        for transcript, content in previous_transcripts_with_content:
+            previous_episodes = f"Episode {transcript.created_at.strftime('%Y-%m-%d %H:%M:%S')}:\nTitle: {transcript.title}\nTranscript:\n{content}\n\n"
+            print(
+                f"Episode {transcript.created_at.strftime('%Y-%m-%d %H:%M:%S')}:\nTitle: {transcript.title}"
+            )
+
         all_transcripts, combined_sources = generate_transcripts(
             conversation_config,
             (
@@ -285,11 +302,15 @@ def create_panel_transcript(
             ),
             ordered_groups,
             request_data.longform,
+            previous_episodes=previous_episodes,
         )
         if len(combined_sources) > 1:
             try:
                 final_transcript = transcript_combiner(
-                    all_transcripts, combined_sources, conversation_config
+                    all_transcripts,
+                    combined_sources,
+                    conversation_config,
+                    previous_episodes=previous_episodes,
                 )
             except ValueError as e:
                 print(f"Skipping transcript combination due to error: {e}")
@@ -329,3 +350,51 @@ def create_panel_transcript(
         raise RuntimeError("Failed to generate podcast transcript") from e
 
     return panel_transcript.id
+
+
+def load_last_transcripts_with_content(
+    supabase_client: Client, panel_id: UUID, num_transcripts: int
+) -> List[Tuple[PanelTranscript, str]]:
+    """
+    Load the last N transcripts for a given panelId from Supabase, including their content.
+
+    Args:
+        supabase_client (Client): The Supabase client instance.
+        panel_id (UUID): The ID of the panel.
+        num_transcripts (int): The number of transcripts to fetch.
+
+    Returns:
+        List[Tuple[PanelTranscript, str]]: A list of tuples, each containing a transcript object and its content.
+    """
+    # Fetch transcripts for the given panel_id
+    transcripts = PanelTranscript.fetch_existing_from_supabase_sync(
+        supabase_client,
+        filter={"panel_id": str(panel_id)},
+    )
+
+    # Sort by updated_at in descending order and limit to num_transcripts
+    transcripts = [t for t in transcripts if t.process_state == ProcessState.done]
+    transcripts.sort(key=lambda t: t.updated_at, reverse=True)
+    transcripts = transcripts[:num_transcripts]
+
+    # Load content from Supabase storage for each transcript
+    transcript_tuples = []
+    for transcript in transcripts:
+        bucket_name = transcript.bucket_id
+        file_path = transcript.file
+
+        # Download the file content from Supabase storage
+        try:
+            print(
+                f"Load transcript: {transcript.title}, from {bucket_name} with name {file_path}"
+            )
+            response = supabase_client.storage.from_(bucket_name).download(file_path)
+            transcript_content = response.decode("utf-8")  # Decode the content
+        except Exception as e:
+            print(f"Failed to load transcript {transcript.title} because {repr(e)}")
+            continue
+
+        # Append the tuple (transcript, content) to the result list
+        transcript_tuples.append((transcript, transcript_content))
+
+    return transcript_tuples

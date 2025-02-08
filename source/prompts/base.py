@@ -22,6 +22,8 @@ from source.helpers.shared import pretty_print
 
 import re
 
+from source.models.config.default_env import DEBUGMODE
+
 
 def clean_tags(text: str, tags: list[str]) -> str:
     """
@@ -44,6 +46,14 @@ def clean_tags(text: str, tags: list[str]) -> str:
         close_tags = len(re.findall(rf"</{tag}>", text, flags=re.IGNORECASE))
         if open_tags != close_tags:
             raise OutputParserException(f"Unclosed <{tag}> tags detected in the text.")
+
+        if DEBUGMODE:
+            # Capture and print the content being removed
+            matches = re.findall(
+                rf"<{tag}.*?>.*?</{tag}>", text, flags=re.DOTALL | re.IGNORECASE
+            )
+            for match in matches:
+                print(f"Removed content: {match}")
 
         # Remove properly closed tags and their content
         text = re.sub(

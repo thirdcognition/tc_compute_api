@@ -17,6 +17,23 @@ if LOG_LEVEL == "DEBUG":
     LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG")
 
 
+def wrap_with_indentation_preserved(message, width=84):
+    # Split the text into lines so we can process each one
+    lines = message.splitlines()
+    wrapped_lines = []
+
+    for line in lines:
+        # Determine the leading whitespace of the line
+        leading_spaces = len(line) - len(line.lstrip())
+        indent = " " * leading_spaces
+
+        # Wrap the line, ensuring subsequent lines match its indentation
+        wrapped = textwrap.wrap(line.strip(), width=width, subsequent_indent=indent)
+        wrapped_lines.extend(wrapped)
+
+    return wrapped_lines
+
+
 class ColoredFormatter(logging.Formatter):
     COLORS = {
         "DEBUG": "\033[94m",  # Blue
@@ -63,7 +80,9 @@ class ColoredFormatter(logging.Formatter):
         if len(record.message) > 84:
             separator_index = formatted_message.rindex("|") - 9
             indent = " " * min(separator_index, 30)
-            wrapped_lines = textwrap.wrap(record.message, width=84)
+            wrapped_lines = wrap_with_indentation_preserved(
+                record.message.replace("\\n", "\n"), width=84
+            )
 
             whitespace = (
                 record.message[: (len(record.message) - len(record.message.lstrip()))]

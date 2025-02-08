@@ -29,7 +29,7 @@ class HostProfile(BaseModel):
     role: str = ""
 
     def to_string(self) -> str:
-        return f"Name: {self.name}, Persona: {self.persona}, Role: {self.role}"
+        return f"Name: {self.name}, Role: {self.role}, Persona: {self.persona}"
 
 
 class ConversationConfig(BaseModel):

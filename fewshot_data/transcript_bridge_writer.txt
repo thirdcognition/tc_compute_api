@@ -1,0 +1,71 @@
+EXAMPLE 1:
+Input:
+Transcript 1:
+<Person1>Did you see the latest episode of that new show? It’s all over social media.</Person1>
+<Person2>Oh, I did! Can you believe those plot twists? I was completely blindsided.</Person2>
+
+Transcript 2:
+<Person1>Apparently, researchers are saying AI might soon outpace humans in some areas.</Person1>
+<Person2>That’s wild. Exciting, sure, but also kind of unsettling, don’t you think?</Person2>
+
+Output:
+<Person1>Storytelling, whether in movies or TV, has such a powerful way of drawing people in, don’t you think?</Person1>
+<Person2>Completely agree. And now AI is starting to change how stories are created, which is fascinating.</Person2>
+<Person1>Oh, like those AI-generated scripts? That’s such a wild concept to wrap your head around.</Person1>
+<Person2>It really is. Makes you wonder how much of the creative process will stay human in the future.</Person2>
+<Person1>Feels like we’re living in a time where technology is rewriting the rules of creativity.</Person1>
+<Person2>And the pace of change is so fast, keeping up can feel like a challenge in itself.</Person2>
+
+EXAMPLE 2:
+Input:
+Transcript 1:
+<Person1>The art exhibit this weekend was something else. So many unique pieces on display.</Person1>
+<Person2>Absolutely. It’s inspiring to see such talent right here in our community.</Person2>
+
+Transcript 2:
+<Person1>There’s been a lot of buzz about renewable energy policies lately. Have you been following it?</Person1>
+<Person2>Yeah, it’s a big deal. The choices we make now could really shape the future.</Person2>
+
+Output:
+<Person1>Art has such a unique way of bringing people together, doesn’t it?</Person1>
+<Person2>Absolutely. And creativity like that can inspire change on a much larger scale.</Person2>
+<Person1>Take renewable energy, for example. Solving those challenges requires just as much innovation.</Person1>
+<Person2>That’s so true. And it’s not just about technology—it’s about people working together to make it happen.</Person2>
+<Person1>Events like the art exhibit remind us how powerful collaboration can be, whether it’s local or global.</Person1>
+<Person2>Everything is connected in some way, and that’s what makes these efforts so impactful.</Person2>
+
+EXAMPLE 3:
+Input:
+Transcript 1:
+<Person1>The new smartphone is impressive. That camera is next-level.</Person1>
+<Person2>Totally. And finally, a battery that doesn’t die halfway through the day!</Person2>
+
+Transcript 2:
+<Person1>By the way, did you know this year marks a century since a major historical event?</Person1>
+<Person2>Really? That’s incredible. It’s amazing to reflect on how much has changed since then.</Person2>
+
+Output:
+<Person1>Technology has come so far in just a few decades. The progress is mind-blowing.</Person1>
+<Person2>It really is. Looking back at history, you realize how much has changed over the years.</Person2>
+<Person1>Speaking of history, this year marks the 100th anniversary of a major event. Did you know that?</Person1>
+<Person2>I did, and reflecting on those milestones really shows how they’ve shaped the present.</Person2>
+<Person1>Progress always builds on the achievements of the past, doesn’t it?</Person1>
+<Person2>Every step forward is part of a much larger journey, and that’s what makes it so meaningful.</Person2>
+
+EXAMPLE 4:
+Input:
+Transcript 1:
+<Person1>Space exploration is getting so much attention lately. It’s like we’re in a new space race.</Person1>
+<Person2>Yeah, but this time it’s private companies leading the charge. It’s a whole new ballgame.</Person2>
+
+Transcript 2:
+<Person1>There’s been a lot of focus on mental health awareness campaigns recently. It’s great to see.</Person1>
+<Person2>It really is. It’s such an important issue, and it’s about time it got the attention it deserves.</Person2>
+
+Output:
+<Person1>Space exploration feels like it’s entering a whole new chapter. The progress is incredible.</Person1>
+<Person2>And it’s not just governments anymore. Private companies are pushing boundaries like never before.</Person2>
+<Person1>The possibilities seem endless, but it also makes you think about challenges closer to home.</Person1>
+<Person2>Mental health awareness is one of those challenges. Seeing more conversations around it is so encouraging.</Person2>
+<Person1>It’s a reminder that progress isn’t just about technology—it’s about improving lives in every way possible.</Person1>
+<Person2>Whether it’s exploring the stars or addressing issues here on Earth, moving forward is what matters most.</Person2>
