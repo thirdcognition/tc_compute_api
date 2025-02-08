@@ -109,8 +109,10 @@ class QuestionClassifierParser(BaseOutputParser[tuple[bool, BaseMessage]]):
         # Check if 'yes' exists on the first line of text
         first_line = text.split("\n")[0].strip().lower()
         if "yes" in first_line:
+            text = "\n".join(text.split("\n")[1:]).strip()  # Remove the first line
             return True, text
         elif "no" in first_line:
+            text = "\n".join(text.split("\n")[1:]).strip()  # Remove the first line
             return False, text
         else:
             raise OutputParserException(

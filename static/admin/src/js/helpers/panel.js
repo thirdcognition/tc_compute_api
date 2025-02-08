@@ -63,7 +63,7 @@ export const handleCreatePanel = async (params) => {
             techcrunch_news: techCrunchNewsArray,
             hackernews: hackerNewsArray,
             news_guidance: params.newsGuidance,
-            news_items: params.newsItems
+            news_items: parseInt(params.newsItems || 5)
         });
         return { panelId, success: true };
     } catch (error) {
@@ -105,7 +105,7 @@ export const handleUpdatePanel = async (panelId, params) => {
             metadata: {
                 ...params.metadata,
                 news_guidance: params.newsGuidance,
-                news_items: params.newsItems,
+                news_items: parseInt(params.newsItems || 5),
                 google_news: googleNewsArray,
                 yle_news: yleNewsArray,
                 techcrunch_news: techCrunchNewsArray,

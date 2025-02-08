@@ -25,7 +25,7 @@ function GoogleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
         setConfigFields([
             ...configFields,
             {
-                type: "topic",
+                feed_type: "topic",
                 lang: "en",
                 country: "US",
                 query: "",
@@ -51,7 +51,7 @@ function GoogleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                 <div key={index} className="border border-gray-300 p-2 mb-2">
                     <div className="flex items-center justify-between mb-2 w-full">
                         <h5>
-                            Config {index + 1}: {config.type || "N/A"}
+                            Config {index + 1}: {config.feed_type || "N/A"}
                         </h5>
                         <Button
                             variant="danger"
@@ -64,9 +64,13 @@ function GoogleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                     </div>
                     <Form.Control
                         as="select"
-                        value={config.type || "search"}
+                        value={config.feed_type || "top_topics"}
                         onChange={(e) =>
-                            handleConfigChange(index, "type", e.target.value)
+                            handleConfigChange(
+                                index,
+                                "feed_type",
+                                e.target.value
+                            )
                         }
                         className={`border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2 ${
                             !config.lang ? "border-red-500" : ""
@@ -77,7 +81,7 @@ function GoogleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                         <option value="topic">Topic</option>
                         <option value="top_topics">Top Topics</option>
                     </Form.Control>
-                    {config.type === "search" && (
+                    {config.feed_type === "search" && (
                         <Form.Control
                             type="text"
                             placeholder="Enter search query..."
@@ -94,7 +98,7 @@ function GoogleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                             }`}
                         />
                     )}
-                    {config.type === "location" && (
+                    {config.feed_type === "location" && (
                         <Form.Control
                             type="text"
                             placeholder="Enter locations as CSV..."
@@ -113,7 +117,7 @@ function GoogleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                             }`}
                         />
                     )}
-                    {config.type === "topic" && (
+                    {config.feed_type === "topic" && (
                         <Form.Control
                             as="select"
                             multiple

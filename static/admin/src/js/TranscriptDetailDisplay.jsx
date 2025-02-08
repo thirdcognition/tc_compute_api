@@ -281,14 +281,30 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                         </p>
                     )}
                     {config.roles_person1 && (
-                        <p className="mb-2">
-                            Role for Person 1: {config.roles_person1}
-                        </p>
+                        <div className="mb-2">
+                            <p>
+                                Name (Person 1):{" "}
+                                {config.roles_person1.name || "Elton"}
+                            </p>
+                            <p>
+                                Persona (Person 1):{" "}
+                                {config.roles_person1.persona || "Not set"}
+                            </p>
+                            <p>Role (Person 1): {config.roles_person1.role}</p>
+                        </div>
                     )}
                     {config.roles_person2 && (
-                        <p className="mb-2">
-                            Role for Person 2: {config.roles_person2}
-                        </p>
+                        <div className="mb-2">
+                            <p>
+                                Name (Person 2):{" "}
+                                {config.roles_person2.name || "Julia"}
+                            </p>
+                            <p>
+                                Persona (Person 2):{" "}
+                                {config.roles_person2.persona || "Not set"}
+                            </p>
+                            <p>Role (Person 2): {config.roles_person2.role}</p>
+                        </div>
                     )}
                     {config.dialogue_structure && (
                         <p className="mb-2">
@@ -354,17 +370,21 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     )}
                 </div>
             )}
-            <button
-                onClick={() => toggleTranscriptVisibility(transcript.id)}
-                className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
-            >
-                <span className="mr-2">{isTranscriptVisible ? "▼" : "▶"}</span>
-                <span>
-                    {isTranscriptVisible
-                        ? "Hide Transcript"
-                        : "View Transcript"}
-                </span>
-            </button>
+            {transcript.process_state === "done" && (
+                <button
+                    onClick={() => toggleTranscriptVisibility(transcript.id)}
+                    className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
+                >
+                    <span className="mr-2">
+                        {isTranscriptVisible ? "▼" : "▶"}
+                    </span>
+                    <span>
+                        {isTranscriptVisible
+                            ? "Hide Transcript"
+                            : "View Transcript"}
+                    </span>
+                </button>
+            )}
             {isTranscriptVisible && (
                 <div className="mt-4">
                     <p className="mb-2">
@@ -378,15 +398,19 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     {renderTranscript(transcriptContent)}
                 </div>
             )}
-            <button
-                onClick={toggleSourcesVisibility}
-                className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
-            >
-                <span className="mr-2">{isSourcesVisible ? "▼" : "▶"}</span>
-                <span>
-                    {isSourcesVisible ? "Hide Sources" : "View Sources"}
-                </span>
-            </button>
+            {transcript.process_state === "done" && (
+                <button
+                    onClick={toggleSourcesVisibility}
+                    className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
+                >
+                    <span className="mr-2">
+                        {isSourcesVisible ? "▼" : "▶"}
+                    </span>
+                    <span>
+                        {isSourcesVisible ? "Hide Sources" : "View Sources"}
+                    </span>
+                </button>
+            )}
             {isSourcesVisible && (
                 <div className="mt-4 border p-3 mb-4 rounded">
                     {renderSources()}

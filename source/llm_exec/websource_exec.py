@@ -1,3 +1,4 @@
+import datetime
 from typing import List
 from source.chains.init import get_chain
 from source.models.data.web_source import WebSource
@@ -10,6 +11,7 @@ def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]
 
     grouping: WebSourceGrouping = get_chain("group_web_sources_sync").invoke(
         {
+            "datetime": str(datetime.datetime.now()),
             "web_sources": "\n\n".join(
                 source.to_simple_str() for source in web_sources
             ),
@@ -62,6 +64,7 @@ def group_rss_items(
 
     grouping: WebSourceGrouping = get_chain("group_rss_items_sync").invoke(
         {
+            "datetime": str(datetime.datetime.now()),
             "all_ids": " - "
             + "\n - ".join([source.get_sorting_id() for source in web_sources]),
             "web_sources": "\n\n".join(
@@ -79,15 +82,6 @@ def group_rss_items(
             source for source in web_sources if str(source.get_sorting_id()) in group
         ]
 
-        # for source in filtered_sources:
-        #     if source.categories is None or len(source.categories) == 0:
-        #         source_item = next(
-        #             (item for item in group if str(source.get_sorting_id()) == item.id),
-        #             None,
-        #         )
-        #         if source_item is not None:
-        #             source.categories = source_item.categories
-
         source_ids -= {str(source.get_sorting_id()) for source in filtered_sources}
         coll = WebSourceCollection(
             filtered_sources,
@@ -96,6 +90,7 @@ def group_rss_items(
                 if (len(grouping.ordered_group_titles) > i)
                 else f"Group {i}"
             ),
+            max_amount=5,
         )
         if i == main_item:
             coll.main_item = True

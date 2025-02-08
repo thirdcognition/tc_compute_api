@@ -23,6 +23,31 @@ custom_config = {
 }
 
 
+class HostProfile(BaseModel):
+    name: str = ""
+    persona: str = ""
+    role: str = ""
+
+    def to_string(self) -> str:
+        return f"Name: {self.name}, Role: {self.role}, Persona: {self.persona}"
+
+
+class ConversationConfig(BaseModel):
+    output_language: Optional[str] = "English"
+    conversation_style: Optional[List[str]] = custom_config["conversation_style"]
+    roles_person1: Optional[HostProfile] = None
+    roles_person2: Optional[HostProfile] = None
+    dialogue_structure: Optional[List[str]] = None
+    engagement_techniques: Optional[List[str]] = None
+    user_instructions: Optional[str] = None
+    podcast_name: Optional[str] = custom_config["podcast_name"]
+    podcast_tagline: Optional[str] = custom_config["podcast_tagline"]
+    creativity: Optional[float] = custom_config["creativity"]
+    word_count: Optional[int] = custom_config["word_count"]
+    longform: Optional[bool] = False
+    text_to_speech: Optional[dict] = {}
+
+
 class PanelRequestData(BaseModel):
     title: str = "New public morning show"
     input_source: Union[str, List[str]] = ""
@@ -30,7 +55,7 @@ class PanelRequestData(BaseModel):
     tts_model: str = "geminimulti"
     longform: bool = False
     bucket_name: str = "public_panels"
-    conversation_config: Optional[dict] = custom_config
+    conversation_config: Optional[ConversationConfig] = ConversationConfig()
     panel_id: Optional[UUID] = None
     transcript_parent_id: Optional[str] = None
     transcript_id: Optional[UUID] = None

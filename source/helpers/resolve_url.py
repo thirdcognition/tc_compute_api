@@ -356,6 +356,7 @@ class LinkResolver:
         )
 
         self.page.close()
+        self.page = None
 
         return results
 
@@ -427,27 +428,35 @@ class LinkResolver:
         )
 
         await self.async_page.close()
+        self.async_page = None
 
         return results
 
     async def async_close(self):
         if self.async_browser is not None:
             await self.async_browser.close()
+            self.async_browser = None
         if self.async_playwright is not None:
             await self.async_playwright.stop()
+            self.async_playwright = None
 
     def close(self):
-        if self.is_async:
-            if asyncio.get_event_loop().is_running():
-                nest_asyncio.apply()
-                asyncio.run(self.async_close())
+        try:
+            if self.is_async:
+                if asyncio.get_event_loop().is_running():
+                    nest_asyncio.apply()
+                    asyncio.run(self.async_close())
+                else:
+                    asyncio.run(self.async_close())
             else:
-                asyncio.run(self.async_close())
-        else:
-            if self.browser is not None:
-                self.browser.close()
-            if self.playwright is not None:
-                self.playwright.stop()
+                if self.browser is not None:
+                    self.browser.close()
+                    self.browser = None
+                if self.playwright is not None:
+                    self.playwright.stop()
+                    self.playwright = None
+        except Exception as e:
+            print(f"Error while closing playwright: {e}")
 
     def resolve_url(
         self,

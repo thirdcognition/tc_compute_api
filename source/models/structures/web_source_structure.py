@@ -10,7 +10,10 @@ class WebSourceCollection:
     main_item: bool = False
 
     def __init__(
-        self, web_sources: Optional[List[WebSource]] = None, title: str = None
+        self,
+        web_sources: Optional[List[WebSource]] = None,
+        title: str = None,
+        max_amount: int = None,
     ):
         """
         Initialize the collection with an optional list of WebSource objects.
@@ -19,6 +22,7 @@ class WebSourceCollection:
         """
         self.web_sources: List[WebSource] = web_sources if web_sources else []
         self.title: str = title
+        self.max_amount = max_amount
 
         self.filter_sources()
 
@@ -27,7 +31,7 @@ class WebSourceCollection:
         for source in self.web_sources:
             new_sources[source.get_sorting_id()] = source
 
-        self.web_sources = new_sources.values()
+        self.web_sources = list(new_sources.values())
 
     def add_web_source(self, web_source: WebSource):
         """
@@ -52,12 +56,22 @@ class WebSourceCollection:
             )
 
         # Concatenate the string representations of all WebSource objects
-        return "\n\n".join(str(ws) for ws in self.web_sources)
+        if self.max_amount is None:
+            return "\n\n".join(str(ws) for ws in self.web_sources)
+        else:
+            return "\n\n".join(str(ws) for ws in self.web_sources[: self.max_amount])
 
     def resolve_and_store_link(self, supabase: Client, user_ids: UserIDs = None):
         resolved = False
         resolved_sources: List[WebSource] = []
-        for item in self.web_sources:
+        sources: List[WebSource] = None
+
+        if self.max_amount is None:
+            sources = self.web_sources
+        else:
+            sources = self.web_sources[: self.max_amount]
+
+        for item in sources:
             if item.resolve_and_store_link(supabase, user_ids=user_ids):
                 resolved = True
                 resolved_sources.append(item)

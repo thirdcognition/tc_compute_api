@@ -78,14 +78,25 @@ function AudioDetailEdit({
                                     }
                                     className="form-select"
                                 >
-                                    {transcriptData.map((transcript) => (
-                                        <option
-                                            key={transcript.id}
-                                            value={transcript.id}
-                                        >
-                                            {transcript.title}
-                                        </option>
-                                    ))}
+                                    {transcriptData
+                                        .filter(
+                                            (transcript) =>
+                                                transcript.process_state ===
+                                                "done"
+                                        )
+                                        .sort(
+                                            (a, b) =>
+                                                new Date(b.created_at) -
+                                                new Date(a.created_at)
+                                        )
+                                        .map((transcript) => (
+                                            <option
+                                                key={transcript.id}
+                                                value={transcript.id}
+                                            >
+                                                {transcript.title}
+                                            </option>
+                                        ))}
                                 </select>
                             </>
                         )}

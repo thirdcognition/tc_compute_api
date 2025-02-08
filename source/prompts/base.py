@@ -22,6 +22,8 @@ from source.helpers.shared import pretty_print
 
 import re
 
+from source.models.config.default_env import DEBUGMODE
+
 
 def clean_tags(text: str, tags: list[str]) -> str:
     """
@@ -45,6 +47,14 @@ def clean_tags(text: str, tags: list[str]) -> str:
         if open_tags != close_tags:
             raise OutputParserException(f"Unclosed <{tag}> tags detected in the text.")
 
+        if DEBUGMODE:
+            # Capture and print the content being removed
+            matches = re.findall(
+                rf"<{tag}.*?>.*?</{tag}>", text, flags=re.DOTALL | re.IGNORECASE
+            )
+            for match in matches:
+                print(f"Removed content: {match}")
+
         # Remove properly closed tags and their content
         text = re.sub(
             rf"<{tag}.*?>.*?</{tag}>", "", text, flags=re.DOTALL | re.IGNORECASE
@@ -56,6 +66,8 @@ PRE_THINK_INSTRUCT = """
         Reason through the query inside <think> tags, and then provide your final response inside <output> tags.
         If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.
         """
+
+
 PRE_THINK_TAGS = ["think", "reflection"]
 
 ACTOR_INTRODUCTIONS = (

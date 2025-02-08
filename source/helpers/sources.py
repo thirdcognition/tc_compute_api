@@ -13,9 +13,12 @@ from source.models.data.web_source import WebSource
 from source.models.structures.panel import PanelRequestData
 from source.models.structures.sources import (
     GoogleNewsConfig,
+    GooglenewsFeedType,
     HackerNewsConfig,
     HackerNewsFeedType,
     TechCrunchNewsConfig,
+    YleFeedType,
+    YleLanguage,
     YleNewsConfig,
 )
 from source.models.structures.web_source_structure import WebSourceCollection
@@ -89,15 +92,18 @@ def fetch_google_news_items(config: GoogleNewsConfig) -> List[WebSource]:
     time_span = parse_since_value(config.since)
 
     print(f"GoogleNews: Time span for news items: {time_span}")
-    if config.query:
+    if config.feed_type == GooglenewsFeedType.SEARCH or config.query:
+        config.feed_type = GooglenewsFeedType.SEARCH
         print(f"GoogleNews: Searching news with query: {config.query}")
         news = gn.search(config.query, when=config.since)
-    elif config.location:
+    elif config.feed_type == GooglenewsFeedType.LOCATION or config.location:
+        config.feed_type = GooglenewsFeedType.LOCATION
         if isinstance(config.location, list):
             news = gn.geo_multiple_headlines(config.location)
         else:
             news = gn.geo_headlines(config.location)
-    elif config.topic:
+    elif config.feed_type == GooglenewsFeedType.TOPIC or config.topic:
+        config.feed_type = GooglenewsFeedType.TOPIC
         if isinstance(config.topic, list):
             news = gn.topic_multiple_headlines(config.topic, time_span=time_span)
         else:
@@ -184,7 +190,14 @@ def fetch_techcrunch_news_items(config: TechCrunchNewsConfig) -> List[WebSource]
 
 
 def fetch_yle_news_items(config: YleNewsConfig) -> List[WebSource]:
-    feed_url = f"https://feeds.yle.fi/uutiset/v1/{config.type.value}/YLE_UUTISET.rss"
+    source = "YLE_UUTISET" if config.lang == YleLanguage.FI else "YLE_NEWS"
+    feed_url = f"https://feeds.yle.fi/uutiset/v1/{(config.feed_type or config.type).value}/YLE_UUTISET.rss"
+
+    if config.feed_type == YleFeedType.TOPICS:
+        feed_url = f"https://feeds.yle.fi/uutiset/v1/recent.rss?publisherIds={source}"
+        concepts = (config.topics or []) + (config.locations or [])
+        if len(concepts) > 0:
+            feed_url += "&concepts=" + ",".join(concepts)
 
     print(f"Yle: Fetching Yle news items from URL: {feed_url}")
     feed = feedparser.parse(feed_url)
@@ -242,43 +255,57 @@ def fetch_links(
     guidance: str = None,
     max_items=5,
 ) -> List[WebSourceCollection | WebSource]:
-    print(f"Fetching links for sources: {sources}")
+    max_items = int(max_items)
+    print(f"Fetching links for sources ({max_items}): {sources}")
     all_resolved_links: List[WebSourceCollection | WebSource] = []
-    all_items = []
+    all_items: List[WebSource] = []
     for source in sources:
         urls = None
-        if isinstance(source, str):
-            # Handle single URL directly
-            print(f"Handling single URL: {source}")
-            urls = [source]
-        elif isinstance(source, list) and all(isinstance(url, str) for url in source):
-            # Handle list of URLs
-            print(f"Handling list of URLs: {source}")
-            urls = source
+        try:
+            if isinstance(source, str):
+                # Handle single URL directly
+                print(f"Handling single URL: {source}")
+                urls = [source]
+            elif isinstance(source, list) and all(
+                isinstance(url, str) for url in source
+            ):
+                # Handle list of URLs
+                print(f"Handling list of URLs: {source}")
+                urls = source
 
-        if urls is not None:
-            # Use fetch_urls_items and fetch_url_links to resolve URLs
-            print(f"Fetching URL items for: {urls}")
-            items = fetch_urls_items(urls)
-        elif isinstance(source, GoogleNewsConfig):
-            print(f"Fetching Google News items for config: {source}")
-            items = fetch_google_news_items(source)
-        elif isinstance(source, HackerNewsConfig):
-            print(f"Fetching HackerNews items for config: {source}")
-            items = fetch_hackernews_items(source)
-        elif isinstance(source, TechCrunchNewsConfig):
-            print(f"Fetching TechCrunch news items for config: {source}")
-            items = fetch_techcrunch_news_items(source)
-        elif isinstance(source, YleNewsConfig):
-            print(f"Fetching Yle news items for config: {source}")
-            items = fetch_yle_news_items(source)
-        else:
-            continue
+            if urls is not None:
+                # Use fetch_urls_items and fetch_url_links to resolve URLs
+                print(f"Fetching URL items for: {urls}")
+                items = fetch_urls_items(urls)
+            elif isinstance(source, GoogleNewsConfig):
+                print(f"Fetching Google News items for config: {source}")
+                items = fetch_google_news_items(source)
+            elif isinstance(source, HackerNewsConfig):
+                print(f"Fetching HackerNews items for config: {source}")
+                items = fetch_hackernews_items(source)
+            elif isinstance(source, TechCrunchNewsConfig):
+                print(f"Fetching TechCrunch news items for config: {source}")
+                items = fetch_techcrunch_news_items(source)
+            elif isinstance(source, YleNewsConfig):
+                print(f"Fetching Yle news items for config: {source}")
+                items = fetch_yle_news_items(source)
+            else:
+                continue
 
-        all_items += items
+            all_items += items
+        except Exception as e:
+            print(f"Unable to fetch source {e=} \n\n {source=}")
 
     resolved_count = 0
-    resolve_items: List[WebSourceCollection] = group_rss_items(all_items, guidance)
+    resolve_items: List[WebSourceCollection] = None
+    if len(all_items) > max_items:
+        resolve_items = group_rss_items(all_items, guidance)
+    else:
+        resolve_items = [
+            WebSourceCollection(web_sources=[item], title=item.title)
+            for item in all_items
+        ]
+
     if not dry_run:
         for item in resolve_items:
             print(f"Resolving and storing link for item: {item.title}")

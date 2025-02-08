@@ -86,7 +86,6 @@ web_source_builder_parser = PydanticOutputParser(pydantic_object=NewsArticle)
 
 def convert_and_parse(raw_input):
     if hasattr(raw_input, "content"):  # Handle AIMessage or similar objects
-        print(f"{raw_input}")
         raw_input = raw_input.content
     return web_source_builder_parser.parse(raw_input)
 
@@ -245,6 +244,9 @@ group_web_sources = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
+        Current date and time:
+        {datetime}
+
         Articles:
         {web_sources}
 
@@ -290,6 +292,9 @@ group_rss_items = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
+        Current date and time:
+        {datetime}
+
         All IDs:
         {all_ids}
 

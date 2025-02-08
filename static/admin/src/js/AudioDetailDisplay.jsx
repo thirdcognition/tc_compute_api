@@ -44,10 +44,14 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
                 </p>
             )}
             <div className="flex items-center mb-2">
-                <audio controls src={audioUrl} className="h-8" />
-                <button onClick={handleDownload} className="ml-2">
-                    ⇩
-                </button>
+                {audio.process_state === "done" && (
+                    <>
+                        <audio controls src={audioUrl} className="h-8" />
+                        <button onClick={handleDownload} className="ml-2">
+                            ⇩
+                        </button>
+                    </>
+                )}
             </div>
             <button
                 onClick={() => setShowDetails(!showDetails)}

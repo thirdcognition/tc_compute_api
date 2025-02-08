@@ -45,7 +45,7 @@ function ArticleReleasedWithinComponent({ value, onChange }) {
                 <Form.Control
                     type="range"
                     min="0"
-                    max="1440" // 2 months in hours
+                    max={24 * 7} // 2 months in hours
                     value={convertTimeFormatToHours(value) || "0"}
                     onChange={(e) =>
                         onChange(convertHoursToTimeFormat(e.target.value))

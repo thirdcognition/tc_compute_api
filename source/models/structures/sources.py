@@ -4,7 +4,15 @@ from enum import Enum
 from typing import List, Optional, Union
 
 
+class GooglenewsFeedType(str, Enum):
+    SEARCH = "search"
+    TOPIC = "topic"
+    TOP_TOPICS = "top_topics"
+    LOCATION = "location"
+
+
 class GoogleNewsConfig(BaseModel):
+    feed_type: Optional[GooglenewsFeedType] = None
     lang: Optional[str] = "en"
     country: Optional[str] = "US"
     topic: Optional[Union[str, List[str]]] = None
@@ -47,8 +55,18 @@ class TechCrunchNewsConfig(BaseModel):
 class YleFeedType(str, Enum):
     MAJOR_HEADLINES = "majorHeadlines"
     MOST_READ = "mostRead"
+    TOPICS = "topics"
+
+
+class YleLanguage(str, Enum):
+    EN = "en"
+    FI = "fi"
 
 
 class YleNewsConfig(BaseModel):
-    type: YleFeedType
+    feed_type: Optional[YleFeedType] = None
+    type: Optional[YleFeedType] = None
     articles: Optional[int] = None
+    topics: Optional[List[str]] = None
+    locations: Optional[List[str]] = None
+    lang: Optional[YleLanguage] = YleLanguage.FI

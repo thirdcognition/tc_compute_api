@@ -47,7 +47,12 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                 await fetchPanelDetails(panelId);
             setDiscussionData(discussionData);
             if (transcriptData.length > 0) {
-                setTranscriptData(transcriptData);
+                const sortedTranscripts = transcriptData.sort((a, b) => {
+                    const dateA = new Date(a.created_at);
+                    const dateB = new Date(b.created_at);
+                    return dateB - dateA; // Descending order
+                });
+                setTranscriptData(sortedTranscripts);
             }
             setExistingAudio(audioData);
             const updatedTranscriptUrls = urlFormatter(

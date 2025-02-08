@@ -282,7 +282,7 @@ class WebSource(BaseModel):
 
         id = self.get_sorting_id()
 
-        str_rep = f"ID({id}):\n"
+        str_rep = f"ID({id}) - Published({str(self.publish_date)}):\n"
         if "tags" in self.rss_item and len(self.rss_item["tags"]) > 0:
             str_rep += f"Categories: {', '.join([tag['term'] for tag in self.rss_item['tags']])}\n"
 
@@ -451,7 +451,6 @@ class WebSource(BaseModel):
                     title=self.title,
                     description=self.description,
                 )
-                resolver.close()
                 self.url_result = url_result
                 if len(url_result.human_readable_content) > 500:
                     self._update_from_(url_result)  # Replaced manual updates
