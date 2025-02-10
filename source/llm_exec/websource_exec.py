@@ -60,37 +60,26 @@ def group_rss_items(
     web_sources = uniq_sources.values()
     source_ids = {str(source.get_sorting_id()) for source in web_sources}
 
-    print(f"Number of unique sources: {len(source_ids)}")
+    print(f"Number of unique sources: {len(source_ids)}, sort and group start.")
 
     grouping: WebSourceGrouping = None
-
-    grouping = get_chain("group_rss_items_sync").invoke(
-        {
-            "datetime": str(datetime.datetime.now()),
-            "all_ids": " - "
-            + "\n - ".join([source.get_sorting_id() for source in web_sources]),
-            "web_sources": "\n\n".join(
-                source.to_sorting_str() for source in web_sources
-            ),
-            "instructions": guidance,
-        }
-    )
+    params = {
+        "datetime": str(datetime.datetime.now()),
+        "all_ids": " - "
+        + "\n - ".join([source.get_sorting_id() for source in web_sources]),
+        "web_sources": "\n\n".join(source.to_sorting_str() for source in web_sources),
+        "instructions": guidance,
+    }
+    grouping = get_chain("group_rss_items_sync").invoke(params)
 
     if not isinstance(grouping, WebSourceGrouping):
-        get_chain("group_rss_items_sync").invoke(
-            {
-                "datetime": str(datetime.datetime.now()),
-                "all_ids": " - "
-                + "\n - ".join([source.get_sorting_id() for source in web_sources]),
-                "web_sources": "\n\n".join(
-                    source.to_sorting_str() for source in web_sources
-                ),
-                "instructions": guidance,
-            }
-        )
+        print(f"\tFailed sorting sources, retrying. \n{repr(grouping)=}")
+        grouping = get_chain("group_rss_items_sync").invoke(params)
 
     if not isinstance(grouping, WebSourceGrouping):
         raise ValueError("Unable to sort news sources.")
+
+    print("Got grouping, continuing...")
 
     source_collections: List[WebSourceCollection] = []
     main_item = int(grouping.main_group)
