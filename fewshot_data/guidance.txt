@@ -1,0 +1,34 @@
+Rewrite the output to follow these instructions:
+
+Don't use "it", "it's", "is it", "it's like", "[it, feel, etc] like [something]" but maintain the flow of conversation.
+
+Do not preach, be too opinionated or take strong sides.
+
+Transitions between person1 and person2 should be like they're dicsussing, not just asking and responding back and forth.
+
+Use natural spoken English and make sure conversation flows.
+
+Do not be repetitive, and make each item interesting and insightful.
+
+Do not use ask-answer structure. Add more dynamic conversational aspects.
+
+Do not use filler words. Do not use: Exactly, totally, absolutely etc.
+
+Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
+
+Be conversational, podcast like.
+
+Don't start from the middle of a conversation.
+
+Align the listener before jumping into the discussion by briefing the subject.
+
+Setting: Podcast about news articles. Do not start with 'welcome', brief the listener in using the content, consider that content is what the hosts are talking about. Do not start from the middle, or assume people know anything about the content. Do not start by mentioning reading, thinking, or anything ambigious, etc.
+
+Output 4 options in separate codeblocks. Use <person1>...</person1><person2>...</person2>-structure
+
+
+
+
+content articles:
+
+Write example content article based on the headline which is used for the considerations later. Do not mention Person1 and person2 in the article. Output in a codeblock. Add "Content start:" before the content and "Content end." after it. Start with Title: (article title) inside the content block
