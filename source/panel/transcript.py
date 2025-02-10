@@ -294,9 +294,9 @@ def create_panel_transcript(
         previous_episodes = ""
 
         for transcript, content in previous_transcripts_with_content:
-            previous_episodes = f"Episode {transcript.created_at.strftime('%Y-%m-%d %H:%M:%S')}:\nTitle: {transcript.title}\nTranscript:\n{content}\n\n"
+            previous_episodes = f"Episode {transcript.created_at.strftime('%Y-%m-%d (%a) %H:%M:%S')}:\nTitle: {transcript.title}\nTranscript:\n{content}\n\n"
             print(
-                f"Episode {transcript.created_at.strftime('%Y-%m-%d %H:%M:%S')}:\nTitle: {transcript.title}"
+                f"Episode {transcript.created_at.strftime('%Y-%m-%d (%a) %H:%M:%S')}:\nTitle: {transcript.title}"
             )
 
         all_transcripts, combined_sources = generate_transcripts(
@@ -380,7 +380,7 @@ def load_last_transcripts_with_content(
 
     # Sort by updated_at in descending order and limit to num_transcripts
     transcripts = [t for t in transcripts if t.process_state == ProcessState.done]
-    transcripts.sort(key=lambda t: t.updated_at, reverse=True)
+    transcripts.sort(key=lambda t: t.updated_at)
     transcripts = transcripts[:num_transcripts]
 
     # Load content from Supabase storage for each transcript

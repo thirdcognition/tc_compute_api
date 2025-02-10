@@ -24,11 +24,14 @@ def load_environment():
 # Call the function to load the environment
 load_environment()
 
-DEBUGMODE = os.getenv("LLM_DEBUG", "True") == "True" or False
-DEVMODE = os.getenv("LLM_DEV", "True") == "True" or False
-IN_PRODUCTION = os.getenv("TC_PRODUCTION", "False") == "True" or False
+DEBUGMODE = os.getenv("LLM_DEBUG", "True").lower() == "true" or False
+DEVMODE = os.getenv("LLM_DEV", "True").lower() == "true" or False
+IN_PRODUCTION = os.getenv("TC_PRODUCTION", "False").lower() == "true" or False
 
-LANGSMITH_TRACING_V2 = os.getenv("LANGSMITH_TRACING_V2", "False") == "True" or False
+LANGSMITH_TRACING = os.getenv("LANGSMITH_TRACING", "False").lower() == "true" or False
+LANGSMITH_TRACING_V2 = (
+    os.getenv("LANGSMITH_TRACING_V2", "False").lower() == "true" or False
+)
 LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY", "")
 LANGSMITH_PROJECT = os.getenv("LANGSMITH_PROJECT", "")
 LANGSMITH_ENDPOINT = os.getenv("LANGSMITH_ENDPOINT", "")

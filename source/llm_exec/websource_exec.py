@@ -58,7 +58,33 @@ def group_rss_items(
         uniq_sources[source.get_sorting_id()] = source
 
     web_sources = uniq_sources.values()
+    web_sources = sorted(web_sources, key=lambda x: x.publish_date)
     source_ids = {str(source.get_sorting_id()) for source in web_sources}
+    used_ids = []
+
+    groups: list[list[WebSource]] = []
+    for source in web_sources:
+        if source.get_sorting_id() in used_ids:
+            continue
+
+        links = source.get_links()
+        used_ids.append(source.get_sorting_id())
+        group = [source]
+        if len(links) > 0:
+            for link in links:
+                if link in source_ids and link not in used_ids:
+                    item = next(
+                        (
+                            source
+                            for source in web_sources
+                            if source.get_sorting_id() == link
+                        ),
+                        None,
+                    )
+                    if item:
+                        used_ids.append(link)
+                        group.append(item)
+        groups.append(group)
 
     print(f"Number of unique sources: {len(source_ids)}, sort and group start.")
 
@@ -67,7 +93,12 @@ def group_rss_items(
         "datetime": str(datetime.datetime.now()),
         "all_ids": " - "
         + "\n - ".join([source.get_sorting_id() for source in web_sources]),
-        "web_sources": "\n\n".join(source.to_sorting_str() for source in web_sources),
+        "web_sources": "\n\n".join(
+            [
+                f"Group {str(i + 1):} {'\n'.join([source.to_sorting_str(additional_details=False) for source in group])}"
+                for i, group in enumerate(groups)
+            ]
+        ),
         "instructions": guidance,
     }
     grouping = get_chain("group_rss_items_sync").invoke(params)

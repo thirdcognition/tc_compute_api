@@ -276,17 +276,8 @@ class WebSource(BaseModel):
             ).hexdigest()
         return self._sorting_id
 
-    def to_sorting_str(self):
-        if self.rss_item is None:
-            return self.to_simple_str()
-
-        id = self.get_sorting_id()
-
-        str_rep = f"ID({id}) - Published({str(self.publish_date)}):\n"
-        if "tags" in self.rss_item and len(self.rss_item["tags"]) > 0:
-            str_rep += f"Categories: {', '.join([tag['term'] for tag in self.rss_item['tags']])}\n"
-
-        str_rep += f"Title: {self.rss_item['title']}\n"
+    def get_links(self):
+        links = []
         if (
             "<ol><li>" in self.rss_item["summary"]
             or 'href="http' in self.rss_item["summary"]
@@ -297,10 +288,29 @@ class WebSource(BaseModel):
                 for link in links
                 if link != self.rss_item["link"]
             ]
-            if len(links) > 0:
-                str_rep += f"Alternative source: \n - {'\n - '.join(links)}\n\n"
-        else:
-            str_rep += f"Description: {self.rss_item['summary']}\n\n"
+        return links
+
+    def to_sorting_str(self, additional_details=True):
+        if self.rss_item is None:
+            return self.to_simple_str()
+
+        id = self.get_sorting_id()
+
+        str_rep = f"ID({id}) - Published({str(self.publish_date)}):\n"
+        if "tags" in self.rss_item and len(self.rss_item["tags"]) > 0:
+            str_rep += f"Categories: {', '.join([tag['term'] for tag in self.rss_item['tags']])}\n"
+
+        str_rep += f"Title: {self.rss_item['title']}\n"
+        if additional_details:
+            if (
+                "<ol><li>" in self.rss_item["summary"]
+                or 'href="http' in self.rss_item["summary"]
+            ):
+                links = self.get_links()
+                if len(links) > 0:
+                    str_rep += f"Alternative source: \n - {'\n - '.join(links)}\n\n"
+            else:
+                str_rep += f"Description: {self.rss_item['summary']}\n\n"
 
         return str_rep
 

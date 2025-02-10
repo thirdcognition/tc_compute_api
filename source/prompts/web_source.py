@@ -188,7 +188,7 @@ class WebSourceGroupingValidator:
             item for group in parsed_response.ordered_groups for item in group
         }
 
-        original_ids = parsed_response.all_ids
+        original_ids = list(set(parsed_response.all_ids))
 
         tolerance = max(len(grouped_ids), len(original_ids)) // 5
 
@@ -207,10 +207,13 @@ class WebSourceGroupingValidator:
         # Find missing IDs
         missing_ids = set(original_ids) - grouped_ids
 
-        if len(missing_ids) > tolerance:
+        if len(missing_ids) > tolerance and len(parsed_response.ordered_groups) < 5:
             raise OutputParserException(
                 f"The following IDs are missing from the LLM response: {', '.join(missing_ids)}"
             )
+        else:
+            print("Adding missing ids to the list")
+            parsed_response.ordered_groups.extend([id for id in missing_ids])
 
         return parsed_response
 

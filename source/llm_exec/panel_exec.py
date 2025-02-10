@@ -23,7 +23,7 @@ def verify_transcript_quality(
     previous_episodes: str = None,
 ) -> tuple[bool, str]:
     current_datetime = datetime.now()
-    current_date = current_datetime.strftime("%Y-%m-%d")
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
 
     result = get_chain("verify_transcript_quality").invoke(
@@ -172,7 +172,7 @@ def _transcript_rewriter(
     retries = 3
     result = ""
     current_datetime = datetime.now()
-    current_date = current_datetime.strftime("%Y-%m-%d")
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
     while result == "" and retries > 0:
         retries -= 1
@@ -225,7 +225,7 @@ def transcript_writer(
     retries = 3
     result = ""
     current_datetime = datetime.now()
-    current_date = current_datetime.strftime("%Y-%m-%d")
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
     while result == "" and retries > 0:
         retries -= 1
@@ -278,7 +278,7 @@ def transcript_bridge_writer(
     retries = 3
     result = ""
     current_datetime = datetime.now()
-    current_date = current_datetime.strftime("%Y-%m-%d")
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
     while result == "" and retries > 0:
         retries -= 1
@@ -317,7 +317,7 @@ def transcript_intro_writer(
     retries = 3
     result = ""
     current_datetime = datetime.now()
-    current_date = current_datetime.strftime("%Y-%m-%d")
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
     while result == "" and retries > 0:
         retries -= 1
@@ -359,7 +359,7 @@ def transcript_conclusion_writer(
     retries = 3
     result = ""
     current_datetime = datetime.now()
-    current_date = current_datetime.strftime("%Y-%m-%d")
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
     while result == "" and retries > 0:
         retries -= 1
@@ -530,9 +530,12 @@ def generate_and_verify_transcript(
 
     transcript_content = orig_transcript_content
 
-    word_count = (
-        int(conversation_config.word_count) * (1 if not main_item else 2) // total_count
-    )
+    if total_count > 1:
+        word_count = int(conversation_config.word_count) // (
+            (total_count - 1) + (-(total_count / 4) if main_item else (total_count / 4))
+        )
+    else:
+        word_count = int(conversation_config.word_count)
 
     try:
         transcript_content = transcript_rewriter(
@@ -602,71 +605,72 @@ def transcript_combiner(
     )
 
     orig_transcript = "\n".join(combined_transcripts)
+    transcript_content = orig_transcript
 
     print(
         f"Combine transcripts ({len(transcripts)=} = {count_words(orig_transcript)=} chars) into one with: {conversation_config=}"
     )
-    current_datetime = datetime.now()
-    current_date = current_datetime.strftime("%Y-%m-%d")
-    current_time = current_datetime.strftime("%H:%M:%S")
+    # current_datetime = datetime.now()
+    # current_date = current_datetime.strftime("%Y-%m-%d")
+    # current_time = current_datetime.strftime("%H:%M:%S")
 
-    try:
-        transcript_content = get_chain("transcript_combiner").invoke(
-            {
-                "content": content,
-                "transcript": orig_transcript,
-                "output_language": conversation_config.output_language,
-                "conversation_style": conversation_config.conversation_style,
-                "roles_person1": str(conversation_config.roles_person1),
-                "roles_person2": str(conversation_config.roles_person2),
-                "dialogue_structure": conversation_config.dialogue_structure,
-                "engagement_techniques": conversation_config.engagement_techniques,
-                "user_instructions": conversation_config.user_instructions,
-                "podcast_name": conversation_config.podcast_name,
-                "podcast_tagline": conversation_config.podcast_tagline,
-                "date": current_date,
-                "time": current_time,
-                "previous_episodes": (
-                    previous_episodes if previous_episodes is not None else ""
-                ),
-            }
-        )
+    # try:
+    #     transcript_content = get_chain("transcript_combiner").invoke(
+    #         {
+    #             "content": content,
+    #             "transcript": orig_transcript,
+    #             "output_language": conversation_config.output_language,
+    #             "conversation_style": conversation_config.conversation_style,
+    #             "roles_person1": str(conversation_config.roles_person1),
+    #             "roles_person2": str(conversation_config.roles_person2),
+    #             "dialogue_structure": conversation_config.dialogue_structure,
+    #             "engagement_techniques": conversation_config.engagement_techniques,
+    #             "user_instructions": conversation_config.user_instructions,
+    #             "podcast_name": conversation_config.podcast_name,
+    #             "podcast_tagline": conversation_config.podcast_tagline,
+    #             "date": current_date,
+    #             "time": current_time,
+    #             "previous_episodes": (
+    #                 previous_episodes if previous_episodes is not None else ""
+    #             ),
+    #         }
+    #     )
 
-        if len(transcript_content) < (len(orig_transcript) // 2):
-            print(
-                f"Transcript shortened too much ({len(orig_transcript)} to {len(transcript_content)}), retry combiner."
-            )
-            transcript_content = get_chain("transcript_combiner").invoke(
-                {
-                    "content": content,
-                    "transcript": orig_transcript,
-                    "output_language": conversation_config.output_language,
-                    "conversation_style": conversation_config.conversation_style,
-                    "roles_person1": str(conversation_config.roles_person1),
-                    "roles_person2": str(conversation_config.roles_person2),
-                    "dialogue_structure": conversation_config.dialogue_structure,
-                    "engagement_techniques": conversation_config.engagement_techniques,
-                    "user_instructions": conversation_config.user_instructions,
-                    "podcast_name": conversation_config.podcast_name,
-                    "podcast_tagline": conversation_config.podcast_tagline,
-                    "date": current_date,
-                    "time": current_time,
-                    "previous_episodes": (
-                        previous_episodes if previous_episodes is not None else ""
-                    ),
-                }
-            )
+    #     if len(transcript_content) < (len(orig_transcript) // 2):
+    #         print(
+    #             f"Transcript shortened too much ({len(orig_transcript)} to {len(transcript_content)}), retry combiner."
+    #         )
+    #         transcript_content = get_chain("transcript_combiner").invoke(
+    #             {
+    #                 "content": content,
+    #                 "transcript": orig_transcript,
+    #                 "output_language": conversation_config.output_language,
+    #                 "conversation_style": conversation_config.conversation_style,
+    #                 "roles_person1": str(conversation_config.roles_person1),
+    #                 "roles_person2": str(conversation_config.roles_person2),
+    #                 "dialogue_structure": conversation_config.dialogue_structure,
+    #                 "engagement_techniques": conversation_config.engagement_techniques,
+    #                 "user_instructions": conversation_config.user_instructions,
+    #                 "podcast_name": conversation_config.podcast_name,
+    #                 "podcast_tagline": conversation_config.podcast_tagline,
+    #                 "date": current_date,
+    #                 "time": current_time,
+    #                 "previous_episodes": (
+    #                     previous_episodes if previous_episodes is not None else ""
+    #                 ),
+    #             }
+    #         )
 
-        if isinstance(transcript_content, BaseMessage):
-            raise ValueError("Generation failed: Received a BaseMessage.")
+    #     if isinstance(transcript_content, BaseMessage):
+    #         raise ValueError("Generation failed: Received a BaseMessage.")
 
-    except ValueError as e:
-        print(f"Error during transcript combination: {e}")
-        raise
+    # except ValueError as e:
+    #     print(f"Error during transcript combination: {e}")
+    #     raise
 
-    print("Combiner result:")
-    print(f"Input ({count_words(orig_transcript)=})")
-    print(f"Output ({count_words(transcript_content)=})")
+    # print("Combiner result:")
+    # print(f"Input ({count_words(orig_transcript)=})")
+    # print(f"Output ({count_words(transcript_content)=})")
 
     word_count = conversation_config.word_count
     word_count = (
