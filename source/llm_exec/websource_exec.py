@@ -95,7 +95,7 @@ def group_rss_items(
         + "\n - ".join([source.get_sorting_id() for source in web_sources]),
         "web_sources": "\n\n".join(
             [
-                f"Group {str(i + 1):} {'\n'.join([source.to_sorting_str(additional_details=False) for source in group])}"
+                f"{('Group ' + str(i + 1) + ':\n') if len(group) > 1 else ''}{'\n'.join([source.to_sorting_str(additional_details=len(group) == 1) for source in group])}"
                 for i, group in enumerate(groups)
             ]
         ),
