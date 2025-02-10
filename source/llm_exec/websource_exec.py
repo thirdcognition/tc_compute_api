@@ -62,7 +62,9 @@ def group_rss_items(
 
     print(f"Number of unique sources: {len(source_ids)}")
 
-    grouping: WebSourceGrouping = get_chain("group_rss_items_sync").invoke(
+    grouping: WebSourceGrouping = None
+
+    grouping = get_chain("group_rss_items_sync").invoke(
         {
             "datetime": str(datetime.datetime.now()),
             "all_ids": " - "
@@ -73,6 +75,22 @@ def group_rss_items(
             "instructions": guidance,
         }
     )
+
+    if not isinstance(grouping, WebSourceGrouping):
+        get_chain("group_rss_items_sync").invoke(
+            {
+                "datetime": str(datetime.datetime.now()),
+                "all_ids": " - "
+                + "\n - ".join([source.get_sorting_id() for source in web_sources]),
+                "web_sources": "\n\n".join(
+                    source.to_sorting_str() for source in web_sources
+                ),
+                "instructions": guidance,
+            }
+        )
+
+    if not isinstance(grouping, WebSourceGrouping):
+        raise ValueError("Unable to sort news sources.")
 
     source_collections: List[WebSourceCollection] = []
     main_item = int(grouping.main_group)
