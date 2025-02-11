@@ -2,11 +2,12 @@ import re
 from typing import List, Union
 from datetime import datetime
 from langchain_core.messages import BaseMessage
+from langsmith import traceable
 from source.chains.init import get_chain
 from source.models.data.web_source import WebSource
 from source.models.structures.web_source_structure import WebSourceCollection
 from source.models.structures.panel import ConversationConfig
-from source.prompts.panel import TranscriptSummary
+from source.prompts.panel import TranscriptQualityCheck, TranscriptSummary
 
 
 def count_words(text: str) -> int:
@@ -14,6 +15,10 @@ def count_words(text: str) -> int:
     return len(cleaned_text.split())
 
 
+@traceable(
+    run_type="llm",
+    name="Verify transcript quality",
+)
 def verify_transcript_quality(
     transcript: str,
     content: str,
@@ -21,12 +26,12 @@ def verify_transcript_quality(
     main_item: bool = False,
     length_instructions: str = "",
     previous_episodes: str = None,
-) -> tuple[bool, str]:
+) -> TranscriptQualityCheck:
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
 
-    result = get_chain("verify_transcript_quality").invoke(
+    result: TranscriptQualityCheck = get_chain("verify_transcript_quality").invoke(
         {
             "content": content,
             "transcript": transcript,
@@ -54,14 +59,9 @@ def verify_transcript_quality(
     if isinstance(result, BaseMessage):
         raise ValueError("Generation failed: Received a BaseMessage.")
 
-    passed: bool = False
-    response: str = None
-    if isinstance(result, tuple):
-        passed, response = result
+    # print(f"LLM result {result=}")
 
-    print(f"LLM result {passed=}")
-
-    return passed, response
+    return result
 
 
 def transcript_rewriter(
@@ -98,7 +98,8 @@ def transcript_rewriter(
             )
             change_length = change_length_int != 0
 
-        check_passed, guidance = verify_transcript_quality(
+        print("Verify transcript quality...")
+        quality_check = verify_transcript_quality(
             transcript=transcript_content,
             content=content,
             conversation_config=conversation_config,
@@ -108,44 +109,69 @@ def transcript_rewriter(
             ),
             previous_episodes=previous_episodes,
         )
+        all_issues = sorted(
+            (issue for issue in quality_check.issues if issue.severity >= 2),
+            key=lambda issue: issue.severity,
+            reverse=True,
+        )
+
+        quality_check.pass_test = len(all_issues) == 0
+        check_passed = quality_check.pass_test
+
+        guidance = ""
+        prev_content = transcript_content
+        prev_len = count_words(transcript_content)
 
         if not check_passed or change_length:
-            feedback = (
-                (length_instructions if change_length else "")
-                if check_passed
-                else guidance
-            )
-            print(f"Rewrite transcript due to failed check. {feedback=}")
-            prev_content = transcript_content
-            prev_len = count_words(transcript_content)
+            while len(all_issues) > 0 or change_length:
+                issues = (
+                    []
+                    if check_passed
+                    else [all_issues.pop(0) for _ in range(min(5, len(all_issues)))]
+                )
+                change_length = False
+                feedback = (
+                    (length_instructions if change_length else "")
+                    if check_passed
+                    else "\n\n".join(
+                        [
+                            f"Issue {str(i + 1)}:\nTitle: {issue.title}\n Segments:\n{'\n\n'.join(issue.transcript_segments)}\nSuggested fix: {issue.suggestions}"
+                            for i, issue in enumerate(issues)
+                        ]
+                    )
+                )
+                guidance += feedback + "\n"
+                print(f"Rewrite transcript due to failed check.\n{feedback=}")
 
-            try:
-                transcript_content = _transcript_rewriter(
-                    transcript=transcript_content,
-                    content=content,
-                    feedback=feedback,
-                    conversation_config=conversation_config,
-                    previous_transcripts=previous_transcripts,
-                    previous_episodes=previous_episodes,
-                    chain=(
-                        "transcript_rewriter"
-                        if change_length_int == 0
-                        else (
-                            "transcript_rewriter_extend"
-                            if change_length_int == 1
-                            else "transcript_rewriter_reduce"
-                        )
-                    ),
-                )
-                previous_transcripts += (
-                    f"\n\n{'Retry ' + str(retry_count) if retry_count > 0 else 'First version'}:\n"
-                    f"Input:\n{prev_content}\n\nIssues:\n{guidance}"
-                )
-            except ValueError as e:
-                print(f"Error during transcript rewrite: {e}")
-                transcript_content = prev_content
+                try:
+                    transcript_content = _transcript_rewriter(
+                        transcript=transcript_content,
+                        content=content,
+                        feedback=feedback,
+                        conversation_config=conversation_config,
+                        previous_transcripts=previous_transcripts,
+                        previous_episodes=previous_episodes,
+                        chain=(
+                            "transcript_rewriter"
+                            if change_length_int == 0
+                            else (
+                                "transcript_rewriter_extend"
+                                if change_length_int == 1
+                                else "transcript_rewriter_reduce"
+                            )
+                        ),
+                        word_count=word_count,
+                    )
+                    change_length_int = 0
+                except ValueError as e:
+                    print(f"Error during transcript rewrite: {e}")
+                    transcript_content = prev_content
 
             print(f"Rewritten transcript ({count_words(transcript_content)=})")
+            previous_transcripts += (
+                f"\n\n{'Retry ' + str(retry_count) if retry_count > 0 else 'First version'}:\n"
+                f"Input:\n{prev_content}\n\nIssues:\n{guidance}"
+            )
             if (
                 check_passed
                 and (prev_len * 1.05) > count_words(transcript_content)
@@ -159,6 +185,10 @@ def transcript_rewriter(
     return transcript_content
 
 
+@traceable(
+    run_type="llm",
+    name="Rewrite transcript",
+)
 def _transcript_rewriter(
     transcript: str,
     content: str,
@@ -168,6 +198,7 @@ def _transcript_rewriter(
     previous_episodes: str = None,
     chain: str = "transcript_rewriter",
     main_item: bool = False,
+    word_count: int = None,
 ) -> bool:
     retries = 3
     result = ""
@@ -201,6 +232,7 @@ def _transcript_rewriter(
                 ),
                 "date": current_date,
                 "time": current_time,
+                "word_count": word_count,
             }
         )
 
@@ -212,6 +244,10 @@ def _transcript_rewriter(
     return result
 
 
+@traceable(
+    run_type="llm",
+    name="Write transcript",
+)
 def transcript_writer(
     content: str,
     conversation_config: ConversationConfig = ConversationConfig(),
@@ -256,6 +292,7 @@ def transcript_writer(
                 "previous_episodes": (
                     previous_episodes if previous_episodes is not None else ""
                 ),
+                "word_count": conversation_config.word_count,
             }
         )
 
@@ -267,6 +304,10 @@ def transcript_writer(
     return result
 
 
+@traceable(
+    run_type="llm",
+    name="Write transcript bridge",
+)
 def transcript_bridge_writer(
     transcript_1: str,
     transcript_2: str,
@@ -306,6 +347,10 @@ def transcript_bridge_writer(
     return result
 
 
+@traceable(
+    run_type="llm",
+    name="Write transcript intro",
+)
 def transcript_intro_writer(
     content: str,
     conversation_config: ConversationConfig = ConversationConfig(),
@@ -349,6 +394,10 @@ def transcript_intro_writer(
     return result
 
 
+@traceable(
+    run_type="llm",
+    name="Write transcript conclusion",
+)
 def transcript_conclusion_writer(
     previous_dialogue: str,
     conversation_config: ConversationConfig = ConversationConfig(),
@@ -390,6 +439,10 @@ def transcript_conclusion_writer(
     return result
 
 
+@traceable(
+    run_type="llm",
+    name="Write transcript summary",
+)
 def transcript_summary_writer(
     transcript: str,
     sources: List[Union[WebSource, WebSourceCollection, str]],
@@ -482,6 +535,10 @@ def check_transcript_length(
     return change_length, length_instruction
 
 
+@traceable(
+    run_type="llm",
+    name="Generate Transcript",
+)
 def generate_and_verify_transcript(
     # config: dict,
     conversation_config: ConversationConfig = ConversationConfig(),
@@ -554,6 +611,10 @@ def generate_and_verify_transcript(
     return transcript_content
 
 
+@traceable(
+    run_type="llm",
+    name="Combine transcript segments",
+)
 def transcript_combiner(
     transcripts: List[str],
     sources: List[WebSource | WebSourceCollection | str],

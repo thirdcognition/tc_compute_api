@@ -4,6 +4,7 @@ import re
 from typing import List, Optional, Type, Union
 
 import feedparser
+from langsmith import traceable
 from pygooglenews import GoogleNews
 from supabase import Client
 from source.helpers.resolve_url import LinkResolver, parse_publish_date
@@ -238,6 +239,10 @@ def fetch_urls_items(urls: List[str]) -> List[WebSource]:
     return news_items
 
 
+@traceable(
+    run_type="llm",
+    name="Fetch transcript sources",
+)
 def fetch_links(
     supabase: Client,
     sources: List[

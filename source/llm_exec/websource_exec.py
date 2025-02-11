@@ -1,11 +1,17 @@
 import datetime
 from typing import List
+
+from langsmith import traceable
 from source.chains.init import get_chain
 from source.models.data.web_source import WebSource
 from source.models.structures.web_source_structure import WebSourceCollection
 from source.prompts.web_source import WebSourceGrouping
 
 
+@traceable(
+    run_type="llm",
+    name="Group web sources",
+)
 def group_web_sources(
     web_sources: List[WebSource], min_amount=5
 ) -> List[WebSourceCollection]:
@@ -53,6 +59,10 @@ def group_web_sources(
     return source_collections
 
 
+@traceable(
+    run_type="llm",
+    name="Group RSS sources",
+)
 def group_rss_items(
     web_sources: List[WebSource], guidance="", min_amount=5
 ) -> List[WebSourceCollection]:

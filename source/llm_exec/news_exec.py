@@ -1,9 +1,14 @@
+from langsmith import traceable
 from source.chains.init import get_chain
 from source.models.structures.url_result import UrlResult
 from source.prompts.web_source import NewsArticle
 from typing import Tuple
 
 
+@traceable(
+    run_type="llm",
+    name="Build web source article",
+)
 async def web_source_article_builder(data: UrlResult) -> NewsArticle:
     payload = {"context": data.human_readable_content, "meta": data.metadata}
     if data.image_data:
@@ -14,6 +19,10 @@ async def web_source_article_builder(data: UrlResult) -> NewsArticle:
     return result  # Pass supabase
 
 
+@traceable(
+    run_type="llm",
+    name="Build web source article (sync)",
+)
 def web_source_article_builder_sync(data: UrlResult) -> NewsArticle:
     payload = {"context": data.human_readable_content, "meta": data.metadata}
     if data.image_data:
@@ -26,6 +35,10 @@ def web_source_article_builder_sync(data: UrlResult) -> NewsArticle:
     return result  # Pass supabase
 
 
+@traceable(
+    run_type="llm",
+    name="Format text",
+)
 # New Functions for Validating News Articles
 async def text_format(content: str) -> str:
     """
@@ -36,6 +49,10 @@ async def text_format(content: str) -> str:
     return await get_chain("text_formatter_simple").ainvoke(payload)
 
 
+@traceable(
+    run_type="llm",
+    name="Format text (sync)",
+)
 def text_format_sync(content: str) -> str:
     """
     Synchronous function to validate if the content is a valid news article.
@@ -45,6 +62,10 @@ def text_format_sync(content: str) -> str:
     return get_chain("text_formatter_simple_sync").invoke(payload)
 
 
+@traceable(
+    run_type="llm",
+    name="Validate news item",
+)
 # New Functions for Validating News Articles
 async def validate_news_article(
     content: str, title: str, description: str
@@ -58,6 +79,10 @@ async def validate_news_article(
     return result
 
 
+@traceable(
+    run_type="llm",
+    name="Validate news item (sync)",
+)
 def validate_news_article_sync(
     content: str, title: str, description: str
 ) -> Tuple[bool, str]:

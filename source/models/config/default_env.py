@@ -14,9 +14,6 @@ def load_environment():
         return
 
     load_dotenv(env_file)
-    from source.models.config.logging import logger
-
-    logger.info("Loading env: " + env_file)
 
     ENV_LOADED = True
 
@@ -35,6 +32,37 @@ LANGSMITH_TRACING_V2 = (
 LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY", "")
 LANGSMITH_PROJECT = os.getenv("LANGSMITH_PROJECT", "")
 LANGSMITH_ENDPOINT = os.getenv("LANGSMITH_ENDPOINT", "")
+
+_langsmith_debug_msg = False
+
+
+def langsmith_tracing_debug():
+    global ENV_LOADED
+    if not ENV_LOADED:
+        return
+
+    global _langsmith_debug_msg
+    if _langsmith_debug_msg:
+        return
+
+    _langsmith_debug_msg = True
+
+    global LANGSMITH_TRACING
+    global LANGSMITH_TRACING_V2
+    global LANGSMITH_PROJECT
+
+    from source.models.config.logging import logger
+
+    logger.info("Loading env: " + env_file)
+
+    logger.info(
+        f"Langsmith is tracing {'enabled' if (LANGSMITH_TRACING or LANGSMITH_TRACING_V2) else 'disabled'}"
+    )
+    if LANGSMITH_TRACING_V2 or LANGSMITH_TRACING:
+        logger.info(f"\t{LANGSMITH_PROJECT=}")
+
+
+langsmith_tracing_debug()
 
 set_debug(DEBUGMODE)
 set_verbose(DEBUGMODE)

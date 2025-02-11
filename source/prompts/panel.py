@@ -1,12 +1,13 @@
 import re
-from source.prompts.base import clean_tags
+from source.prompts.base import TagsParser, clean_tags
 import textwrap
 from typing import List, Union
 from pydantic import BaseModel, Field
 from langchain_core.exceptions import OutputParserException
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.messages import BaseMessage
-from source.prompts.actions import QuestionClassifierParser
+
+# from source.prompts.actions import QuestionClassifierParser
 from source.prompts.base import (
     ACTOR_INTRODUCTIONS,
     PRE_THINK_INSTRUCT,
@@ -136,6 +137,46 @@ class TranscriptParser(BaseOutputParser[str]):
         return "\n".join(blocks)
 
 
+class TranscriptQualityIssue(BaseModel):
+    title: str = Field(..., title="Title", description="Title describing the issue.")
+    details: str = Field(
+        ..., title="Issue details", description="Details about the issue."
+    )
+    suggestions: str = Field(
+        ..., title="Suggested fix", description="Suggestion on how to fix the issue."
+    )
+    transcript_segments: list[str] = Field(
+        ...,
+        title="Transcript segments",
+        description="One or more segments which have the issue and need to be fixed.",
+        min_length=1,
+    )
+    severity: int = Field(
+        ...,
+        title="Issue severity",
+        description="How severe is this issue with a scale from 1 to 5. 5 being most severe.",
+        min=1,
+        max=5,
+    )
+
+
+class TranscriptQualityCheck(BaseModel):
+    pass_test: bool = Field(
+        ...,
+        title="Valid transcript",
+        description="Boolean value indicating if transcript passes quality check.",
+    )
+    issues: List[TranscriptQualityIssue] = Field(
+        ...,
+        title="Issues",
+        description="List of issues for the transcript, if any.",
+    )
+
+
+verify_transcript_quality_parser = PydanticOutputParser(
+    pydantic_object=TranscriptQualityCheck
+)
+
 verify_transcript_quality = PromptFormatter(
     system=textwrap.dedent(
         f"""
@@ -170,7 +211,8 @@ verify_transcript_quality = PromptFormatter(
         - If the transcript is not long enough as defined by transcript length, make sure to fail the transcript and instruct on how to make the transcript longer.
         - If the transcript should be longer give specific instructions on how to make the transcript longer.
         - If there's excessive usage of a word, or a phrase make sure to create an issue of it and suggest fixes.
-        - Words like "Absolutely" "Exactly" "For sure!" etc. should be used sparingly and only when needed. If they're repeated multiple times make sure to create an issue out of it.
+        - Words like "Absolutely" "Exactly" "Totally" "For sure!" etc. should be used sparingly and only when needed. If they're repeated multiple times make sure to create an issue out of it.
+        - Uses of "it", "it's", "is it", "it's like", "[it, feel, etc] like [something]" should be limited.
         - Make sure to reveal your reasoning for rejecting the transcript after think-tags.
         - Do not place your reasoning for rejection within <reflection>-tags.
         - Do not use <reflection>-tags outside of <think>-tags
@@ -194,8 +236,8 @@ verify_transcript_quality = PromptFormatter(
         Ignore and don't pay attention to:
         - Transcript length. Transcript can be as long as it is. Do not suggest it as an issue.
 
-        Return "yes" if the transcript follows the defined instructions otherwise return "no".
-        If transcript doesn't follow instructions write list of issues and explain how to fix them.
+        Format your output as follows:
+        {verify_transcript_quality_parser.get_format_instructions()}
         """
     ),
     user=textwrap.dedent(
@@ -234,7 +276,22 @@ verify_transcript_quality = PromptFormatter(
     ),
 )
 
-verify_transcript_quality.parser = QuestionClassifierParser()
+
+class TranscriptQualityCheckParseWrapper:
+    def __init__(self):
+        self.cleaner = TagsParser(tags=["think", "reflection"], return_tag=False)
+
+    def parse(self, raw_input: str) -> TranscriptQualityCheck:
+        # Clean the <think> and <reflection> tags
+        if hasattr(raw_input, "content"):  # Handle AIMessage or similar objects
+            raw_input = raw_input.content
+
+        cleaned_input = self.cleaner.parse(raw_input)
+
+        return verify_transcript_quality_parser.parse(cleaned_input)
+
+
+verify_transcript_quality.parser = TranscriptQualityCheckParseWrapper()
 
 transcript_template = {
     "identity": """
@@ -248,7 +305,11 @@ transcript_template = {
         - Incorporate all feedback into the rewritten transcript. The feedback is the most critical aspect and must be fully addressed.
         - Make the transcript as engaging and natural as possible. Person1 and Person2 will be simulated by different voice engines.
         - Introduce disfluencies, interruptions, and back-and-forth banter to make the conversation sound real and dynamic, but only if the feedback allows for it.
-        - Avoid repetitive phrases like "totally," "absolutely," "exactly," or "definitely." Use them sparingly.
+        - Avoid repetitive phrases like "totally," "absolutely," "exactly," or "definitely." Use them sparingly. Do not use filler words.
+        - Avoid use of "it", "it's", "is it", "it's like", "[it's, feels, etc] like [something]" but maintain the flow of conversation.
+        - Do not be repetitive, and make each item interesting and insightful.
+        - Do not use ask-answer structure. Add more dynamic conversational aspects.
+        - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
         - Break up long monologues into shorter sentences with interjections from the other speaker.
         - Maintain the language specified by the user for writing the transcript.
         - Use Previous transcripts and issues to guide the rewriting process.
@@ -265,15 +326,18 @@ transcript_template = {
     },
     "length": {
         "maintain": """
-        - Do not reduce the length of the conversation.
+        - You will be given a word count. The transcript output must have at least that many words.
+        - Do not reduce the length of the conversation. Make sure output transcript has as much content as the input transcript.
         - The resulting transcript should match the length of the previous transcript unless the feedback explicitly requests a longer or shorter version.
         """,
         "extend": """
-        - Extend the transcript using the provided examples and instructions.
-        - The transcript is not long enough and should be extended.
+        - You will be given a word count. The transcript output must have at least that many words.
+        - Extend the transcript using the provided content, previous versions, examples and instructions.
+        - The transcript is not long enough and needs to be be extended.
         - Aim for a very long conversation. Use max_output_tokens limit.
         """,
         "reduce": """
+        - You will be given a word count. The transcript output must fit in that amount of words.
         - Reduce the transcript using the provided examples and instructions.
         - The transcript is too long and should be compressed.
         - Aim for a short conversation but maintain all the defined content and follow feedback.
@@ -419,6 +483,7 @@ transcript_rewriter = PromptFormatter(
         Transcript configuration:
         Current date: {date}
         Current time: {time}
+        Word count: {word_count}
         Language: {output_language}
         Conversation Style: {conversation_style}
         Person 1 role: {roles_person1}
@@ -481,6 +546,7 @@ transcript_rewriter_extend = PromptFormatter(
         Transcript configuration:
         Current date: {date}
         Current time: {time}
+        Word count: {word_count}
         Language: {output_language}
         Conversation Style: {conversation_style}
         Person 1 role: {roles_person1}
@@ -542,6 +608,7 @@ transcript_rewriter_reduce = PromptFormatter(
         Transcript configuration:
         Current date: {date}
         Current time: {time}
+        Word count: {word_count}
         Language: {output_language}
         Conversation Style: {conversation_style}
         Person 1 role: {roles_person1}
@@ -588,6 +655,7 @@ transcript_writer = PromptFormatter(
         - Do not use repetitive phrases like "totally," "absolutely," "exactly." "yeah, " "It's ", "It's like"
         - Use advanced TTS-specific markup (excluding Amazon/Alexa-specific tags) to enhance the naturalness of the conversation.
         - Ensure the conversation starts with Person1 and ends with Person2.
+        - You will be given a word count. The transcript output must have at least that many words.
 
         3. Guidelines:
         - Focus on a specific topic or theme for the conversation.
@@ -595,7 +663,10 @@ transcript_writer = PromptFormatter(
         - Add interruptions, interjections, and reactions to simulate a real conversation.
         - Maintain the language, tone, and style specified by the user.
         - Do not add laughter, e.g. "Ha" or "Ha ha", etc. in the script. Instead use witty comebacks or other reactive responses.
-        - Avoid use of "it", "it's", "is it", "it's like", "[it, feel, etc] like [something]" but maintain the flow of conversation.
+        - Avoid use of "it", "it's", "is it", "it's like", "[it's, feels, etc] like [something]" but maintain the flow of conversation.
+        - Do not be repetitive, and make each item interesting and insightful.
+        - Do not use ask-answer structure. Add more dynamic conversational aspects.
+        - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
         - Do not use childish humor or remarks. Make sure all humor is aligned with the content and is smart.
         - Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
         - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
@@ -656,6 +727,7 @@ transcript_writer = PromptFormatter(
 
         Current date: {date}
         Current time: {time}
+        Word count: {word_count}
 
         Additional instructions:
         {user_instructions}
