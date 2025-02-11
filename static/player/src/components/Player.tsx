@@ -222,7 +222,7 @@ const Player: React.FC<PlayerProps> = ({
     return (
         <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl mb-4 overflow-hidden">
             <div
-                className="relative w-full h-[520px] bg-top bg-contain bg-no-repeat"
+                className="relative w-full h-[820px] bg-top bg-cover bg-no-repeat"
                 style={{
                     ...(transcript.metadata.images[0] && {
                         backgroundImage: `url(${transcript.metadata.images[0]})`
@@ -230,11 +230,11 @@ const Player: React.FC<PlayerProps> = ({
                 }}
             >
                 <div className="absolute bottom-0 w-full p-6 hero-image-gradient">
-                    <p className="text-sm font-normal text-gray-800 dark:text-gray-300">
-                        Latest episode:
+                    <p className="text-xs font-normal text-gray-800 dark:text-gray-300">
+                        LATEST EPISODE:
                     </p>
 
-                    <h2 className="text-lg font-medium text-gray-800 dark:text-gray-300 mb-10">
+                    <h2 className="text-2xl font-black text-gray-800 dark:text-gray-300 mb-10">
                         {transcript.title}
                     </h2>
 
@@ -339,11 +339,11 @@ const Player: React.FC<PlayerProps> = ({
 
                         {/* Row 1: Empty - Thumb Up - Thumb Down - Share */}
 
-                        <LikeDislikeSection
+                        {/* <LikeDislikeSection
                             userId={userId}
                             sessionRef={sessionRef}
                             audioSrc={audioSrc}
-                        />
+                        /> */}
                     </div>
                 </div>
             </div>

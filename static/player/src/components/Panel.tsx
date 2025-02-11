@@ -148,17 +148,17 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
             {audioUrl ? (
                 <div className="w-full">
                     {/* New container for the icon and text */}
-                    <div className="flex justify-center items-center space-x-4 mb-6 w-full">
+                    {/* <div className="flex justify-center items-center space-x-4 mb-6 w-full">
                         <img
                             src="/assets/mail-header.svg" // Updated to use the URL path
                             alt="Mail Header Icon"
                             className="h-16 mr-2" // Adjust height dynamically based on text size
                             style={{ height: "54px" }} // 4x the height of 17px text
                         />
-                        {/* <span className="text-lg font-semibold text-gray-800 dark:text-gray-300">
+                        <span className="text-lg font-semibold text-gray-800 dark:text-gray-300">
                             {process.env.REACT_APP_PODCAST_NAME}
-                        </span> */}
-                    </div>
+                        </span>
+                    </div> */}
                     <Player
                         userId={userId}
                         sessionRef={sessionRef}
