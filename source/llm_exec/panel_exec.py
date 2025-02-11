@@ -573,7 +573,8 @@ def transcript_combiner(
 
     for i in range(len(transcripts) - 1):
         try:
-            combined_transcripts.append(f"Topic {str(i + 1)}:\n\n{transcripts[i]}")
+            # combined_transcripts.append(f"Topic {str(i + 1)}:\n\n{transcripts[i]}")
+            combined_transcripts.append(transcripts[i])
 
             bridge = transcript_bridge_writer(
                 transcript_1=transcripts[i],
@@ -581,9 +582,10 @@ def transcript_combiner(
                 conversation_config=conversation_config,
             )
 
-            combined_transcripts.append(
-                f"Bridge for Topic {str(i + 1)} and Topic {str(i + 2)}:\n\n{bridge}"
-            )
+            # combined_transcripts.append(
+            #     f"Bridge for Topic {str(i + 1)} and Topic {str(i + 2)}:\n\n{bridge}"
+            # )
+            combined_transcripts.append(bridge)
         except ValueError as e:
             print(
                 f"Skipping bridge generation for topics {i + 1} and {i + 2} due to error: {e}"
@@ -591,9 +593,10 @@ def transcript_combiner(
             continue
 
     if transcripts:
-        combined_transcripts.append(
-            f"Topic {str(len(transcripts))}:\n\n{transcripts[-1]}"
-        )
+        # combined_transcripts.append(
+        #     f"Topic {str(len(transcripts))}:\n\n{transcripts[-1]}"
+        # )
+        combined_transcripts.append(transcripts[-1])
     else:
         print("Error: No transcripts provided to combine.")
         raise ValueError("No transcripts provided to combine.")
