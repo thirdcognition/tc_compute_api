@@ -6,7 +6,9 @@ from source.models.structures.web_source_structure import WebSourceCollection
 from source.prompts.web_source import WebSourceGrouping
 
 
-def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]:
+def group_web_sources(
+    web_sources: List[WebSource], min_amount=5
+) -> List[WebSourceCollection]:
     source_ids = {str(source.get_sorting_id()) for source in web_sources}
 
     grouping: WebSourceGrouping = get_chain("group_web_sources_sync").invoke(
@@ -17,6 +19,7 @@ def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]
             ),
             "start_with": "Humor or funny topic if available",
             "end_with": "Lighthearted, or funny topic if available",
+            "min_groups": min_amount,
         }
     )
 
@@ -51,7 +54,7 @@ def group_web_sources(web_sources: List[WebSource]) -> List[WebSourceCollection]
 
 
 def group_rss_items(
-    web_sources: List[WebSource], guidance=""
+    web_sources: List[WebSource], guidance="", min_amount=5
 ) -> List[WebSourceCollection]:
     uniq_sources: dict[str, WebSource] = {}
     for source in web_sources:
@@ -100,6 +103,7 @@ def group_rss_items(
             ]
         ),
         "instructions": guidance,
+        "min_groups": min_amount,
     }
     grouping = get_chain("group_rss_items_sync").invoke(params)
 

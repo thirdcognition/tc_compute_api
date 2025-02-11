@@ -149,13 +149,13 @@ web_source_builder.parser = ConvertAndParseWrapper()
 
 # Define the Pydantic model for the output structure
 class WebSourceGrouping(BaseModel):
+    min_groups: int = Field(..., description="Minimum amount of ordered groups.")
     ordered_groups: List[List[str]] = Field(
-        ..., description="An ordered list of lists of grouped IDs.", min_length=5
+        ..., description="An ordered list of lists of grouped IDs."
     )
     ordered_group_titles: List[str] = Field(
         ...,
         description="An ordered list of titles for ordered_groups based on the titles of the items within the group.",
-        min_length=5,
     )
     main_group: int = Field(
         ...,
@@ -192,6 +192,11 @@ class WebSourceGroupingValidator:
 
         tolerance = max(len(grouped_ids), len(original_ids)) // 5
 
+        if len(grouped_ids) < parsed_response.min_groups:
+            raise OutputParserException(
+                f"The response does not have enough groups defined. Minimum amount is: {parsed_response.min_groups}"
+            )
+
         # Check for duplicate IDs
         if len(grouped_ids) != len(original_ids):
             duplicates = set(
@@ -207,7 +212,10 @@ class WebSourceGroupingValidator:
         # Find missing IDs
         missing_ids = set(original_ids) - grouped_ids
 
-        if len(missing_ids) > tolerance and len(parsed_response.ordered_groups) < 5:
+        if (
+            len(missing_ids) > tolerance
+            and len(parsed_response.ordered_groups) < parsed_response.min_groups
+        ):
             raise OutputParserException(
                 f"The following IDs are missing from the LLM response: {', '.join(missing_ids)}"
             )
@@ -249,6 +257,8 @@ group_web_sources = PromptFormatter(
         """
         Current date and time:
         {datetime}
+
+        Minimum amount of groups: {min_groups}
 
         Articles:
         {web_sources}
@@ -297,6 +307,8 @@ group_rss_items = PromptFormatter(
         """
         Current date and time:
         {datetime}
+
+        Minimum amount of groups: {min_groups}
 
         All IDs:
         {all_ids}

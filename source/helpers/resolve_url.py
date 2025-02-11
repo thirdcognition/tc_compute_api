@@ -35,8 +35,13 @@ def parse_publish_date(date_str):
             try:
                 return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
             except ValueError:
-                logger.error(f"Invalid date format: {date_str}")
-                return None
+                try:
+                    return datetime.strptime(
+                        date_str, "%Y-%m-%d %H:%M:%S %z"
+                    )  # New format
+                except ValueError:
+                    logger.error(f"Invalid date format: {date_str}")
+                    return None
 
 
 def process_image(image_data: bytes) -> bytes:

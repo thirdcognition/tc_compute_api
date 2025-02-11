@@ -299,7 +299,7 @@ def fetch_links(
     resolved_count = 0
     resolve_items: List[WebSourceCollection] = None
     if len(all_items) > max_items:
-        resolve_items = group_rss_items(all_items, guidance)
+        resolve_items = group_rss_items(all_items, guidance, min_amount=max_items)
     else:
         resolve_items = [
             WebSourceCollection(web_sources=[item], title=item.title)

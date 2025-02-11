@@ -577,6 +577,7 @@ transcript_writer = PromptFormatter(
         1. Objective:
         - Create an engaging and natural conversation between Person1 and Person2.
         - Ensure the transcript is suitable for TTS pipelines and can be combined with other transcripts.
+        - Consider the content, define an Approach and a Plan for your output in <think>-tags before writing transcript.
 
         2. Key Requirements:
         - Language: Use the `Language` specified by the user to ensure the transcript aligns with the desired language.
@@ -584,7 +585,7 @@ transcript_writer = PromptFormatter(
         - Structure: Adhere to the `Dialogue Structure` provided by the user to maintain the ordered flow of the conversation.
         - Engagement: Incorporate the `Engagement techniques` specified by the user to make the conversation lively and dynamic. Use interruptions, disfluencies, interjections, and other techniques to simulate a real conversation.
         - Instructions: Follow all `Other instructions` to ensure the transcript meets specific user-defined requirements.
-        - Avoid overuse of repetitive phrases like "totally," "absolutely," "exactly." "yeah, " "It's "
+        - Do not use repetitive phrases like "totally," "absolutely," "exactly." "yeah, " "It's ", "It's like"
         - Use advanced TTS-specific markup (excluding Amazon/Alexa-specific tags) to enhance the naturalness of the conversation.
         - Ensure the conversation starts with Person1 and ends with Person2.
 
@@ -594,8 +595,12 @@ transcript_writer = PromptFormatter(
         - Add interruptions, interjections, and reactions to simulate a real conversation.
         - Maintain the language, tone, and style specified by the user.
         - Do not add laughter, e.g. "Ha" or "Ha ha", etc. in the script. Instead use witty comebacks or other reactive responses.
+        - Avoid use of "it", "it's", "is it", "it's like", "[it, feel, etc] like [something]" but maintain the flow of conversation.
         - Do not use childish humor or remarks. Make sure all humor is aligned with the content and is smart.
         - Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
+        - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
+        - Don't start from the middle of a conversation.
+        - Align the listener before jumping into the discussion by briefing the subject.
 
         4. Instructions for using previous episodes:
         - Refer to previous episodes if the discussions align with them.
@@ -688,7 +693,8 @@ transcript_bridge_writer = PromptFormatter(
         {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
-        - Your task is to create a conversational bridge between two podcast transcripts.
+        - Your task is to create a conversational transition between two podcast transcripts.
+        - Transition between last line from transcript 1 and first line from transcript 2
         - The two transcripts may discuss unrelated topics, but the transition should be smooth and engaging.
         - Use multiple speaking turns to make the transition feel natural and conversational.
         - Make it as engaging as possible. Person1 and Person2 will be simulated by different voice engines.
@@ -698,6 +704,7 @@ transcript_bridge_writer = PromptFormatter(
         - Make speakers interrupt each other and anticipate what the other person is going to say.
         - Make speakers react to what the other person is saying using phrases like, "Oh?" and "yeah?"
         - Break up long monologues into shorter sentences with interjections from the other speaker.
+        - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth
         - Maintain the language specified by the user for writing the transcript.
         - Use advanced TTS-specific markup (excluding Amazon/Alexa-specific tags) to enhance the naturalness of the conversation.
         - Ensure the conversation adheres to the input content and configuration provided.
@@ -706,6 +713,8 @@ transcript_bridge_writer = PromptFormatter(
         - Only write the bridge between Transcript 1 and Transcript 2. Do not repeat the content from the transcripts.
         - You need to only write a bridge for Transcript 1 and Transcript 2 so that there's a natural transition between the topics.
         - Try to keep the bridge short. Do not write more than 6 dialogue items.
+        - The transition from concepts should be natural.
+        - Do not summarize the last sentence of transcript 1 or first sentence of transcript 2.
 
         {ROLES_PERSON_INSTRUCT}
 

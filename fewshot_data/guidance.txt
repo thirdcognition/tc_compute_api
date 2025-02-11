@@ -1,34 +1,121 @@
-Rewrite the output to follow these instructions:
-
+-- bridge --
+Write an output to transition the input transcripts with a bridge with these instructions:
+Transition between last line from transcript 1 and first line from transcript 2.
 Don't use "it", "it's", "is it", "it's like", "[it, feel, etc] like [something]" but maintain the flow of conversation.
-
-Do not preach, be too opinionated or take strong sides.
-
 Transitions between person1 and person2 should be like they're dicsussing, not just asking and responding back and forth.
-
 Use natural spoken English and make sure conversation flows.
-
 Do not be repetitive, and make each item interesting and insightful.
-
 Do not use ask-answer structure. Add more dynamic conversational aspects.
-
 Do not use filler words. Do not use: Exactly, totally, absolutely etc.
-
 Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
-
 Be conversational, podcast like.
+The transition from concepts should be natural.
+Do not summarize the last sentence of transcript 1 or first sentence of transcript 2.
 
-Don't start from the middle of a conversation.
+The output should have 4 tag-pairs.
+Output 4 options in separate codeblocks. Use <person1>...</person1><person2>...</person2>-structure
 
-Align the listener before jumping into the discussion by briefing the subject.
+-- reduce --
 
-Setting: Podcast about news articles. Do not start with 'welcome', brief the listener in using the content, consider that content is what the hosts are talking about. Do not start from the middle, or assume people know anything about the content. Do not start by mentioning reading, thinking, or anything ambigious, etc.
+Reduce the amount of dialogue, but keep the amount of turns. Do not use filler words like, Exactly, totally, absolute, etc.  Keep it conversational and natural, but maintain transition between last line from transcript 1 and first line from transcript 2 - do not summarize the last sentence of transcript 1 or first sentence of transcript 2.
+
+-- rewriter input --
+
+Rewrite the input based on output to follow these instructions:
+Make sure to that input exibits the defined issues. Exaggerate the issues in the input.
+The input must be content which have the all issues in it.
+Person1 and person2 should refer to each other with names.
+Be conversational, podcast like.
+Output the input 4 options in separate codeblocks. Use <person1>...</person1><person2>...</person2>-structure
+
+-- rewriter output --
+
+Rewrite the output built from input to follow these instructions:
+Make sure to incorporate Suggestions and Plan in the output.
+Fix the issues and focus have the output be more aligned with expectation.
+Don't use "it", "it's", "is it", "it's like", "[it, feel, etc] like [something]" but maintain the flow of conversation.
+Do not preach, be too opinionated or take strong sides.
+Transitions between person1 and person2 should be like they're dicsussing, not just asking and responding back and forth.
+Person1 and person2 should refer to each other with names, but don't start with them.
+Use natural spoken English and make sure conversation flows.
+Do not be repetitive, and make each item interesting and insightful.
+Do not use ask-answer structure. Add more dynamic conversational aspects.
+Do not use filler words. Do not use: Exactly, totally, absolutely etc.
+Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
+Be conversational, podcast like.
+The output should have 4 tag-pairs.
 
 Output 4 options in separate codeblocks. Use <person1>...</person1><person2>...</person2>-structure
 
 
+-- rewriter tuning --
+
+Rewrite output adding the names from input in once in a conversational style. Use names in a conversational and familiar way. Do not over use the names and don't make the use artificial, or forced. Do not change content of output or the structure. Write 4-revisions in codeblocks. Do not use filler words. Do not use: Exactly, totally, absolutely etc. Do not change other wording outside of making the addition of names conversational.
 
 
-content articles:
+---- writer ---
+
+Write the output built from Considerations, Approach and Plan to follow these instructions:
+
+INSTRUCTION:
+
+Your task is to write a new podcast transcript from scratch, optimized for AI Text-To-Speech (TTS) pipelines. This transcript will later be combined with others. Follow these instructions:
+
+1. Objective:
+
+- Create an engaging and natural conversation between Person1 and Person2.
+- Ensure the transcript is suitable for TTS pipelines and can be combined with other transcripts.
+
+2. Key Requirements:
+
+- Use advanced TTS-specific markup (excluding Amazon/Alexa-specific tags) to enhance the naturalness of the conversation.
+- Ensure the conversation starts with Person1 and ends with Person2.
+- Do not use filler words e.g.: Exactly, totally, absolutely etc.
+
+3. Guidelines:
+
+- Focus on a specific topic or theme for the conversation.
+- Break up long monologues into shorter, interactive exchanges.
+- Add interruptions, interjections, and reactions to simulate a real conversation.
+- Maintain the language, tone, and style specified by the user.
+- Do not add laughter, e.g. "Ha" or "Ha ha", etc. in the script. Instead use witty comebacks or other reactive responses.
+- Do not use childish humor or remarks. Make sure all humor is aligned with the content and is smart.
+- Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
+- Don't use "it", "it's", "is it", "it's like", "[it, feel, etc] like [something]" but maintain the flow of conversation.
+- Do not preach, be too opinionated or take strong sides.
+- Transitions between person1 and person2 should be like they're dicsussing, not just asking and responding back and forth.
+- Person1 and person2 should refer to each other with names, defined in the reactions for each person, but do not start with the names.
+- Use natural spoken English and make sure conversation flows.
+- Do not be repetitive, and make each item interesting and insightful.
+- Do not use ask-answer structure. Add more dynamic conversational aspects.
+- Do not use filler words, e.g.: Exactly, totally, absolutely etc.
+- Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
+- Be conversational, podcast like.
+- Don't start from the middle of a conversation.
+- Align the listener before jumping into the discussion by briefing the subject.
+- Follow the Considerations, Approach and Plan in the output in detail.
+- Keep the interactions short and aligned with Considerations, Approach and Plan. Do not write long segments.
+
+4. Setting:
+
+Podcast about news articles. Do not start with 'welcome', brief the listener in using the content, consider that content is what the hosts are talking about. Do not start from the middle, or assume people know anything about the content. Do not start by mentioning reading, thinking, or anything ambigious, etc.
+
+Use <person1>...</person1><person2>...</person2>-structure
+
+Never use filler words, e.g.: Exactly, totally, absolutely etc.
+
+Output 4 options in separate codeblocks. Use <person1>...</person1><person2>...</person2>-structure
+
+-- reduce --
+
+Reduce the amount of dialogue. Do not use filler words like, Exactly, totally, absolute, etc. Do not remove name usage, but don't add more either. Keep it conversational.
+
+--content articles--:
 
 Write example content article based on the headline which is used for the considerations later. Do not mention Person1 and person2 in the article. Output in a codeblock. Add "Content start:" before the content and "Content end." after it. Start with Title: (article title) inside the content block
+
+
+-- Writer tuning --
+
+Rewrite output adding the names from input in once in a conversational style. Use names in a conversational and familiar way. Do not over use the names and don't make the use artificial, or forced. If needed align the content with the reactions and plan, but do not change it otherwise.
+Write 4-revisions in codeblocks. Do not use filler words. Do not use: Exactly, totally, absolutely etc. Do not change other wording outside of making the addition of names conversational.
