@@ -75,6 +75,7 @@ async def api_fetch_news_links(
             dry_run=True,
             guidance=configs.get("news_guidance", ""),
             max_items=int(configs.get("news_items", 5)),
+            tokens=tokens,
         )
         return {
             "news_links": [

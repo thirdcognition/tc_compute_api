@@ -144,7 +144,7 @@ class WebSourceCollection(BaseModel):
     #     """
     #     return [web_source.model_dump(**kwargs) for web_source in self.web_sources]
 
-    def generate_tasks(self, supabase: Client, user_ids: UserIDs):
+    def generate_tasks(self, tokens, user_ids: UserIDs):
         """
         Generate and execute tasks for all WebSource items in the collection.
 
@@ -152,9 +152,7 @@ class WebSourceCollection(BaseModel):
         :param user_ids: User IDs for task execution.
         :return: Results of the executed tasks.
         """
-        return generate_resolve_tasks_for_websources(
-            self.web_sources, supabase, user_ids
-        )
+        return generate_resolve_tasks_for_websources(self.web_sources, tokens, user_ids)
 
     def __str__(self):
         return self.to_ordered_string()

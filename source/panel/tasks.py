@@ -6,7 +6,10 @@ from supabase import Client
 from croniter import croniter
 
 from app.core.celery_app import celery_app
-from app.core.supabase import get_sync_supabase_client, get_sync_supabase_service_client
+from app.core.supabase import (
+    get_sync_supabase_client,
+    get_sync_supabase_service_client,
+)
 from source.panel.panel import create_panel
 from source.panel.transcript import create_panel_transcript
 from source.panel.audio import create_panel_audio

@@ -71,6 +71,7 @@ def fetch_links_and_process_articles(
     user_ids: UserIDs = None,
     guidance="",
     max_items=5,
+    tokens: tuple = None,
 ) -> List[WebSource | WebSourceCollection]:
     article_news_items = []
     for news_item in fetch_links(
@@ -79,6 +80,7 @@ def fetch_links_and_process_articles(
         user_ids=user_ids,
         guidance=guidance,
         max_items=max_items,
+        tokens=tokens,
     ):
         article_news_items.append(news_item)
     return article_news_items
@@ -297,6 +299,7 @@ def create_panel_transcript(
             user_ids,
             guidance=request_data.news_guidance,
             max_items=request_data.news_items,
+            tokens=tokens,
         )
 
         for item in ordered_groups:

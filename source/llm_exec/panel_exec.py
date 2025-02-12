@@ -236,7 +236,7 @@ def _transcript_rewriter(
                 ),
                 "date": current_date,
                 "time": current_time,
-                "word_count": word_count,
+                "word_count": word_count * 1.2,
             }
         )
 
@@ -296,7 +296,11 @@ def transcript_writer(
                 "previous_episodes": (
                     previous_episodes if previous_episodes is not None else ""
                 ),
-                "word_count": conversation_config.word_count,
+                "word_count": (
+                    conversation_config.word_count * 1.2
+                    if conversation_config.word_count
+                    else ""
+                ),
             }
         )
 

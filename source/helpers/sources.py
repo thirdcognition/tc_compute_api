@@ -263,6 +263,7 @@ def fetch_links(
     dry_run: bool = False,
     guidance: str = None,
     max_items=5,
+    tokens: tuple = None,
 ) -> List[WebSourceCollection | WebSource]:
     max_items = int(max_items)
     print(f"Fetch links: Fetching links for sources ({max_items}): {sources}")
@@ -342,7 +343,7 @@ def fetch_links(
                 print(f"Fetch links: Processing item at index {idx}: {item}")
                 if isinstance(item, WebSourceCollection):
                     collection_key = (item.title, item.max_amount)
-                    tasks = item.generate_tasks(supabase, user_ids)
+                    tasks = item.generate_tasks(tokens, user_ids)
                     batch_tasks.extend(tasks)
                     collection_task_counts[collection_key] = len(
                         tasks
@@ -355,7 +356,7 @@ def fetch_links(
                     )  # Map each task to the collection
                 else:
                     standalone_task = generate_resolve_tasks_for_websources(
-                        [item], supabase, user_ids
+                        [item], tokens, user_ids
                     )[0]
                     batch_tasks.append(standalone_task)
                     task_mapping.append(item)  # Map the task to the standalone item

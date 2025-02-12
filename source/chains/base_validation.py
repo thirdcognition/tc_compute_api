@@ -5,6 +5,8 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.output_parsers import BaseOutputParser, PydanticOutputParser
 from langchain.output_parsers.retry import RetryWithErrorOutputParser
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, BaseMessage
+from openai import RateLimitError
+from source.chains.base import retry_with_delay
 from langchain_core.runnables import (
     RunnableSequence,
     RunnableParallel,
@@ -159,6 +161,9 @@ class BaseValidationChain(BaseChain):
         ):
             self.verify_chain = add_format_instructions(parser) | self.verify_chain
 
+        self.verify_chain = self.verify_chain.with_fallbacks(
+            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
+        )
         self.verify_chain.name = f"{self.name}-validation-verify"
 
         self.chain = RunnableLambda(

@@ -1,6 +1,9 @@
 from typing import Dict
-from langchain_core.runnables import RunnableSequence
+from langchain_core.runnables import RunnableSequence, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
+from openai import RateLimitError
+from random import randint
+from time import sleep
 
 from source.helpers.shared import print_params
 from source.prompts.base import PromptFormatter
@@ -22,6 +25,14 @@ def log_chain_params(params):
     return params
 
 
+# Retry logic for RateLimitError
+def retry_with_delay(params):
+    delay = randint(4, 10)
+    print(f"Retrying after {delay} seconds due to RateLimitError...")
+    sleep(delay)
+    return params
+
+
 class BaseChain:
     def __init__(
         self,
@@ -31,6 +42,7 @@ class BaseChain:
         custom_prompt: tuple[str, str] | None = None,
         async_mode: bool = False,
         structured_mode: bool = False,
+        max_retries: int = 3,  # New parameter for maximum retries
     ):
         if not hasattr(self, "parent_chain") or self.parent_chain is None:
             self.parent_chain = parent_chain
@@ -47,6 +59,7 @@ class BaseChain:
 
         self.async_mode = async_mode
         self.structured_mode = structured_mode
+        self.max_retries = max_retries  # Store max retries
 
         self.id = f"{self.__class__.__name__}-{id(self)}"
         self.name = self.id
@@ -84,6 +97,10 @@ class BaseChain:
             self.chain = self.parent_chain
         else:
             raise ValueError("Either parent_chain or prompt_template must be provided.")
+
+        self.chain = self.chain.with_fallbacks(
+            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
+        )
 
         self.chain.name = f"{self.name}-base"
 
