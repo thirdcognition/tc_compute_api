@@ -22,7 +22,13 @@ celery_app = Celery(
     "tc_compute_api",
     broker=SETTINGS.redis_broker_url,
     backend=SETTINGS.redis_backend_url,
-    include=["source.panel.tasks", "source.helpers.communication"],
+    include=[
+        "source.panel.tasks",
+        "source.helpers.communication",
+        "source.tasks.utils",
+        "source.tasks.web_sources",
+        "source.tasks.transcript",
+    ],
     log="source.models.config.logging.CeleryLogger",
 )
 

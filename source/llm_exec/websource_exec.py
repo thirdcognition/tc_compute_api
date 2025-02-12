@@ -38,7 +38,10 @@ def group_web_sources(
         ]
 
         source_ids -= {str(source.get_sorting_id()) for source in filtered_sources}
-        coll = WebSourceCollection(filtered_sources, grouping.ordered_group_titles[i])
+        coll = WebSourceCollection(
+            web_sources=filtered_sources,
+            title=grouping.ordered_group_titles[i],
+        )
         if i == main_item:
             coll.main_item = True
         source_collections.append(coll)
@@ -54,7 +57,9 @@ def group_web_sources(
             None,
         )
         if remaining_source:
-            source_collections.append(WebSourceCollection([remaining_source]))
+            source_collections.append(
+                WebSourceCollection(web_sources=[remaining_source])
+            )
 
     return source_collections
 
@@ -136,8 +141,8 @@ def group_rss_items(
 
         source_ids -= {str(source.get_sorting_id()) for source in filtered_sources}
         coll = WebSourceCollection(
-            filtered_sources,
-            (
+            web_sources=filtered_sources,
+            title=(
                 grouping.ordered_group_titles[i]
                 if (len(grouping.ordered_group_titles) > i)
                 else f"Group {i}"
@@ -159,6 +164,8 @@ def group_rss_items(
             None,
         )
         if remaining_source:
-            source_collections.append(WebSourceCollection([remaining_source]))
+            source_collections.append(
+                WebSourceCollection(web_sources=[remaining_source])
+            )
 
     return source_collections

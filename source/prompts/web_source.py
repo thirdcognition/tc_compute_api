@@ -28,26 +28,34 @@ class NewsCategory(Enum):
     HEALTH = "Health"
     TRAVEL = "Travel"
     FOOD = "Food"
-    # Add more categories as needed
+
+    def __str__(self):
+        return self.value
+
+    def __json__(self):
+        """
+        Custom method to make NewsCategory JSON serializable.
+        """
+        return self.value
+
+    def to_json(self):
+        return self.value
+
+    @staticmethod
+    def from_json(value: str):
+        return NewsCategory(value)
 
 
 class NewsArticle(BaseModel):
     title: str = Field(..., title="Title", description="Title for the article")
-
     topic: str = Field(
-        ...,
-        title="Topic",
-        description="The topic related to the context.",
+        ..., title="Topic", description="The topic related to the context."
     )
     description: str = Field(
-        ...,
-        title="Description",
-        description="Synopsis for the article.",
+        ..., title="Description", description="Synopsis for the article."
     )
     summary: str = Field(
-        ...,
-        title="Summary",
-        description="Brief summary of the context.",
+        ..., title="Summary", description="Brief summary of the context."
     )
     article: str = Field(
         ..., title="Article", description="Article based on the provided context."
@@ -58,7 +66,7 @@ class NewsArticle(BaseModel):
     image: str = Field(
         ...,
         title="Image",
-        description="Url to an hero image which is defined in the context. If context specifies no images return as None.",
+        description="Url to a hero image which is defined in the context. If context specifies no images return as None.",
     )
     categories: Optional[List[NewsCategory]] = Field(
         default=None,
@@ -76,9 +84,18 @@ class NewsArticle(BaseModel):
 
     def to_json(self) -> str:
         """
-        Convert the NewsArticle instance to a compact JSON string.
+        Convert the NewsArticle instance to a compact JSON string using Pydantic v2 serialization.
         """
-        return json.dumps(self.model_dump(), ensure_ascii=False)
+        data = self.model_dump(mode="json", exclude_none=True)
+        return json.dumps(data, ensure_ascii=False)
+
+    @staticmethod
+    def from_json(json_str: str) -> "NewsArticle":
+        """
+        Deserialize a JSON string into a NewsArticle instance using Pydantic v2 deserialization.
+        """
+        data = json.loads(json_str)
+        return NewsArticle.model_validate(data)
 
 
 web_source_builder_parser = PydanticOutputParser(pydantic_object=NewsArticle)

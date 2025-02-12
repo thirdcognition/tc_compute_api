@@ -73,7 +73,9 @@ class TranscriptParser(BaseOutputParser[str]):
                 r"<person(\d+)(.*?)>(.*?)</person\1>", block, re.DOTALL | re.IGNORECASE
             )
             if not match:
-                raise OutputParserException(f"Malformed block: {block}")
+                raise OutputParserException(
+                    f"Malformed block. Verify format and correct tags <person[N]></person[N]>:\n\n{block}"
+                )
 
             speaker, properties, content = match.groups()
             content = content.strip()
@@ -298,13 +300,21 @@ transcript_template = {
         You are an international Oscar-winning screenwriter.
         You have been working with multiple award-winning podcasters.
     """,
+    "identity_extend": """
+        You are a skilled writer specializing in adding depth, detail, and richness to content.
+        Your expertise lies in expanding ideas, enhancing descriptions, and making content more engaging and comprehensive.
+    """,
+    "identity_reduce": """
+        You are a skilled writer with expertise in simplifying and condensing content effectively.
+        Your focus is on maintaining clarity while making content concise, direct, and impactful.
+    """,
     "instructions": {
         "rewriter": """
-        - You will receive a transcript, the content it was built from, specific configuration details, and feedback for improving the transcript.
-        - Your primary task is to rewrite the provided transcript for an AI Text-To-Speech (TTS) pipeline, ensuring it adheres to the feedback provided.
-        - Incorporate all feedback into the rewritten transcript. The feedback is the most critical aspect and must be fully addressed.
+        - You will receive a transcript, the content it was built from, specific configuration details, and a list of issues for improving the transcript.
+        - Your primary task is to rewrite the provided transcript for an AI Text-To-Speech (TTS) pipeline, ensuring it adheres to the suggestions from issues provided.
+        - Incorporate all suggestions into the rewritten transcript. Fixing the Issues is the most critical aspect and must be fully addressed.
         - Make the transcript as engaging and natural as possible. Person1 and Person2 will be simulated by different voice engines.
-        - Introduce disfluencies, interruptions, and back-and-forth banter to make the conversation sound real and dynamic, but only if the feedback allows for it.
+        - Introduce disfluencies, interruptions, and back-and-forth banter to make the conversation sound real and dynamic, but only if the suggestions allows for it.
         - Avoid repetitive phrases like "totally," "absolutely," "exactly," or "definitely." Use them sparingly. Do not use filler words.
         - Avoid use of "it", "it's", "is it", "it's like", "[it's, feels, etc] like [something]" but maintain the flow of conversation.
         - Do not be repetitive, and make each item interesting and insightful.
@@ -317,7 +327,7 @@ transcript_template = {
         - Ensure the rewritten transcript includes a proper introduction and conclusion.
         - If the content is labeled as the "Main Item," emphasize that this is the central topic of the episode.
         - Highlight the "Main Item" if the configuration specifies it as true, ensuring it is the focal point of the transcript.
-        - You will be given a set of feedback. Make sure to implement the changes defined in it.
+        - You will be given a set of Issues. Make sure to implement the suggestions defined in them.
         - Do not add laughter, e.g. "Ha" or "Ha ha", etc. in the script. Instead use witty comebacks or other reactive responses.
         - Do not use childish humor or remarks. Make sure all humor is aligned with the content and is smart.
         - Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
@@ -328,19 +338,21 @@ transcript_template = {
         "maintain": """
         - You will be given a word count. The transcript output must have at least that many words.
         - Do not reduce the length of the conversation. Make sure output transcript has as much content as the input transcript.
-        - The resulting transcript should match the length of the previous transcript unless the feedback explicitly requests a longer or shorter version.
+        - The resulting transcript should match the length of the previous transcript.
         """,
         "extend": """
-        - You will be given a word count. The transcript output must have at least that many words.
-        - Extend the transcript using the provided content, previous versions, examples and instructions.
-        - The transcript is not long enough and needs to be be extended.
-        - Aim for a very long conversation. Use max_output_tokens limit.
+        - Your primary goal is to significantly expand the transcript to meet or exceed the given word count.
+        - Use the provided content, earlier drafts, relevant examples, and guidelines to enrich and extend the conversation.
+        - Focus on creating a much longer transcript. Ensure it is at least twice as long as the original while maintaining coherence.
+        - Incorporate suggestions, ideas, or issues from the provided list to extend the content meaningfully.
+        - Strive for maximum word count by fully utilizing the max_output_tokens limit without compromising quality.
+        - Prioritize length and depth in the output, transforming brief conversations into extensive, detailed discussions.
         """,
         "reduce": """
-        - You will be given a word count. The transcript output must fit in that amount of words.
-        - Reduce the transcript using the provided examples and instructions.
-        - The transcript is too long and should be compressed.
-        - Aim for a short conversation but maintain all the defined content and follow feedback.
+        - Compress the transcript to fit within a specified word count.
+        - Use the provided examples, instructions, and issue list for refinement.
+        - Focus on reducing length while preserving all key content and addressing issues highlighted.
+        - Prioritize concise phrasing to achieve the shortest possible version without losing meaning.
         """,
     },
     "format": """
@@ -350,14 +362,6 @@ transcript_template = {
         - Make sure Person1's text is inside the tag <Person1> and do the same with Person2.
         - The conversation must start with <Person1> and end with <Person2>.
         """,
-    "fewshot": {
-        "extend": textwrap.indent(
-            load_fewshot_examples("transcript_rewriter_extend.txt"), prefix="        "
-        ),
-        "reduce": textwrap.indent(
-            load_fewshot_examples("transcript_rewriter_reduce.txt"), prefix="        "
-        ),
-    },
 }
 
 transcript_combiner = PromptFormatter(
@@ -468,9 +472,8 @@ transcript_rewriter = PromptFormatter(
         {transcript}
         Transcript end.
 
-        Transcript and Issue history :
-        {previous_transcripts}
-        Transcript and Issue history end.
+        Issues (fix these):
+        {feedback}
 
         Content start:
         {content}
@@ -494,9 +497,6 @@ transcript_rewriter = PromptFormatter(
 
         Main Item:
         {main_item}
-
-        Feedback (did the transcript pass the check?):
-        {feedback}
         """
     ),
 )
@@ -520,9 +520,7 @@ transcript_rewriter_extend = PromptFormatter(
         FORMAT:
         {transcript_template["format"]}
 
-        {textwrap.indent(load_fewshot_examples('transcript_rewriter.txt'), prefix="        ")}
-
-        {transcript_template["fewshot"]["extend"]}
+        {textwrap.indent(load_fewshot_examples('transcript_rewriter_extend.txt'), prefix="        ")}
         """
     ),
     user=textwrap.dedent(
@@ -531,9 +529,8 @@ transcript_rewriter_extend = PromptFormatter(
         {transcript}
         Transcript end.
 
-        Transcript and Issue history :
-        {previous_transcripts}
-        Transcript and Issue history end.
+        Issues (fix these):
+        {feedback}
 
         Content start:
         {content}
@@ -557,12 +554,14 @@ transcript_rewriter_extend = PromptFormatter(
 
         Main Item:
         {main_item}
-
-        Feedback (did the transcript pass the check?):
-        {feedback}
         """
     ),
 )
+
+
+# Transcript and Issue history :
+# {previous_transcripts}
+# Transcript and Issue history end.
 
 transcript_rewriter_extend.parser = TranscriptParser()
 
@@ -582,9 +581,7 @@ transcript_rewriter_reduce = PromptFormatter(
         FORMAT:
         {transcript_template["format"]}
 
-        {textwrap.indent(load_fewshot_examples('transcript_rewriter.txt'), prefix="        ")}
-
-        {transcript_template["fewshot"]["reduce"]}
+        {textwrap.indent(load_fewshot_examples('transcript_rewriter_reduce.txt'), prefix="        ")}
         """
     ),
     user=textwrap.dedent(
@@ -593,9 +590,8 @@ transcript_rewriter_reduce = PromptFormatter(
         {transcript}
         Transcript end.
 
-        Transcript and Issue history :
-        {previous_transcripts}
-        Transcript and Issue history end.
+        Issues (fix these):
+        {feedback}
 
         Content start:
         {content}
@@ -619,9 +615,6 @@ transcript_rewriter_reduce = PromptFormatter(
 
         Main Item:
         {main_item}
-
-        Feedback (did the transcript pass the check?):
-        {feedback}
         """
     ),
 )
@@ -643,6 +636,8 @@ transcript_writer = PromptFormatter(
 
         1. Objective:
         - Create an engaging and natural conversation between Person1 and Person2.
+        - The conversation should go through all the provided content.
+        - The conversation should be long and detailed.
         - Ensure the transcript is suitable for TTS pipelines and can be combined with other transcripts.
         - Consider the content, define an Approach and a Plan for your output in <think>-tags before writing transcript.
 
@@ -656,6 +651,7 @@ transcript_writer = PromptFormatter(
         - Use advanced TTS-specific markup (excluding Amazon/Alexa-specific tags) to enhance the naturalness of the conversation.
         - Ensure the conversation starts with Person1 and ends with Person2.
         - You will be given a word count. The transcript output must have at least that many words.
+        - Aim for a very long conversation. Use max_output_tokens limit.
 
         3. Guidelines:
         - Focus on a specific topic or theme for the conversation.
@@ -669,9 +665,9 @@ transcript_writer = PromptFormatter(
         - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
         - Do not use childish humor or remarks. Make sure all humor is aligned with the content and is smart.
         - Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
-        - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
         - Don't start from the middle of a conversation.
         - Align the listener before jumping into the discussion by briefing the subject.
+        - Person1 and person2 should refer to each other with names, but don't start with them.
 
         4. Instructions for using previous episodes:
         - Refer to previous episodes if the discussions align with them.

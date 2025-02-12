@@ -112,7 +112,7 @@ def transcript_rewriter(
         all_issues = sorted(
             (issue for issue in quality_check.issues if issue.severity >= 2),
             key=lambda issue: issue.severity,
-            reverse=True,
+            reverse=False,
         )
 
         quality_check.pass_test = len(all_issues) == 0
@@ -141,7 +141,19 @@ def transcript_rewriter(
                     )
                 )
                 guidance += feedback + "\n"
-                print(f"Rewrite transcript due to failed check.\n{feedback=}")
+                chain = (
+                    "transcript_rewriter"
+                    if change_length_int == 0
+                    else (
+                        "transcript_rewriter_extend"
+                        if change_length_int == 1
+                        else "transcript_rewriter_reduce"
+                    )
+                )
+
+                print(
+                    f"Rewrite transcript due to failed check (use chain {chain}).\n{feedback=}"
+                )
 
                 try:
                     transcript_content = _transcript_rewriter(
@@ -151,15 +163,7 @@ def transcript_rewriter(
                         conversation_config=conversation_config,
                         previous_transcripts=previous_transcripts,
                         previous_episodes=previous_episodes,
-                        chain=(
-                            "transcript_rewriter"
-                            if change_length_int == 0
-                            else (
-                                "transcript_rewriter_extend"
-                                if change_length_int == 1
-                                else "transcript_rewriter_reduce"
-                            )
-                        ),
+                        chain=chain,
                         word_count=word_count,
                     )
                     change_length_int = 0
@@ -168,10 +172,10 @@ def transcript_rewriter(
                     transcript_content = prev_content
 
             print(f"Rewritten transcript ({count_words(transcript_content)=})")
-            previous_transcripts += (
-                f"\n\n{'Retry ' + str(retry_count) if retry_count > 0 else 'First version'}:\n"
-                f"Input:\n{prev_content}\n\nIssues:\n{guidance}"
-            )
+            # previous_transcripts += (
+            #     f"\n\n{'Retry ' + str(retry_count) if retry_count > 0 else 'First version'}:\n"
+            #     f"Input:\n{prev_content}\n\nIssues:\n{guidance}"
+            # )
             if (
                 check_passed
                 and (prev_len * 1.05) > count_words(transcript_content)
@@ -560,14 +564,21 @@ def generate_and_verify_transcript(
     """
     urls = urls or []
 
+    if isinstance(sources, WebSource) or isinstance(sources, WebSourceCollection):
+        if sources is None:
+            source = sources
+            sources = None
+        else:
+            sources = [source, sources]
+            source = None
+
     if content is None:
         content = ""
         if source is not None:
             content = str(source)
-        elif sources is not None:
-            content = "\n\n".join(map(str, sources))
 
-    print(f"Generate transcript with: {repr(conversation_config)=}")
+        if isinstance(sources, list):
+            content += "\n\n".join(map(str, sources))
 
     main_item = False
     if source is not None and (
@@ -575,13 +586,24 @@ def generate_and_verify_transcript(
     ):
         main_item = source.main_item
 
-    orig_transcript_content = transcript_writer(
-        content,
-        conversation_config,
-        main_item,
-        previous_transcripts,
-        previous_episodes=previous_episodes,
-    )
+    orig_transcript_content = ""
+    if (sources or isinstance(source, WebSourceCollection)) and total_count == 1:
+        for item in sources if sources else source.web_sources:
+            orig_transcript_content += transcript_writer(
+                str(item),
+                conversation_config,
+                main_item,
+                previous_transcripts,
+                previous_episodes=previous_episodes,
+            )
+    else:
+        orig_transcript_content = transcript_writer(
+            content,
+            conversation_config,
+            main_item,
+            previous_transcripts,
+            previous_episodes=previous_episodes,
+        )
 
     # print(f"Resulting initial transcript: {orig_transcript_content=}")
 

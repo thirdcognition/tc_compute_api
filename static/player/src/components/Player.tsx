@@ -222,7 +222,7 @@ const Player: React.FC<PlayerProps> = ({
     return (
         <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl mb-4 overflow-hidden">
             <div
-                className="relative w-full h-[820px] bg-top bg-cover bg-no-repeat"
+                className="relative w-full h-[680px] bg-top bg-cover bg-no-repeat"
                 style={{
                     ...(transcript.metadata.images[0] && {
                         backgroundImage: `url(${transcript.metadata.images[0]})`
@@ -230,7 +230,7 @@ const Player: React.FC<PlayerProps> = ({
                 }}
             >
                 <div className="absolute bottom-0 w-full p-6 hero-image-gradient">
-                    <p className="text-xs font-normal text-gray-800 dark:text-gray-300">
+                    <p className="text-xs font-bold text-gray-800 dark:text-gray-300">
                         LATEST EPISODE:
                     </p>
 

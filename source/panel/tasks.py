@@ -1,7 +1,7 @@
 import datetime
 from typing import Tuple
 from uuid import UUID
-from celery import Task
+from celery import Task, chord
 from supabase import Client
 from croniter import croniter
 
@@ -16,6 +16,7 @@ from source.models.structures.panel import (
     ConversationConfig,
 )
 from source.models.supabase.panel import PanelTranscript, PanelDiscussion, PanelAudio
+from source.tasks.utils import collect_results
 
 
 @celery_app.task
@@ -90,88 +91,80 @@ def generate_transcripts_task(
         if transcript.generation_cronjob != ""
     ]
 
-    # Fetch all PanelTranscripts and map them by panelId
+    # Create a chord to execute tasks in parallel and collect results
+    chord(
+        process_transcript_task.s(transcript.id, tokens, use_service_account)
+        for transcript in transcripts_with_cronjob
+    )(collect_results.s() | handle_transcript_cron_results.s())
+
+
+@celery_app.task
+def handle_transcript_cron_results(new_transcript_ids):
+    """
+    Handle the results of the collect_results task and send emails if needed.
+
+    :param new_transcript_ids: List of new transcript IDs.
+    """
+    if new_transcript_ids:
+        send_email_about_new_shows_task.delay(new_transcript_ids)
+
+
+@celery_app.task
+def process_transcript_task(
+    transcript_id: UUID, tokens: Tuple[str, str], use_service_account=False
+):
+    supabase_client = (
+        get_sync_supabase_service_client()
+        if use_service_account
+        else get_sync_supabase_client(access_token=tokens[0], refresh_token=tokens[1])
+    )
+
+    # Fetch the transcript from the database
+    transcript = PanelTranscript.fetch_from_supabase_sync(
+        supabase_client, transcript_id
+    )
+    if not transcript:
+        raise ValueError(f"Transcript with ID {transcript_id} not found.")
+
+    panel_id = transcript.panel_id
+    latest_transcript = transcript  # Default to the current transcript
+
+    # Fetch the latest transcript if available
     all_transcripts_with_parent = PanelTranscript.fetch_existing_from_supabase_sync(
         supabase_client, filter={"generation_parent": {"neq": None}}
     )
+    transcripts_by_parent = {}
+    for t in all_transcripts_with_parent:
+        if t.generation_parent not in transcripts_by_parent:
+            transcripts_by_parent[t.generation_parent] = []
+        transcripts_by_parent[t.generation_parent].append(t)
 
-    transcripts_by_parent: dict[str, PanelTranscript] = {}
-    for transcript in all_transcripts_with_parent:
-        if transcript.generation_parent not in transcripts_by_parent:
-            transcripts_by_parent[transcript.generation_parent] = []
-        transcripts_by_parent[transcript.generation_parent].append(transcript)
-
-    # Sort each list of transcripts by updated_at, newest first
-    for transcript_id in transcripts_by_parent:
+    if transcript_id in transcripts_by_parent:
         transcripts_by_parent[transcript_id].sort(
             key=lambda x: x.updated_at, reverse=True
         )
+        latest_transcript = transcripts_by_parent[transcript_id][0]
 
-    new_transcripts_generated = False  # Flag to track new transcript generation
+    now_aware = datetime.datetime.now(datetime.timezone.utc)
+    cron = croniter(
+        transcript.generation_cronjob,
+        latest_transcript.created_at.astimezone(datetime.timezone.utc),
+    )
+    next_scheduled_time = datetime.datetime.fromtimestamp(
+        cron.get_next(float)
+    ).astimezone(datetime.timezone.utc)
 
-    new_transcript_ids = []  # List to store IDs of newly generated transcripts
+    if now_aware >= next_scheduled_time:
+        panel = PanelDiscussion.fetch_from_supabase_sync(supabase_client, panel_id)
+        metadata = (panel.metadata or {}) if panel else {}
 
-    for transcript in transcripts_with_cronjob:
-        transcript_id = transcript.id
-        panel_id = transcript.panel_id
-        latest_transcript: PanelTranscript = transcripts_by_parent.get(
-            transcript_id, [None]
-        )[0]
-
-        if latest_transcript is None:
-            latest_transcript = transcript
-
-        if latest_transcript:
-            now_aware = datetime.datetime.now(datetime.timezone.utc)
-            cron = croniter(
-                transcript.generation_cronjob,
-                latest_transcript.created_at.astimezone(datetime.timezone.utc),
-            )
-            prev_scheduled_time = datetime.datetime.fromtimestamp(
-                cron.get_prev(float)
-            ).astimezone(datetime.timezone.utc)
-            next_scheduled_time = datetime.datetime.fromtimestamp(
-                cron.get_next(float)
-            ).astimezone(datetime.timezone.utc)
-
-            print(
-                f"Debug: Transcript {transcript.id} - now: {now_aware}, "
-                f"next: {next_scheduled_time}, prev: {prev_scheduled_time}, "
-                f"created_at: {latest_transcript.created_at}"
-            )
-            if (
-                now_aware
-                >= next_scheduled_time
-                # and latest_transcript.created_at <= prev_scheduled_time
-            ):
-                # Fetch the matching PanelDiscussion model
-                panel = PanelDiscussion.fetch_from_supabase_sync(
-                    supabase_client, panel_id
-                )
-                metadata = (panel.metadata or {}) if panel is not None else {}
-
-                # Call the helper function to process transcript generation
-                transcript_id = process_transcript_generation(
-                    tokens, transcript, panel, metadata, supabase_client
-                )
-                new_transcript_ids.append(str(transcript_id))
-                new_transcripts_generated = True
-
-            else:
-                time_since_creation_str = str(
-                    now_aware - latest_transcript.created_at
-                ).split(".")[
-                    0
-                ]  # Remove microseconds
-                print(
-                    f"Skip generation for {transcript.id} because time since creation is {time_since_creation_str}, "
-                    f"current time is {now_aware}, next scheduled time is {next_scheduled_time}, "
-                    f"and previous scheduled time is {prev_scheduled_time}"
-                )
-
-    # After processing all transcripts, check the flag and send emails if needed
-    if new_transcripts_generated:
-        send_email_about_new_shows_task.delay(new_transcript_ids)
+        # Process transcript generation
+        transcript_id = process_transcript_generation(
+            tokens, transcript, panel, metadata, supabase_client
+        )
+        return str(transcript_id)
+    else:
+        return None
 
 
 def process_transcript_generation(tokens, transcript, panel, metadata, supabase_client):

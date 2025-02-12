@@ -413,19 +413,19 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
     ),
     "transcript_rewriter": (
-        "instruct_detailed_0",
+        "instruct_detailed",
         transcript_rewriter,
         True,
         True,
     ),
     "transcript_rewriter_extend": (
-        "instruct_detailed_0",
+        "instruct_detailed",
         transcript_rewriter_extend,
         True,
         True,
     ),
     "transcript_rewriter_reduce": (
-        "instruct_detailed_0",
+        "instruct_detailed",
         transcript_rewriter_reduce,
         True,
         True,

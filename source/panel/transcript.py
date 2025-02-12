@@ -1,8 +1,10 @@
 import datetime
+import time
 from typing import List, Tuple
 from uuid import UUID
 from supabase import Client
-
+from celery import group
+from celery.result import AsyncResult
 from app.core.supabase import get_sync_supabase_client
 
 # from source.llm_exec.websource_exec import group_web_sources
@@ -20,11 +22,14 @@ from source.helpers.sources import (
     manage_news_sources,
 )
 from source.llm_exec.panel_exec import (
-    generate_and_verify_transcript,
     transcript_combiner,
     transcript_summary_writer,
 )
 from source.models.data.user import UserIDs
+from source.tasks.transcript import (
+    generate_and_verify_transcript_task,
+    serialize_sources,
+)
 
 
 def initialize_supabase_client(
@@ -162,56 +167,70 @@ def generate_transcripts(
     all_transcripts = []
     combined_sources = []
     total_count = len(sources) + 1
+    # Prepare tasks for parallel execution
+    tasks = []
 
     if longform:
         if input_text:
-            try:
-                transcript = generate_and_verify_transcript(
-                    conversation_config=conversation_config,
+            tasks.append(
+                generate_and_verify_transcript_task.s(
+                    conversation_config_json=conversation_config.model_dump(),
                     content=input_text,
-                    urls=[],
-                    total_count=total_count,
+                    sources_json=None,
+                    previous_transcripts=None,
                     previous_episodes=previous_episodes,
+                    total_count=total_count,
                 )
-                combined_sources.append(input_text)
-                all_transcripts.append(transcript)
-            except ValueError as e:
-                print(
-                    f"Skipping transcript generation for input_text due to error: {e}"
-                )
+            )
+            combined_sources.append(input_text)
 
         for source_collection in sources:
-            try:
-                transcript = generate_and_verify_transcript(
-                    conversation_config=conversation_config,
-                    source=source_collection,
-                    urls=[],
-                    total_count=total_count,
-                    previous_transcripts=all_transcripts,
+            serialized = serialize_sources(source_collection)
+            tasks.append(
+                generate_and_verify_transcript_task.s(
+                    conversation_config_json=conversation_config.model_dump(),
+                    content=None,
+                    sources_json=serialized,
+                    previous_transcripts=None,
                     previous_episodes=previous_episodes,
+                    total_count=total_count,
                 )
-                all_transcripts.append(transcript)
-                combined_sources.append(source_collection)
-            except ValueError as e:
-                print(
-                    f"Skipping transcript generation for source_collection due to error: {e}"
-                )
+            )
+            combined_sources.append(source_collection)
+
     else:
         combined_sources = [input_text] + sources if input_text else sources
-        # try:
-        all_transcripts = [
-            generate_and_verify_transcript(
-                conversation_config=conversation_config,
-                sources=combined_sources,
-                urls=[],
-                total_count=1,
+        serialized = serialize_sources(combined_sources)
+        tasks.append(
+            generate_and_verify_transcript_task.s(
+                conversation_config_json=conversation_config.model_dump(),
+                content=None,
+                sources_json=serialized,
+                previous_transcripts=None,
                 previous_episodes=previous_episodes,
+                total_count=1,
             )
-        ]
-        # except ValueError as e:
-        #     print(
-        #         f"Skipping transcript generation for combined_sources due to error: {e}"
-        #     )
+        )
+
+    # Execute tasks in parallel using Celery group
+    task_group = group(tasks)
+    async_result: AsyncResult = task_group.apply_async()
+
+    while not async_result.ready():
+        print("Build transcripts: Waiting for tasks to complete...")
+        time.sleep(15)  # Sleep for 5 seconds to avoid busy-waiting
+
+    results = None
+    # Process results asynchronously
+    if async_result.successful():
+        results = async_result.get(disable_sync_subtasks=False)
+    else:
+        raise Exception("Error while generating transcripts...")
+
+    # Collect results
+    for result in results:
+        if result:  # Ensure the task succeeded
+            all_transcripts.append(result)
 
     return all_transcripts, combined_sources
 

@@ -1,8 +1,11 @@
 import datetime
 import json
 import re
+import time
 from typing import List, Optional, Type, Union
 
+from celery import group
+from celery.result import AsyncResult
 import feedparser
 from langsmith import traceable
 from pygooglenews import GoogleNews
@@ -23,6 +26,7 @@ from source.models.structures.sources import (
     YleNewsConfig,
 )
 from source.models.structures.web_source_structure import WebSourceCollection
+from source.tasks.web_sources import generate_resolve_tasks_for_websources
 
 
 # Google News
@@ -261,7 +265,7 @@ def fetch_links(
     max_items=5,
 ) -> List[WebSourceCollection | WebSource]:
     max_items = int(max_items)
-    print(f"Fetching links for sources ({max_items}): {sources}")
+    print(f"Fetch links: Fetching links for sources ({max_items}): {sources}")
     all_resolved_links: List[WebSourceCollection | WebSource] = []
     all_items: List[WebSource] = []
     for source in sources:
@@ -269,40 +273,41 @@ def fetch_links(
         try:
             if isinstance(source, str):
                 # Handle single URL directly
-                print(f"Handling single URL: {source}")
+                print(f"Fetch links: Handling single URL: {source}")
                 urls = [source]
             elif isinstance(source, list) and all(
                 isinstance(url, str) for url in source
             ):
                 # Handle list of URLs
-                print(f"Handling list of URLs: {source}")
+                print(f"Fetch links: Handling list of URLs: {source}")
                 urls = source
 
             if urls is not None:
                 # Use fetch_urls_items and fetch_url_links to resolve URLs
-                print(f"Fetching URL items for: {urls}")
+                print(f"Fetch links: Fetching URL items for: {urls}")
                 items = fetch_urls_items(urls)
             elif isinstance(source, GoogleNewsConfig):
-                print(f"Fetching Google News items for config: {source}")
+                print(f"Fetch links: Fetching Google News items for config: {source}")
                 items = fetch_google_news_items(source)
             elif isinstance(source, HackerNewsConfig):
-                print(f"Fetching HackerNews items for config: {source}")
+                print(f"Fetch links: Fetching HackerNews items for config: {source}")
                 items = fetch_hackernews_items(source)
             elif isinstance(source, TechCrunchNewsConfig):
-                print(f"Fetching TechCrunch news items for config: {source}")
+                print(
+                    f"Fetch links: Fetching TechCrunch news items for config: {source}"
+                )
                 items = fetch_techcrunch_news_items(source)
             elif isinstance(source, YleNewsConfig):
-                print(f"Fetching Yle news items for config: {source}")
+                print(f"Fetch links: Fetching Yle news items for config: {source}")
                 items = fetch_yle_news_items(source)
             else:
                 continue
 
             all_items += items
         except Exception as e:
-            print(f"Unable to fetch source {e=} \n\n {source=}")
+            print(f"Fetch links: Unable to fetch source {e=} \n\n {source=}")
 
-    resolved_count = 0
-    resolve_items: List[WebSourceCollection] = None
+    resolve_items: List[WebSourceCollection | WebSource] = None
     if len(all_items) > max_items:
         resolve_items = group_rss_items(all_items, guidance, min_amount=max_items)
     else:
@@ -312,18 +317,104 @@ def fetch_links(
         ]
 
     if not dry_run:
-        for item in resolve_items:
-            print(f"Resolving and storing link for item: {item.title}")
-            if item.resolve_and_store_link(supabase, user_ids):
-                all_resolved_links.append(item)
-                resolved_count += 1
-            if resolved_count >= max_items:
-                break
+        # Initialize variables
+        successful_results = []
+        start_index = 0  # Start index for batching
 
+        while len(successful_results) < max_items and start_index < len(resolve_items):
+            print(
+                f"Fetch links: Starting batch processing with {max_items=}, starting from {start_index=}"
+            )
+            batch_tasks = []
+            task_mapping = []  # To track which item each task corresponds to
+            collection_task_counts = (
+                {}
+            )  # To track the number of tasks for each WebSourceCollection
+            collection_item_map = {}  # Map to track items by their keys
+
+            end_index = min(start_index + max_items, len(resolve_items))
+            print(
+                f"Fetch links: Collecting tasks for items: start_index={start_index}, end_index={end_index}"
+            )
+            for idx, item in enumerate(
+                resolve_items[start_index:end_index], start=start_index
+            ):
+                print(f"Fetch links: Processing item at index {idx}: {item}")
+                if isinstance(item, WebSourceCollection):
+                    collection_key = (item.title, item.max_amount)
+                    tasks = item.generate_tasks(supabase, user_ids)
+                    batch_tasks.extend(tasks)
+                    collection_task_counts[collection_key] = len(
+                        tasks
+                    )  # Track the number of tasks
+                    collection_item_map[
+                        collection_key
+                    ] = item  # Map the key to the item
+                    task_mapping.extend(
+                        [collection_key] * len(tasks)
+                    )  # Map each task to the collection
+                else:
+                    standalone_task = generate_resolve_tasks_for_websources(
+                        [item], supabase, user_ids
+                    )[0]
+                    batch_tasks.append(standalone_task)
+                    task_mapping.append(item)  # Map the task to the standalone item
+
+            # Group and execute the batch of tasks
+            if batch_tasks:
+                print(f"Fetch links: Generated {len(batch_tasks)} tasks for the batch")
+                task_group = group(batch_tasks)
+                print("Fetch links: Executing task group asynchronously")
+                async_result: AsyncResult = task_group.apply_async()
+
+                # Poll for task completion without blocking
+                while not async_result.ready():
+                    print("Fetch links: Waiting for tasks to complete...")
+                    time.sleep(15)  # Sleep for 5 seconds to avoid busy-waiting
+
+                # Process results asynchronously
+                if async_result.successful():
+                    print("Fetch links: Tasks completed. Retrieving results...")
+                    task_results = async_result.get(disable_sync_subtasks=False)
+                    print(
+                        f"Fetch links: Retrieved {len(task_results)} results from the batch"
+                    )
+
+                    # Process results
+                    result_index = 0
+                    for item in resolve_items[start_index:end_index]:
+                        if len(successful_results) >= max_items:
+                            break  # Stop if max_items successful results are achieved
+                        if isinstance(item, WebSourceCollection):
+                            collection_key = (item.title, item.max_amount)
+                            task_count = collection_task_counts[collection_key]
+                            collection_results = task_results[
+                                result_index : result_index + task_count
+                            ]
+                            result_index += task_count
+                            if any(
+                                collection_results
+                            ):  # Check if all tasks in the group were successful
+                                item.load_from_supabase(supabase=supabase)
+                                successful_results.append(item)
+                        else:
+                            if task_results[
+                                result_index
+                            ]:  # Check if the standalone task was successful
+                                item.load_from_supabase(supabase=supabase)
+                                successful_results.append(item)
+                            result_index += 1
+                else:
+                    print("Fetch links: Some tasks failed. Handling errors...")
+
+            start_index = end_index
+
+        # Add successful results to all_resolved_links
+        all_resolved_links.extend(successful_results)
     else:
         all_resolved_links.extend(resolve_items[:max_items])
 
-    print(f"Total resolved links: {len(all_resolved_links)}")
+    print(f"Fetch links: Total resolved links: {len(all_resolved_links)}")
     return all_resolved_links
 
 

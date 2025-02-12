@@ -103,7 +103,9 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                                 ).toLocaleDateString(undefined, {
                                     year: "numeric",
                                     month: "long",
-                                    day: "numeric"
+                                    day: "numeric",
+                                    hour: "numeric",
+                                    minute: "numeric"
                                 }),
                                 title: transcript?.title || "Untitled",
                                 thumbnail,

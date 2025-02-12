@@ -23,7 +23,7 @@ function App() {
     return (
         <Router basename="/player">
             <div className="min-h-screen">
-                <div className="min-h-screen flex flex-col items-center p-8 w-full">
+                <div className="min-h-screen flex flex-col items-center p-2 w-full">
                     <Routes>
                         <Route path="/" element={<PanelList />} />
                         <Route
