@@ -31,7 +31,7 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
     if async_mode:
 
         async def retry(params):
-            delay = randint(4, 10)
+            delay = randint(10, 30)
             print(f"Retrying after {delay} seconds due to RateLimitError...")
             await asyncio.sleep(delay)
             return await chain.ainvoke(params)
@@ -39,7 +39,7 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
     else:
 
         def retry(params):
-            delay = randint(4, 10)
+            delay = randint(10, 30)
             print(f"Retrying after {delay} seconds due to RateLimitError...")
             sleep(delay)
             return chain.invoke(params)
