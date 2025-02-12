@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict
 from langchain_core.runnables import RunnableSequence, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
@@ -26,11 +27,26 @@ def log_chain_params(params):
 
 
 # Retry logic for RateLimitError
-def retry_with_delay(params):
-    delay = randint(4, 10)
-    print(f"Retrying after {delay} seconds due to RateLimitError...")
-    sleep(delay)
-    return params
+def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
+    if async_mode:
+
+        async def retry(params):
+            delay = randint(4, 10)
+            print(f"Retrying after {delay} seconds due to RateLimitError...")
+            await asyncio.sleep(delay)
+            return await chain.ainvoke(params)
+
+    else:
+
+        def retry(params):
+            delay = randint(4, 10)
+            print(f"Retrying after {delay} seconds due to RateLimitError...")
+            sleep(delay)
+            return chain.invoke(params)
+
+    return chain.with_fallbacks(
+        [RunnableLambda(retry)], exceptions_to_handle=(RateLimitError,)
+    )
 
 
 class BaseChain:
@@ -98,9 +114,7 @@ class BaseChain:
         else:
             raise ValueError("Either parent_chain or prompt_template must be provided.")
 
-        self.chain = self.chain.with_fallbacks(
-            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
-        )
+        self.chain = retry_with_delay(self.chain, self.async_mode)
 
         self.chain.name = f"{self.name}-base"
 

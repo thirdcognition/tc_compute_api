@@ -5,7 +5,6 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.output_parsers import BaseOutputParser, PydanticOutputParser
 from langchain.output_parsers.retry import RetryWithErrorOutputParser
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, BaseMessage
-from openai import RateLimitError
 from source.chains.base import retry_with_delay
 from langchain_core.runnables import (
     RunnableSequence,
@@ -126,17 +125,13 @@ class BaseValidationChain(BaseChain):
             | self.validation_prompt.get_chat_prompt_template()
             | self.validation_llm
         )
-        self.validation_chain = self.validation_chain.with_fallbacks(
-            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
-        )
+        self.validation_chain = retry_with_delay(self.validation_chain, self.async_mode)
         self.validation_chain.name = f"{self.name}-validation-initial"
 
         self.retry_chain: RunnableSequence = (
             self.error_prompt.get_chat_prompt_template() | self.retry_llm
         )
-        self.retry_chain = self.retry_chain.with_fallbacks(
-            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
-        )
+        self.retry_chain = retry_with_delay(self.retry_chain, self.async_mode)
         self.retry_chain.name = f"{self.name}-validation-retry"
 
         parser = self.output_parser or self.prompt.parser
@@ -167,9 +162,7 @@ class BaseValidationChain(BaseChain):
         ):
             self.verify_chain = add_format_instructions(parser) | self.verify_chain
 
-        self.verify_chain = self.verify_chain.with_fallbacks(
-            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
-        )
+        self.verify_chain = retry_with_delay(self.verify_chain, self.async_mode)
         self.verify_chain.name = f"{self.name}-validation-verify"
 
         self.chain = RunnableLambda(

@@ -13,7 +13,6 @@ from langchain_core.runnables import (
     RunnablePassthrough,
     RunnableLambda,
 )
-from openai import RateLimitError
 from pydantic import ValidationError
 
 # from source.models.config.logging import logger
@@ -104,18 +103,16 @@ class BaseParserChain(BaseChain):
             completion=self.chain,
             prompt_value=self.prompt_template,
             params=RunnablePassthrough(),
-        ).with_fallbacks(
-            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
         )
+        parser_chain = retry_with_delay(parser_chain, self.async_mode)
         parser_chain.name = f"{self.name}-parser-initial"
 
         parser_retry_chain = (
             RunnableLambda(retry_setup)
             | self.error_prompt.get_agent_prompt_template()
             | self.retry_llm  # (llms[self.llm_id] if self.llm_id == "json" else get_llm("instruct_detailed"))
-        ).with_fallbacks(
-            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
         )
+        parser_retry_chain = retry_with_delay(parser_retry_chain, self.async_mode)
         parser_retry_chain.name = f"{self.name}-parser-retry"
 
         retry_parser = RetryWithErrorOutputParser(
