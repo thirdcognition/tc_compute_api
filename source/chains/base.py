@@ -45,7 +45,8 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
             return chain.invoke(params)
 
     return chain.with_fallbacks(
-        [RunnableLambda(retry)], exceptions_to_handle=(RateLimitError,)
+        [RunnableLambda(retry), RunnableLambda(retry)],
+        exceptions_to_handle=(RateLimitError,),
     )
 
 
