@@ -1,4 +1,5 @@
 import asyncio
+import re
 from typing import Dict
 from langchain_core.runnables import RunnableSequence, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
@@ -8,6 +9,11 @@ from time import sleep
 
 from source.helpers.shared import print_params
 from source.prompts.base import PromptFormatter
+
+
+def extract_delay_from_error(error_message: str) -> int:
+    match = re.search(r"retry after (\d+) seconds", error_message, re.IGNORECASE)
+    return int(match.group(1)) if match else randint(10, 60)
 
 
 def keep_chain_params(params: Dict):
@@ -31,7 +37,8 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
     if async_mode:
 
         async def retry(params):
-            delay = randint(10, 60)
+            error_message = params.get("rate_limit_error", {}).get("message", "")
+            delay = extract_delay_from_error(error_message)
             print(f"Retrying after {delay} seconds due to RateLimitError...")
             await asyncio.sleep(delay)
             return await chain.ainvoke(params)
@@ -39,7 +46,8 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
     else:
 
         def retry(params):
-            delay = randint(10, 60)
+            error_message = params.get("rate_limit_error", {}).get("message", "")
+            delay = extract_delay_from_error(error_message)
             print(f"Retrying after {delay} seconds due to RateLimitError...")
             sleep(delay)
             return chain.invoke(params)
@@ -47,6 +55,7 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
     return chain.with_fallbacks(
         [RunnableLambda(retry), RunnableLambda(retry)],
         exceptions_to_handle=(RateLimitError,),
+        exception_key="rate_limit_error",
     )
 
 
