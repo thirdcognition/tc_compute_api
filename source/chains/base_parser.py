@@ -104,6 +104,8 @@ class BaseParserChain(BaseChain):
             completion=self.chain,
             prompt_value=self.prompt_template,
             params=RunnablePassthrough(),
+        ).with_fallbacks(
+            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
         )
         parser_chain.name = f"{self.name}-parser-initial"
 

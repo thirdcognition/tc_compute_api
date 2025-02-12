@@ -126,10 +126,16 @@ class BaseValidationChain(BaseChain):
             | self.validation_prompt.get_chat_prompt_template()
             | self.validation_llm
         )
+        self.validation_chain = self.validation_chain.with_fallbacks(
+            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
+        )
         self.validation_chain.name = f"{self.name}-validation-initial"
 
         self.retry_chain: RunnableSequence = (
             self.error_prompt.get_chat_prompt_template() | self.retry_llm
+        )
+        self.retry_chain = self.retry_chain.with_fallbacks(
+            [RunnableLambda(retry_with_delay)], exceptions_to_handle=(RateLimitError,)
         )
         self.retry_chain.name = f"{self.name}-validation-retry"
 
