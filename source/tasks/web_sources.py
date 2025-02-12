@@ -16,7 +16,9 @@ def resolve_and_store_link_task(serialized_web_source, tokens, serialized_user_i
     """
     # Deserialize the WebSource instance
     web_source = WebSource.model_validate(serialized_web_source)
-    user_ids = UserIDs.model_validate(serialized_user_ids)
+    user_ids = None
+    if serialized_user_ids is not None:
+        user_ids = UserIDs.model_validate(serialized_user_ids)
 
     # Recreate the Supabase client using tokens
     if tokens:
