@@ -34,19 +34,26 @@ def log_chain_params(params):
     return params
 
 
+def get_error_message(params):
+    error_message = {}
+    if isinstance(params, dict):
+        error_message = params.get("rate_limit_error", {})
+
+    if isinstance(error_message, dict):
+        if "error" in error_message.keys():
+            error_message = error_message.get("error")
+        return error_message.get("message", "")
+
+    if isinstance(error_message, RateLimitError):
+        return error_message.message
+
+
 # Retry logic for RateLimitError
 def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
     if async_mode:
 
         async def retry(params):
-            error_message = params.get("rate_limit_error", {}).get("message", "")
-            if error_message == "":
-                error_message = (
-                    params.get("rate_limit_error", {})
-                    .get("error", {})
-                    .get("message", "")
-                )
-            delay = extract_delay_from_error(error_message)
+            delay = extract_delay_from_error(get_error_message(params))
             print(f"Retrying after {delay} seconds due to RateLimitError...")
             await asyncio.sleep(delay)
             return await chain.ainvoke(params)
@@ -54,14 +61,7 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
     else:
 
         def retry(params):
-            error_message = params.get("rate_limit_error", {}).get("message", "")
-            if error_message == "":
-                error_message = (
-                    params.get("rate_limit_error", {})
-                    .get("error", {})
-                    .get("message", "")
-                )
-            delay = extract_delay_from_error(error_message)
+            delay = extract_delay_from_error(get_error_message(params))
             print(f"Retrying after {delay} seconds due to RateLimitError...")
             sleep(delay)
             return chain.invoke(params)
