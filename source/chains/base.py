@@ -3,7 +3,7 @@ import re
 from typing import Dict
 from langchain_core.runnables import RunnableSequence, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
-from openai import RateLimitError
+from openai import RateLimitError, BadRequestError
 from random import randint
 from time import sleep
 
@@ -54,7 +54,10 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
 
     return chain.with_fallbacks(
         [RunnableLambda(retry), RunnableLambda(retry)],
-        exceptions_to_handle=(RateLimitError,),
+        exceptions_to_handle=(
+            RateLimitError,
+            BadRequestError,
+        ),
         exception_key="rate_limit_error",
     )
 

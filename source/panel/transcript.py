@@ -225,7 +225,7 @@ def generate_transcripts(
     task_group = group(tasks)
     async_result: AsyncResult = task_group.apply_async(disable_sync_subtasks=False)
     start_time = time.time()
-    timeout = 45 * 60
+    timeout = 30 * 60
     elapsed_time = 0
     while not async_result.ready() and elapsed_time < timeout:
         elapsed_time = time.time() - start_time

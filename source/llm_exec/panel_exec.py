@@ -209,7 +209,7 @@ def _transcript_rewriter(
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
-    while result == "" and retries > 0:
+    while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
         retries -= 1
         result = get_chain(chain).invoke(
             {
@@ -240,8 +240,8 @@ def _transcript_rewriter(
             }
         )
 
-        if isinstance(result, BaseMessage):
-            raise ValueError("Generation failed: Received a BaseMessage.")
+    if isinstance(result, BaseMessage):
+        raise ValueError("Generation failed: Received a BaseMessage.")
 
     print(f"LLM result {count_words(result)=}")
 
@@ -267,7 +267,7 @@ def transcript_writer(
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
-    while result == "" and retries > 0:
+    while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
         retries -= 1
         result = get_chain("transcript_writer").invoke(
             {
@@ -304,8 +304,8 @@ def transcript_writer(
             }
         )
 
-        if isinstance(result, BaseMessage):
-            raise ValueError("Generation failed: Received a BaseMessage.")
+    if isinstance(result, BaseMessage):
+        raise ValueError("Generation failed: Received a BaseMessage.")
 
     print(f"transcript_writer - Completed with result ({count_words(result)})")
 
@@ -329,7 +329,7 @@ def transcript_bridge_writer(
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
-    while result == "" and retries > 0:
+    while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
         retries -= 1
         result = get_chain("transcript_bridge_writer").invoke(
             {
@@ -347,8 +347,8 @@ def transcript_bridge_writer(
             }
         )
 
-        if isinstance(result, BaseMessage):
-            raise ValueError("Generation failed: Received a BaseMessage.")
+    if isinstance(result, BaseMessage):
+        raise ValueError("Generation failed: Received a BaseMessage.")
 
     print(f"transcript_bridge_writer - Completed with result ({count_words(result)})")
 
@@ -372,7 +372,7 @@ def transcript_intro_writer(
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
-    while result == "" and retries > 0:
+    while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
         retries -= 1
         result = get_chain("transcript_intro_writer").invoke(
             {
@@ -394,8 +394,8 @@ def transcript_intro_writer(
             }
         )
 
-        if isinstance(result, BaseMessage):
-            raise ValueError("Generation failed: Received a BaseMessage.")
+    if isinstance(result, BaseMessage):
+        raise ValueError("Generation failed: Received a BaseMessage.")
 
     print(f"transcript_intro_writer - Completed with result ({count_words(result)})")
 
@@ -418,7 +418,7 @@ def transcript_conclusion_writer(
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
-    while result == "" and retries > 0:
+    while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
         retries -= 1
         result = get_chain("transcript_conclusion_writer").invoke(
             {
@@ -437,8 +437,8 @@ def transcript_conclusion_writer(
             }
         )
 
-        if isinstance(result, BaseMessage):
-            raise ValueError("Generation failed: Received a BaseMessage.")
+    if isinstance(result, BaseMessage):
+        raise ValueError("Generation failed: Received a BaseMessage.")
 
     print(
         f"transcript_conclusion_writer - Completed with result ({count_words(result)})"

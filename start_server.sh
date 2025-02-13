@@ -32,7 +32,7 @@ if [ -f /.dockerenv ]; then
     UVICORN_PID=$!
 
     echo "Starting Celery worker"
-    celery -A app.core.celery_app worker -B --autoscale=64,8 &
+    celery -A app.core.celery_app worker -B --autoscale=16,4 &
     CELERY_WORKER_PID=$!
 
     echo "Starting Flower on port $FLOWER_PORT"

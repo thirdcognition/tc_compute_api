@@ -371,7 +371,7 @@ def fetch_links(
                 )
 
                 start_time = time.time()
-                timeout = 5 * 60
+                timeout = 15 * 60
                 elapsed_time = 0
 
                 # Poll for task completion without blocking
