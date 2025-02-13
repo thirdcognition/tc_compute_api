@@ -223,7 +223,7 @@ def generate_transcripts(
 
     # Execute tasks in parallel using Celery group
     task_group = group(tasks)
-    async_result: AsyncResult = task_group.apply_async()
+    async_result: AsyncResult = task_group.apply_async(disable_sync_subtasks=False)
     start_time = time.time()
     timeout = 45 * 60
     elapsed_time = 0

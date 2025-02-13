@@ -366,7 +366,9 @@ def fetch_links(
                 print(f"Fetch links: Generated {len(batch_tasks)} tasks for the batch")
                 task_group = group(batch_tasks)
                 print("Fetch links: Executing task group asynchronously")
-                async_result: AsyncResult = task_group.apply_async()
+                async_result: AsyncResult = task_group.apply_async(
+                    disable_sync_subtasks=False
+                )
 
                 start_time = time.time()
                 timeout = 5 * 60
