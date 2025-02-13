@@ -3,7 +3,9 @@ import re
 from typing import Dict
 from langchain_core.runnables import RunnableSequence, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
-from openai import RateLimitError, BadRequestError
+from openai import RateLimitError
+
+# , BadRequestError
 from random import randint
 from time import sleep
 
@@ -13,7 +15,7 @@ from source.prompts.base import PromptFormatter
 
 def extract_delay_from_error(error_message: str) -> int:
     match = re.search(r"retry after (\d+) seconds", error_message, re.IGNORECASE)
-    return int(match.group(1)) if match else randint(10, 60)
+    return (int(match.group(1)) + randint(3, 9)) if match else randint(10, 60)
 
 
 def keep_chain_params(params: Dict):
@@ -38,6 +40,12 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
 
         async def retry(params):
             error_message = params.get("rate_limit_error", {}).get("message", "")
+            if error_message == "":
+                error_message = (
+                    params.get("rate_limit_error", {})
+                    .get("error", {})
+                    .get("message", "")
+                )
             delay = extract_delay_from_error(error_message)
             print(f"Retrying after {delay} seconds due to RateLimitError...")
             await asyncio.sleep(delay)
@@ -47,6 +55,12 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
 
         def retry(params):
             error_message = params.get("rate_limit_error", {}).get("message", "")
+            if error_message == "":
+                error_message = (
+                    params.get("rate_limit_error", {})
+                    .get("error", {})
+                    .get("message", "")
+                )
             delay = extract_delay_from_error(error_message)
             print(f"Retrying after {delay} seconds due to RateLimitError...")
             sleep(delay)
@@ -54,10 +68,7 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
 
     return chain.with_fallbacks(
         [RunnableLambda(retry), RunnableLambda(retry)],
-        exceptions_to_handle=(
-            RateLimitError,
-            BadRequestError,
-        ),
+        exceptions_to_handle=(RateLimitError,),
         exception_key="rate_limit_error",
     )
 
