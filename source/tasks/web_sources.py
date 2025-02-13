@@ -46,7 +46,11 @@ def generate_resolve_tasks_for_websources(web_sources, tokens, user_ids):
     serialized_user_ids = user_ids.model_dump() if user_ids else None
 
     # Return a list of tasks for parallel execution
-    return [
-        resolve_and_store_link_task.s(item, tokens, serialized_user_ids)
-        for item in serialized_items
-    ]
+    tasks = []
+    for item in serialized_items:
+        try:
+            task = resolve_and_store_link_task.s(item, tokens, serialized_user_ids)
+            tasks.append(task)
+        except Exception as e:
+            print(f"Failed to create task for item {item}: {e}")
+    return tasks
