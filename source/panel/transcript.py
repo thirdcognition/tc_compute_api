@@ -227,6 +227,17 @@ def generate_transcripts(
         )
         time.sleep(30)  # Sleep for 5 seconds to avoid busy-waiting
 
+    if not async_result.ready() and elapsed_time >= timeout:
+        print("Timeout reached! Revoking pending tasks...")
+        for task in task_group:
+            async_task_result = AsyncResult(task.id)
+            task_state = async_task_result.state
+            if task_state == "PENDING":
+                async_task_result.revoke(terminate=False)  # Only cancel pending tasks
+                print(f"Task {task.id} revoked (state: {task_state}).")
+            else:
+                print(f"Task {task.id} not revoked (state: {task_state}).")
+
     results = None
     # Process results asynchronously
     if async_result.successful():
