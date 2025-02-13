@@ -230,7 +230,7 @@ def generate_transcripts(
     if not async_result.ready() and elapsed_time >= timeout:
         print("Timeout reached! Revoking pending tasks...")
         for task in task_group:
-            if task is None:
+            if task is None or task.id is None:
                 continue
             async_task_result = AsyncResult(task.id)
             task_state = async_task_result.state
