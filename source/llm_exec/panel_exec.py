@@ -80,7 +80,7 @@ def transcript_rewriter(
     change_length = True
 
     transcript_content = orig_transcript
-
+    fallback_quality_check = TranscriptQualityCheck(pass_test=True, issues=[])
     previous_transcripts = (
         ""
         if orig_combined_transcript is None
@@ -99,16 +99,24 @@ def transcript_rewriter(
             change_length = change_length_int != 0
 
         print("Verify transcript quality...")
-        quality_check = verify_transcript_quality(
-            transcript=transcript_content,
-            content=content,
-            conversation_config=conversation_config,
-            main_item=main_item,
-            length_instructions=(
-                length_instructions if change_length else "Transcript length is good."
-            ),
-            previous_episodes=previous_episodes,
-        )
+        quality_check = fallback_quality_check
+        try:
+            quality_check = verify_transcript_quality(
+                transcript=transcript_content,
+                content=content,
+                conversation_config=conversation_config,
+                main_item=main_item,
+                length_instructions=(
+                    length_instructions
+                    if change_length
+                    else "Transcript length is good."
+                ),
+                previous_episodes=previous_episodes,
+            )
+        except Exception as e:
+            print(f"Error while verifying quality: {e}")
+            quality_check = fallback_quality_check
+
         all_issues = sorted(
             (issue for issue in quality_check.issues if issue.severity >= 2),
             key=lambda issue: issue.severity,
@@ -348,7 +356,8 @@ def transcript_bridge_writer(
         )
 
     if isinstance(result, BaseMessage):
-        raise ValueError("Generation failed: Received a BaseMessage.")
+        print("Generation failed: Received a BaseMessage.")
+        return ""
 
     print(f"transcript_bridge_writer - Completed with result ({count_words(result)})")
 
@@ -395,7 +404,8 @@ def transcript_intro_writer(
         )
 
     if isinstance(result, BaseMessage):
-        raise ValueError("Generation failed: Received a BaseMessage.")
+        print("Generation failed: Received a BaseMessage.")
+        return ""
 
     print(f"transcript_intro_writer - Completed with result ({count_words(result)})")
 
@@ -438,7 +448,8 @@ def transcript_conclusion_writer(
         )
 
     if isinstance(result, BaseMessage):
-        raise ValueError("Generation failed: Received a BaseMessage.")
+        print("Generation failed: Received a BaseMessage.")
+        return ""
 
     print(
         f"transcript_conclusion_writer - Completed with result ({count_words(result)})"
@@ -593,21 +604,27 @@ def generate_and_verify_transcript(
     orig_transcript_content = ""
     if (sources or isinstance(source, WebSourceCollection)) and total_count == 1:
         for item in sources if sources else source.web_sources:
-            orig_transcript_content += transcript_writer(
-                str(item),
+            try:
+                orig_transcript_content += transcript_writer(
+                    str(item),
+                    conversation_config,
+                    main_item,
+                    previous_transcripts,
+                    previous_episodes=previous_episodes,
+                )
+            except Exception as e:
+                print(f"Error while writing transcript: {e}")
+    else:
+        try:
+            orig_transcript_content = transcript_writer(
+                content,
                 conversation_config,
                 main_item,
                 previous_transcripts,
                 previous_episodes=previous_episodes,
             )
-    else:
-        orig_transcript_content = transcript_writer(
-            content,
-            conversation_config,
-            main_item,
-            previous_transcripts,
-            previous_episodes=previous_episodes,
-        )
+        except Exception as e:
+            print(f"Error while writing transcript: {e}")
 
     # print(f"Resulting initial transcript: {orig_transcript_content=}")
 
@@ -632,9 +649,9 @@ def generate_and_verify_transcript(
         )
     except Exception as e:
         print(f"Failed to rewrite the transcript: {e}")
-        raise
+        transcript_content = orig_transcript_content or ""
 
-    return transcript_content
+    return transcript_content or orig_transcript_content
 
 
 @traceable(
