@@ -1,7 +1,7 @@
 import datetime
 import time
 from typing import List, Tuple
-from uuid import UUID
+from uuid import UUID, uuid4
 from supabase import Client
 from celery import group
 from celery.result import AsyncResult
@@ -174,56 +174,63 @@ def generate_transcripts(
 
     if longform:
         if input_text:
-            tasks.append(
-                generate_and_verify_transcript_task.s(
-                    conversation_config_json=conversation_config.model_dump(),
-                    content=input_text,
-                    sources_json=None,
-                    previous_transcripts=None,
-                    previous_episodes=previous_episodes,
-                    total_count=total_count,
-                )
-            )
+            task_id = str(uuid4())  # Generate a unique ID for the task
+            task = generate_and_verify_transcript_task.s(
+                conversation_config_json=conversation_config.model_dump(),
+                content=input_text,
+                sources_json=None,
+                previous_transcripts=None,
+                previous_episodes=previous_episodes,
+                total_count=total_count,
+            ).set(
+                task_id=task_id
+            )  # Set the task ID
+            tasks.append(task)
             combined_sources.append(input_text)
 
         for source_collection in sources:
             serialized = serialize_sources(source_collection)
-            tasks.append(
-                generate_and_verify_transcript_task.s(
-                    conversation_config_json=conversation_config.model_dump(),
-                    content=None,
-                    sources_json=serialized,
-                    previous_transcripts=None,
-                    previous_episodes=previous_episodes,
-                    total_count=total_count,
-                )
-            )
-            combined_sources.append(source_collection)
-
-    else:
-        combined_sources = [input_text] + sources if input_text else sources
-        serialized = serialize_sources(combined_sources)
-        tasks.append(
-            generate_and_verify_transcript_task.s(
+            task_id = str(uuid4())  # Generate a unique ID for the task
+            task = generate_and_verify_transcript_task.s(
                 conversation_config_json=conversation_config.model_dump(),
                 content=None,
                 sources_json=serialized,
                 previous_transcripts=None,
                 previous_episodes=previous_episodes,
-                total_count=1,
-            )
-        )
+                total_count=total_count,
+            ).set(
+                task_id=task_id
+            )  # Set the task ID
+            tasks.append(task)
+            combined_sources.append(source_collection)
+
+    else:
+        combined_sources = [input_text] + sources if input_text else sources
+        serialized = serialize_sources(combined_sources)
+
+        task_id = str(uuid4())  # Generate a unique ID for the task
+        task = generate_and_verify_transcript_task.s(
+            conversation_config_json=conversation_config.model_dump(),
+            content=None,
+            sources_json=serialized,
+            previous_transcripts=None,
+            previous_episodes=previous_episodes,
+            total_count=1,
+        ).set(
+            task_id=task_id
+        )  # Set the task ID
+        tasks.append(task)
 
     # Execute tasks in parallel using Celery group
     task_group = group(tasks)
     async_result: AsyncResult = task_group.apply_async()
     start_time = time.time()
-    timeout = 15 * 60
+    timeout = 45 * 60
     elapsed_time = 0
     while not async_result.ready() and elapsed_time < timeout:
         elapsed_time = time.time() - start_time
         print(
-            "Build transcripts: Waiting for tasks to complete ({elapsed_time:.2f}s)..."
+            f"Build transcripts: Waiting for tasks to complete ({elapsed_time:.2f}s)..."
         )
         time.sleep(30)  # Sleep for 5 seconds to avoid busy-waiting
 

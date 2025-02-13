@@ -1,3 +1,4 @@
+import uuid
 from app.core.celery_app import celery_app
 from source.models.data.user import UserIDs
 from source.models.data.web_source import WebSource
@@ -49,7 +50,14 @@ def generate_resolve_tasks_for_websources(web_sources, tokens, user_ids):
     tasks = []
     for item in serialized_items:
         try:
-            task = resolve_and_store_link_task.s(item, tokens, serialized_user_ids)
+            # Generate a unique ID for the task using item's unique identifier
+            item_id = str(uuid.uuid4())
+            task_id = f"resolve_store_{item_id}"
+
+            # Create the task and set a unique ID
+            task = resolve_and_store_link_task.s(item, tokens, serialized_user_ids).set(
+                task_id=task_id
+            )
             tasks.append(task)
         except Exception as e:
             print(f"Failed to create task for item {item}: {e}")
