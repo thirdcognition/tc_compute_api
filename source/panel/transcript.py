@@ -217,10 +217,15 @@ def generate_transcripts(
     # Execute tasks in parallel using Celery group
     task_group = group(tasks)
     async_result: AsyncResult = task_group.apply_async()
-
-    while not async_result.ready():
-        print("Build transcripts: Waiting for tasks to complete...")
-        time.sleep(15)  # Sleep for 5 seconds to avoid busy-waiting
+    start_time = time.time()
+    timeout = 15 * 60
+    elapsed_time = 0
+    while not async_result.ready() and elapsed_time < timeout:
+        elapsed_time = time.time() - start_time
+        print(
+            "Build transcripts: Waiting for tasks to complete ({elapsed_time:.2f}s)..."
+        )
+        time.sleep(30)  # Sleep for 5 seconds to avoid busy-waiting
 
     results = None
     # Process results asynchronously

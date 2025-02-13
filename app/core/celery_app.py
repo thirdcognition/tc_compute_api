@@ -103,7 +103,8 @@ celery_app.conf.beat_schedule = {
     "generate-transcripts-every-30min": {
         "task": "source.panel.tasks.generate_transcripts_task",
         # "schedule": crontab(hour=4, minute=30),
-        "schedule": crontab(minute="*/30"),
+        "schedule": crontab(hour="*/1"),
+        # "schedule": crontab(minute="*/30"),
         # "schedule": crontab(minute="*/2"),
         # if IN_PRODUCTION else crontab(minute="*/2"),
         "args": (
