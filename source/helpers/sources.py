@@ -369,7 +369,7 @@ def fetch_links(
                 async_result: AsyncResult = task_group.apply_async()
 
                 start_time = time.time()
-                timeout = 15 * 60
+                timeout = 5 * 60
                 elapsed_time = 0
 
                 # Poll for task completion without blocking
