@@ -48,6 +48,7 @@ function PanelDetailEdit({
     const [languages, setLanguages] = useState(
         panel.metadata?.languages || ["English"]
     );
+    const [isPublic, setIsPublic] = useState(panel.is_public || false);
     const handlePanelSubmit = async (e) => {
         e.preventDefault();
         const panelData = {
@@ -60,7 +61,8 @@ function PanelDetailEdit({
             hackerNewsConfigs,
             newsGuidance,
             newsItems,
-            languages
+            languages,
+            is_public: isPublic
         };
 
         if (panel.id) {
@@ -131,10 +133,25 @@ function PanelDetailEdit({
                             label="Name:"
                             initialText={title}
                             onTextChange={setTitle}
+                            textarea={false}
                         />
-                        <Form.Label className="font-semibold mt-2">
-                            Extra languages (Note: Selected voice models should
-                            be tested to work with the languages):
+                        <Form.Check
+                            type="switch"
+                            label="Public Panel"
+                            checked={isPublic}
+                            onChange={(e) => setIsPublic(e.target.checked)}
+                            className="font-semibold mt-4"
+                        />
+                        <Form.Text className="text-muted">
+                            Toggle to make this panel public or private
+                            <i>(hidden)</i>.
+                        </Form.Text>
+                        <Form.Label className="font-semibold mt-6">
+                            Extra languages:
+                            <br />
+                            <small className="text-muted font-normal">
+                                Note: Test all languages with voice models
+                            </small>
                         </Form.Label>
                         <Form.Control
                             as="select"
@@ -159,9 +176,9 @@ function PanelDetailEdit({
                                     </option>
                                 ))}
                         </Form.Control>
-                        <p className="text-sm ml-2">
+                        <Form.Text className="text-muted ml-2">
                             English is enabled by default
-                        </p>
+                        </Form.Text>
                     </Form.Group>
 
                     <Form.Group

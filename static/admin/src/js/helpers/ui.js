@@ -1,17 +1,25 @@
+import {
+    FaRegCircle,
+    FaHourglassHalf,
+    FaCog,
+    FaTimes,
+    FaCheck
+} from "react-icons/fa";
+
 export const processStateIcon = (state) => {
     switch (state) {
         case "none":
-            return "○"; // UML symbol for none
+            return <FaRegCircle className="inline-block" />;
         case "waiting":
-            return "⏳"; // UML symbol for waiting
+            return <FaHourglassHalf className="inline-block" />;
         case "processing":
-            return "⚙️"; // UML symbol for processing
+            return <FaCog className="inline-block" />;
         case "failed":
-            return "❌"; // UML symbol for failed
+            return <FaTimes className="inline-block" />;
         case "done":
-            return "✔️"; // UML symbol for done
+            return <FaCheck className="inline-block" />;
         default:
-            return "";
+            return null;
     }
 };
 

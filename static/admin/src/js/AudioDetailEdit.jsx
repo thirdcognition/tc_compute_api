@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Form, Button } from "react-bootstrap";
 import { defaultTtsModelOptions } from "./options.js";
 import { handleCreateAudio } from "./helpers/panel.js";
+import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 
 function AudioDetailEdit({
     panelId,
@@ -126,7 +127,13 @@ function AudioDetailEdit({
                         onClick={() => setShowDetails(!showDetails)}
                         className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
                     >
-                        <span className="mr-2">{showDetails ? "▼" : "▶"}</span>
+                        <span className="mr-2">
+                            {showDetails ? (
+                                <FaChevronDown className="inline-block" />
+                            ) : (
+                                <FaChevronRight className="inline-block" />
+                            )}
+                        </span>
                         <span>
                             {showDetails ? "Hide Details" : "Show More Details"}
                         </span>

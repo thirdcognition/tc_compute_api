@@ -11,6 +11,7 @@ import {
 } from "./options.js";
 import { getWordCountDescription } from "./helpers/ui.js";
 import CronjobComponent from "./components/CronjobComponent.jsx";
+import { FaChevronDown, FaChevronRight, FaTimes } from "react-icons/fa";
 
 function TranscriptDetailEdit({
     panelId,
@@ -166,11 +167,18 @@ function TranscriptDetailEdit({
                             </div>
                         </Form.Group>
                     )}
+                    // Replaced emoticons with FaIcons
                     <Button
                         onClick={() => setShowDetails(!showDetails)}
                         className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
                     >
-                        <span className="mr-2">{showDetails ? "▼" : "▶"}</span>
+                        <span className="mr-2">
+                            {showDetails ? (
+                                <FaChevronDown className="inline-block" />
+                            ) : (
+                                <FaChevronRight className="inline-block" />
+                            )}
+                        </span>
                         <span>
                             {showDetails ? "Hide Details" : "Show More Details"}
                         </span>
@@ -405,7 +413,7 @@ function TranscriptDetailEdit({
                                                         }}
                                                         className="remove-item-button"
                                                     >
-                                                        ✖
+                                                        <FaTimes className="inline-block" />
                                                     </Button>
                                                 </div>
                                             )

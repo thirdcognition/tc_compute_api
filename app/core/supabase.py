@@ -47,7 +47,11 @@ class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
     async def __call__(self, request: Request) -> Optional[str]:
         global anon_paths
 
-        if any(
+        authorization: str = request.headers.get("Authorization")
+        scheme, _, param = authorization.partition(" ")
+        has_auth = scheme.lower() == "bearer" and bool(param)
+
+        if not has_auth and any(
             request.url.path.startswith(path) and request.method in methods
             for path, methods in anon_paths
         ):

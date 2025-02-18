@@ -227,6 +227,20 @@ export async function createAudio(data) {
     }
 }
 
+export async function deletePanel(panelId) {
+    try {
+        await fetchData(`/panel/${panelId}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${session.getAccessToken()}`
+            }
+        });
+    } catch (error) {
+        console.error("Error deleting panel:", error);
+        throw error;
+    }
+}
+
 export async function deleteTranscript(transcriptId) {
     try {
         await fetchData(`/panel/transcript/${transcriptId}`, {

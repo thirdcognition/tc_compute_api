@@ -9,13 +9,18 @@ import {
     useLocation
 } from "react-router-dom";
 import { Button, Container, Row, Col, ListGroup } from "react-bootstrap";
+import { FaTrash, FaRocket, FaBan } from "react-icons/fa";
 import LoginForm from "./js/LoginForm.jsx";
 import PanelEdit from "./js/PanelEdit.jsx";
 import PanelDetails from "./js/PanelDetails.jsx";
 import session from "./js/helpers/session.js";
 import { fetchPublicPanels } from "./js/helpers/fetch.js";
 import ConfirmationDialog from "./js/components/ConfirmationDialog.jsx";
-import { setToggleDialog } from "./js/helpers/panel.js";
+import {
+    setToggleDialog,
+    showConfirmationDialog,
+    handleDeleteItem
+} from "./js/helpers/panel.js";
 
 function App() {
     return (
@@ -104,6 +109,10 @@ function AppContent() {
         navigate(redirectPath);
     }
 
+    const deletePanel = (panelId, onSuccess) => {
+        handleDeleteItem({ type: "panel", id: panelId }, onSuccess);
+    };
+
     function logout() {
         session.logout();
         setPanels([]);
@@ -173,33 +182,69 @@ function AppContent() {
                                     }
                                     onClick={() => handlePanelChange(panel)}
                                     className={
-                                        selectedPanel &&
+                                        (selectedPanel &&
                                         selectedPanel.id === panel.id
                                             ? "text-white bg-blue-500"
-                                            : ""
+                                            : "") + " px-2"
                                     }
                                 >
-                                    <div
-                                        className={
-                                            selectedPanel &&
-                                            selectedPanel.id === panel.id
-                                                ? "text-white"
-                                                : ""
-                                        }
-                                    >
-                                        {panel.title}
-                                    </div>
-                                    <div
-                                        className={
-                                            selectedPanel &&
-                                            selectedPanel.id === panel.id
-                                                ? "text-white text-sm"
-                                                : "text-gray-600 text-sm"
-                                        }
-                                    >
-                                        {new Date(
-                                            panel.created_at
-                                        ).toLocaleString()}
+                                    <div className="flex items-center">
+                                        <div
+                                            className="icon-container flex-1 text-left"
+                                            aria-label={
+                                                panel.is_public
+                                                    ? "released"
+                                                    : "unreleased"
+                                            }
+                                        >
+                                            {panel.is_public ? (
+                                                <FaRocket className="inline-block" />
+                                            ) : (
+                                                <FaBan className="inline-block" />
+                                            )}
+                                        </div>
+                                        <div className="flex-3">
+                                            <div
+                                                className={
+                                                    selectedPanel &&
+                                                    selectedPanel.id ===
+                                                        panel.id
+                                                        ? "text-white"
+                                                        : ""
+                                                }
+                                            >
+                                                {panel.title}
+                                            </div>
+                                            <div
+                                                className={
+                                                    selectedPanel &&
+                                                    selectedPanel.id ===
+                                                        panel.id
+                                                        ? "text-white text-xs"
+                                                        : "text-gray-600 text-xs"
+                                                }
+                                            >
+                                                {new Date(
+                                                    panel.created_at
+                                                ).toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() =>
+                                                showConfirmationDialog(
+                                                    "Are you sure you want to delete this panel? This action cannot be undone.",
+                                                    () =>
+                                                        deletePanel(
+                                                            panel.id,
+                                                            fetchPanels
+                                                        ) // Refresh panels after deletion
+                                                )
+                                            }
+                                            className="text-red-500 hover:text-red-700 flex-1 text-right"
+                                            aria-label="Delete Panel"
+                                        >
+                                            <FaTrash className="inline-block" />
+                                        </button>
                                     </div>
                                 </ListGroup.Item>
                             ))}

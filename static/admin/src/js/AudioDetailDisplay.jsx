@@ -1,5 +1,12 @@
 import { useState } from "react";
 import { processStateIcon } from "./helpers/ui.js";
+import {
+    FaCalendarAlt,
+    FaClock,
+    FaChevronDown,
+    FaChevronRight,
+    FaDownload
+} from "react-icons/fa";
 
 const AudioDetailDisplay = ({ audio, audioUrl }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -26,29 +33,37 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
 
     return (
         <div className="audio-detail-display border p-3 mb-4 rounded">
-            <h6 className="font-bold mb-2">{audio.title}</h6>
-            <p className="mb-2 flex items-center">
+            <h6 className="font-bold mb-3 pr-4">{audio.title}</h6>
+            <p className="mb-3 flex items-between">
                 <span className="mr-2">
                     {processStateIcon(audio.process_state)}
                 </span>
-                <span className="mr-2">📅</span>
-                <span className="mr-2">
-                    {new Date(audio.created_at).toLocaleString()}
-                </span>
-                <span className="mr-2">🕒</span>
-                <span>{new Date(audio.updated_at).toLocaleString()}</span>
+                <div class="flex-1 self-center">
+                    <span className="mr-2">
+                        <FaCalendarAlt className="inline-block" />
+                    </span>
+                    <span className="mr-2">
+                        {new Date(audio.created_at).toLocaleString()}
+                    </span>
+                </div>
+                <div class="flex-1 self-center">
+                    <span className="mr-2">
+                        <FaClock className="inline-block" />
+                    </span>
+                    <span>{new Date(audio.updated_at).toLocaleString()}</span>
+                </div>
             </p>
             {audio.process_state_message && (
                 <p className="mb-2 text-red-500">
                     Error: {audio.process_state_message}
                 </p>
             )}
-            <div className="flex items-center mb-2">
+            <div className="flex items-center justify-center mb-4 w-full">
                 {audio.process_state === "done" && (
                     <>
                         <audio controls src={audioUrl} className="h-8" />
                         <button onClick={handleDownload} className="ml-2">
-                            ⇩
+                            <FaDownload className="inline-block" />
                         </button>
                     </>
                 )}
@@ -57,7 +72,13 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
                 onClick={() => setShowDetails(!showDetails)}
                 className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
             >
-                <span className="mr-2">{showDetails ? "▼" : "▶"}</span>
+                <span className="mr-2">
+                    {showDetails ? (
+                        <FaChevronDown className="inline-block" />
+                    ) : (
+                        <FaChevronRight className="inline-block" />
+                    )}
+                </span>
                 <span>
                     {showDetails ? "Hide Details" : "Show More Details"}
                 </span>

@@ -84,7 +84,7 @@ function PanelDetails({ panel }) {
                                             })
                                     )
                                 }
-                                className="absolute top-0 right-0 p-2 text-red-500 hover:text-red-700"
+                                className="absolute top-1 right-1 p-2 text-red-500 hover:text-red-700"
                                 aria-label="Delete Transcript"
                             >
                                 <FaTrash />

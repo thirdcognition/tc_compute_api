@@ -3,6 +3,7 @@ import { fetchNewsLinks } from "./helpers/fetch.js";
 import { Button } from "react-bootstrap";
 import PanelDetailEdit from "./PanelDetailEdit";
 import { conceptsMap } from "./news_config/YleNewsConfigForm";
+import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 
 const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -103,7 +104,13 @@ const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
                 onClick={() => setShowDetails(!showDetails)}
                 className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
             >
-                <span className="mr-2">{showDetails ? "▼" : "▶"}</span>
+                <span className="mr-2">
+                    {showDetails ? (
+                        <FaChevronDown className="inline-block" />
+                    ) : (
+                        <FaChevronRight className="inline-block" />
+                    )}
+                </span>
                 <span>
                     {showDetails ? "Hide Details" : "Show More Details"}
                 </span>

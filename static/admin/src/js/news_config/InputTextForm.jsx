@@ -4,7 +4,8 @@ import { Form } from "react-bootstrap";
 function InputTextForm({
     initialText = "",
     onTextChange,
-    label = "Input Text:"
+    label = "Input Text:",
+    textarea = true
 }) {
     const [text, setText] = useState(initialText);
 
@@ -16,7 +17,7 @@ function InputTextForm({
         <Form.Group controlId="inputText">
             <Form.Label className="font-semibold">{label}</Form.Label>
             <Form.Control
-                as="textarea"
+                as={textarea ? "textarea" : "input"}
                 rows={5}
                 placeholder="Enter text here..."
                 value={text}

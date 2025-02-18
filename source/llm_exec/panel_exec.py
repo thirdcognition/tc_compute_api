@@ -755,7 +755,7 @@ def generate_and_verify_transcript(
             orig_transcript=transcript_content,
             conversation_config=conversation_config,
             word_count=word_count,
-            max_retries=6 if total_count == 1 else 4,
+            max_retries=4 if total_count == 1 else 2,
             main_item=False,
             previous_episodes=previous_episodes,
         )

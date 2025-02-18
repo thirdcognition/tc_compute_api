@@ -193,12 +193,12 @@ class WebSourceCollection(BaseModel):
         references = []
         # Ensure the source_model is set
 
-        for item in self.web_sources:
-            ref = item.create_panel_transcript_source_reference_sync(
-                supabase, transcript
-            )
-            if ref is not None:
-                references.append(ref)
+        # for item in self.web_sources:
+        #     ref = item.create_panel_transcript_source_reference_sync(
+        #         supabase, transcript
+        #     )
+        #     if ref is not None:
+        #         references.append(ref)
 
         if not self.source_model:
             self.save_to_database_sync(supabase)

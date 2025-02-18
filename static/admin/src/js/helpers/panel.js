@@ -4,6 +4,7 @@ import {
     createAudio,
     deleteAudio,
     deleteTranscript,
+    deletePanel,
     updatePanel
 } from "./fetch.js";
 let dialogManager = {
@@ -241,6 +242,8 @@ export const handleDeleteItem = async (deleteTarget, refreshCallback) => {
             await deleteAudio(deleteTarget.id);
         } else if (deleteTarget.type === "transcript") {
             await deleteTranscript(deleteTarget.id);
+        } else if (deleteTarget.type === "panel") {
+            await deletePanel(deleteTarget.id);
         } else {
             throw new Error(
                 `Unsupported delete target type: ${deleteTarget.type}`

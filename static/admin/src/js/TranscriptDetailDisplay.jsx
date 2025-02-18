@@ -7,13 +7,20 @@ import {
     updateTranscript
 } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
-import { FaTrash, FaClock, FaRegStar } from "react-icons/fa";
 import {
     processStateIcon,
     getWordCountDescription,
     formatCronjob
 } from "./helpers/ui.js";
-import { FaSyncAlt } from "react-icons/fa";
+import {
+    FaTrash,
+    FaClock,
+    FaRegStar,
+    FaCalendarAlt,
+    FaChevronDown,
+    FaChevronRight,
+    FaSyncAlt
+} from "react-icons/fa";
 import CronjobComponent from "./components/CronjobComponent.jsx";
 import { pollTaskStatus } from "./helpers/pollState.js";
 
@@ -202,36 +209,50 @@ const TranscriptDetailDisplay = ({ transcript }) => {
 
     return (
         <div className="transcript-detail-display border p-3 mb-4 rounded">
-            <h5 className="font-bold mb-2">
-                {transcript.transcript_parent_id && (
-                    <FaSyncAlt
-                        className="inline-block mr-2 text-blue-500"
-                        title="Recurring Generation"
-                    />
-                )}
-                {transcript.generation_cronjob ? (
-                    <FaClock
-                        className="inline-block mr-2 text-green-500"
-                        title="Scheduled Generation"
-                    />
-                ) : (
-                    <FaRegStar
-                        className="inline-block mr-2 text-gray-500"
-                        title="No Update Cycle"
-                    />
-                )}
-                {transcript.title}
-            </h5>
-            <p className="mb-2 flex items-center">
+            <div className="flex align-end mb-4">
+                <div className="flex flex-col gap-2 self-center mr-4">
+                    {transcript.transcript_parent_id && (
+                        <FaSyncAlt
+                            className="inline-block mr-2 text-blue-500"
+                            title="Recurring Generation"
+                        />
+                    )}
+                    {transcript.generation_cronjob ? (
+                        <FaClock
+                            className="inline-block mr-2 text-green-500"
+                            title="Scheduled Generation"
+                        />
+                    ) : (
+                        <FaRegStar
+                            className="inline-block mr-2 text-gray-500"
+                            title="No Update Cycle"
+                        />
+                    )}
+                </div>
+                <h5 className="font-bold self-center pr-5">
+                    {transcript.title}
+                </h5>
+            </div>
+            <p className="mb-3 flex items-between">
                 <span className="mr-2">
                     {processStateIcon(transcript.process_state)}
                 </span>
-                <span className="mr-2">📅</span>
-                <span className="mr-2">
-                    {new Date(transcript.created_at).toLocaleString()}
-                </span>
-                <span className="mr-2">🕒</span>
-                <span>{new Date(transcript.updated_at).toLocaleString()}</span>
+                <div class="flex-1 self-center">
+                    <span className="mr-2">
+                        <FaCalendarAlt className="inline-block" />
+                    </span>
+                    <span className="mr-2">
+                        {new Date(transcript.created_at).toLocaleString()}
+                    </span>
+                </div>
+                <div class="flex-1 self-center">
+                    <span className="mr-2">
+                        <FaClock className="inline-block" />
+                    </span>
+                    <span>
+                        {new Date(transcript.updated_at).toLocaleString()}
+                    </span>
+                </div>
             </p>
             {transcript.process_state_message && (
                 <p className="mb-2 text-red-500">
@@ -258,7 +279,13 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                 onClick={() => setShowDetails(!showDetails)}
                 className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
             >
-                <span className="mr-2">{showDetails ? "▼" : "▶"}</span>
+                <span className="mr-2">
+                    {showDetails ? (
+                        <FaChevronDown className="inline-block" />
+                    ) : (
+                        <FaChevronRight className="inline-block" />
+                    )}
+                </span>
                 <span>
                     {showDetails ? "Hide Details" : "Show More Details"}
                 </span>
@@ -376,7 +403,11 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
                 >
                     <span className="mr-2">
-                        {isTranscriptVisible ? "▼" : "▶"}
+                        {isTranscriptVisible ? (
+                            <FaChevronDown className="inline-block" />
+                        ) : (
+                            <FaChevronRight className="inline-block" />
+                        )}
                     </span>
                     <span>
                         {isTranscriptVisible
@@ -404,7 +435,11 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
                 >
                     <span className="mr-2">
-                        {isSourcesVisible ? "▼" : "▶"}
+                        {isSourcesVisible ? (
+                            <FaChevronDown className="inline-block" />
+                        ) : (
+                            <FaChevronRight className="inline-block" />
+                        )}
                     </span>
                     <span>
                         {isSourcesVisible ? "Hide Sources" : "View Sources"}
@@ -428,7 +463,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                                         () => handleDeleteAudio(audio.id)
                                     )
                                 }
-                                className="absolute top-0 right-0 p-2 text-red-500 hover:text-red-700"
+                                className="absolute top-1 right-1 p-2 text-red-500 hover:text-red-700"
                                 aria-label="Delete Audio"
                             >
                                 <FaTrash />
