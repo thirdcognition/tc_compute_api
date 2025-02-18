@@ -203,7 +203,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
     return (
         <div className="transcript-detail-display border p-3 mb-4 rounded">
             <h5 className="font-bold mb-2">
-                {transcript.generation_parent && (
+                {transcript.transcript_parent_id && (
                     <FaSyncAlt
                         className="inline-block mr-2 text-blue-500"
                         title="Recurring Generation"
@@ -233,12 +233,12 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                 <span className="mr-2">🕒</span>
                 <span>{new Date(transcript.updated_at).toLocaleString()}</span>
             </p>
-            {transcript.process_fail_message && (
+            {transcript.process_state_message && (
                 <p className="mb-2 text-red-500">
-                    Error: {transcript.process_fail_message}
+                    Error: {transcript.process_state_message}
                 </p>
             )}
-            {!transcript.generation_parent && (
+            {!transcript.transcript_parent_id && (
                 <button
                     onClick={handleDuplicateTranscript}
                     className={`w-full py-2 mb-4 flex items-center justify-center rounded ${
@@ -333,7 +333,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                         longer process time):{" "}
                         {transcript.metadata?.longform ? "Yes" : "No"}
                     </p>
-                    {!transcript.generation_parent && (
+                    {!transcript.transcript_parent_id && (
                         <>
                             {transcript.generation_cronjob && cronjob ? (
                                 <div className="mb-4">

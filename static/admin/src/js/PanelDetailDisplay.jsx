@@ -67,6 +67,15 @@ const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
     return (
         <div className="panel-detail-display border p-3 mb-4 rounded">
             {panel.title && <h2 className="font-bold mb-2">{panel.title}</h2>}
+            {panel.metadata?.languages && (
+                <p className="mb-2">
+                    <strong className="font-semibold">
+                        Additional languages:
+                    </strong>
+                    &nbsp;
+                    {panel.metadata.languages.join(", ")}
+                </p>
+            )}
             {inputText && (
                 <div className="border p-3 mb-4 rounded">
                     <strong className="font-semibold">Input Text:</strong>
@@ -324,7 +333,7 @@ const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
                         {newsLinks.map((group, groupIndex) => (
                             <div key={groupIndex} className="news-group">
                                 <h6>{group.title || "Group " + groupIndex}</h6>
-                                {group.data.map((link, index) => (
+                                {group.data.web_sources.map((link, index) => (
                                     <div
                                         key={index}
                                         className="border p-4 rounded shadow"

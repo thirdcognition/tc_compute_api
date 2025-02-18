@@ -8,6 +8,7 @@ import TechCrunchNewsConfigForm from "./news_config/TechCrunchNewsConfigForm";
 import HackerNewsConfigForm from "./news_config/HackerNewsConfigForm";
 import InputTextForm from "./news_config/InputTextForm";
 import ArticleCountComponent from "./components/ArticleCountComponent";
+import { outputLanguageOptions } from "./options.js";
 
 import PropTypes from "prop-types";
 
@@ -44,7 +45,9 @@ function PanelDetailEdit({
     const [newsItems, setNewsItems] = useState(
         parseInt(panel.metadata?.news_items || 5)
     );
-
+    const [languages, setLanguages] = useState(
+        panel.metadata?.languages || ["English"]
+    );
     const handlePanelSubmit = async (e) => {
         e.preventDefault();
         const panelData = {
@@ -56,7 +59,8 @@ function PanelDetailEdit({
             techCrunchNewsConfigs,
             hackerNewsConfigs,
             newsGuidance,
-            newsItems
+            newsItems,
+            languages
         };
 
         if (panel.id) {
@@ -121,42 +125,82 @@ function PanelDetailEdit({
                 <Form onSubmit={handlePanelSubmit}>
                     <Form.Group controlId="title">
                         <Form.Label className="font-semibold">
-                            Title:
+                            Panel defaults:
+                        </Form.Label>
+                        <InputTextForm
+                            label="Name:"
+                            initialText={title}
+                            onTextChange={setTitle}
+                        />
+                        <Form.Label className="font-semibold mt-2">
+                            Extra languages (Note: Selected voice models should
+                            be tested to work with the languages):
                         </Form.Label>
                         <Form.Control
-                            type="text"
-                            placeholder="Enter title here..."
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            as="select"
+                            multiple
+                            value={languages}
+                            onChange={(e) =>
+                                setLanguages(
+                                    [...e.target.selectedOptions].map(
+                                        (option) => option.value
+                                    )
+                                )
+                            }
+                            className="w-full"
+                        >
+                            {outputLanguageOptions
+                                .filter(
+                                    (item) => item.toLowerCase() !== "english"
+                                )
+                                .map((language) => (
+                                    <option value={language} key={language}>
+                                        {language}
+                                    </option>
+                                ))}
+                        </Form.Control>
+                        <p className="text-sm ml-2">
+                            English is enabled by default
+                        </p>
+                    </Form.Group>
+
+                    <Form.Group
+                        controlId="news_configs"
+                        className="mt-4 border-t-2"
+                    >
+                        <Form.Label className="font-bold my-4">
+                            News configs:
+                        </Form.Label>
+                        <InputTextForm
+                            label="Guidance for LLM when organizing and filtering news items:"
+                            initialText={newsGuidance}
+                            onTextChange={setNewsGuidance}
+                        />
+                        <ArticleCountComponent
+                            value={newsItems}
+                            onChange={(value) => setNewsItems(value)}
+                        />
+                        <LinkForm
+                            initialLinks={links}
+                            onLinksChange={setLinks}
+                        />
+                        <YleNewsConfigForm
+                            initialConfigs={yleNewsConfigs}
+                            onConfigsChange={setYleNewsConfigs}
+                        />
+                        <GoogleNewsConfigForm
+                            initialConfigs={googleNewsConfigs}
+                            onConfigsChange={setGoogleNewsConfigs}
+                        />
+                        <TechCrunchNewsConfigForm
+                            initialConfigs={techCrunchNewsConfigs}
+                            onConfigsChange={setTechCrunchNewsConfigs}
+                        />
+                        <HackerNewsConfigForm
+                            initialConfigs={hackerNewsConfigs}
+                            onConfigsChange={setHackerNewsConfigs}
                         />
                     </Form.Group>
-                    <InputTextForm
-                        label="Guidance for LLM when organizing and filtering news items:"
-                        initialText={newsGuidance}
-                        onTextChange={setNewsGuidance}
-                    />
-                    <ArticleCountComponent
-                        value={newsItems}
-                        onChange={(value) => setNewsItems(value)}
-                    />
-                    <LinkForm initialLinks={links} onLinksChange={setLinks} />
-                    <YleNewsConfigForm
-                        initialConfigs={yleNewsConfigs}
-                        onConfigsChange={setYleNewsConfigs}
-                    />
-                    <GoogleNewsConfigForm
-                        initialConfigs={googleNewsConfigs}
-                        onConfigsChange={setGoogleNewsConfigs}
-                    />
-                    <TechCrunchNewsConfigForm
-                        initialConfigs={techCrunchNewsConfigs}
-                        onConfigsChange={setTechCrunchNewsConfigs}
-                    />
-                    <HackerNewsConfigForm
-                        initialConfigs={hackerNewsConfigs}
-                        onConfigsChange={setHackerNewsConfigs}
-                    />
                     <InputTextForm
                         initialText={inputText}
                         onTextChange={setInputText}

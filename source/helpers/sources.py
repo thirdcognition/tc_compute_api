@@ -12,8 +12,8 @@ from pygooglenews import GoogleNews
 from supabase import Client
 from source.helpers.resolve_url import LinkResolver, parse_publish_date
 from source.llm_exec.websource_exec import group_rss_items
-from source.models.data.user import UserIDs
-from source.models.data.web_source import WebSource
+from source.models.structures.user import UserIDs
+from source.models.structures.web_source import WebSource
 from source.models.structures.panel import PanelRequestData
 from source.models.structures.sources import (
     GoogleNewsConfig,
@@ -25,7 +25,7 @@ from source.models.structures.sources import (
     YleLanguage,
     YleNewsConfig,
 )
-from source.models.structures.web_source_structure import WebSourceCollection
+from source.models.structures.web_source_collection import WebSourceCollection
 from source.tasks.web_sources import generate_resolve_tasks_for_websources
 
 
@@ -312,10 +312,11 @@ def fetch_links(
     if len(all_items) > max_items:
         resolve_items = group_rss_items(all_items, guidance, min_amount=max_items)
     else:
-        resolve_items = [
-            WebSourceCollection(web_sources=[item], title=item.title)
-            for item in all_items
-        ]
+        resolve_items = all_items
+        # [
+        #     WebSourceCollection(web_sources=[item], title=item.title)
+        #     for item in all_items
+        # ]
 
     if not dry_run:
         # Initialize variables

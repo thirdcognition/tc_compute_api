@@ -126,7 +126,7 @@ def create_panel_audio(
         except Exception as e:
             print(f"Error during second attempt of audio generation: {e}")
             panel_audio.process_state = ProcessState.failed
-            panel_audio.process_fail_message = str(e)
+            panel_audio.process_state_message = str(e)
             panel_audio.update_sync(supabase=supabase_client)
             raise RuntimeError("Failed to generate podcast audio after retry") from e
 

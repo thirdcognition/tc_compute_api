@@ -2,7 +2,7 @@ from supabase.client import AsyncClient
 from uuid import UUID
 
 from source.models.config.logging import logger
-from source.models.data.user import UserData, CreateOrganizationUserRequestData
+from source.models.structures.user import UserData, CreateOrganizationUserRequestData
 from source.models.supabase.organization import OrganizationUsersModel
 
 

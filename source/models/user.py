@@ -8,7 +8,7 @@ from source.models.supabase.organization import (
     OrganizationUsersModel,
     UserProfileModel,
 )
-from source.models.data.user import UserData
+from source.models.structures.user import UserData
 from supabase.client import AsyncClient
 from uuid import UUID
 from typing import Dict, List, Optional

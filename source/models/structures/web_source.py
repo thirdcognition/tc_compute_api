@@ -11,7 +11,7 @@ from pydantic import BaseModel, HttpUrl, Field
 from datetime import datetime
 from source.models.supabase.panel import PanelTranscript, PanelTranscriptSourceReference
 from source.helpers.resolve_url import LinkResolver
-from source.models.data.user import UserIDs
+from source.models.structures.user import UserIDs
 
 # from source.models.config.logging import logger
 from source.prompts.web_source import NewsArticle
@@ -23,6 +23,7 @@ class WebSource(BaseModel):
     resolved_source: Optional[HttpUrl] = None
     source: str
     source_id: Optional[str] = None
+    source_model: Optional[SourceModel] = None
     description: Optional[str] = None
     original_content: Optional[str] = None
     url_result: Optional[UrlResult] = None
@@ -108,6 +109,7 @@ class WebSource(BaseModel):
                 else self.publish_date
             )
             self.source_id = obj.id or self.source_id
+            self.source_model = obj
             self.owner_id = obj.owner_id or self.owner_id
             self.organization_id = obj.organization_id or self.organization_id
             if obj.data.get("url_result"):
@@ -118,7 +120,6 @@ class WebSource(BaseModel):
             raise ValueError(f"Unsupported object type: {type(obj)}")
 
     def _populate_source_model(self):
-        # pretty_print(self, "News_item save", True, print)
         print(f"Populating source model for: {self.title} ({self.original_source})")
         content_to_hash = (self.original_content or "") + (
             str(self.article) if self.article else ""
@@ -129,44 +130,79 @@ class WebSource(BaseModel):
             else None
         )
 
-        return SourceModel(
-            original_source=str(self.original_source),
-            resolved_source=str(self.resolved_source) if self.resolved_source else None,
-            title=self.title,
-            type="webpage",
-            lang=self.lang,
-            content_hash=content_hash,
-            is_public=True,
-            data={
+        if self.source_model:
+            # Update existing source_model fields
+            self.source_model.original_source = str(self.original_source)
+            self.source_model.resolved_source = (
+                str(self.resolved_source) if self.resolved_source else None
+            )
+            self.source_model.title = self.title
+            self.source_model.type = "webpage"
+            self.source_model.lang = self.lang
+            self.source_model.content_hash = content_hash
+            self.source_model.is_public = True
+            self.source_model.data = {
                 "source": self.source,
                 "description": self.description,
                 "url_result": self.url_result.model_dump() if self.url_result else None,
                 "article": self.article.model_dump() if self.article else None,
                 "categories": self.categories,
                 "linked_items": self.linked_items,
-            },
-            metadata={
+            }
+            self.source_model.metadata = {
                 "image": str(self.image) if self.image else None,
                 "publish_date": (
                     self.publish_date.isoformat() if self.publish_date else None
                 ),
-            },
-            owner_id=self.owner_id,
-            organization_id=self.organization_id,
-        )
+            }
+            self.source_model.owner_id = self.owner_id
+            self.source_model.organization_id = self.organization_id
+        else:
+            # Create a new SourceModel instance
+            self.source_model = SourceModel(
+                original_source=str(self.original_source),
+                resolved_source=(
+                    str(self.resolved_source) if self.resolved_source else None
+                ),
+                title=self.title,
+                type="webpage",
+                lang=self.lang,
+                content_hash=content_hash,
+                is_public=True,
+                data={
+                    "source": self.source,
+                    "description": self.description,
+                    "url_result": (
+                        self.url_result.model_dump() if self.url_result else None
+                    ),
+                    "article": self.article.model_dump() if self.article else None,
+                    "categories": self.categories,
+                    "linked_items": self.linked_items,
+                },
+                metadata={
+                    "image": str(self.image) if self.image else None,
+                    "publish_date": (
+                        self.publish_date.isoformat() if self.publish_date else None
+                    ),
+                },
+                owner_id=self.owner_id,
+                organization_id=self.organization_id,
+            )
+
+        return self.source_model
 
     async def create_and_save_source(self, supabase: AsyncClient):
         print(f"Creating and saving source for: {self.title} ({self.original_source})")
-        source_model = self._populate_source_model()
-        result = await source_model.create(supabase)
+        self._populate_source_model()
+        result = await self.source_model.create(supabase)
         self._update_from_(result)
 
     def create_and_save_source_sync(self, supabase: Client):
         print(
             f"Synchronously creating and saving source for: {self.title} ({self.original_source})"
         )
-        source_model = self._populate_source_model()
-        result = source_model.create_sync(supabase)
+        self._populate_source_model()
+        result = self.source_model.create_sync(supabase)
         self._update_from_(result)
 
     def check_if_exists_sync(self, supabase: Client) -> bool:
@@ -229,16 +265,12 @@ class WebSource(BaseModel):
                         relationship = SourceRelationshipModel(
                             source_id=self.source_id,
                             related_source_id=source_model.id,
-                            relationship_type="linked",
+                            relationship_type="linked_news_items",
                             is_public=True,
                         )
                         link_upsert.append(relationship)
 
-        await SourceRelationshipModel.upsert_to_supabase(
-            supabase,
-            link_upsert,
-            on_conflict=["source_id", "related_source_id"],
-        )
+        await SourceRelationshipModel.upsert_to_supabase(supabase, link_upsert)
 
     def _get_field(self, article_attr, url_result_attr, self_attr):
         """
@@ -388,11 +420,7 @@ class WebSource(BaseModel):
                         )
                         link_upsert.append(relationship)
 
-        await SourceRelationshipModel.upsert_to_supabase_sync(
-            supabase,
-            link_upsert,
-            on_conflict=["source_id", "related_source_id"],
-        )
+        await SourceRelationshipModel.upsert_to_supabase_sync(supabase, link_upsert)
 
     async def load_from_supabase(self, supabase: AsyncClient):
         result = await SourceModel.fetch_from_supabase(

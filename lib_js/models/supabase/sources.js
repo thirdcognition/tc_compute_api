@@ -24,6 +24,26 @@ export class SourceModel extends SupabaseModel {
     static TABLE_FIELDS = {
         id: { type: "uuid", required: true, dbColumn: "id" },
         type: { type: SourceType, required: false, dbColumn: "type" },
+        originalSource: {
+            type: "string",
+            required: false,
+            dbColumn: "original_source"
+        },
+        resolvedSource: {
+            type: "string",
+            required: false,
+            dbColumn: "resolved_source"
+        },
+        title: { type: "string", required: false, dbColumn: "title" },
+        lang: { type: "string", required: false, dbColumn: "lang" },
+        contentHash: {
+            type: "string",
+            required: false,
+            dbColumn: "content_hash"
+        },
+        data: { type: "json", required: false, dbColumn: "data" },
+        metadata: { type: "json", required: false, dbColumn: "metadata" },
+        isPublic: { type: "boolean", required: false, dbColumn: "is_public" },
         disabled: { type: "boolean", required: false, dbColumn: "disabled" },
         disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
         createdAt: { type: "date", required: false, dbColumn: "created_at" },
@@ -33,11 +53,6 @@ export class SourceModel extends SupabaseModel {
             type: "uuid",
             required: false,
             dbColumn: "organization_id"
-        },
-        currentVersionId: {
-            type: "uuid",
-            required: false,
-            dbColumn: "current_version_id"
         },
         updatedBy: { type: "uuid", required: false, dbColumn: "updated_by" }
     };
@@ -49,11 +64,6 @@ export class SourceChunkModel extends SupabaseModel {
     static TABLE_FIELDS = {
         id: { type: "uuid", required: true, dbColumn: "id" },
         sourceId: { type: "uuid", required: false, dbColumn: "source_id" },
-        sourceVersionId: {
-            type: "uuid",
-            required: false,
-            dbColumn: "source_version_id"
-        },
         chunkNextId: {
             type: "uuid",
             required: false,
@@ -66,6 +76,7 @@ export class SourceChunkModel extends SupabaseModel {
         },
         data: { type: "json", required: false, dbColumn: "data" },
         metadata: { type: "json", required: false, dbColumn: "metadata" },
+        isPublic: { type: "boolean", required: false, dbColumn: "is_public" },
         createdAt: { type: "date", required: false, dbColumn: "created_at" },
         updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
         organizationId: {
@@ -80,15 +91,15 @@ export class SourceChunkModel extends SupabaseModel {
 export class SourceRelationshipModel extends SupabaseModel {
     static TABLE_NAME = "source_relationship";
     static TABLE_FIELDS = {
-        sourceVersionId: {
+        sourceId: {
             type: "uuid",
             required: true,
-            dbColumn: "source_version_id"
+            dbColumn: "source_id"
         },
-        relatedSourceVersionId: {
+        relatedSourceId: {
             type: "uuid",
             required: true,
-            dbColumn: "related_source_version_id"
+            dbColumn: "related_source_id"
         },
         relationshipType: {
             type: "string",
@@ -96,6 +107,7 @@ export class SourceRelationshipModel extends SupabaseModel {
             dbColumn: "relationship_type"
         },
         metadata: { type: "json", required: false, dbColumn: "metadata" },
+        isPublic: { type: "boolean", required: false, dbColumn: "is_public" },
         disabled: { type: "boolean", required: false, dbColumn: "disabled" },
         disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
         createdAt: { type: "date", required: false, dbColumn: "created_at" },
@@ -115,8 +127,8 @@ export class SourceRelationshipModel extends SupabaseModel {
     static async upsertToSupabase(
         supabase,
         instances,
-        onConflict = null,
-        idColumn = "sourceVersionId"
+        onConflict = ["source_id", ""],
+        idColumn = "sourceId"
     ) {
         return super.upsertToSupabase(
             supabase,
@@ -129,7 +141,7 @@ export class SourceRelationshipModel extends SupabaseModel {
     static async fetchFromSupabase(
         supabase,
         value = null,
-        idColumn = "sourceVersionId"
+        idColumn = "sourceId"
     ) {
         return super.fetchFromSupabase(supabase, value, idColumn);
     }
@@ -137,7 +149,7 @@ export class SourceRelationshipModel extends SupabaseModel {
     static async existsInSupabase(
         supabase,
         value = null,
-        idColumn = "sourceVersionId"
+        idColumn = "sourceId"
     ) {
         return super.existsInSupabase(supabase, value, idColumn);
     }
@@ -145,40 +157,8 @@ export class SourceRelationshipModel extends SupabaseModel {
     static async deleteFromSupabase(
         supabase,
         value = null,
-        idColumn = "sourceVersionId"
+        idColumn = "sourceId"
     ) {
         return super.deleteFromSupabase(supabase, value, idColumn);
     }
-}
-
-// Define SourceVersionModel
-export class SourceVersionModel extends SupabaseModel {
-    static TABLE_NAME = "source_version";
-    static TABLE_FIELDS = {
-        id: { type: "uuid", required: true, dbColumn: "id" },
-        title: { type: "string", required: false, dbColumn: "title" },
-        lang: { type: "string", required: false, dbColumn: "lang" },
-        contentHash: {
-            type: "string",
-            required: false,
-            dbColumn: "content_hash"
-        },
-        data: { type: "json", required: false, dbColumn: "data" },
-        metadata: { type: "json", required: false, dbColumn: "metadata" },
-        disabled: { type: "boolean", required: false, dbColumn: "disabled" },
-        disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
-        createdAt: { type: "date", required: false, dbColumn: "created_at" },
-        updatedAt: { type: "date", required: false, dbColumn: "updated_at" },
-        ownerId: { type: "uuid", required: false, dbColumn: "owner_id" },
-        organizationId: {
-            type: "uuid",
-            required: false,
-            dbColumn: "organization_id"
-        },
-        versionOfId: {
-            type: "uuid",
-            required: false,
-            dbColumn: "version_of_id"
-        }
-    };
 }

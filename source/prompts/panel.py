@@ -183,60 +183,66 @@ verify_transcript_quality = PromptFormatter(
     system=textwrap.dedent(
         f"""
         {ACTOR_INTRODUCTIONS}
-        Act as a transcript quality verifier.
-        You will get a transcript in a format:
-        <Person1>Person 1 dialog</Person1>
-        <Person2>Person 2 dialog</Person2>
+        Act as a quality assurance agent verifying podcast transcript before production.
+        Your goal is to make sure the upcomming episode is the best possible episode based on the input parameters.
 
         {PRE_THINK_INSTRUCT}
 
-        Instructions:
-        - Transcript should use mostly natural non repetitive language.
-        - Transcript should follow normal dialogue rhythm common to podcasts and radio show style.
-        - Transcript should use the configuration specified by the user.
-        - Transcript should use the whole content and cover all the topics.
-        - Transcript should always follow the specified language.
-        - Transcript should have at least the defined amount of words.
-        - Each speaker turn should not be longer than 600 characters!
-        - Speakers should speak in turns. Speaker1 should always follow Speaker2 and Speaker2 always Speaker1.
-        - Transcript should always end with a proper conclusion.
-        - Use details between content start and content end to verify that the transcript uses the specified information.
-        - Transcript language can be different than content language, especially if Language configuration is set.
-        - Transcript should be in the language defined in Transcript configuration.
-        - The transcript might be marked as the main item, in which case it should be highlighted as such.
-        - Transcript cover all the content.
-        - Transcript should include every aspect of available content.
-        - There should be discussion about every title and topic from the provided content.
-        - There should not be any messages about episode ending, or farewells, etc in the middle of the transcript.
-        - If there are any discussion ending, or conclusion messages in the middle of the transcript, those must be removed.
-        - There is a field for specifying if the transcript length is enough. Make sure to incorporate the requirements in your feedback.
-        - If the transcript is not long enough as defined by transcript length, make sure to fail the transcript and instruct on how to make the transcript longer.
-        - If the transcript should be longer give specific instructions on how to make the transcript longer.
-        - If there's excessive usage of a word, or a phrase make sure to create an issue of it and suggest fixes.
-        - Words like "Absolutely" "Exactly" "Totally" "For sure!" etc. should be used sparingly and only when needed. If they're repeated multiple times make sure to create an issue out of it.
-        - Uses of "it", "it's", "is it", "it's like", "[it, feel, etc] like [something]" should be limited.
-        - Make sure to reveal your reasoning for rejecting the transcript after think-tags.
-        - Do not place your reasoning for rejection within <reflection>-tags.
-        - Do not use <reflection>-tags outside of <think>-tags
-        - Place your reasoning always within <output>-tags.
-        - Do not just reply with 'no'
-        - Transcript should not have written out laughter, e.g. "Ha", "Ha ha", etc. Instruct to use witty comebacks or other reactive responses.
-        - Transcript should not have childish humor or remarks. Make sure all humor is aligned with the content and is smart.
-        - Humor must be aligned with the content. If the subject matter is tragic or serious, do not allow light hearted humor.
+        Instructions for Quality Verification:
 
-        Instructions for previous episodes:
-        - Make sure that the generated transcript do not repeat the content too closely.
-        - If the content for the transcripts aligns with previous episodes, check that the hosts refer to the previous episodes and discussions.
-        - There should be a continuum between episodes. Make sure previous episodes are referred when it's meaningful.
+        1. **Language & Style**:
+        - Ensure transcript uses natural, conversational language typical of podcasts or radio shows.
+        - Dialogue should follow a normal rhythm, with speakers alternating turns (Speaker1 -> Speaker2 -> Speaker1...).
+        - Avoid repetitive phrases and maintain appropriate vocabulary.
+        - Limit overuse of words like "Absolutely," "Exactly," "Totally," or phrases like "It's like," or "[it, feel, etc.] like [something]." Flag excessive repetition as an improvement point.
+        - Avoid written-out laughter (e.g., "Ha, Ha ha") and substitute with clever or witty responses where applicable.
+        - Ensure humor matches the tone of the content. For serious topics, humor should be respectful and context-appropriate.
+
+        2. **Structure & Turn Limits**:
+        - Check that speaker turns do not exceed 600 characters.
+        - Ensure the transcript alternates turns consistently: Speaker1 should always follow Speaker2, and vice versa.
+        - Verify that the transcript concludes with a proper ending and resolves the discussed topics without abrupt stops or incomplete discussions.
+
+        3. **Content Coverage**:
+        - Validate that the transcript covers all provided content, including all topics, titles, and details.
+        - Discussions should not omit or misinterpret any information from the provided material.
+        - Ensure references to previous episodes (if any) are factual, without fabricating details, and exclude date-specific mentions.
+
+        4. **Adherence to Configuration**:
+        - Transcript should align with the specified language, regardless of the original content language.
+        - Ensure word count requirements are met. If the transcript falls short:
+            - Suggest areas where detail can be expanded or topics can be discussed further.
+        - Check if the transcript is flagged as the main item. If so, verify it is appropriately highlighted.
+
+        5. **Quality Concerns**:
+        - Flag transcripts where:
+            - Sentence structure is awkward or unnatural.
+            - Humor detracts from or undermines the topic.
+            - Discussions incorrectly conclude mid-transcript or fail to follow the approved flow.
+        - Confirm smart placement of transitions between topics.
+        - Flag excessive repetition of any word or phrase and suggest alternatives.
+
+        6. **Factual Accuracy & References**:
+        - Verify factual descriptions or claims made in the transcript align with the provided content.
+        - Cross-check any references to previous episodes for accuracy and relevancy.
+
+        7. **Actionable Feedback**:
+        - If the transcript is too short:
+            - Recommend specific areas or topics for expansion.
+            - Provide clarity on what additional details are needed to meet the word count.
+        - Highlight any areas where balance (between speakers, subject, or otherwise) is lacking.
+        - When identifying issues (e.g., repetitive words, incomplete discussions), provide actionable suggestions for correction.
+
+        **Key Instructions**:
+        - Always ensure the transcript aligns with the specified tone, content, language, and length requirements.
+        - Flag improper mannerisms, style inconsistencies, factual inaccuracies, or incomplete content.
+        - Provide explicit, constructive suggestions for improving flagged items.
 
         {ROLES_PERSON_INSTRUCT}
 
         Allow for:
         - Long transcript. Do not critisize long transcripts as long as the conversation is natural.
         - Allow numbers to be written as letters as this is a requirement for TTS systems.
-
-        Ignore and don't pay attention to:
-        - Transcript length. Transcript can be as long as it is. Do not suggest it as an issue.
 
         Format your output as follows:
         {verify_transcript_quality_parser.get_format_instructions()}
@@ -402,9 +408,9 @@ transcript_combiner = PromptFormatter(
         - Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
 
         4. Instructions for using previous episodes:
-        - Refer to previous episodes if the discussions align with them.
-        - Build on ongoing narratives or themes to create progression across episodes.
-        - Highlight connections to engage returning listeners and provide context for new ones.
+        - Refer to previous episodes if there is direct connections to them.
+        - Extend ongoing events with previous episodes when possible to create progression.
+        - Highlight specific connections for encagement. Do not over emphasise connections between subjects and episodes.
         - Expand on ideas from previous episodes to introduce fresh perspectives and maintain engagement if there's overlap with current content.
 
 
@@ -670,9 +676,9 @@ transcript_writer = PromptFormatter(
         - Person1 and person2 should refer to each other with names, but don't start with them.
 
         4. Instructions for using previous episodes:
-        - Refer to previous episodes if the discussions align with them.
-        - Build on ongoing narratives or themes to create progression across episodes.
-        - Highlight connections to engage returning listeners and provide context for new ones.
+        - Refer to previous episodes if there is direct connections to them.
+        - Extend ongoing events with previous episodes when possible to create progression.
+        - Highlight specific connections for encagement. Do not over emphasise connections between subjects and episodes.
         - Expand on ideas from previous episodes to introduce fresh perspectives and maintain engagement if there's overlap with current content.
 
         {ROLES_PERSON_INSTRUCT}
@@ -717,7 +723,7 @@ transcript_writer = PromptFormatter(
         [Refinement: Suggest improvements for clarity, accuracy of summary, and TTS optimization. Avoid slangs.]
         [Length: Aim for a very long conversation. Use max_output_tokens limit! But each speaker turn should not be too long!]
         [Language: Output language should be in {output_language}.]
-        [If previous transcripts are provided use them to prevent repetion. To have references to previous conversation and also to remark previous topics in connection to this topic and transcript. Discussion should be fluid and not use previous transcript excessively.]
+        [If previous transcripts are provided use them to prevent repetion and to refer previous conversation. Discussion should be fluid and not use previous transcript excessively or in multiple occasions.]
         ```
         [[Generate the TTS-optimized Podcast conversation that accurately discusses the provided input content, adhering to all specified requirements.]]
 
@@ -1008,3 +1014,93 @@ transcript_summary_formatter = PromptFormatter(
 )
 
 transcript_summary_formatter.parser = TranscriptSummaryValidator()
+
+transcript_compress = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        IDENTITY:
+        {transcript_template["identity"]}
+
+        {PRE_THINK_INSTRUCT}
+
+        INSTRUCTION:
+        Reduce the amount of dialogue.
+        Do not use filler words like, Exactly, totally, absolute, etc.
+        Do not remove name usage, but don't add more either.
+        Keep transcript conversational.
+
+        {ROLES_PERSON_INSTRUCT}
+
+        FORMAT:
+        {transcript_template["format"]}
+
+        {textwrap.indent(load_fewshot_examples('transcript_rewriter_reduce.txt'), prefix="        ")}
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Transcript:
+        {transcript}
+        Transcript end.
+
+        Podcast configuration:
+        Current date: {date}
+        Current time: {time}
+        Podcast Name: {podcast_name}
+        Podcast Tagline: {podcast_tagline}
+        Language: {output_language}
+        Conversation Style: {conversation_style}
+        Person 1 role: {roles_person1}
+        Person 2 role: {roles_person2}
+        Engagement techniques: {engagement_techniques}
+        Other instructions: {user_instructions}
+        """
+    ),
+)
+
+transcript_compress.parser = TranscriptParser()
+
+transcript_translate = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        IDENTITY:
+        {transcript_template["identity"]}
+
+        INSTRUCTION:
+        Translate the provided transcript from the source language into the target language.
+        Ensure the translation preserves the conversational tone and context.
+        Do not add or omit any information.
+        Retain the original speaker names and dialogue formatting.
+        Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one.
+        Maintain the length of the original transcript. Do not reduce or extend the discussion.
+        Translate the article.
+
+        FORMAT:
+        {transcript_template["format"]}
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Transcript:
+        {transcript}
+        Transcript end.
+
+        Translation configuration:
+        Current date: {date}
+        Current time: {time}
+        Source Language: {source_language}
+        Target Language: {target_language}
+        Podcast Name: {podcast_name}
+        Podcast Tagline: {podcast_tagline}
+        Conversation Style: {conversation_style}
+        Person 1 role: {roles_person1}
+        Person 2 role: {roles_person2}
+        Engagement techniques: {engagement_techniques}
+        Other instructions: {user_instructions}
+        """
+    ),
+)
+
+transcript_translate.parser = TranscriptParser()

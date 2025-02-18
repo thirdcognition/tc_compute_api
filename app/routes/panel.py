@@ -34,7 +34,7 @@ from source.api.panel.delete import (
     delete_panel_audio,
 )
 from source.models.structures.panel import PanelRequestData
-from source.models.structures.web_source_structure import WebSourceCollection
+from source.models.structures.web_source_collection import WebSourceCollection
 from source.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
 from source.panel.panel import create_panel
 from source.panel.tasks import (
@@ -48,7 +48,7 @@ from source.helpers.sources import (
     fetch_links,
     manage_news_sources,
 )
-from source.models.data.web_source import WebSource
+from source.models.structures.web_source import WebSource
 
 router = APIRouter()
 

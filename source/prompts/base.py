@@ -67,6 +67,7 @@ PRE_THINK_INSTRUCT = """
         If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.
         """
 
+# PRE_THINK_INSTRUCT = ""
 
 PRE_THINK_TAGS = ["think", "reflection"]
 
@@ -189,6 +190,7 @@ class PromptFormatter(BaseModel):
     ) -> ChatPromptTemplate:
         prompt = ChatPromptTemplate.from_messages(
             [
+                # HumanMessage(content=custom_system or self.system),
                 SystemMessage(content=custom_system or self.system),
                 MessagesPlaceholder(variable_name="chat_history", optional=True),
                 HumanMessagePromptTemplate.from_template(custom_user or self.user),

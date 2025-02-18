@@ -1,7 +1,7 @@
 import json
 from app.core.celery_app import celery_app
-from source.models.structures.web_source_structure import WebSourceCollection
-from source.models.data.web_source import WebSource
+from source.models.structures.web_source_collection import WebSourceCollection
+from source.models.structures.web_source import WebSource
 from source.models.structures.panel import ConversationConfig
 from source.llm_exec.panel_exec import generate_and_verify_transcript
 

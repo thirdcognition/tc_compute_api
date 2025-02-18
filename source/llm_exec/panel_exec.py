@@ -4,8 +4,8 @@ from datetime import datetime
 from langchain_core.messages import BaseMessage
 from langsmith import traceable
 from source.chains.init import get_chain
-from source.models.data.web_source import WebSource
-from source.models.structures.web_source_structure import WebSourceCollection
+from source.models.structures.web_source import WebSource
+from source.models.structures.web_source_collection import WebSourceCollection
 from source.models.structures.panel import ConversationConfig
 from source.prompts.panel import TranscriptQualityCheck, TranscriptSummary
 
@@ -91,6 +91,28 @@ def transcript_rewriter(
         change_length = False
         length_instructions = ""
         if word_count is not None:
+            change_length_int, length_instructions = check_transcript_length(
+                transcript_content,
+                content,
+                word_count,
+            )
+            change_length = change_length_int != 0
+
+        retries = 3
+
+        while change_length and change_length_int < 0 and retries > 0:
+            retries -= 1
+            save_content = transcript_content
+            try:
+                transcript_content = transcript_compress(
+                    transcript=transcript_content,
+                    conversation_config=conversation_config,
+                )
+                change_length_int = 0
+            except ValueError as e:
+                print(f"Error during transcript rewrite: {e}")
+                transcript_content = save_content
+
             change_length_int, length_instructions = check_transcript_length(
                 transcript_content,
                 content,
@@ -460,6 +482,96 @@ def transcript_conclusion_writer(
 
 @traceable(
     run_type="llm",
+    name="Compress transcript",
+)
+def transcript_compress(
+    transcript: str,
+    conversation_config: ConversationConfig = ConversationConfig(),
+) -> bool:
+    print(
+        f"transcript_compress - Starting with transcript ({count_words(transcript)}), conversation_config={conversation_config}"
+    )
+    retries = 3
+    result = ""
+    current_datetime = datetime.now()
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
+    current_time = current_datetime.strftime("%H:%M:%S")
+    while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
+        retries -= 1
+        result = get_chain("transcript_compress").invoke(
+            {
+                "transcript": transcript,
+                "output_language": conversation_config.output_language,
+                "conversation_style": conversation_config.conversation_style,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "dialogue_structure": conversation_config.dialogue_structure,
+                "engagement_techniques": conversation_config.engagement_techniques,
+                "user_instructions": conversation_config.user_instructions,
+                "podcast_name": conversation_config.podcast_name,
+                "podcast_tagline": conversation_config.podcast_tagline,
+                "date": current_date,
+                "time": current_time,
+            }
+        )
+
+    if isinstance(result, BaseMessage):
+        print("Generation failed: Received a BaseMessage.")
+        return ""
+
+    print(f"transcript_compress - Completed with result ({count_words(result)})")
+
+    return result
+
+
+@traceable(
+    run_type="llm",
+    name="Translate transcript",
+)
+def _transcript_translate(
+    transcript: str,
+    target_language: str,
+    conversation_config: ConversationConfig = ConversationConfig(),
+) -> bool:
+    print(
+        f"transcript_translate - Starting with transcript ({count_words(transcript)}), conversation_config={conversation_config}"
+    )
+    retries = 3
+    result = ""
+    current_datetime = datetime.now()
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
+    current_time = current_datetime.strftime("%H:%M:%S")
+    while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
+        retries -= 1
+        result = get_chain("transcript_translate").invoke(
+            {
+                "transcript": transcript,
+                "source_language": conversation_config.output_language,
+                "target_language": target_language,
+                "conversation_style": conversation_config.conversation_style,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "dialogue_structure": conversation_config.dialogue_structure,
+                "engagement_techniques": conversation_config.engagement_techniques,
+                "user_instructions": conversation_config.user_instructions,
+                "podcast_name": conversation_config.podcast_name,
+                "podcast_tagline": conversation_config.podcast_tagline,
+                "date": current_date,
+                "time": current_time,
+            }
+        )
+
+    if isinstance(result, BaseMessage):
+        print("Generation failed: Received a BaseMessage.")
+        return ""
+
+    print(f"transcript_translate - Completed with result ({count_words(result)})")
+
+    return result
+
+
+@traceable(
+    run_type="llm",
     name="Write transcript summary",
 )
 def transcript_summary_writer(
@@ -714,71 +826,6 @@ def transcript_combiner(
     orig_transcript = "\n".join(combined_transcripts)
     transcript_content = orig_transcript
 
-    print(
-        f"Combine transcripts ({len(transcripts)=} = {count_words(orig_transcript)=} chars) into one with: {conversation_config=}"
-    )
-    # current_datetime = datetime.now()
-    # current_date = current_datetime.strftime("%Y-%m-%d")
-    # current_time = current_datetime.strftime("%H:%M:%S")
-
-    # try:
-    #     transcript_content = get_chain("transcript_combiner").invoke(
-    #         {
-    #             "content": content,
-    #             "transcript": orig_transcript,
-    #             "output_language": conversation_config.output_language,
-    #             "conversation_style": conversation_config.conversation_style,
-    #             "roles_person1": str(conversation_config.roles_person1),
-    #             "roles_person2": str(conversation_config.roles_person2),
-    #             "dialogue_structure": conversation_config.dialogue_structure,
-    #             "engagement_techniques": conversation_config.engagement_techniques,
-    #             "user_instructions": conversation_config.user_instructions,
-    #             "podcast_name": conversation_config.podcast_name,
-    #             "podcast_tagline": conversation_config.podcast_tagline,
-    #             "date": current_date,
-    #             "time": current_time,
-    #             "previous_episodes": (
-    #                 previous_episodes if previous_episodes is not None else ""
-    #             ),
-    #         }
-    #     )
-
-    #     if len(transcript_content) < (len(orig_transcript) // 2):
-    #         print(
-    #             f"Transcript shortened too much ({len(orig_transcript)} to {len(transcript_content)}), retry combiner."
-    #         )
-    #         transcript_content = get_chain("transcript_combiner").invoke(
-    #             {
-    #                 "content": content,
-    #                 "transcript": orig_transcript,
-    #                 "output_language": conversation_config.output_language,
-    #                 "conversation_style": conversation_config.conversation_style,
-    #                 "roles_person1": str(conversation_config.roles_person1),
-    #                 "roles_person2": str(conversation_config.roles_person2),
-    #                 "dialogue_structure": conversation_config.dialogue_structure,
-    #                 "engagement_techniques": conversation_config.engagement_techniques,
-    #                 "user_instructions": conversation_config.user_instructions,
-    #                 "podcast_name": conversation_config.podcast_name,
-    #                 "podcast_tagline": conversation_config.podcast_tagline,
-    #                 "date": current_date,
-    #                 "time": current_time,
-    #                 "previous_episodes": (
-    #                     previous_episodes if previous_episodes is not None else ""
-    #                 ),
-    #             }
-    #         )
-
-    #     if isinstance(transcript_content, BaseMessage):
-    #         raise ValueError("Generation failed: Received a BaseMessage.")
-
-    # except ValueError as e:
-    #     print(f"Error during transcript combination: {e}")
-    #     raise
-
-    # print("Combiner result:")
-    # print(f"Input ({count_words(orig_transcript)=})")
-    # print(f"Output ({count_words(transcript_content)=})")
-
     word_count = conversation_config.word_count
     word_count = (
         (word_count * article_count) // 2
@@ -799,6 +846,57 @@ def transcript_combiner(
         )
     except Exception as e:
         print(f"Failed to rewrite the transcript: {e}")
+        raise
+
+    return transcript_content
+
+
+@traceable(
+    run_type="llm",
+    name="Translate generated transcript",
+)
+def transcript_translate(
+    transcript_content: str,
+    target_language: str,
+    sources: List[WebSource | WebSourceCollection | str],
+    conversation_config: ConversationConfig = ConversationConfig(),
+) -> str:
+    content = ""
+    article_count = 1
+    if sources is not None:
+        content = "\n\n".join(map(str, sources))
+        article_count = len(sources)
+    else:
+        raise ValueError("Sources needed for combining resulting transcripts.")
+
+    word_count = conversation_config.word_count
+    word_count = (
+        (word_count * article_count) // 2
+        if word_count is not None and conversation_config.longform
+        else word_count
+    )
+
+    translated_transcript = _transcript_translate(
+        transcript_content,
+        target_language,
+        conversation_config,
+    )
+
+    conversation_config_copy = conversation_config.model_copy()
+    conversation_config_copy.output_language = target_language
+
+    try:
+        transcript_content = transcript_rewriter(
+            content=content,
+            orig_transcript=translated_transcript,
+            conversation_config=conversation_config_copy,
+            word_count=word_count,
+            max_retries=6,
+            main_item=False,
+            orig_combined_transcript=transcript_content,
+        )
+    except Exception as e:
+        print(f"Failed to translate the transcript: {e}")
         raise
 
     return transcript_content

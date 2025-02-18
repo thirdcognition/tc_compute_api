@@ -82,6 +82,8 @@ from source.prompts.panel import (
     transcript_intro_writer,
     transcript_conclusion_writer,
     transcript_summary_formatter,
+    transcript_compress,
+    transcript_translate,
 )
 from source.prompts.web_source import (
     web_source_builder,
@@ -133,12 +135,18 @@ def init_llm(
 
     common_kwargs = {
         "verbose": debug_mode,
-        "temperature": temperature,
         "rate_limiter": get_limiter(model),
         "callback_manager": (
             CallbackManager([StreamingStdOutCallbackHandler()]) if debug_mode else None
         ),
     }
+
+    if "o1" not in model.model:
+        print(f"Set {temperature=} {model.model=}")
+        common_kwargs["temperature"] = temperature
+    else:
+        print("Unset temperature")
+        common_kwargs["temperature"] = 1
 
     if model.provider == "BEDROCK":
         llm = model.class_model(
@@ -163,7 +171,8 @@ def init_llm(
             ),
             # timeout=60000,
             request_timeout=120,
-            max_tokens=model.max_tokens,
+            max_tokens=model.max_tokens if "o1" not in model.model else None,
+            max_completion_tokens=model.max_tokens if "o1" in model.model else None,
             max_retries=2,
             **common_kwargs,
         )
@@ -451,6 +460,18 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "transcript_conclusion_writer": (
         "instruct",
         transcript_conclusion_writer,
+        False,
+        True,
+    ),
+    "transcript_compress": (
+        "instruct",
+        transcript_compress,
+        False,
+        True,
+    ),
+    "transcript_translate": (
+        "instruct",
+        transcript_translate,
         False,
         True,
     ),

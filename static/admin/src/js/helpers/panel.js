@@ -109,7 +109,8 @@ export const handleUpdatePanel = async (panelId, params) => {
                 google_news: googleNewsArray,
                 yle_news: yleNewsArray,
                 techcrunch_news: techCrunchNewsArray,
-                hackernews: hackerNewsArray
+                hackernews: hackerNewsArray,
+                languages: params.languages
             },
             ...(params.is_public !== undefined && {
                 is_public: params.is_public

@@ -8,8 +8,8 @@ from celery.result import AsyncResult
 from app.core.supabase import get_sync_supabase_client
 
 # from source.llm_exec.websource_exec import group_web_sources
-from source.models.data.web_source import WebSource
-from source.models.structures.web_source_structure import WebSourceCollection
+from source.models.structures.web_source import WebSource
+from source.models.structures.web_source_collection import WebSourceCollection
 from source.models.supabase.panel import ProcessState, PanelDiscussion, PanelTranscript
 from source.models.structures.panel import (
     PanelRequestData,
@@ -24,8 +24,9 @@ from source.helpers.sources import (
 from source.llm_exec.panel_exec import (
     transcript_combiner,
     transcript_summary_writer,
+    transcript_translate,
 )
-from source.models.data.user import UserIDs
+from source.models.structures.user import UserIDs
 from source.tasks.transcript import (
     generate_and_verify_transcript_task,
     serialize_sources,
@@ -41,9 +42,15 @@ def initialize_supabase_client(
 
 
 def fetch_panel_metadata_and_config(
-    supabase_client: Client, panel_id: UUID, request_data: PanelRequestData
+    supabase_client: Client,
+    panel_id: UUID | PanelDiscussion,
+    request_data: PanelRequestData,
 ) -> Tuple[ConversationConfig, dict, PanelDiscussion]:
-    panel = PanelDiscussion.fetch_from_supabase_sync(supabase_client, panel_id)
+    panel = (
+        panel_id
+        if isinstance(panel_id, PanelDiscussion)
+        else PanelDiscussion.fetch_from_supabase_sync(supabase_client, panel_id)
+    )
     metadata = panel.metadata or {}
     base_conversation_config = metadata.get("conversation_config", {})
 
@@ -138,10 +145,13 @@ def create_and_update_panel_transcript(
     title: str,
     conversation_config: ConversationConfig,
     longform: bool,
+    language: str = "english",
+    parent_id: str = None,
 ) -> PanelTranscript:
     panel_transcript = PanelTranscript(
         panel_id=request_data.panel_id,
         title=title,
+        lang=language,
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
         type="segment",
@@ -150,7 +160,7 @@ def create_and_update_panel_transcript(
             "conversation_config": conversation_config.model_dump(),
         },
         generation_cronjob=request_data.cronjob,
-        generation_parent=request_data.transcript_parent_id,
+        transcript_parent_id=parent_id or request_data.transcript_parent_id,
         is_public=True,
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
@@ -283,7 +293,7 @@ def create_panel_transcript(
     tokens: Tuple[str, str],
     request_data: PanelRequestData,
     supabase_client: Client = None,
-) -> UUID:
+) -> list[UUID]:
     supabase_client = initialize_supabase_client(tokens, supabase_client)
     conversation_config, metadata, panel = fetch_panel_metadata_and_config(
         supabase_client, request_data.panel_id, request_data
@@ -293,6 +303,7 @@ def create_panel_transcript(
     panel_transcript = create_and_update_panel_transcript(
         supabase_client, request_data, title, conversation_config, request_data.longform
     )
+    transcript_ids = []
     try:
         user_ids = (
             UserIDs(
@@ -305,18 +316,33 @@ def create_panel_transcript(
 
         sources = manage_news_sources(request_data, metadata)
 
+        input_sources = set()
+
         if request_data.input_source:
-            sources.extend(
+            input_sources = (
                 request_data.input_source
                 if isinstance(request_data.input_source, list)
                 else [request_data.input_source]
             )
+
+        if metadata.get("input_source"):
+            metadata_sources = (
+                metadata["input_source"]
+                if isinstance(metadata["input_source"], list)
+                else [metadata["input_source"]]
+            )
+            input_sources.update(metadata_sources)
+
         if metadata.get("urls"):
-            sources.extend(
+            metadata_urls = (
                 metadata["urls"]
                 if isinstance(metadata["urls"], list)
                 else [metadata["urls"]]
             )
+            input_sources.update(metadata_urls)
+
+        if len(input_sources) > 0:
+            sources.extend(list(input_sources))
 
         ordered_groups = fetch_links_and_process_articles(
             supabase_client,
@@ -390,6 +416,98 @@ def create_panel_transcript(
             if isinstance(web_source, WebSource) and web_source.image
         ]
 
+        transcript_ids.append(panel_transcript.id)
+
+        upload_transcript_to_supabase(
+            supabase_client,
+            panel_transcript,
+            final_transcript,
+            request_data.bucket_name,
+        )
+
+        if metadata.get("languages"):
+            languages = metadata.get("languages")
+            for language in languages:
+                transcript_ids.append(
+                    create_panel_transcript_translation(
+                        request_data=request_data,
+                        panel=panel,
+                        parent_transcript=panel_transcript,
+                        transcript=final_transcript,
+                        language=language,
+                        sources=ordered_groups,
+                        combined_sources=combined_sources,
+                        supabase_client=supabase_client,
+                    )
+                )
+    except Exception as e:
+        panel_transcript.process_state = ProcessState.failed
+        panel_transcript.process_state_message = str(e)
+        panel_transcript.update_sync(supabase=supabase_client)
+        raise RuntimeError("Failed to generate podcast transcript") from e
+
+    return transcript_ids
+
+
+def create_panel_transcript_translation(
+    request_data: PanelRequestData,
+    panel: PanelDiscussion,
+    parent_transcript: PanelTranscript,
+    transcript: str,
+    language: str,
+    sources: List[WebSource | WebSourceCollection],
+    combined_sources: str = "",
+    supabase_client: Client = None,
+) -> UUID:
+    conversation_config, metadata, panel = fetch_panel_metadata_and_config(
+        supabase_client, panel, request_data
+    )
+
+    conversation_config = conversation_config.model_copy()
+    conversation_config.output_language = language
+
+    title = construct_transcript_title(panel, conversation_config, request_data)
+    panel_transcript = create_and_update_panel_transcript(
+        supabase_client,
+        request_data,
+        title,
+        conversation_config,
+        request_data.longform,
+        language=language,
+        parent_id=parent_transcript.id,
+    )
+
+    try:
+        for item in sources:
+            item.create_panel_transcript_source_reference_sync(
+                supabase_client, panel_transcript
+            )
+
+        # ordered_groups = group_web_sources(web_sources)
+
+        final_transcript = transcript_translate(
+            transcript, language, sources, conversation_config
+        )
+
+        transcript_summaries = transcript_summary_writer(
+            final_transcript, combined_sources, conversation_config
+        )
+
+        panel_transcript.title = transcript_summaries.title
+        panel_transcript.metadata["subjects"] = transcript_summaries.subjects
+        panel_transcript.metadata["description"] = transcript_summaries.description
+
+        if "images" not in panel_transcript.metadata:
+            panel_transcript.metadata["images"] = []
+
+        panel_transcript.metadata["images"] = [
+            str(web_source.image)
+            for collection in combined_sources
+            if isinstance(collection, WebSourceCollection)
+            for web_source in collection.web_sources
+            if isinstance(web_source, WebSource) and web_source.image
+        ]
+
         upload_transcript_to_supabase(
             supabase_client,
             panel_transcript,
@@ -398,7 +516,7 @@ def create_panel_transcript(
         )
     except Exception as e:
         panel_transcript.process_state = ProcessState.failed
-        panel_transcript.process_fail_message = str(e)
+        panel_transcript.process_state_message = str(e)
         panel_transcript.update_sync(supabase=supabase_client)
         raise RuntimeError("Failed to generate podcast transcript") from e
 

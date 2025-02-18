@@ -33,35 +33,24 @@ def create_panel(
     # Initialize metadata with task_id if available
     metadata = {"task_id": task_request.id} if task_request else {}
 
-    # Add additional fields to metadata if they are defined
-    if request_data.conversation_config is not None:
-        metadata["conversation_config"] = request_data.conversation_config.model_dump()
-    if request_data.tts_model:
-        metadata["tts_model"] = request_data.tts_model
-    if request_data.input_source:
-        metadata["urls"] = request_data.input_source
-    if request_data.longform is not None:
-        metadata["longform"] = request_data.longform
-    if request_data.input_text:
-        metadata["input_text"] = request_data.input_text
+    EXCLUDED_KEYS = [
+        "title",
+        "bucket_name",
+        "panel_id",
+        "transcript_parent_id",
+        "transcript_id",
+        "cronjob",
+        "owner_id",
+        "organization_id",
+    ]
 
-    if request_data.google_news:
-        metadata["google_news"] = request_data.google_news
-
-    if request_data.yle_news:
-        metadata["yle_news"] = request_data.yle_news
-
-    if request_data.techcrunch_news:
-        metadata["techcrunch_news"] = request_data.techcrunch_news
-
-    if request_data.hackernews:
-        metadata["hackernews"] = request_data.hackernews
-
-    if request_data.news_guidance:
-        metadata["news_guidance"] = request_data.news_guidance
-
-    if request_data.news_items:
-        metadata["news_items"] = request_data.news_items
+    # Dump all fields from the Pydantic model and filter while looping
+    for key, value in request_data.model_dump().items():
+        if key not in EXCLUDED_KEYS and value is not None:
+            # If the field has a `model_dump` method, serialize it; otherwise, use the raw value
+            metadata[key] = (
+                value.model_dump() if hasattr(value, "model_dump") else value
+            )
 
     panel: PanelDiscussion = PanelDiscussion(
         title=request_data.title,

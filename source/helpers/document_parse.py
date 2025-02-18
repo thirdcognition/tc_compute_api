@@ -1,4 +1,4 @@
-from enum import Enum
+# from enum import Enum
 import io
 import os
 import re
@@ -15,6 +15,7 @@ from source.helpers.document_tools import (
     split_markdown,
     split_text,
 )
+from source.helpers.json_exportable_enum import JSONExportableEnum
 from source.load_env import SETTINGS
 
 ocr = None
@@ -182,7 +183,7 @@ def process_page(
 #     return chunks
 
 
-class SourceType(Enum):
+class SourceType(str, JSONExportableEnum):
     FILE = "file"
     URL = "url"
 

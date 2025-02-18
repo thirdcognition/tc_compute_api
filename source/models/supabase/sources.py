@@ -2,13 +2,16 @@ from datetime import datetime
 from typing import ClassVar, Dict, Optional
 from uuid import UUID
 from pydantic import Field
-from enum import Enum
+
+# from enum import Enum
+from supabase import Client
 from supabase.client import AsyncClient
 
+from source.helpers.json_exportable_enum import JSONExportableEnum
 from source.models.supabase.supabase_model import SupabaseModel
 
 
-class SourceTypeEnum(Enum):
+class SourceTypeEnum(str, JSONExportableEnum):
     DOCUMENT = "document"
     WEBPAGE = "webpage"
     WEBSITE = "website"
@@ -17,6 +20,7 @@ class SourceTypeEnum(Enum):
     IMAGE = "image"
     TOPIC = "topic"
     CONCEPT = "concept"
+    COLLECTION = "collection"
 
 
 class SourceModel(SupabaseModel):
@@ -77,7 +81,12 @@ class SourceRelationshipModel(SupabaseModel):
     #     return v
 
     @classmethod
-    async def save_to_supabase(cls, supabase: AsyncClient, instance, on_conflict=None):
+    async def save_to_supabase(
+        cls,
+        supabase: AsyncClient,
+        instance,
+        on_conflict=["source_id", "related_source_id"],
+    ):
         return await super(SourceRelationshipModel, cls).save_to_supabase(
             supabase, instance, on_conflict
         )
@@ -87,7 +96,7 @@ class SourceRelationshipModel(SupabaseModel):
         cls,
         supabase: AsyncClient,
         instances,
-        on_conflict=None,
+        on_conflict=["source_id", "related_source_id"],
         id_column="source_id",
     ):
         return await super(SourceRelationshipModel, cls).upsert_to_supabase(
@@ -115,5 +124,52 @@ class SourceRelationshipModel(SupabaseModel):
         cls, supabase: AsyncClient, value=None, id_column="source_id"
     ):
         return await super(SourceRelationshipModel, cls).delete_from_supabase(
+            supabase, value=value, id_column=id_column
+        )
+
+    @classmethod
+    def save_to_supabase_sync(
+        cls,
+        supabase: Client,
+        instance,
+        on_conflict=["source_id", "related_source_id"],
+    ):
+        return super(SourceRelationshipModel, cls).save_to_supabase_sync(
+            supabase, instance, on_conflict
+        )
+
+    @classmethod
+    def upsert_to_supabase_sync(
+        cls,
+        supabase: Client,
+        instances,
+        on_conflict=["source_id", "related_source_id"],
+        id_column="source_id",
+    ):
+        return super(SourceRelationshipModel, cls).upsert_to_supabase_sync(
+            supabase, instances, on_conflict, id_column
+        )
+
+    @classmethod
+    def fetch_from_supabase_sync(
+        cls, supabase: Client, value=None, id_column="source_id"
+    ):
+        return super(SourceRelationshipModel, cls).fetch_from_supabase_sync(
+            supabase, value=value, id_column=id_column
+        )
+
+    @classmethod
+    def exists_in_supabase_sync(
+        cls, supabase: Client, value=None, id_column="source_id"
+    ):
+        return super(SourceRelationshipModel, cls).exists_in_supabase_sync(
+            supabase, value=value, id_column=id_column
+        )
+
+    @classmethod
+    def delete_from_supabase_sync(
+        cls, supabase: Client, value=None, id_column="source_id"
+    ):
+        return super(SourceRelationshipModel, cls).delete_from_supabase_sync(
             supabase, value=value, id_column=id_column
         )

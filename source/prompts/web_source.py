@@ -1,11 +1,13 @@
 import collections
-from enum import Enum
+
+# from enum import Enum
 import json
 import textwrap
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
+from source.helpers.json_exportable_enum import JSONExportableEnum
 from source.prompts.actions import QuestionClassifierParser
 from source.prompts.base import (
     ACTOR_INTRODUCTIONS,
@@ -17,7 +19,7 @@ from source.prompts.base import (
 )
 
 
-class NewsCategory(Enum):
+class NewsCategory(str, JSONExportableEnum):
     WORLD = "World"
     NATIONAL = "National"
     BUSINESS = "Business"
@@ -29,27 +31,28 @@ class NewsCategory(Enum):
     TRAVEL = "Travel"
     FOOD = "Food"
 
-    def __str__(self):
-        return self.value
+    # def __str__(self):
+    #     return self.value
 
-    def __json__(self):
-        """
-        Custom method to make NewsCategory JSON serializable.
-        """
-        return self.value
+    # def __json__(self):
+    #     """
+    #     Custom method to make NewsCategory JSON serializable.
+    #     """
+    #     return self.value
 
-    def to_json(self):
-        return self.value
+    # def to_json(self):
+    #     return self.value
 
-    @staticmethod
-    def from_json(value: str):
-        return NewsCategory(value)
+    # @staticmethod
+    # def from_json(value: str):
+    #     return NewsCategory(value)
 
 
 class NewsArticle(BaseModel):
     title: str = Field(..., title="Title", description="Title for the article")
-    topic: str = Field(
-        ..., title="Topic", description="The topic related to the context."
+    topic: str = Field(..., title="Topic", description="Generic topic of the article.")
+    subject: Optional[str] = Field(
+        ..., title="Subject", description="Detailed subject of the article."
     )
     description: str = Field(
         ..., title="Description", description="Synopsis for the article."
@@ -251,24 +254,27 @@ group_web_sources = PromptFormatter(
         {PRE_THINK_INSTRUCT}
         {KEEP_PRE_THINK_TOGETHER}
 
-        You are tasked with analyzing a list of articles and then grouping and sorting them based on their topical or categorical connections.
+        You are tasked with analyzing a list of articles and then grouping them by their subject and sorting them based on their topical and categorical connections.
         Instructions:
-        - Group articles into lists of IDs based on their categories, topic, title and summary.
-        - Each group must be directly connected by categories, topic and title or summary.
-        - Do not group items just by topic or category.
+        - Group articles into lists of IDs by their subject based on title and summary.
+        - Each group must be directly connected by subject.
+        - Do not group items by topic or category.
         - Sorting of the groups should be based on categories and topics.
         - Make sure to sort groups through similarity of topics/categories.
-        - Use the `start_with` and `end_with` parameters to determine which items to place at the beginning and end of the ordered groups.
+        - Use the `start_with` and `end_with` parameters to determine which topics and themes to place at the beginning and end of the ordered groups.
         - Ensure all provided IDs are included in the output.
         - Return the result as a JSON object using the specified format.
         - Do not use one ID more than once in the groups.
 
         Format instructions:
-        <think>Place your think here</think>
-        <output>
         {web_source_grouping_parser.get_format_instructions()}
-        </output>
         """
+        # Format instructions:
+        # <think>Place your thinking here.</think>
+        # <output>
+        # {web_source_grouping_parser.get_format_instructions()}
+        # </output>
+        # """
     ),
     user=textwrap.dedent(
         """
@@ -314,11 +320,14 @@ group_rss_items = PromptFormatter(
         - ordered_groups and ordered_groups_titles cannot be empty. They must have the groups defined in them.
 
         Format instructions:
-        <think>Place your thinking here.</think>
-        <output>
         {web_source_grouping_parser.get_format_instructions()}
-        </output>
         """
+        # Format instructions:
+        # <think>Place your thinking here.</think>
+        # <output>
+        # {web_source_grouping_parser.get_format_instructions()}
+        # </output>
+        # """
     ),
     user=textwrap.dedent(
         """

@@ -1,7 +1,7 @@
 import uuid
 from app.core.celery_app import celery_app
-from source.models.data.user import UserIDs
-from source.models.data.web_source import WebSource
+from source.models.structures.user import UserIDs
+from source.models.structures.web_source import WebSource
 from app.core.supabase import get_sync_supabase_client, get_sync_supabase_service_client
 
 

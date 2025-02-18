@@ -3,8 +3,8 @@ from typing import List
 
 from langsmith import traceable
 from source.chains.init import get_chain
-from source.models.data.web_source import WebSource
-from source.models.structures.web_source_structure import WebSourceCollection
+from source.models.structures.web_source import WebSource
+from source.models.structures.web_source_collection import WebSourceCollection
 from source.prompts.web_source import WebSourceGrouping
 
 

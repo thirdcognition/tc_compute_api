@@ -31,14 +31,14 @@ def create_panel_transcription_task(tokens: Tuple[str, str], request_data_json):
 @celery_app.task(bind=True)
 def create_panel_w_transcript_task(
     self: Task, tokens: Tuple[str, str], request_data_json
-) -> Tuple[UUID, UUID]:
+) -> Tuple[UUID, list[UUID]]:
     request_data = PanelRequestData.model_validate_json(request_data_json)
     panel_id = create_panel(tokens, request_data, self.request)
     request_data.panel_id = panel_id
 
-    transcript_id = create_panel_transcript(tokens, request_data)
+    transcript_ids = create_panel_transcript(tokens, request_data)
 
-    return panel_id, transcript_id
+    return panel_id, transcript_ids
 
 
 @celery_app.task
@@ -55,17 +55,19 @@ def create_panel_audio_task(tokens: Tuple[str, str], request_data_json):
 @celery_app.task(bind=True)
 def create_panel_task(
     self: Task, tokens: Tuple[str, str], request_data_json
-) -> Tuple[UUID, UUID, UUID]:
+) -> Tuple[UUID, list[UUID], list[UUID]]:
     request_data = PanelRequestData.model_validate_json(request_data_json)
     panel_id = create_panel(tokens, request_data, self.request)
     request_data.panel_id = panel_id
 
-    transcript_id = create_panel_transcript(tokens, request_data)
-    request_data.transcript_id = transcript_id
+    transcript_ids = create_panel_transcript(tokens, request_data)
+    audio_ids = []
+    for transcript_id in transcript_ids:
+        audio_request_data = request_data.model_copy()
+        audio_request_data.transcript_id = transcript_id
+        audio_ids.append(create_panel_audio(tokens, audio_request_data))
 
-    audio_id = create_panel_audio(tokens, request_data)
-
-    return panel_id, transcript_id, audio_id
+    return panel_id, transcript_ids, audio_ids
 
 
 @celery_app.task(bind=True)
@@ -134,13 +136,13 @@ def process_transcript_task(
 
     # Fetch the latest transcript if available
     all_transcripts_with_parent = PanelTranscript.fetch_existing_from_supabase_sync(
-        supabase_client, filter={"generation_parent": {"neq": None}}
+        supabase_client, filter={"transcript_parent_id": {"neq": None}}
     )
     transcripts_by_parent = {}
     for t in all_transcripts_with_parent:
-        if t.generation_parent not in transcripts_by_parent:
-            transcripts_by_parent[t.generation_parent] = []
-        transcripts_by_parent[t.generation_parent].append(t)
+        if t.transcript_parent_id not in transcripts_by_parent:
+            transcripts_by_parent[t.transcript_parent_id] = []
+        transcripts_by_parent[t.transcript_parent_id].append(t)
 
     if transcript_id in transcripts_by_parent:
         transcripts_by_parent[transcript_id].sort(
@@ -162,15 +164,21 @@ def process_transcript_task(
         metadata = (panel.metadata or {}) if panel else {}
 
         # Process transcript generation
-        transcript_id = process_transcript_generation(
+        transcript_ids = process_transcript_generation(
             tokens, transcript, panel, metadata, supabase_client
         )
-        return str(transcript_id)
+        return [str(transcript_id) for transcript_id in transcript_ids]
     else:
         return None
 
 
-def process_transcript_generation(tokens, transcript, panel, metadata, supabase_client):
+def process_transcript_generation(
+    tokens: Tuple,
+    transcript: PanelTranscript,
+    panel: PanelDiscussion,
+    metadata: dict,
+    supabase_client: Client,
+) -> list[UUID]:
     # Extend the metadata with the PanelTranscript model
     transcript_metadata = (transcript.metadata or {}) if transcript is not None else {}
 
@@ -192,7 +200,7 @@ def process_transcript_generation(tokens, transcript, panel, metadata, supabase_
     metadata.update(transcript_metadata)
     metadata["conversation_config"] = conversation_config.model_dump()
 
-    new_transcript_data = PanelRequestData(
+    new_transcript_request = PanelRequestData(
         title=panel.title,
         input_source=metadata.get("input_source", ""),
         input_text=metadata.get("input_text", ""),
@@ -204,6 +212,9 @@ def process_transcript_generation(tokens, transcript, panel, metadata, supabase_
         yle_news=metadata.get("yle_news", None),
         techcrunch_news=metadata.get("techcrunch_news", None),
         hackernews=metadata.get("hackernews", None),
+        news_guidance=metadata.get("news_guidance", None),
+        news_items=metadata.get("news_items", 5),
+        languages=metadata.get("languages", None),
         owner_id=str(panel.owner_id),
         organization_id=str(panel.organization_id),
         transcript_parent_id=str(transcript.id),
@@ -211,10 +222,10 @@ def process_transcript_generation(tokens, transcript, panel, metadata, supabase_
 
     print(f"Generating timed transcript for {transcript.id}.")
     if tokens is not None:
-        transcript_id = create_panel_transcript(tokens, new_transcript_data)
+        transcript_ids = create_panel_transcript(tokens, new_transcript_request)
     else:
-        transcript_id = create_panel_transcript(
-            tokens, new_transcript_data, supabase_client
+        transcript_ids = create_panel_transcript(
+            tokens, new_transcript_request, supabase_client
         )
 
     metadata.update(audio_metadata)
@@ -222,13 +233,15 @@ def process_transcript_generation(tokens, transcript, panel, metadata, supabase_
         update=audio_metadata.get("conversation_config", {})
     )
     metadata["conversation_config"] = conversation_config.model_dump()
-    new_transcript_data.tts_model = audio_metadata.get("tts_model", "gemini")
+    new_transcript_request.tts_model = audio_metadata.get("tts_model", "elevenlabs")
+    new_transcript_request.conversation_config = conversation_config
 
-    new_transcript_data.transcript_id = transcript_id
-    new_transcript_data.conversation_config = conversation_config
-    if tokens is not None:
-        create_panel_audio(tokens, new_transcript_data)
-    else:
-        create_panel_audio(tokens, new_transcript_data, supabase_client)
+    for transcript_id in transcript_ids:
+        audio_transcript_request = new_transcript_request.model_copy()
+        audio_transcript_request.transcript_id = transcript_id
+        if tokens is not None:
+            create_panel_audio(tokens, audio_transcript_request)
+        else:
+            create_panel_audio(tokens, audio_transcript_request, supabase_client)
 
-    return transcript_id
+    return transcript_ids

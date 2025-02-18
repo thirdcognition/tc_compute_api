@@ -44,7 +44,7 @@ export class PanelAudioModel extends SupabaseModel {
         processFailMessage: {
             type: "string",
             required: false,
-            dbColumn: "process_fail_message"
+            dbColumn: "process_state_message"
         },
         metadata: { type: "json", required: false, dbColumn: "metadata" },
         isPublic: {
@@ -128,7 +128,7 @@ export class PanelTranscriptModel extends SupabaseModel {
         processFailMessage: {
             type: "string",
             required: false,
-            dbColumn: "process_fail_message"
+            dbColumn: "process_state_message"
         },
         generationCronjob: {
             type: "string",
@@ -138,7 +138,7 @@ export class PanelTranscriptModel extends SupabaseModel {
         generationParent: {
             type: "uuid",
             required: false,
-            dbColumn: "generation_parent"
+            dbColumn: "transcript_parent_id"
         },
         metadata: { type: "json", required: false, dbColumn: "metadata" },
         isPublic: {

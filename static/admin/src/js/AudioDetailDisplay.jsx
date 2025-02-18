@@ -38,9 +38,9 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
                 <span className="mr-2">🕒</span>
                 <span>{new Date(audio.updated_at).toLocaleString()}</span>
             </p>
-            {audio.process_fail_message && (
+            {audio.process_state_message && (
                 <p className="mb-2 text-red-500">
-                    Error: {audio.process_fail_message}
+                    Error: {audio.process_state_message}
                 </p>
             )}
             <div className="flex items-center mb-2">

@@ -137,7 +137,14 @@ class SupabaseModel(BaseModel):
         if upsert_data:
             response = (
                 await supabase.table(cls.TABLE_NAME)
-                .upsert(upsert_data, on_conflict=on_conflict)
+                .upsert(
+                    upsert_data,
+                    on_conflict=(
+                        ", ".join(on_conflict)
+                        if isinstance(on_conflict, list)
+                        else on_conflict
+                    ),
+                )
                 .execute()
             )
 
@@ -197,7 +204,14 @@ class SupabaseModel(BaseModel):
         if upsert_data:
             response = (
                 supabase.table(cls.TABLE_NAME)
-                .upsert(upsert_data, on_conflict=on_conflict)
+                .upsert(
+                    upsert_data,
+                    on_conflict=(
+                        ", ".join(on_conflict)
+                        if isinstance(on_conflict, list)
+                        else on_conflict
+                    ),
+                )
                 .execute()
             )
 
@@ -252,7 +266,14 @@ class SupabaseModel(BaseModel):
             if len(on_conflict) == 1:
                 response = (
                     await supabase.table(cls.TABLE_NAME)
-                    .upsert(data, on_conflict=on_conflict)
+                    .upsert(
+                        data,
+                        on_conflict=(
+                            ", ".join(on_conflict)
+                            if isinstance(on_conflict, list)
+                            else on_conflict
+                        ),
+                    )
                     .execute()
                 )
             else:
@@ -298,7 +319,14 @@ class SupabaseModel(BaseModel):
             if len(on_conflict) == 1:
                 response = (
                     supabase.table(cls.TABLE_NAME)
-                    .upsert(data, on_conflict=on_conflict)
+                    .upsert(
+                        data,
+                        on_conflict=(
+                            ", ".join(on_conflict)
+                            if isinstance(on_conflict, list)
+                            else on_conflict
+                        ),
+                    )
                     .execute()
                 )
             else:

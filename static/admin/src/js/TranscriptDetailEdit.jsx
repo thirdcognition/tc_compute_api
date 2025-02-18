@@ -472,7 +472,7 @@ function TranscriptDetailEdit({
                                         className="w-full"
                                     />
                                 </Form.Group>
-                                <Form.Group
+                                {/* <Form.Group
                                     controlId="outputLanguage"
                                     className="mb-4"
                                 >
@@ -499,7 +499,7 @@ function TranscriptDetailEdit({
                                             )
                                         )}
                                     </Form.Control>
-                                </Form.Group>
+                                </Form.Group> */}
                             </>
                         </div>
                     )}
