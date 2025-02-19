@@ -7,7 +7,7 @@ from supabase.client import AsyncClient, Client
 from source.llm_exec.news_exec import web_source_article_builder_sync
 from source.models.structures.url_result import UrlResult
 from source.models.supabase.sources import SourceModel, SourceRelationshipModel
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, Field
 from datetime import datetime
 from source.models.supabase.panel import PanelTranscript, PanelTranscriptSourceReference
 from source.helpers.resolve_url import LinkResolver
@@ -19,8 +19,8 @@ from source.prompts.web_source import NewsArticle
 
 class WebSource(BaseModel):
     title: str
-    original_source: HttpUrl
-    resolved_source: Optional[HttpUrl] = None
+    original_source: str
+    resolved_source: Optional[str] = None
     source: str
     source_id: Optional[str] = None
     source_model: Optional[SourceModel] = None
@@ -29,7 +29,7 @@ class WebSource(BaseModel):
     url_result: Optional[UrlResult] = None
     article: Optional[NewsArticle] = None
 
-    image: Optional[HttpUrl] = None
+    image: Optional[str] = None
     publish_date: Optional[datetime] = None
     categories: Optional[List[str]] = Field(default_factory=list)
     linked_items: Optional[List[str]] = Field(default_factory=list)

@@ -2,6 +2,7 @@ import collections
 
 # from enum import Enum
 import json
+import re
 import textwrap
 from typing import List, Optional
 from pydantic import BaseModel, Field
@@ -196,9 +197,17 @@ class WebSourceGroupingValidator:
         self.cleaner = TagsParser(tags=["think", "reflection"], return_tag=False)
 
     def parse(self, raw_input: str) -> WebSourceGrouping:
-        # Clean the <think> and <reflection> tags
-        cleaned_input = self.cleaner.parse(raw_input)
-        # print(f"{cleaned_input=}")
+        json_block = re.search(r"```json\n(.*?)\n```", raw_input, re.DOTALL)
+        if json_block:
+            json_string = json_block.group(1).strip()
+
+            print("Extracted JSON string:", json_string)
+            cleaned_input = json_string
+        else:
+            print("No JSON block found.")
+            cleaned_input = self.cleaner.parse(raw_input)
+
+        print(f"{cleaned_input=}")
 
         # Parse the cleaned input into a WebSourceGrouping object
         parsed_response = web_source_grouping_parser.parse(cleaned_input)
@@ -267,13 +276,13 @@ group_web_sources = PromptFormatter(
         - Do not use one ID more than once in the groups.
 
         Format instructions:
+        <think>Place your thinking here.</think>
+        <output>
         {web_source_grouping_parser.get_format_instructions()}
+        </output>
         """
         # Format instructions:
-        # <think>Place your thinking here.</think>
-        # <output>
         # {web_source_grouping_parser.get_format_instructions()}
-        # </output>
         # """
     ),
     user=textwrap.dedent(
@@ -320,13 +329,13 @@ group_rss_items = PromptFormatter(
         - ordered_groups and ordered_groups_titles cannot be empty. They must have the groups defined in them.
 
         Format instructions:
+        <think>Place your thinking here.</think>
+        <output>
         {web_source_grouping_parser.get_format_instructions()}
+        </output>
         """
         # Format instructions:
-        # <think>Place your thinking here.</think>
-        # <output>
         # {web_source_grouping_parser.get_format_instructions()}
-        # </output>
         # """
     ),
     user=textwrap.dedent(

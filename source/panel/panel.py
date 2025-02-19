@@ -55,7 +55,7 @@ def create_panel(
     panel: PanelDiscussion = PanelDiscussion(
         title=request_data.title,
         metadata=metadata,
-        is_public=True,
+        is_public=request_data.is_public,
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
     )

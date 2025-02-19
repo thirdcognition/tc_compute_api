@@ -218,6 +218,7 @@ def process_transcript_generation(
         owner_id=str(panel.owner_id),
         organization_id=str(panel.organization_id),
         transcript_parent_id=str(transcript.id),
+        is_public=bool(panel.is_public),
     )
 
     print(f"Generating timed transcript for {transcript.id}.")

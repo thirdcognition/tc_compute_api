@@ -248,13 +248,19 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                         {new Date(transcript.updated_at).toLocaleString()}
                     </span>
                 </div>
-                {transcript.process_state_message && (
-                    <p className="mb-2 text-red-500">
-                        Error: {transcript.process_state_message}
-                    </p>
-                )}
             </div>
-
+            {transcript.process_state_message && (
+                <Card className="mb-2 border-danger">
+                    <Card.Header className="bg-danger text-white">
+                        Error
+                    </Card.Header>
+                    <Card.Body>
+                        <Card.Text>
+                            {transcript.process_state_message}
+                        </Card.Text>
+                    </Card.Body>
+                </Card>
+            )}
             <Accordion defaultActiveKey={showDetails ? "0" : null}>
                 <Accordion.Item eventKey="0">
                     <Accordion.Header>

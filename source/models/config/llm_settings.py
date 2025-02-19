@@ -81,7 +81,9 @@ class EmbeddingDefaults(BaseSettings):
 
 
 class EmbeddingProviderSettings(BaseSettings):
-    type: Literal["LOCAL", "HUGGINGFACE", "OPENAI", "OLLAMA", "BEDROCK", "AZURE"]
+    type: Literal[
+        "LOCAL", "HUGGINGFACE", "OPENAI", "OLLAMA", "BEDROCK", "AZURE", "GEMINI"
+    ]
     class_model: Any = None  # Union[HuggingFaceEmbeddings, OllamaEmbeddings, HuggingFaceInferenceAPIEmbeddings, None] = None
     url: Optional[str] = None
     api_key: Optional[str] = None

@@ -10,7 +10,7 @@ import { urlFormatter } from "./helpers/url.js";
 import { pollTaskStatus } from "./helpers/pollState.js";
 import { fetchPanelDetails } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
-import { FaTimes } from "react-icons/fa";
+import { FaTimes, FaClock, FaRegStar, FaSyncAlt } from "react-icons/fa";
 
 import { getStatusBarStyle, getStatusSymbol } from "./helpers/ui.js";
 
@@ -147,27 +147,51 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     {transcriptData.map((transcript, index) => (
                         <Accordion.Item eventKey={index}>
                             <Accordion.Header>
-                                Episode {transcriptData.length - index}:
-                                {transcript.title}
+                                <div class="flex justify-between items-center w-full pr-4">
+                                    <div className="flex-none flex flex-col items-center gap-2">
+                                        {transcript.transcript_parent_id && (
+                                            <FaSyncAlt
+                                                className="inline-block mr-2 text-blue-500"
+                                                title="Recurring Generation"
+                                            />
+                                        )}
+                                        {!transcript.transcript_parent_id &&
+                                            (transcript.generation_cronjob ? (
+                                                <FaClock
+                                                    className="inline-block mr-2 text-green-500"
+                                                    title="Scheduled Generation"
+                                                />
+                                            ) : (
+                                                <FaRegStar
+                                                    className="inline-block mr-2 text-gray-500"
+                                                    title="No Update Cycle"
+                                                />
+                                            ))}
+                                    </div>
+                                    <div class="flex-1">
+                                        {`Transcript ${transcriptData.length - index}`}
+                                        : {transcript.title}
+                                    </div>
+                                    <Button
+                                        variant="danger"
+                                        onClick={() =>
+                                            showConfirmationDialog(
+                                                "Are you sure you want to delete this transcript? This action cannot be undone.",
+                                                () =>
+                                                    handleDelete({
+                                                        type: "transcript",
+                                                        id: transcript.id
+                                                    })
+                                            )
+                                        }
+                                        className="flex-none"
+                                        aria-label="Delete Transcript"
+                                    >
+                                        <FaTimes className="inline-block" />
+                                    </Button>
+                                </div>
                             </Accordion.Header>
                             <Accordion.Body>
-                                <Button
-                                    variant="danger"
-                                    onClick={() =>
-                                        showConfirmationDialog(
-                                            "Are you sure you want to delete this transcript? This action cannot be undone.",
-                                            () =>
-                                                handleDelete({
-                                                    type: "transcript",
-                                                    id: transcript.id
-                                                })
-                                        )
-                                    }
-                                    className="absolute top-15 right-1"
-                                    aria-label="Delete Transcript"
-                                >
-                                    <FaTimes className="inline-block" />
-                                </Button>
                                 <TranscriptDetailDisplay
                                     transcript={transcript}
                                     transcriptUrls={transcriptUrls}

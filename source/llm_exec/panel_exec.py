@@ -4,10 +4,17 @@ from datetime import datetime
 from langchain_core.messages import BaseMessage
 from langsmith import traceable
 from source.chains.init import get_chain
+
+# from source.helpers.translation import (
+#     translate_transcript,
+# )
 from source.models.structures.web_source import WebSource
 from source.models.structures.web_source_collection import WebSourceCollection
 from source.models.structures.panel import ConversationConfig
-from source.prompts.panel import TranscriptQualityCheck, TranscriptSummary
+from source.prompts.panel import (
+    TranscriptQualityCheck,
+    TranscriptSummary,
+)
 
 
 def count_words(text: str) -> int:
@@ -875,6 +882,8 @@ def transcript_translate(
         if word_count is not None and conversation_config.longform
         else word_count
     )
+
+    # translated_transcript = translate_transcript(transcript_content, target_language)
 
     translated_transcript = _transcript_translate(
         transcript_content,

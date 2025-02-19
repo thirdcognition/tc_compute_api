@@ -90,12 +90,15 @@ function AudioDetailEdit({
                                                     new Date(b.created_at) -
                                                     new Date(a.created_at)
                                             )
-                                            .map((transcript) => (
+                                            .map((transcript, index) => (
                                                 <option
                                                     key={transcript.id}
                                                     value={transcript.id}
                                                 >
-                                                    {transcript.title}
+                                                    Transcript{" "}
+                                                    {transcriptData.length -
+                                                        index}
+                                                    : {transcript.title}
                                                 </option>
                                             ))}
                                     </select>

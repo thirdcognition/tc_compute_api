@@ -213,7 +213,15 @@ function AppContent() {
                                                         : ""
                                                 }
                                             >
-                                                {panel.title}
+                                                {panel.title}{" "}
+                                                <small>
+                                                    {panel.metadata?.display_tag
+                                                        ? "(" +
+                                                          panel.metadata
+                                                              .display_tag +
+                                                          ")"
+                                                        : ""}
+                                                </small>
                                             </div>
                                             <div
                                                 className={

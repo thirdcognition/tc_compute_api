@@ -4,6 +4,7 @@ from typing import Dict
 from langchain_core.runnables import RunnableSequence, RunnableLambda
 from langchain_core.output_parsers import StrOutputParser
 from openai import RateLimitError
+from google.api_core.exceptions import ResourceExhausted
 
 # , BadRequestError
 from random import randint
@@ -14,8 +15,20 @@ from source.prompts.base import PromptFormatter
 
 
 def extract_delay_from_error(error_message: str) -> int:
+    print(f"Retry parse {error_message=}")
+
+    # Match case 1: "retry after X seconds"
     match = re.search(r"retry after (\d+) seconds", error_message, re.IGNORECASE)
-    return (int(match.group(1)) + randint(3, 9)) if match else randint(10, 60)
+    if match:
+        return int(match.group(1)) + randint(3, 9)
+
+    # Match case 2: "_chat_with_retry in X seconds"
+    match = re.search(r"in (\d+) seconds", error_message, re.IGNORECASE)
+    if match:
+        return int(match.group(1)) + randint(3, 9)
+
+    # Fallback if no match is found
+    return randint(10, 60)
 
 
 def keep_chain_params(params: Dict):
@@ -47,6 +60,9 @@ def get_error_message(params):
     if isinstance(error_message, RateLimitError):
         return error_message.message
 
+    if isinstance(error_message, ResourceExhausted):
+        return error_message.message
+
 
 # Retry logic for RateLimitError
 def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
@@ -68,7 +84,7 @@ def retry_with_delay(chain: RunnableSequence, async_mode: bool = False):
 
     return chain.with_fallbacks(
         [RunnableLambda(retry), RunnableLambda(retry)],
-        exceptions_to_handle=(RateLimitError,),
+        exceptions_to_handle=(RateLimitError, ResourceExhausted),
         exception_key="rate_limit_error",
     )
 

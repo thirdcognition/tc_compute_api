@@ -49,6 +49,8 @@ else
     .venv/bin/playwright install chromium
     .venv/bin/playwright install-deps
 
+    source .env
+
     echo "Not running inside Docker, starting server with reload."
     .venv/bin/uvicorn app.server:app --host 0.0.0.0 --port "$SERVER_PORT" --reload --log-config logging.ini &
     UVICORN_PID=$!

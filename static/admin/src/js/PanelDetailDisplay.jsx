@@ -69,7 +69,10 @@ const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
             <Accordion>
                 <Accordion.Item eventKey="0">
                     <Accordion.Header>
-                        {panel.title && panel.title}
+                        {panel.title && panel.title}{" "}
+                        {panel.metadata?.display_tag
+                            ? "(" + panel.metadata.display_tag + ")"
+                            : ""}
                     </Accordion.Header>
                     <Accordion.Body>
                         {panel.metadata?.languages && (

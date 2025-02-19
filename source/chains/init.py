@@ -224,6 +224,22 @@ def init_llm(
             **common_kwargs,
         )
 
+    if model.provider == "GEMINI":
+        llm = model.class_model(
+            # streaming=debug_mode,
+            api_key=model.api_key,
+            model=model.model,
+            model_kwargs=(
+                {"response_format": {"type": "json_object"}}
+                if "structured" in model.type
+                else {}
+            ),
+            timeout=120,
+            max_retries=2,
+            max_tokens=model.max_tokens,
+            **common_kwargs,
+        )
+
     return llm
 
 
@@ -233,7 +249,15 @@ temperature_map = {"default": 0.2, "zero": 0, "warm": 0.5}
 def get_llm(
     id: str = "default",
     provider: Literal[
-        "OLLAMA", "GROQ", "BEDROCK", "OPENAI", "ANTHROPIC", "AZURE", "AZURE_ML", None
+        "OLLAMA",
+        "GROQ",
+        "BEDROCK",
+        "OPENAI",
+        "ANTHROPIC",
+        "AZURE",
+        "AZURE_ML",
+        "GEMINI",
+        None,
     ] = None,
     temperature: Literal["default", "zero", "warm", None] = None,
 ) -> BaseLLM:
@@ -298,7 +322,8 @@ def init_chain(
     id,
     prompt: PromptFormatter,
     retry_id: str = None,
-    validate_id: str = "instruct" if DEVMODE else "instruct_detailed",
+    validate_id: str = "instruct",
+    #  if DEVMODE else "instruct_detailed",
     check_for_hallucinations=False,
     ChainType: BaseChain = Chain,
     sync_mode: bool = False,

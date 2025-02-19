@@ -55,6 +55,7 @@ class PanelRequestData(BaseModel):
     tts_model: str = "geminimulti"
     longform: bool = False
     bucket_name: str = "public_panels"
+    display_tag: Optional[str] = ""
     conversation_config: Optional[ConversationConfig] = ConversationConfig()
     panel_id: Optional[UUID] = None
     transcript_parent_id: Optional[str] = None
@@ -71,6 +72,7 @@ class PanelRequestData(BaseModel):
     cronjob: Optional[str] = None
     owner_id: Optional[str] = None
     organization_id: Optional[str] = None
+    is_public: Optional[bool] = True
 
     def to_json(self):
         return json.dumps(self.model_dump(), default=str)

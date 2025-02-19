@@ -161,7 +161,7 @@ def create_and_update_panel_transcript(
         },
         generation_cronjob=request_data.cronjob,
         transcript_parent_id=parent_id or request_data.transcript_parent_id,
-        is_public=True,
+        is_public=request_data.is_public,
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
     )

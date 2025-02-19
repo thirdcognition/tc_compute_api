@@ -56,13 +56,15 @@ class TranscriptParser(BaseOutputParser[str]):
         """Remove specific tags but keep their content."""
         return re.sub(rf"</?{tag}.*?>", "", text, flags=re.IGNORECASE)
 
-    def _split_blocks(self, text: str) -> List[str]:
+    @classmethod
+    def split_blocks(cls, text: str) -> List[str]:
         """Split text into blocks based on <personN> tags, allowing for properties and whitespace."""
         pattern = r"(<person\d+.*?>.*?</person\d+>)"
         blocks = re.split(pattern, text, flags=re.DOTALL | re.IGNORECASE)
         return [block.strip() for block in blocks if block.strip()]
 
-    def _validate_and_merge_blocks(self, blocks: List[str]) -> List[str]:
+    @classmethod
+    def validate_and_merge_blocks(cls, blocks: List[str]) -> List[str]:
         """Validate and merge consecutive blocks for the same speaker."""
         merged_blocks = []
         current_speaker = None
@@ -128,10 +130,10 @@ class TranscriptParser(BaseOutputParser[str]):
         text = self._strip_tags(text, "output")
 
         # Step 3: Split text into blocks and validate formatting
-        blocks = self._split_blocks(text)
+        blocks = self.split_blocks(text)
 
         # Step 4: Validate and merge consecutive blocks for the same speaker
-        blocks = self._validate_and_merge_blocks(blocks)
+        blocks = self.validate_and_merge_blocks(blocks)
 
         # Step 5: Ensure the transcript alternates between speakers
         blocks = self._ensure_alternating_speakers(blocks)
@@ -294,7 +296,17 @@ class TranscriptQualityCheckParseWrapper:
         if hasattr(raw_input, "content"):  # Handle AIMessage or similar objects
             raw_input = raw_input.content
 
-        cleaned_input = self.cleaner.parse(raw_input)
+        json_block = re.search(r"```json\n(.*?)\n```", raw_input, re.DOTALL)
+        if json_block:
+            json_string = json_block.group(1).strip()
+
+            print("Extracted JSON string:", json_string)
+            cleaned_input = json_string
+        else:
+            print("No JSON block found.")
+            cleaned_input = self.cleaner.parse(raw_input)
+
+        print(f"{cleaned_input=}")
 
         return verify_transcript_quality_parser.parse(cleaned_input)
 

@@ -6,6 +6,7 @@ from langchain_core.output_parsers import (
     BaseOutputParser,
     StrOutputParser,
 )
+from langchain_core.exceptions import OutputParserException
 from langchain.output_parsers.retry import RetryWithErrorOutputParser
 from langchain_core.runnables import (
     RunnableSequence,
@@ -48,7 +49,11 @@ def retry_setup(params):
             (
                 params["error"].content
                 if isinstance(params["error"], BaseMessage)
-                else params["error"]
+                else (
+                    params["error"].message
+                    if isinstance(params["error"], OutputParserException)
+                    else params["error"]
+                )
             )
             or ""
         ).strip(),

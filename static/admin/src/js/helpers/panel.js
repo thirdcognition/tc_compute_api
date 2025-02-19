@@ -57,6 +57,7 @@ export const handleCreatePanel = async (params) => {
     try {
         const panelId = await createPanel({
             title: params.title,
+            display_tag: params.displayTag,
             input_text: params.inputText,
             input_source: linksArray,
             google_news: googleNewsArray,
@@ -64,7 +65,10 @@ export const handleCreatePanel = async (params) => {
             techcrunch_news: techCrunchNewsArray,
             hackernews: hackerNewsArray,
             news_guidance: params.newsGuidance,
-            news_items: parseInt(params.newsItems || 5)
+            news_items: parseInt(params.newsItems || 5),
+            ...(params.is_public !== undefined && {
+                is_public: params.is_public
+            })
         });
         return { panelId, success: true };
     } catch (error) {
@@ -105,6 +109,7 @@ export const handleUpdatePanel = async (panelId, params) => {
             input_source: linksArray,
             metadata: {
                 ...params.metadata,
+                display_tag: params.displayTag,
                 news_guidance: params.newsGuidance,
                 news_items: parseInt(params.newsItems || 5),
                 google_news: googleNewsArray,
@@ -251,6 +256,8 @@ export const handleDeleteItem = async (deleteTarget, refreshCallback) => {
         }
         if (refreshCallback) {
             refreshCallback();
+        } else {
+            window.location.reload();
         }
     } catch (error) {
         console.error(

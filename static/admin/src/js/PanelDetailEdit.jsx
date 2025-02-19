@@ -23,6 +23,9 @@ function PanelDetailEdit({
     onCancel
 }) {
     const [title, setTitle] = useState(panel.title || "");
+    const [displayTag, setDisplayTag] = useState(
+        panel.metadata?.display_tag || ""
+    );
     const [links, setLinks] = useState(panel.links || []);
     const [googleNewsConfigs, setGoogleNewsConfigs] = useState(
         panel.metadata?.google_news || []
@@ -53,6 +56,7 @@ function PanelDetailEdit({
         e.preventDefault();
         const panelData = {
             title,
+            displayTag,
             inputText,
             links,
             googleNewsConfigs,
@@ -136,9 +140,7 @@ function PanelDetailEdit({
                 </h3>
                 <Form onSubmit={handlePanelSubmit}>
                     <Card className="mb-4">
-                        <Card.Header className="font-bold">
-                            Panel Name
-                        </Card.Header>
+                        <Card.Header>Panel Name</Card.Header>
                         <Card.Body>
                             <Form.Group controlId="title">
                                 <InputTextForm
@@ -149,11 +151,22 @@ function PanelDetailEdit({
                             </Form.Group>
                         </Card.Body>
                     </Card>
-
                     <Card className="mb-4">
-                        <Card.Header className="font-bold">
-                            Public Access
+                        <Card.Header>
+                            Display tag <small>(shown at user selection)</small>
                         </Card.Header>
+                        <Card.Body>
+                            <Form.Group controlId="displaytag">
+                                <InputTextForm
+                                    initialText={displayTag}
+                                    onTextChange={setDisplayTag}
+                                    textarea={false}
+                                />
+                            </Form.Group>
+                        </Card.Body>
+                    </Card>
+                    <Card className="mb-4">
+                        <Card.Header>Public Access</Card.Header>
                         <Card.Body>
                             <Form.Group controlId="public">
                                 <Form.Check
@@ -174,9 +187,7 @@ function PanelDetailEdit({
                     </Card>
 
                     <Card className="mb-4">
-                        <Card.Header className="font-bold">
-                            Languages
-                        </Card.Header>
+                        <Card.Header>Languages</Card.Header>
                         <Card.Body>
                             <Form.Group controlId="languages">
                                 <Form.Label className="font-semibold text-left">

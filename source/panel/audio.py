@@ -94,7 +94,7 @@ def create_panel_audio(
             "conversation_config": conversation_config.model_dump(),
             "tts_model": tts_model,
         },
-        is_public=True,
+        is_public=request_data.is_public,
         owner_id=request_data.owner_id,
         organization_id=request_data.organization_id,
     )
