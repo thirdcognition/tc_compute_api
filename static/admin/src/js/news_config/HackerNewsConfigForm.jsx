@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Card } from "react-bootstrap";
 import ArticleCountComponent from "../components/ArticleCountComponent";
 
 function HackerNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
@@ -38,92 +38,114 @@ function HackerNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
 
     return (
         <Form.Group controlId="hackerNewsConfigs">
-            <Form.Label className="font-semibold">
-                Configure Hacker News:
-            </Form.Label>
             {configFields.map((config, index) => (
-                <div key={index} className="border border-gray-300 p-2 mb-2">
-                    <div className="flex items-center justify-between mb-2 w-full">
-                        <h5>
+                <Card key={index} className="border border-gray-300 mb-2">
+                    <Card.Header className="d-flex justify-content-between align-items-center">
+                        <h5 className="mb-0">
                             Config {index + 1}: {config.feed_type || "N/A"}
                         </h5>
                         <Button
                             variant="danger"
                             type="button"
                             onClick={() => removeConfigField(index)}
-                            className="py-2"
                         >
                             Remove Config
                         </Button>
-                    </div>
-                    <Form.Label>Feed Type</Form.Label>
-                    <Form.Control
-                        as="select"
-                        value={config.feed_type || "newest"}
-                        onChange={(e) =>
-                            handleConfigChange(
-                                index,
-                                "feed_type",
-                                e.target.value
-                            )
-                        }
-                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-                    >
-                        <option value="newest">Newest</option>
-                        <option value="newcomments">New Comments</option>
-                        <option value="frontpage">Front Page</option>
-                        <option value="bestcomments">Best Comments</option>
-                        <option value="ask">Ask HN</option>
-                        <option value="show">Show HN</option>
-                        <option value="polls">Polls</option>
-                        <option value="jobs">Jobs</option>
-                        <option value="whoishiring">Who is Hiring</option>
-                    </Form.Control>
-                    <Form.Label>Search Query</Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Enter search query..."
-                        value={config.query || ""}
-                        onChange={(e) =>
-                            handleConfigChange(index, "query", e.target.value)
-                        }
-                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-                    />
-                    <Form.Label>Minimum Points</Form.Label>
-                    <Form.Control
-                        type="number"
-                        placeholder="Minimum points..."
-                        value={config.points || 0}
-                        onChange={(e) =>
-                            handleConfigChange(
-                                index,
-                                "points",
-                                parseInt(e.target.value, 10)
-                            )
-                        }
-                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-                    />
-                    <Form.Label>Minimum Comments</Form.Label>
-                    <Form.Control
-                        type="number"
-                        placeholder="Minimum comments..."
-                        value={config.comments || 0}
-                        onChange={(e) =>
-                            handleConfigChange(
-                                index,
-                                "comments",
-                                parseInt(e.target.value, 10)
-                            )
-                        }
-                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-                    />
-                    {/* <ArticleCountComponent
-                        value={config.articles}
-                        onChange={(value) =>
-                            handleConfigChange(index, "articles", value)
-                        }
-                    /> */}
-                </div>
+                    </Card.Header>
+                    <Card.Body className="bg-gray-200">
+                        <Card className="mb-3">
+                            <Card.Header>Feed Type</Card.Header>
+                            <Card.Body>
+                                <Form.Control
+                                    as="select"
+                                    value={config.feed_type || "newest"}
+                                    onChange={(e) =>
+                                        handleConfigChange(
+                                            index,
+                                            "feed_type",
+                                            e.target.value
+                                        )
+                                    }
+                                    className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                >
+                                    <option value="newest">Newest</option>
+                                    <option value="newcomments">
+                                        New Comments
+                                    </option>
+                                    <option value="frontpage">
+                                        Front Page
+                                    </option>
+                                    <option value="bestcomments">
+                                        Best Comments
+                                    </option>
+                                    <option value="ask">Ask HN</option>
+                                    <option value="show">Show HN</option>
+                                    <option value="polls">Polls</option>
+                                    <option value="jobs">Jobs</option>
+                                    <option value="whoishiring">
+                                        Who is Hiring
+                                    </option>
+                                </Form.Control>
+                            </Card.Body>
+                        </Card>
+                        <Card className="mb-3">
+                            <Card.Header>Search Query</Card.Header>
+                            <Card.Body>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Enter search query..."
+                                    value={config.query || ""}
+                                    onChange={(e) =>
+                                        handleConfigChange(
+                                            index,
+                                            "query",
+                                            e.target.value
+                                        )
+                                    }
+                                    className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                />
+                            </Card.Body>
+                        </Card>
+                        <div className="flex mb-3 gap-3">
+                            <Card className="flex-1">
+                                <Card.Header>Minimum Points</Card.Header>
+                                <Card.Body>
+                                    <Form.Control
+                                        type="number"
+                                        placeholder="Minimum points..."
+                                        value={config.points || 0}
+                                        onChange={(e) =>
+                                            handleConfigChange(
+                                                index,
+                                                "points",
+                                                parseInt(e.target.value, 10)
+                                            )
+                                        }
+                                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    />
+                                </Card.Body>
+                            </Card>
+                            <Card className="flex-1">
+                                <Card.Header>Minimum Comments</Card.Header>
+                                <Card.Body>
+                                    <Form.Control
+                                        type="number"
+                                        placeholder="Minimum comments..."
+                                        value={config.comments || 0}
+                                        onChange={(e) =>
+                                            handleConfigChange(
+                                                index,
+                                                "comments",
+                                                parseInt(e.target.value, 10)
+                                            )
+                                        }
+                                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    />
+                                </Card.Body>
+                            </Card>
+                        </div>
+                    </Card.Body>
+                </Card>
             ))}
             <Button
                 variant="secondary"

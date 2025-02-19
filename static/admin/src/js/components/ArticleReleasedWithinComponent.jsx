@@ -1,5 +1,5 @@
 import React from "react";
-import { Form } from "react-bootstrap";
+import { Form, Card } from "react-bootstrap";
 
 function ArticleReleasedWithinComponent({ value, onChange }) {
     const convertHoursToTimeFormat = (hours) => {
@@ -16,6 +16,8 @@ function ArticleReleasedWithinComponent({ value, onChange }) {
 
     const convertTimeFormatToHours = (timeFormat) => {
         if (typeof timeFormat !== "string") {
+            if (timeFormat == null) return "";
+
             console.error(
                 "Expected a string for timeFormat, but received:",
                 timeFormat
@@ -37,24 +39,24 @@ function ArticleReleasedWithinComponent({ value, onChange }) {
     };
 
     return (
-        <div className="flex items-start mb-4 flex-col w-full">
-            <label className="mb-1 self-start">
-                Article has to be released within
-            </label>
-            <div className="flex items-start w-full">
-                <Form.Control
-                    type="range"
-                    min="0"
-                    max={24 * 7} // 2 months in hours
-                    value={convertTimeFormatToHours(value) || "0"}
-                    onChange={(e) =>
-                        onChange(convertHoursToTimeFormat(e.target.value))
-                    }
-                    className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mr-4 flex-grow"
-                />
-                <span className="w-40 text-left">{value || "Not set"}</span>
-            </div>
-        </div>
+        <Card className="mb-4 w-full">
+            <Card.Header>Article has to be released within</Card.Header>
+            <Card.Body>
+                <div className="flex items-start w-full">
+                    <Form.Control
+                        type="range"
+                        min="0"
+                        max={24 * 7} // 2 months in hours
+                        value={convertTimeFormatToHours(value) || "0"}
+                        onChange={(e) =>
+                            onChange(convertHoursToTimeFormat(e.target.value))
+                        }
+                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mr-4 flex-grow"
+                    />
+                    <span className="w-40 text-left">{value || "Not set"}</span>
+                </div>
+            </Card.Body>
+        </Card>
     );
 }
 

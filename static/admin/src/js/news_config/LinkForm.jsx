@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Card } from "react-bootstrap";
 
 function LinkForm({ initialLinks = [], onLinksChange }) {
     const [linkFields, setLinkFields] = useState(initialLinks);
@@ -29,25 +29,30 @@ function LinkForm({ initialLinks = [], onLinksChange }) {
                 Add links (one per item):
             </Form.Label>
             {linkFields.map((link, index) => (
-                <div key={index} className="flex items-center mb-2">
-                    <Form.Control
-                        type="text"
-                        placeholder="Enter URL here..."
-                        value={link}
-                        onChange={(e) =>
-                            handleLinkChange(index, e.target.value)
-                        }
-                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 flex-grow mr-2"
-                    />
-                    <Button
-                        variant="danger"
-                        type="button"
-                        onClick={() => removeLinkField(index)}
-                        className="py-2"
-                    >
-                        Remove
-                    </Button>
-                </div>
+                <Card key={index} className="mb-3">
+                    <Card.Header className="flex items-center justify-between">
+                        <span>Link {index + 1}</span>
+                        <Button
+                            variant="danger"
+                            type="button"
+                            onClick={() => removeLinkField(index)}
+                            className="py-1"
+                        >
+                            Remove
+                        </Button>
+                    </Card.Header>
+                    <Card.Body>
+                        <Form.Control
+                            type="text"
+                            placeholder="Enter URL here..."
+                            value={link}
+                            onChange={(e) =>
+                                handleLinkChange(index, e.target.value)
+                            }
+                            className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        />
+                    </Card.Body>
+                </Card>
             ))}
             <Button
                 variant="secondary"

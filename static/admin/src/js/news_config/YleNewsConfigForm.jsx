@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Card } from "react-bootstrap";
 
 export const conceptsMap = {
     topics: [
@@ -68,13 +68,10 @@ function YleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
 
     return (
         <Form.Group controlId="yleNewsConfigs">
-            <Form.Label className="font-semibold">
-                Configure Yle News:
-            </Form.Label>
             {configFields.map((config, index) => (
-                <div key={index} className="border border-gray-300 p-2 mb-2">
-                    <div className="flex items-center justify-between mb-2 w-full">
-                        <h5>
+                <Card key={index} className="mb-3">
+                    <Card.Header className="d-flex justify-content-between align-items-center">
+                        <h5 className="mb-0">
                             Config {index + 1}:{" "}
                             {config.feed_type || config.type || "N/A"}
                         </h5>
@@ -86,94 +83,135 @@ function YleNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
                         >
                             Remove Config
                         </Button>
-                    </div>
-                    <Form.Control
-                        as="select"
-                        value={
-                            config.feed_type || config.type || "majorHeadlines"
-                        }
-                        onChange={(e) =>
-                            handleConfigChange(
-                                index,
-                                "feed_type",
-                                e.target.value
-                            )
-                        }
-                        className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-                    >
-                        <option value="majorHeadlines">Major Headlines</option>
-                        <option value="mostRead">Most Read</option>
-                        <option value="topics">Topics</option>
-                    </Form.Control>
+                    </Card.Header>
+                    <Card.Body className="bg-gray-200">
+                        <Card className="mb-3">
+                            <Card.Header>Feed Type</Card.Header>
+                            <Card.Body>
+                                <Form.Control
+                                    as="select"
+                                    value={
+                                        config.feed_type ||
+                                        config.type ||
+                                        "majorHeadlines"
+                                    }
+                                    onChange={(e) =>
+                                        handleConfigChange(
+                                            index,
+                                            "feed_type",
+                                            e.target.value
+                                        )
+                                    }
+                                    className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
+                                >
+                                    <option value="majorHeadlines">
+                                        Major Headlines
+                                    </option>
+                                    <option value="mostRead">Most Read</option>
+                                    <option value="topics">Topics</option>
+                                </Form.Control>
+                            </Card.Body>
+                        </Card>
 
-                    {config.feed_type === "topics" && (
-                        <>
-                            <Form.Label>Language</Form.Label>
-                            <Form.Control
-                                as="select"
-                                value={config.lang || "fi"}
-                                onChange={(e) =>
-                                    handleConfigChange(
-                                        index,
-                                        "lang",
-                                        e.target.value
-                                    )
-                                }
-                                className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-                            >
-                                <option value="fi">Finnish</option>
-                                <option value="en">English</option>
-                            </Form.Control>
-                            <Form.Label>Topics</Form.Label>
-                            <Form.Control
-                                as="select"
-                                multiple
-                                value={config.topics || []}
-                                onChange={(e) =>
-                                    handleConfigChange(
-                                        index,
-                                        "topics",
-                                        Array.from(
-                                            e.target.selectedOptions
-                                        ).map((option) => option.value)
-                                    )
-                                }
-                                className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-                            >
-                                {conceptsMap.topics.map((topic) => (
-                                    <option key={topic.id} value={topic.id}>
-                                        {topic.title}
-                                    </option>
-                                ))}
-                            </Form.Control>
-                            <Form.Label>Locations</Form.Label>
-                            <Form.Control
-                                as="select"
-                                multiple
-                                value={config.locations || []}
-                                onChange={(e) =>
-                                    handleConfigChange(
-                                        index,
-                                        "locations",
-                                        Array.from(
-                                            e.target.selectedOptions
-                                        ).map((option) => option.value)
-                                    )
-                                }
-                                className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-                            >
-                                {conceptsMap.locations.map((location) => (
-                                    <option
-                                        key={location.id}
-                                        value={location.id}
-                                    >
-                                        {location.title}
-                                    </option>
-                                ))}
-                            </Form.Control>
-                        </>
-                    )}
-                </div>
+                        {config.feed_type === "topics" && (
+                            <>
+                                <Card className="mb-3">
+                                    <Card.Header>Language</Card.Header>
+                                    <Card.Body>
+                                        <Form.Control
+                                            as="select"
+                                            value={config.lang || "fi"}
+                                            onChange={(e) =>
+                                                handleConfigChange(
+                                                    index,
+                                                    "lang",
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
+                                        >
+                                            <option value="fi">Finnish</option>
+                                            <option value="en">English</option>
+                                        </Form.Control>
+                                    </Card.Body>
+                                </Card>
+                                <div className="flex gap-3 mb-3">
+                                    <Card className="flex-1">
+                                        <Card.Header>Topics</Card.Header>
+                                        <Card.Body>
+                                            <Form.Control
+                                                as="select"
+                                                multiple
+                                                value={config.topics || []}
+                                                onChange={(e) =>
+                                                    handleConfigChange(
+                                                        index,
+                                                        "topics",
+                                                        Array.from(
+                                                            e.target
+                                                                .selectedOptions
+                                                        ).map(
+                                                            (option) =>
+                                                                option.value
+                                                        )
+                                                    )
+                                                }
+                                                className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
+                                            >
+                                                {conceptsMap.topics.map(
+                                                    (topic) => (
+                                                        <option
+                                                            key={topic.id}
+                                                            value={topic.id}
+                                                        >
+                                                            {topic.title}
+                                                        </option>
+                                                    )
+                                                )}
+                                            </Form.Control>
+                                        </Card.Body>
+                                    </Card>
+
+                                    <Card className="flex-1">
+                                        <Card.Header>Locations</Card.Header>
+                                        <Card.Body>
+                                            <Form.Control
+                                                as="select"
+                                                multiple
+                                                value={config.locations || []}
+                                                onChange={(e) =>
+                                                    handleConfigChange(
+                                                        index,
+                                                        "locations",
+                                                        Array.from(
+                                                            e.target
+                                                                .selectedOptions
+                                                        ).map(
+                                                            (option) =>
+                                                                option.value
+                                                        )
+                                                    )
+                                                }
+                                                className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
+                                            >
+                                                {conceptsMap.locations.map(
+                                                    (location) => (
+                                                        <option
+                                                            key={location.id}
+                                                            value={location.id}
+                                                        >
+                                                            {location.title}
+                                                        </option>
+                                                    )
+                                                )}
+                                            </Form.Control>
+                                        </Card.Body>
+                                    </Card>
+                                </div>
+                            </>
+                        )}
+                    </Card.Body>
+                </Card>
             ))}
             <Button
                 variant="secondary"

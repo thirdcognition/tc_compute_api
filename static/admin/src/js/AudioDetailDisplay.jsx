@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { processStateIcon } from "./helpers/ui.js";
-import {
-    FaCalendarAlt,
-    FaClock,
-    FaChevronDown,
-    FaChevronRight,
-    FaDownload
-} from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaDownload } from "react-icons/fa";
+import { Button, Accordion } from "react-bootstrap";
 
 const AudioDetailDisplay = ({ audio, audioUrl }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -32,9 +27,8 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
     };
 
     return (
-        <div className="audio-detail-display border p-3 mb-4 rounded">
-            <h6 className="font-bold mb-3 pr-4">{audio.title}</h6>
-            <p className="mb-3 flex items-between">
+        <>
+            <p className="mb-3 flex items-between mr-6">
                 <span className="mr-2">
                     {processStateIcon(audio.process_state)}
                 </span>
@@ -62,61 +56,48 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
                 {audio.process_state === "done" && (
                     <>
                         <audio controls src={audioUrl} className="h-8" />
-                        <button onClick={handleDownload} className="ml-2">
+                        <Button
+                            variant="secondary"
+                            onClick={handleDownload}
+                            className="ml-2"
+                        >
                             <FaDownload className="inline-block" />
-                        </button>
+                        </Button>
                     </>
                 )}
             </div>
-            <button
-                onClick={() => setShowDetails(!showDetails)}
-                className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
-            >
-                <span className="mr-2">
-                    {showDetails ? (
-                        <FaChevronDown className="inline-block" />
-                    ) : (
-                        <FaChevronRight className="inline-block" />
-                    )}
-                </span>
-                <span>
-                    {showDetails ? "Hide Details" : "Show More Details"}
-                </span>
-            </button>
-            {showDetails && (
-                <div className="border p-3 mb-4 rounded">
-                    {ttsConfig.default_tts_model && (
-                        <p className="mb-2">
-                            Default TTS Model: {ttsConfig.default_tts_model}
-                        </p>
-                    )}
-                    {elevenlabsConfig.default_voices?.question && (
-                        <p className="mb-2">
-                            ElevenLabs Question Voice:{" "}
-                            {elevenlabsConfig.default_voices.question}
-                        </p>
-                    )}
-                    {elevenlabsConfig.default_voices?.answer && (
-                        <p className="mb-2">
-                            ElevenLabs Answer Voice:{" "}
-                            {elevenlabsConfig.default_voices.answer}
-                        </p>
-                    )}
-                    {geminiConfig.default_voices?.question && (
-                        <p className="mb-2">
-                            Gemini Question Voice:{" "}
-                            {geminiConfig.default_voices.question}
-                        </p>
-                    )}
-                    {geminiConfig.default_voices?.answer && (
-                        <p className="mb-2">
-                            Gemini Answer Voice:{" "}
-                            {geminiConfig.default_voices.answer}
-                        </p>
-                    )}
-                </div>
-            )}
-        </div>
+            <div className="flex">
+                {ttsConfig.default_tts_model && (
+                    <p className="flex-1">
+                        Default TTS Model: {ttsConfig.default_tts_model}
+                    </p>
+                )}
+                {elevenlabsConfig.default_voices?.question && (
+                    <p className="flex-1">
+                        ElevenLabs Question Voice:{" "}
+                        {elevenlabsConfig.default_voices.question}
+                    </p>
+                )}
+                {elevenlabsConfig.default_voices?.answer && (
+                    <p className="flex-1">
+                        ElevenLabs Answer Voice:{" "}
+                        {elevenlabsConfig.default_voices.answer}
+                    </p>
+                )}
+                {geminiConfig.default_voices?.question && (
+                    <p className="flex-1">
+                        Gemini Question Voice:{" "}
+                        {geminiConfig.default_voices.question}
+                    </p>
+                )}
+                {geminiConfig.default_voices?.answer && (
+                    <p className="flex-1">
+                        Gemini Answer Voice:{" "}
+                        {geminiConfig.default_voices.answer}
+                    </p>
+                )}
+            </div>
+        </>
     );
 };
 

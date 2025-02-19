@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Card, Accordion } from "react-bootstrap";
 import { handleCreatePanel, handleUpdatePanel } from "./helpers/panel.js";
 import LinkForm from "./news_config/LinkForm";
 import GoogleNewsConfigForm from "./news_config/GoogleNewsConfigForm";
@@ -118,6 +118,16 @@ function PanelDetailEdit({
         }
     };
 
+    const defaultNewsConfigActiveKey = () => {
+        if (links && links.length > 0) return "0";
+        if (yleNewsConfigs && yleNewsConfigs.length > 0) return "1";
+        if (googleNewsConfigs && googleNewsConfigs.length > 0) return "2";
+        if (techCrunchNewsConfigs && techCrunchNewsConfigs.length > 0)
+            return "3";
+        if (hackerNewsConfigs && hackerNewsConfigs.length > 0) return "4";
+        return null; // Default to Links if no configs are defined
+    };
+
     return (
         <>
             <div className="panel-container border p-3 mb-4 rounded">
@@ -125,104 +135,191 @@ function PanelDetailEdit({
                     {panel.id ? "Edit Panel" : "Create Panel"}
                 </h3>
                 <Form onSubmit={handlePanelSubmit}>
-                    <Form.Group controlId="title">
-                        <Form.Label className="font-semibold">
-                            Panel defaults:
-                        </Form.Label>
-                        <InputTextForm
-                            label="Name:"
-                            initialText={title}
-                            onTextChange={setTitle}
-                            textarea={false}
-                        />
-                        <Form.Check
-                            type="switch"
-                            label="Public Panel"
-                            checked={isPublic}
-                            onChange={(e) => setIsPublic(e.target.checked)}
-                            className="font-semibold mt-4"
-                        />
-                        <Form.Text className="text-muted">
-                            Toggle to make this panel public or private
-                            <i>(hidden)</i>.
-                        </Form.Text>
-                        <Form.Label className="font-semibold mt-6">
-                            Extra languages:
-                            <br />
-                            <small className="text-muted font-normal">
-                                Note: Test all languages with voice models
-                            </small>
-                        </Form.Label>
-                        <Form.Control
-                            as="select"
-                            multiple
-                            value={languages}
-                            onChange={(e) =>
-                                setLanguages(
-                                    [...e.target.selectedOptions].map(
-                                        (option) => option.value
-                                    )
-                                )
-                            }
-                            className="w-full"
-                        >
-                            {outputLanguageOptions
-                                .filter(
-                                    (item) => item.toLowerCase() !== "english"
-                                )
-                                .map((language) => (
-                                    <option value={language} key={language}>
-                                        {language}
-                                    </option>
-                                ))}
-                        </Form.Control>
-                        <Form.Text className="text-muted ml-2">
-                            English is enabled by default
-                        </Form.Text>
-                    </Form.Group>
+                    <Card className="mb-4">
+                        <Card.Header className="font-bold">
+                            Panel Name
+                        </Card.Header>
+                        <Card.Body>
+                            <Form.Group controlId="title">
+                                <InputTextForm
+                                    initialText={title}
+                                    onTextChange={setTitle}
+                                    textarea={false}
+                                />
+                            </Form.Group>
+                        </Card.Body>
+                    </Card>
+
+                    <Card className="mb-4">
+                        <Card.Header className="font-bold">
+                            Public Access
+                        </Card.Header>
+                        <Card.Body>
+                            <Form.Group controlId="public">
+                                <Form.Check
+                                    type="switch"
+                                    label="Public Panel"
+                                    checked={isPublic}
+                                    onChange={(e) =>
+                                        setIsPublic(e.target.checked)
+                                    }
+                                    className="font-semibold"
+                                />
+                                <Form.Text className="text-muted">
+                                    Toggle to make this panel public or private
+                                    <i>(hidden)</i>.
+                                </Form.Text>
+                            </Form.Group>
+                        </Card.Body>
+                    </Card>
+
+                    <Card className="mb-4">
+                        <Card.Header className="font-bold">
+                            Languages
+                        </Card.Header>
+                        <Card.Body>
+                            <Form.Group controlId="languages">
+                                <Form.Label className="font-semibold text-left">
+                                    Extra languages:
+                                    <br />
+                                    <small className="text-muted font-normal">
+                                        Note: Test all languages with voice
+                                        models
+                                    </small>
+                                </Form.Label>
+                                <Form.Control
+                                    as="select"
+                                    multiple
+                                    value={languages}
+                                    onChange={(e) =>
+                                        setLanguages(
+                                            [...e.target.selectedOptions].map(
+                                                (option) => option.value
+                                            )
+                                        )
+                                    }
+                                    className="w-full"
+                                >
+                                    {outputLanguageOptions
+                                        .filter(
+                                            (item) =>
+                                                item.toLowerCase() !== "english"
+                                        )
+                                        .map((language) => (
+                                            <option
+                                                value={language}
+                                                key={language}
+                                            >
+                                                {language}
+                                            </option>
+                                        ))}
+                                </Form.Control>
+                                <Form.Text className="text-muted ml-2">
+                                    English is enabled by default
+                                </Form.Text>
+                            </Form.Group>
+                        </Card.Body>
+                    </Card>
+                    <ArticleCountComponent
+                        value={newsItems}
+                        onChange={(value) => setNewsItems(value)}
+                    />
 
                     <Form.Group
                         controlId="news_configs"
                         className="mt-4 border-t-2"
                     >
-                        <Form.Label className="font-bold my-4">
-                            News configs:
-                        </Form.Label>
-                        <InputTextForm
-                            label="Guidance for LLM when organizing and filtering news items:"
-                            initialText={newsGuidance}
-                            onTextChange={setNewsGuidance}
-                        />
-                        <ArticleCountComponent
-                            value={newsItems}
-                            onChange={(value) => setNewsItems(value)}
-                        />
-                        <LinkForm
-                            initialLinks={links}
-                            onLinksChange={setLinks}
-                        />
-                        <YleNewsConfigForm
-                            initialConfigs={yleNewsConfigs}
-                            onConfigsChange={setYleNewsConfigs}
-                        />
-                        <GoogleNewsConfigForm
-                            initialConfigs={googleNewsConfigs}
-                            onConfigsChange={setGoogleNewsConfigs}
-                        />
-                        <TechCrunchNewsConfigForm
-                            initialConfigs={techCrunchNewsConfigs}
-                            onConfigsChange={setTechCrunchNewsConfigs}
-                        />
-                        <HackerNewsConfigForm
-                            initialConfigs={hackerNewsConfigs}
-                            onConfigsChange={setHackerNewsConfigs}
-                        />
+                        <Card className="my-4">
+                            <Card.Header>
+                                Guidance for LLM when organizing and filtering
+                                news items:
+                            </Card.Header>
+                            <Card.Body>
+                                <InputTextForm
+                                    initialText={newsGuidance}
+                                    onTextChange={setNewsGuidance}
+                                />
+                            </Card.Body>
+                        </Card>
+
+                        <Accordion
+                            defaultActiveKey={defaultNewsConfigActiveKey()}
+                        >
+                            <Accordion.Item eventKey="0">
+                                <Accordion.Header>
+                                    Links (defined: {links.length})
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    <LinkForm
+                                        initialLinks={links}
+                                        onLinksChange={setLinks}
+                                    />
+                                </Accordion.Body>
+                            </Accordion.Item>
+                            <Accordion.Item eventKey="1">
+                                <Accordion.Header>
+                                    Yle News Configs (defined:{" "}
+                                    {yleNewsConfigs.length})
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    <YleNewsConfigForm
+                                        initialConfigs={yleNewsConfigs}
+                                        onConfigsChange={setYleNewsConfigs}
+                                    />
+                                </Accordion.Body>
+                            </Accordion.Item>
+                            <Accordion.Item eventKey="2">
+                                <Accordion.Header>
+                                    Google News Configs (defined:{" "}
+                                    {googleNewsConfigs.length})
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    <GoogleNewsConfigForm
+                                        initialConfigs={googleNewsConfigs}
+                                        onConfigsChange={setGoogleNewsConfigs}
+                                    />
+                                </Accordion.Body>
+                            </Accordion.Item>
+                            <Accordion.Item eventKey="3">
+                                <Accordion.Header>
+                                    TechCrunch News Config
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    <TechCrunchNewsConfigForm
+                                        initialConfigs={techCrunchNewsConfigs}
+                                        onConfigsChange={
+                                            setTechCrunchNewsConfigs
+                                        }
+                                    />
+                                </Accordion.Body>
+                            </Accordion.Item>
+                            <Accordion.Item eventKey="4">
+                                <Accordion.Header>
+                                    Hacker News Configs (defined:{" "}
+                                    {hackerNewsConfigs.length})
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    <HackerNewsConfigForm
+                                        initialConfigs={hackerNewsConfigs}
+                                        onConfigsChange={setHackerNewsConfigs}
+                                    />
+                                </Accordion.Body>
+                            </Accordion.Item>
+                            <Accordion.Item eventKey="5">
+                                <Accordion.Header>
+                                    Static text content to include in show
+                                    content
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    <InputTextForm
+                                        initialText={inputText}
+                                        onTextChange={setInputText}
+                                    />
+                                </Accordion.Body>
+                            </Accordion.Item>
+                        </Accordion>
                     </Form.Group>
-                    <InputTextForm
-                        initialText={inputText}
-                        onTextChange={setInputText}
-                        label="Static text content to include in show content:"
-                    />
+
                     <div className="flex justify-between mt-4">
                         <Button
                             variant="secondary"

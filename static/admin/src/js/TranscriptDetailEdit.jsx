@@ -1,25 +1,24 @@
 import { useState, useEffect } from "react";
 import { handleCreateTranscript } from "./helpers/panel.js";
-import { Form, Button } from "react-bootstrap";
+import { Form, Card, Button, Accordion } from "react-bootstrap";
 import {
     conversationStyleOptions,
     rolesPerson1Options,
     rolesPerson2Options,
     dialogueStructureOptions,
-    engagementTechniquesOptions,
-    outputLanguageOptions
+    engagementTechniquesOptions
 } from "./options.js";
 import { getWordCountDescription } from "./helpers/ui.js";
 import CronjobComponent from "./components/CronjobComponent.jsx";
-import { FaChevronDown, FaChevronRight, FaTimes } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 
 function TranscriptDetailEdit({
     panelId,
     discussionData,
     taskStatus,
-    initiatePolling
+    initiatePolling,
+    visible
 }) {
-    const [showDetails, setShowDetails] = useState(false);
     const [wordCount, setWordCount] = useState(1000);
     const [maxWordCount, setMaxWordCount] = useState(2500); // Dynamically updated max
     const [creativity] = useState(0.7);
@@ -40,8 +39,7 @@ function TranscriptDetailEdit({
     });
     const [dialogueStructure, setDialogueStructure] = useState([
         "Introduction",
-        "Main Content Summary",
-        "Conclusion"
+        "Main Content Summary"
     ]);
     const [engagementTechniques, setEngagementTechniques] = useState([
         "rhetorical questions",
@@ -120,115 +118,127 @@ function TranscriptDetailEdit({
 
     return (
         <>
-            <div className="transcript-container border p-3 mb-4 rounded">
-                <h3 className="font-bold mb-3">Create Transcript</h3>
-                <Form onSubmit={handleTranscriptSubmit}>
-                    <Form.Group controlId="cronjob" className="mb-4">
-                        <Form.Label className="font-semibold">
-                            Update Cycle:
-                        </Form.Label>
-                        <CronjobComponent
-                            value={cronjob}
-                            onChange={setCronjob}
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="wordCount" className="mb-4">
-                        <Form.Label className="font-semibold">
-                            Requested length:
-                        </Form.Label>
-                        <Form.Control
-                            type="range"
-                            min={100}
-                            max={maxWordCount}
-                            step={100}
-                            value={wordCount}
-                            onChange={(e) => setWordCount(e.target.value)}
-                            className="w-full"
-                        />
-                        <div>
-                            {getWordCountDescription(wordCount, maxWordCount)}
-                        </div>
-                    </Form.Group>
-                    {calculateArticleCount(discussionData) > 1 && (
-                        <Form.Group controlId="longForm" className="mb-4">
-                            <div className="flex items-center mb-2.5">
-                                <label className="mr-2.5">
-                                    <input
-                                        type="checkbox"
-                                        checked={longForm}
-                                        onChange={(e) =>
-                                            setLongForm(e.target.checked)
-                                        }
-                                    />
-                                    {
-                                        " Process every article separately. (higher quality, longer process time)"
-                                    }
-                                </label>
-                            </div>
-                        </Form.Group>
-                    )}
-                    // Replaced emoticons with FaIcons
-                    <Button
-                        onClick={() => setShowDetails(!showDetails)}
-                        className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
-                    >
-                        <span className="mr-2">
-                            {showDetails ? (
-                                <FaChevronDown className="inline-block" />
-                            ) : (
-                                <FaChevronRight className="inline-block" />
+            <Form onSubmit={handleTranscriptSubmit}>
+                <Accordion defaultActiveKey={visible ? "0" : null}>
+                    <Accordion.Item eventKey="0">
+                        <Accordion.Header>Create Transcript</Accordion.Header>
+                        <Accordion.Body>
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
+                                        Update Cycle:
+                                    </Card.Title>
+                                    <Form.Group controlId="cronjob">
+                                        <CronjobComponent
+                                            value={cronjob}
+                                            onChange={setCronjob}
+                                        />
+                                    </Form.Group>
+                                </Card.Body>
+                            </Card>
+
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
+                                        Requested length:
+                                    </Card.Title>
+                                    <Form.Group controlId="wordCount">
+                                        <Form.Control
+                                            type="range"
+                                            min={100}
+                                            max={maxWordCount}
+                                            step={100}
+                                            value={wordCount}
+                                            onChange={(e) =>
+                                                setWordCount(e.target.value)
+                                            }
+                                            className="w-full"
+                                        />
+                                        <div>
+                                            {getWordCountDescription(
+                                                wordCount,
+                                                maxWordCount
+                                            )}
+                                        </div>
+                                    </Form.Group>
+                                </Card.Body>
+                            </Card>
+
+                            {calculateArticleCount(discussionData) > 1 && (
+                                <Card className="mb-4">
+                                    <Card.Body>
+                                        <Card.Title className="font-bold text-lg">
+                                            Process Articles:
+                                        </Card.Title>
+                                        <Form.Group controlId="longForm">
+                                            <div className="flex items-center mb-2.5">
+                                                <label className="mr-2.5">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={longForm}
+                                                        onChange={(e) =>
+                                                            setLongForm(
+                                                                e.target.checked
+                                                            )
+                                                        }
+                                                    />
+                                                    {
+                                                        " Process every article separately. (higher quality, longer process time)"
+                                                    }
+                                                </label>
+                                            </div>
+                                        </Form.Group>
+                                    </Card.Body>
+                                </Card>
                             )}
-                        </span>
-                        <span>
-                            {showDetails ? "Hide Details" : "Show More Details"}
-                        </span>
-                    </Button>
-                    {showDetails && (
-                        <div className="border p-3 mb-4 rounded">
-                            <>
-                                <Form.Group
-                                    controlId="conversationStyle"
-                                    className="mb-4"
-                                >
-                                    <Form.Label className="font-semibold">
+
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
                                         Conversation Style:
-                                    </Form.Label>
-                                    <Form.Control
-                                        as="select"
-                                        multiple
-                                        value={conversationStyle}
-                                        onChange={(e) =>
-                                            setConversationStyle(
-                                                [
-                                                    ...e.target.selectedOptions
-                                                ].map((option) => option.value)
-                                            )
-                                        }
-                                        className="w-full h-40"
-                                    >
-                                        {conversationStyleOptions.map(
-                                            (style) => (
-                                                <option
-                                                    value={style}
-                                                    key={style}
-                                                >
-                                                    {style}
-                                                </option>
-                                            )
-                                        )}
-                                    </Form.Control>
-                                </Form.Group>
-                                <div className="mb-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                                    <h5 className="font-bold text-lg mb-3">
+                                    </Card.Title>
+                                    <Form.Group controlId="conversationStyle">
+                                        <Form.Control
+                                            as="select"
+                                            multiple
+                                            value={conversationStyle}
+                                            onChange={(e) =>
+                                                setConversationStyle(
+                                                    [
+                                                        ...e.target
+                                                            .selectedOptions
+                                                    ].map(
+                                                        (option) => option.value
+                                                    )
+                                                )
+                                            }
+                                            className="w-full h-40"
+                                        >
+                                            {conversationStyleOptions.map(
+                                                (style) => (
+                                                    <option
+                                                        value={style}
+                                                        key={style}
+                                                    >
+                                                        {style}
+                                                    </option>
+                                                )
+                                            )}
+                                        </Form.Control>
+                                    </Form.Group>
+                                </Card.Body>
+                            </Card>
+
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
                                         Person 1
-                                    </h5>
+                                    </Card.Title>
                                     <Form.Group
                                         controlId="rolesPerson1Name"
                                         className="mb-3"
                                     >
-                                        <Form.Label className="font-semibold">
-                                            Name:
-                                        </Form.Label>
+                                        <Form.Label>Name:</Form.Label>
                                         <Form.Control
                                             type="text"
                                             value={rolesPerson1.name || "Elton"}
@@ -245,9 +255,7 @@ function TranscriptDetailEdit({
                                         controlId="rolesPerson1Persona"
                                         className="mb-3"
                                     >
-                                        <Form.Label className="font-semibold">
-                                            Persona:
-                                        </Form.Label>
+                                        <Form.Label>Persona:</Form.Label>
                                         <Form.Control
                                             type="text"
                                             value={rolesPerson1.persona || ""}
@@ -264,9 +272,7 @@ function TranscriptDetailEdit({
                                         controlId="rolesPerson1Role"
                                         className="mb-3"
                                     >
-                                        <Form.Label className="font-semibold">
-                                            Role:
-                                        </Form.Label>
+                                        <Form.Label>Role:</Form.Label>
                                         <Form.Control
                                             as="select"
                                             value={rolesPerson1.role}
@@ -285,18 +291,19 @@ function TranscriptDetailEdit({
                                             ))}
                                         </Form.Control>
                                     </Form.Group>
-                                </div>
-                                <div className="mb-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                                    <h5 className="font-bold text-lg mb-3">
+                                </Card.Body>
+                            </Card>
+
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
                                         Person 2
-                                    </h5>
+                                    </Card.Title>
                                     <Form.Group
                                         controlId="rolesPerson2Name"
                                         className="mb-3"
                                     >
-                                        <Form.Label className="font-semibold">
-                                            Name:
-                                        </Form.Label>
+                                        <Form.Label>Name:</Form.Label>
                                         <Form.Control
                                             type="text"
                                             value={rolesPerson2.name || "Julia"}
@@ -313,9 +320,7 @@ function TranscriptDetailEdit({
                                         controlId="rolesPerson2Persona"
                                         className="mb-3"
                                     >
-                                        <Form.Label className="font-semibold">
-                                            Persona:
-                                        </Form.Label>
+                                        <Form.Label>Persona:</Form.Label>
                                         <Form.Control
                                             type="text"
                                             value={rolesPerson2.persona || ""}
@@ -332,9 +337,7 @@ function TranscriptDetailEdit({
                                         controlId="rolesPerson2Role"
                                         className="mb-3"
                                     >
-                                        <Form.Label className="font-semibold">
-                                            Role:
-                                        </Form.Label>
+                                        <Form.Label>Role:</Form.Label>
                                         <Form.Control
                                             as="select"
                                             value={rolesPerson2.role}
@@ -353,179 +356,169 @@ function TranscriptDetailEdit({
                                             ))}
                                         </Form.Control>
                                     </Form.Group>
-                                </div>
-                                <Form.Group
-                                    controlId="dialogueStructure"
-                                    className="mb-4"
-                                >
-                                    <Form.Label className="font-semibold">
+                                </Card.Body>
+                            </Card>
+
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
                                         Dialogue Structure:
-                                    </Form.Label>
-                                    <div className="dialogue-structure-container">
-                                        {dialogueStructure.map(
-                                            (structure, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="dialogue-item flex items-center mb-2"
-                                                >
-                                                    <Form.Control
-                                                        as="select"
-                                                        value={structure}
-                                                        onChange={(e) => {
-                                                            const newStructure =
-                                                                [
-                                                                    ...dialogueStructure
-                                                                ];
-                                                            newStructure[
-                                                                index
-                                                            ] = e.target.value;
-                                                            setDialogueStructure(
-                                                                newStructure
-                                                            );
-                                                        }}
-                                                        className="flex-grow mr-2"
+                                    </Card.Title>
+                                    <Form.Group controlId="dialogueStructure">
+                                        <div className="dialogue-structure-container">
+                                            {dialogueStructure.map(
+                                                (structure, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="dialogue-item flex items-center mb-2"
                                                     >
-                                                        {dialogueStructureOptions.map(
-                                                            (option) => (
-                                                                <option
-                                                                    value={
-                                                                        option
-                                                                    }
-                                                                    key={option}
-                                                                >
-                                                                    {option}
-                                                                </option>
-                                                            )
-                                                        )}
-                                                    </Form.Control>
-                                                    <Button
-                                                        variant="danger"
-                                                        onClick={() => {
-                                                            const newStructure =
-                                                                dialogueStructure.filter(
-                                                                    (_, i) =>
-                                                                        i !==
-                                                                        index
+                                                        <Form.Control
+                                                            as="select"
+                                                            value={structure}
+                                                            onChange={(e) => {
+                                                                const newStructure =
+                                                                    [
+                                                                        ...dialogueStructure
+                                                                    ];
+                                                                newStructure[
+                                                                    index
+                                                                ] =
+                                                                    e.target.value;
+                                                                setDialogueStructure(
+                                                                    newStructure
                                                                 );
-                                                            setDialogueStructure(
-                                                                newStructure
-                                                            );
-                                                        }}
-                                                        className="remove-item-button"
-                                                    >
-                                                        <FaTimes className="inline-block" />
-                                                    </Button>
-                                                </div>
-                                            )
-                                        )}
-                                        <Button
-                                            onClick={() =>
-                                                setDialogueStructure([
-                                                    ...dialogueStructure,
-                                                    ""
-                                                ])
-                                            }
-                                            className="add-item-button mt-2"
-                                        >
-                                            Add Item
-                                        </Button>
-                                    </div>
-                                </Form.Group>
-                                <Form.Group
-                                    controlId="engagementTechniques"
-                                    className="mb-4"
-                                >
-                                    <Form.Label className="font-semibold">
+                                                            }}
+                                                            className="flex-grow mr-2"
+                                                        >
+                                                            {dialogueStructureOptions.map(
+                                                                (option) => (
+                                                                    <option
+                                                                        value={
+                                                                            option
+                                                                        }
+                                                                        key={
+                                                                            option
+                                                                        }
+                                                                    >
+                                                                        {option}
+                                                                    </option>
+                                                                )
+                                                            )}
+                                                        </Form.Control>
+                                                        <Button
+                                                            variant="danger"
+                                                            onClick={() => {
+                                                                const newStructure =
+                                                                    dialogueStructure.filter(
+                                                                        (
+                                                                            _,
+                                                                            i
+                                                                        ) =>
+                                                                            i !==
+                                                                            index
+                                                                    );
+                                                                setDialogueStructure(
+                                                                    newStructure
+                                                                );
+                                                            }}
+                                                            className="remove-item-button"
+                                                        >
+                                                            <FaTimes className="inline-block" />
+                                                        </Button>
+                                                    </div>
+                                                )
+                                            )}
+                                            <Button
+                                                onClick={() =>
+                                                    setDialogueStructure([
+                                                        ...dialogueStructure,
+                                                        ""
+                                                    ])
+                                                }
+                                                className="add-item-button mt-2"
+                                            >
+                                                Add Item
+                                            </Button>
+                                        </div>
+                                    </Form.Group>
+                                </Card.Body>
+                            </Card>
+
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
                                         Engagement Techniques:
-                                    </Form.Label>
-                                    <Form.Control
-                                        as="select"
-                                        multiple
-                                        value={engagementTechniques}
-                                        onChange={(e) =>
-                                            setEngagementTechniques(
-                                                [
-                                                    ...e.target.selectedOptions
-                                                ].map((option) => option.value)
-                                            )
-                                        }
-                                        className="w-full h-40"
-                                    >
-                                        {engagementTechniquesOptions.map(
-                                            (technique) => (
-                                                <option
-                                                    value={technique}
-                                                    key={technique}
-                                                >
-                                                    {technique}
-                                                </option>
-                                            )
-                                        )}
-                                    </Form.Control>
-                                </Form.Group>
-                                <Form.Group
-                                    controlId="userInstructions"
-                                    className="mb-4"
-                                >
-                                    <Form.Label className="font-semibold">
+                                    </Card.Title>
+                                    <Form.Group controlId="engagementTechniques">
+                                        <Form.Control
+                                            as="select"
+                                            multiple
+                                            value={engagementTechniques}
+                                            onChange={(e) =>
+                                                setEngagementTechniques(
+                                                    [
+                                                        ...e.target
+                                                            .selectedOptions
+                                                    ].map(
+                                                        (option) => option.value
+                                                    )
+                                                )
+                                            }
+                                            className="w-full h-40"
+                                        >
+                                            {engagementTechniquesOptions.map(
+                                                (technique) => (
+                                                    <option
+                                                        value={technique}
+                                                        key={technique}
+                                                    >
+                                                        {technique}
+                                                    </option>
+                                                )
+                                            )}
+                                        </Form.Control>
+                                    </Form.Group>
+                                </Card.Body>
+                            </Card>
+
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
                                         User Instructions:
-                                    </Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Provide specific instructions here..."
-                                        value={userInstructions}
-                                        onChange={(e) =>
-                                            setUserInstructions(e.target.value)
-                                        }
-                                        className="w-full"
-                                    />
-                                </Form.Group>
-                                {/* <Form.Group
-                                    controlId="outputLanguage"
-                                    className="mb-4"
-                                >
-                                    <Form.Label className="font-semibold">
-                                        Output Language (Note: Selected voice
-                                        models should align with the language):
-                                    </Form.Label>
-                                    <Form.Control
-                                        as="select"
-                                        value={outputLanguage}
-                                        onChange={(e) =>
-                                            setOutputLanguage(e.target.value)
-                                        }
-                                        className="w-full"
-                                    >
-                                        {outputLanguageOptions.map(
-                                            (language) => (
-                                                <option
-                                                    value={language}
-                                                    key={language}
-                                                >
-                                                    {language}
-                                                </option>
-                                            )
-                                        )}
-                                    </Form.Control>
-                                </Form.Group> */}
-                            </>
-                        </div>
-                    )}
-                    <Button
-                        variant="primary"
-                        type="submit"
-                        className="w-full py-2 mt-3"
-                        disabled={
-                            !panelId ||
-                            (taskStatus !== "idle" &&
-                                taskStatus !== "failure" &&
-                                taskStatus !== "success")
-                        }
-                    >
-                        Create Transcript
-                    </Button>
-                </Form>
-            </div>
+                                    </Card.Title>
+                                    <Form.Group controlId="userInstructions">
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Provide specific instructions here..."
+                                            value={userInstructions}
+                                            onChange={(e) =>
+                                                setUserInstructions(
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="w-full"
+                                        />
+                                    </Form.Group>
+                                </Card.Body>
+                            </Card>
+
+                            <Button
+                                variant="primary"
+                                type="submit"
+                                className="w-full py-2 mt-3"
+                                disabled={
+                                    !panelId ||
+                                    (taskStatus !== "idle" &&
+                                        taskStatus !== "failure" &&
+                                        taskStatus !== "success")
+                                }
+                            >
+                                Create Transcript
+                            </Button>
+                        </Accordion.Body>
+                    </Accordion.Item>
+                </Accordion>
+            </Form>
         </>
     );
 }

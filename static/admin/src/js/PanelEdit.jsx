@@ -1,4 +1,4 @@
-import { Spinner } from "react-bootstrap";
+import { Spinner, Button, Accordion } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import PanelDetailEdit from "./PanelDetailEdit.jsx";
@@ -10,7 +10,7 @@ import { urlFormatter } from "./helpers/url.js";
 import { pollTaskStatus } from "./helpers/pollState.js";
 import { fetchPanelDetails } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
-import { FaTrash } from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 
 import { getStatusBarStyle, getStatusSymbol } from "./helpers/ui.js";
 
@@ -142,33 +142,43 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     taskStatus={taskStatus}
                 />
             )}
-            {transcriptData &&
-                transcriptData.map((transcript) => (
-                    <div key={transcript.id} className="relative">
-                        <button
-                            onClick={() =>
-                                showConfirmationDialog(
-                                    "Are you sure you want to delete this transcript? This action cannot be undone.",
-                                    () =>
-                                        handleDelete({
-                                            type: "transcript",
-                                            id: transcript.id
-                                        })
-                                )
-                            }
-                            className="absolute top-0 right-0 p-2 text-red-500 hover:text-red-700"
-                            aria-label="Delete Transcript"
-                        >
-                            <FaTrash />
-                        </button>
-                        <TranscriptDetailDisplay
-                            transcript={transcript}
-                            transcriptUrls={transcriptUrls}
-                            existingAudio={existingAudio}
-                            audioUrls={audioUrls}
-                        />
-                    </div>
-                ))}
+            {transcriptData && (
+                <Accordion defaultActiveKey={0}>
+                    {transcriptData.map((transcript, index) => (
+                        <Accordion.Item eventKey={index}>
+                            <Accordion.Header>
+                                Episode {transcriptData.length - index}:
+                                {transcript.title}
+                            </Accordion.Header>
+                            <Accordion.Body>
+                                <Button
+                                    variant="danger"
+                                    onClick={() =>
+                                        showConfirmationDialog(
+                                            "Are you sure you want to delete this transcript? This action cannot be undone.",
+                                            () =>
+                                                handleDelete({
+                                                    type: "transcript",
+                                                    id: transcript.id
+                                                })
+                                        )
+                                    }
+                                    className="absolute top-15 right-1"
+                                    aria-label="Delete Transcript"
+                                >
+                                    <FaTimes className="inline-block" />
+                                </Button>
+                                <TranscriptDetailDisplay
+                                    transcript={transcript}
+                                    transcriptUrls={transcriptUrls}
+                                    existingAudio={existingAudio}
+                                    audioUrls={audioUrls}
+                                />
+                            </Accordion.Body>
+                        </Accordion.Item>
+                    ))}
+                </Accordion>
+            )}
             {taskStatus !== "idle" &&
             taskStatus !== "success" &&
             taskStatus !== "failure" ? null : (
@@ -177,23 +187,27 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     discussionData={discussionData}
                     taskStatus={taskStatus}
                     initiatePolling={initiatePolling}
+                    visible={transcriptData && transcriptData.length === 0}
                 />
             )}
-            {taskStatus !== "idle" &&
-            taskStatus !== "success" &&
-            taskStatus !== "failure" ? (
-                <div className="processing-container border p-3 mb-4 rounded">
-                    <h3 className="font-bold mb-3">Processing...</h3>
-                    <p>Please wait while the task is being processed.</p>
-                </div>
-            ) : (
-                <AudioDetailEdit
-                    panelId={panelId}
-                    transcriptData={transcriptData}
-                    taskStatus={taskStatus}
-                    initiatePolling={initiatePolling}
-                />
-            )}
+            {transcriptData &&
+                transcriptData.length > 0 &&
+                (taskStatus !== "idle" &&
+                taskStatus !== "success" &&
+                taskStatus !== "failure" ? (
+                    <div className="processing-container border p-3 mb-4 rounded">
+                        <h3 className="font-bold mb-3">Processing...</h3>
+                        <p>Please wait while the task is being processed.</p>
+                    </div>
+                ) : (
+                    <AudioDetailEdit
+                        panelId={panelId}
+                        transcriptData={transcriptData}
+                        taskStatus={taskStatus}
+                        initiatePolling={initiatePolling}
+                        visible={!transcriptData || transcriptData.length === 0}
+                    />
+                ))}
         </div>
     );
 }

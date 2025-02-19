@@ -9,7 +9,7 @@ import {
     useLocation
 } from "react-router-dom";
 import { Button, Container, Row, Col, ListGroup } from "react-bootstrap";
-import { FaTrash, FaRocket, FaBan } from "react-icons/fa";
+import { FaTimes, FaRocket, FaBan } from "react-icons/fa";
 import LoginForm from "./js/LoginForm.jsx";
 import PanelEdit from "./js/PanelEdit.jsx";
 import PanelDetails from "./js/PanelDetails.jsx";
@@ -163,7 +163,7 @@ function AppContent() {
             </Row>
             <Row>
                 {session.isAuthenticated() && (
-                    <Col md={4}>
+                    <Col md={3}>
                         <ListGroup>
                             <ListGroup.Item
                                 action
@@ -188,9 +188,9 @@ function AppContent() {
                                             : "") + " px-2"
                                     }
                                 >
-                                    <div className="flex items-center">
+                                    <div className="flex items-center justify-between gap-3">
                                         <div
-                                            className="icon-container flex-1 text-left"
+                                            className="icon-container flex-none text-left"
                                             aria-label={
                                                 panel.is_public
                                                     ? "released"
@@ -203,7 +203,7 @@ function AppContent() {
                                                 <FaBan className="inline-block" />
                                             )}
                                         </div>
-                                        <div className="flex-3">
+                                        <div className="grow">
                                             <div
                                                 className={
                                                     selectedPanel &&
@@ -229,7 +229,8 @@ function AppContent() {
                                                 ).toLocaleString()}
                                             </div>
                                         </div>
-                                        <button
+                                        <Button
+                                            variant="danger"
                                             onClick={() =>
                                                 showConfirmationDialog(
                                                     "Are you sure you want to delete this panel? This action cannot be undone.",
@@ -240,11 +241,10 @@ function AppContent() {
                                                         ) // Refresh panels after deletion
                                                 )
                                             }
-                                            className="text-red-500 hover:text-red-700 flex-1 text-right"
                                             aria-label="Delete Panel"
                                         >
-                                            <FaTrash className="inline-block" />
-                                        </button>
+                                            <FaTimes className="inline-block" />
+                                        </Button>
                                     </div>
                                 </ListGroup.Item>
                             ))}

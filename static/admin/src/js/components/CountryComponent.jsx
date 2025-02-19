@@ -1,5 +1,5 @@
 import React from "react";
-import { Form } from "react-bootstrap";
+import { Form, Card } from "react-bootstrap";
 
 function CountryComponent({ value, onChange }) {
     const nordicCountries = [
@@ -22,29 +22,32 @@ function CountryComponent({ value, onChange }) {
 
     return (
         <Form.Group controlId="country-select">
-            <Form.Label className="font-semibold">Country:</Form.Label>
-            <Form.Control
-                as="select"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2"
-            >
-                {nordicCountries.map((country) => (
-                    <option key={country.code} value={country.code}>
-                        {country.name}
-                    </option>
-                ))}
-                {euCountries.map((country) => (
-                    <option key={country.code} value={country.code}>
-                        {country.name}
-                    </option>
-                ))}
-                {usCountries.map((country) => (
-                    <option key={country.code} value={country.code}>
-                        {country.name}
-                    </option>
-                ))}
-            </Form.Control>
+            <Card className="border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mb-2">
+                <Card.Header>Select Country</Card.Header>
+                <Card.Body>
+                    <Form.Control
+                        as="select"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                    >
+                        {nordicCountries.map((country) => (
+                            <option key={country.code} value={country.code}>
+                                {country.name}
+                            </option>
+                        ))}
+                        {euCountries.map((country) => (
+                            <option key={country.code} value={country.code}>
+                                {country.name}
+                            </option>
+                        ))}
+                        {usCountries.map((country) => (
+                            <option key={country.code} value={country.code}>
+                                {country.name}
+                            </option>
+                        ))}
+                    </Form.Control>
+                </Card.Body>
+            </Card>
         </Form.Group>
     );
 }

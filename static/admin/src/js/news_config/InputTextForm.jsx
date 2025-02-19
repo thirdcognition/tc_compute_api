@@ -4,7 +4,7 @@ import { Form } from "react-bootstrap";
 function InputTextForm({
     initialText = "",
     onTextChange,
-    label = "Input Text:",
+    label = "",
     textarea = true
 }) {
     const [text, setText] = useState(initialText);
@@ -15,7 +15,9 @@ function InputTextForm({
 
     return (
         <Form.Group controlId="inputText">
-            <Form.Label className="font-semibold">{label}</Form.Label>
+            {label && (
+                <Form.Label className="font-semibold">{label}</Form.Label>
+            )}
             <Form.Control
                 as={textarea ? "textarea" : "input"}
                 rows={5}

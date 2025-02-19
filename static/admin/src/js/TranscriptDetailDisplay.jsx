@@ -13,15 +13,14 @@ import {
     formatCronjob
 } from "./helpers/ui.js";
 import {
-    FaTrash,
+    FaTimes,
     FaClock,
     FaRegStar,
     FaCalendarAlt,
-    FaChevronDown,
-    FaChevronRight,
     FaSyncAlt
 } from "react-icons/fa";
 import CronjobComponent from "./components/CronjobComponent.jsx";
+import { Button, Card, Accordion } from "react-bootstrap";
 import { pollTaskStatus } from "./helpers/pollState.js";
 
 const TranscriptDetailDisplay = ({ transcript }) => {
@@ -83,29 +82,33 @@ const TranscriptDetailDisplay = ({ transcript }) => {
 
     const renderSources = () => {
         return transcriptSources.map((source) => (
-            <div key={source.id} className="mb-4 p-2 border rounded">
-                <h6 className="font-bold">
-                    {source.data.url ? (
-                        <a
-                            href={source.data.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {source.data.title}
-                        </a>
-                    ) : (
-                        source.data.title
-                    )}
-                </h6>
-                <p>{new Date(source.data.publish_date).toLocaleString()}</p>
+            <Card key={source.id} className="mb-4">
                 {source.data.image && (
-                    <img
+                    <Card.Img
+                        variant="top"
                         src={source.data.image}
                         alt={source.data.title}
-                        className="w-full h-auto"
                     />
                 )}
-            </div>
+                <Card.Body>
+                    <Card.Title>
+                        {source.data.url ? (
+                            <a
+                                href={source.data.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {source.data.title}
+                            </a>
+                        ) : (
+                            source.data.title
+                        )}
+                    </Card.Title>
+                    <Card.Text>
+                        {new Date(source.data.publish_date).toLocaleString()}
+                    </Card.Text>
+                </Card.Body>
+            </Card>
         ));
     };
 
@@ -208,32 +211,24 @@ const TranscriptDetailDisplay = ({ transcript }) => {
     };
 
     return (
-        <div className="transcript-detail-display border p-3 mb-4 rounded">
-            <div className="flex align-end mb-4">
-                <div className="flex flex-col gap-2 self-center mr-4">
-                    {transcript.transcript_parent_id && (
-                        <FaSyncAlt
-                            className="inline-block mr-2 text-blue-500"
-                            title="Recurring Generation"
-                        />
-                    )}
-                    {transcript.generation_cronjob ? (
-                        <FaClock
-                            className="inline-block mr-2 text-green-500"
-                            title="Scheduled Generation"
-                        />
-                    ) : (
-                        <FaRegStar
-                            className="inline-block mr-2 text-gray-500"
-                            title="No Update Cycle"
-                        />
-                    )}
-                </div>
-                <h5 className="font-bold self-center pr-5">
-                    {transcript.title}
-                </h5>
-            </div>
-            <p className="mb-3 flex items-between">
+        <>
+            {!transcript.transcript_parent_id && (
+                <Button
+                    onClick={handleDuplicateTranscript}
+                    className={`w-full py-2 mb-4 flex items-center justify-center ${
+                        taskStatus === "processing"
+                            ? "bg-gray-500 border-gray-800 text-white"
+                            : "bg-green-500 border-green-800 text-white"
+                    }`}
+                    disabled={taskStatus === "processing"}
+                >
+                    {taskStatus === "idle" && "Recreate Transcript"}
+                    {taskStatus === "processing" && "Processing..."}
+                    {taskStatus === "success" && "Success"}
+                    {taskStatus === "failure" && "Failed"}
+                </Button>
+            )}
+            <div className="flex items-center mb-4">
                 <span className="mr-2">
                     {processStateIcon(transcript.process_state)}
                 </span>
@@ -253,228 +248,257 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                         {new Date(transcript.updated_at).toLocaleString()}
                     </span>
                 </div>
-            </p>
-            {transcript.process_state_message && (
-                <p className="mb-2 text-red-500">
-                    Error: {transcript.process_state_message}
-                </p>
-            )}
-            {!transcript.transcript_parent_id && (
-                <button
-                    onClick={handleDuplicateTranscript}
-                    className={`w-full py-2 mb-4 flex items-center justify-center rounded ${
-                        taskStatus === "processing"
-                            ? "bg-gray-500 text-white"
-                            : "bg-green-500 text-white"
-                    }`}
-                    disabled={taskStatus === "processing"}
-                >
-                    {taskStatus === "idle" && "Recreate Transcript"}
-                    {taskStatus === "processing" && "Processing..."}
-                    {taskStatus === "success" && "Success"}
-                    {taskStatus === "failure" && "Failed"}
-                </button>
-            )}
-            <button
-                onClick={() => setShowDetails(!showDetails)}
-                className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
-            >
-                <span className="mr-2">
-                    {showDetails ? (
-                        <FaChevronDown className="inline-block" />
-                    ) : (
-                        <FaChevronRight className="inline-block" />
-                    )}
-                </span>
-                <span>
-                    {showDetails ? "Hide Details" : "Show More Details"}
-                </span>
-            </button>
-            {showDetails && (
-                <div className="border p-3 mb-4 rounded">
-                    {config.word_count && (
-                        <p className="mb-2">
-                            Length:{" "}
-                            {getWordCountDescription(config.word_count, 4000)}
-                        </p>
-                    )}
-                    {/* {config.creativity && (
-                        <p className="mb-2">Creativity: {config.creativity}</p>
-                    )} */}
-                    {config.conversation_style && (
-                        <p className="mb-2">
-                            Conversation Style:{" "}
-                            {config.conversation_style.join(", ")}
-                        </p>
-                    )}
-                    {config.roles_person1 && (
-                        <div className="mb-2">
-                            <p>
-                                Name (Person 1):{" "}
-                                {config.roles_person1.name || "Elton"}
-                            </p>
-                            <p>
-                                Persona (Person 1):{" "}
-                                {config.roles_person1.persona || "Not set"}
-                            </p>
-                            <p>Role (Person 1): {config.roles_person1.role}</p>
-                        </div>
-                    )}
-                    {config.roles_person2 && (
-                        <div className="mb-2">
-                            <p>
-                                Name (Person 2):{" "}
-                                {config.roles_person2.name || "Julia"}
-                            </p>
-                            <p>
-                                Persona (Person 2):{" "}
-                                {config.roles_person2.persona || "Not set"}
-                            </p>
-                            <p>Role (Person 2): {config.roles_person2.role}</p>
-                        </div>
-                    )}
-                    {config.dialogue_structure && (
-                        <p className="mb-2">
-                            Dialogue Structure:{" "}
-                            {config.dialogue_structure.join(", ")}
-                        </p>
-                    )}
-                    {config.engagement_techniques && (
-                        <p className="mb-2">
-                            Engagement Techniques:{" "}
-                            {config.engagement_techniques.join(", ")}
-                        </p>
-                    )}
-                    {config.user_instructions && (
-                        <p className="mb-2">
-                            User Instructions: {config.user_instructions}
-                        </p>
-                    )}
-                    {config.output_language && (
-                        <p className="mb-2">
-                            Output Language: {config.output_language}
-                        </p>
-                    )}
-                    <p className="mb-2">
-                        Process every article separately. (higher quality,
-                        longer process time):{" "}
-                        {transcript.metadata?.longform ? "Yes" : "No"}
+                {transcript.process_state_message && (
+                    <p className="mb-2 text-red-500">
+                        Error: {transcript.process_state_message}
                     </p>
-                    {!transcript.transcript_parent_id && (
-                        <>
-                            {transcript.generation_cronjob && cronjob ? (
-                                <div className="mb-4">
-                                    <p className="mb-2">
-                                        Scheduled: {formatCronjob(cronjob)}
-                                    </p>
-                                    <button
-                                        onClick={() => setCronjob("")}
-                                        className="bg-red-500 text-white py-1 px-3 rounded"
-                                    >
-                                        Clear Schedule
-                                    </button>
-                                </div>
-                            ) : (
-                                <>
-                                    <label className="font-semibold mb-1 block">
-                                        Update Cycle:
-                                    </label>
-                                    <CronjobComponent
-                                        value={cronjob}
-                                        onChange={setCronjob}
-                                    />
-                                    <button
-                                        onClick={() =>
-                                            handleUpdateTranscript(cronjob)
-                                        }
-                                        className="bg-blue-500 text-white py-1 px-3 rounded"
-                                    >
-                                        Update
-                                    </button>
-                                </>
-                            )}
-                        </>
-                    )}
-                </div>
-            )}
-            {transcript.process_state === "done" && (
-                <button
-                    onClick={() => toggleTranscriptVisibility(transcript.id)}
-                    className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
-                >
-                    <span className="mr-2">
-                        {isTranscriptVisible ? (
-                            <FaChevronDown className="inline-block" />
-                        ) : (
-                            <FaChevronRight className="inline-block" />
+                )}
+            </div>
+
+            <Accordion defaultActiveKey={showDetails ? "0" : null}>
+                <Accordion.Item eventKey="0">
+                    <Accordion.Header>
+                        {showDetails ? "Hide Details" : "Show More Details"}
+                    </Accordion.Header>
+                    <Accordion.Body>
+                        {!transcript.transcript_parent_id && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>Scheduling</Card.Title>
+                                    {transcript.generation_cronjob &&
+                                    cronjob ? (
+                                        <>
+                                            <Card.Text>
+                                                {formatCronjob(cronjob)}
+                                            </Card.Text>
+                                            <Button
+                                                variant="danger"
+                                                onClick={() => setCronjob("")}
+                                            >
+                                                Clear Schedule
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CronjobComponent
+                                                value={cronjob}
+                                                onChange={setCronjob}
+                                            />
+                                            <Button
+                                                onClick={() =>
+                                                    handleUpdateTranscript(
+                                                        cronjob
+                                                    )
+                                                }
+                                            >
+                                                Save schedule
+                                            </Button>
+                                        </>
+                                    )}
+                                </Card.Body>
+                            </Card>
                         )}
-                    </span>
-                    <span>
+                        {config.word_count && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>Length</Card.Title>
+                                    <Card.Text>
+                                        {getWordCountDescription(
+                                            config.word_count,
+                                            4000
+                                        )}
+                                    </Card.Text>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        {config.conversation_style && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>Conversation Style</Card.Title>
+                                    <Card.Text>
+                                        {config.conversation_style.join(", ")}
+                                    </Card.Text>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        {config.roles_person1 && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>Person 1 Details</Card.Title>
+                                    <Card.Text>
+                                        <strong>Name:</strong>{" "}
+                                        {config.roles_person1.name || "Elton"}
+                                    </Card.Text>
+                                    <Card.Text>
+                                        <strong>Persona:</strong>{" "}
+                                        {config.roles_person1.persona ||
+                                            "Not set"}
+                                    </Card.Text>
+                                    <Card.Text>
+                                        <strong>Role:</strong>{" "}
+                                        {config.roles_person1.role}
+                                    </Card.Text>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        {config.roles_person2 && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>Person 2 Details</Card.Title>
+                                    <Card.Text>
+                                        <strong>Name:</strong>{" "}
+                                        {config.roles_person2.name || "Julia"}
+                                    </Card.Text>
+                                    <Card.Text>
+                                        <strong>Persona:</strong>{" "}
+                                        {config.roles_person2.persona ||
+                                            "Not set"}
+                                    </Card.Text>
+                                    <Card.Text>
+                                        <strong>Role:</strong>{" "}
+                                        {config.roles_person2.role}
+                                    </Card.Text>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        {config.dialogue_structure && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>Dialogue Structure</Card.Title>
+                                    <Card.Text>
+                                        {config.dialogue_structure.join(", ")}
+                                    </Card.Text>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        {config.engagement_techniques && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>
+                                        Engagement Techniques
+                                    </Card.Title>
+                                    <Card.Text>
+                                        {config.engagement_techniques.join(
+                                            ", "
+                                        )}
+                                    </Card.Text>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        {config.user_instructions && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>User Instructions</Card.Title>
+                                    <Card.Text>
+                                        {config.user_instructions}
+                                    </Card.Text>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        {config.output_language && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>Output Language</Card.Title>
+                                    <Card.Text>
+                                        {config.output_language}
+                                    </Card.Text>
+                                </Card.Body>
+                            </Card>
+                        )}
+                        <Card className="mb-4">
+                            <Card.Body>
+                                <Card.Title>Process Mode</Card.Title>
+                                <Card.Text>
+                                    <strong>
+                                        Process every article separately:
+                                    </strong>{" "}
+                                    {transcript.metadata?.longform
+                                        ? "Yes"
+                                        : "No"}
+                                </Card.Text>
+                            </Card.Body>
+                        </Card>
+                    </Accordion.Body>
+                </Accordion.Item>
+                <Accordion.Item eventKey="1">
+                    <Accordion.Header
+                        onClick={() => {
+                            toggleTranscriptVisibility(transcript.id);
+                        }}
+                    >
                         {isTranscriptVisible
                             ? "Hide Transcript"
                             : "View Transcript"}
-                    </span>
-                </button>
-            )}
-            {isTranscriptVisible && (
-                <div className="mt-4">
-                    <p className="mb-2">
-                        Word Count:{" "}
-                        {
-                            transcriptContent
-                                .replace(/<\/?person\d+>/gi, "")
-                                .split(/\s+/).length
-                        }
-                    </p>
-                    {renderTranscript(transcriptContent)}
-                </div>
-            )}
-            {transcript.process_state === "done" && (
-                <button
-                    onClick={toggleSourcesVisibility}
-                    className="w-full py-2 mb-4 flex items-center justify-center bg-blue-500 text-white rounded"
-                >
-                    <span className="mr-2">
-                        {isSourcesVisible ? (
-                            <FaChevronDown className="inline-block" />
-                        ) : (
-                            <FaChevronRight className="inline-block" />
-                        )}
-                    </span>
-                    <span>
-                        {isSourcesVisible ? "Hide Sources" : "View Sources"}
-                    </span>
-                </button>
-            )}
-            {isSourcesVisible && (
-                <div className="mt-4 border p-3 mb-4 rounded">
-                    {renderSources()}
-                </div>
-            )}
-            {audios &&
-                audios
-                    .filter((audio) => audio.transcript_id === transcript.id)
-                    .map((audio) => (
-                        <div key={audio.id} className="relative">
-                            <button
-                                onClick={() =>
-                                    showConfirmationDialog(
-                                        "Are you sure you want to delete this audio? This action cannot be undone.",
-                                        () => handleDeleteAudio(audio.id)
-                                    )
-                                }
-                                className="absolute top-1 right-1 p-2 text-red-500 hover:text-red-700"
-                                aria-label="Delete Audio"
+                    </Accordion.Header>
+                    <Accordion.Body>
+                        {(transcriptContent && (
+                            <>
+                                <p className="mb-2">
+                                    Word Count:{" "}
+                                    {
+                                        transcriptContent
+                                            .replace(/<\/?person\d+>/gi, "")
+                                            .split(/\s+/).length
+                                    }
+                                </p>
+                                {renderTranscript(transcriptContent)}
+                            </>
+                        )) || <p>Loading transcript...</p>}
+                    </Accordion.Body>
+                </Accordion.Item>
+                {transcriptSources.length > 0 && (
+                    <Accordion.Item eventKey="2">
+                        <Accordion.Header onClick={toggleSourcesVisibility}>
+                            {isSourcesVisible ? "Hide Sources" : "View Sources"}
+                        </Accordion.Header>
+                        <Accordion.Body>
+                            {isSourcesVisible && renderSources()}
+                        </Accordion.Body>
+                    </Accordion.Item>
+                )}
+            </Accordion>
+            <Accordion className="mt-4">
+                {audios &&
+                    audios
+                        .filter(
+                            (audio) => audio.transcript_id === transcript.id
+                        )
+                        .map((audio, index) => (
+                            <Accordion.Item
+                                eventKey={index.toString()}
+                                key={audio.id}
                             >
-                                <FaTrash />
-                            </button>
-                            <AudioDetailDisplay
-                                audio={audio}
-                                audioUrl={audioUrls[audio.id]}
-                            />
-                        </div>
-                    ))}
-        </div>
+                                <Accordion.Header>
+                                    {audio.title}
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    <div className="relative">
+                                        <Button
+                                            variant="danger"
+                                            onClick={() =>
+                                                showConfirmationDialog(
+                                                    "Are you sure you want to delete this audio? This action cannot be undone.",
+                                                    () =>
+                                                        handleDeleteAudio(
+                                                            audio.id
+                                                        )
+                                                )
+                                            }
+                                            className="absolute top-1 right-1"
+                                            aria-label="Delete Audio"
+                                        >
+                                            <FaTimes className="inline-block" />
+                                        </Button>
+                                        <AudioDetailDisplay
+                                            audio={audio}
+                                            audioUrl={audioUrls[audio.id]}
+                                        />
+                                    </div>
+                                </Accordion.Body>
+                            </Accordion.Item>
+                        ))}
+            </Accordion>
+        </>
     );
 };
 

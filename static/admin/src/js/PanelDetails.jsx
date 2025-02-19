@@ -2,11 +2,10 @@ import PanelDetailDisplay from "./PanelDetailDisplay.jsx";
 import TranscriptDetailDisplay from "./TranscriptDetailDisplay.jsx";
 import { fetchPanelTranscripts } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
-import { Card } from "react-bootstrap";
+import { Accordion, Button, Card } from "react-bootstrap";
 import { Navigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { FaTrash } from "react-icons/fa";
-
+import { FaTimes, FaClock, FaRegStar, FaSyncAlt } from "react-icons/fa";
 function PanelDetails({ panel }) {
     const [transcripts, setTranscripts] = useState([]);
     const [redirectToEdit, setRedirectToEdit] = useState(false);
@@ -50,6 +49,8 @@ function PanelDetails({ panel }) {
         return <Navigate to={`/panel/${panel.id}/edit`} />;
     }
 
+    console.log(transcripts);
+
     return (
         <div className="max-h-screen overflow-y-auto">
             <div className="flex justify-between items-center text-center">
@@ -71,27 +72,65 @@ function PanelDetails({ panel }) {
             <Card className="mb-3 shadow-lg">
                 <Card.Body>
                     <PanelDetailDisplay panel={panel} />
-                    {transcripts.map((transcript) => (
-                        <div key={transcript.id} className="mb-4 relative">
-                            <button
-                                onClick={() =>
-                                    showConfirmationDialog(
-                                        "Are you sure you want to delete this transcript? This action cannot be undone.",
-                                        () =>
-                                            handleDelete({
-                                                type: "transcript",
-                                                id: transcript.id
-                                            })
-                                    )
-                                }
-                                className="absolute top-1 right-1 p-2 text-red-500 hover:text-red-700"
-                                aria-label="Delete Transcript"
+                    <Accordion defaultActiveKey="0">
+                        {transcripts.map((transcript, index) => (
+                            <Accordion.Item
+                                eventKey={index.toString()}
+                                key={transcript.id}
                             >
-                                <FaTrash />
-                            </button>
-                            <TranscriptDetailDisplay transcript={transcript} />
-                        </div>
-                    ))}
+                                <Accordion.Header>
+                                    <div class="flex justify-between items-center w-full pr-4">
+                                        <div className="flex-none flex flex-col items-center gap-2">
+                                            {transcript.transcript_parent_id && (
+                                                <FaSyncAlt
+                                                    className="inline-block mr-2 text-blue-500"
+                                                    title="Recurring Generation"
+                                                />
+                                            )}
+                                            {!transcript.transcript_parent_id &&
+                                                (transcript.generation_cronjob ? (
+                                                    <FaClock
+                                                        className="inline-block mr-2 text-green-500"
+                                                        title="Scheduled Generation"
+                                                    />
+                                                ) : (
+                                                    <FaRegStar
+                                                        className="inline-block mr-2 text-gray-500"
+                                                        title="No Update Cycle"
+                                                    />
+                                                ))}
+                                        </div>
+                                        <div class="flex-1">
+                                            {`Transcript ${transcripts.length - index}`}
+                                            : {transcript.title}
+                                        </div>
+                                        <Button
+                                            className="flex-none"
+                                            variant="danger"
+                                            onClick={() =>
+                                                showConfirmationDialog(
+                                                    "Are you sure you want to delete this transcript? This action cannot be undone.",
+                                                    () =>
+                                                        handleDelete({
+                                                            type: "transcript",
+                                                            id: transcript.id
+                                                        })
+                                                )
+                                            }
+                                            aria-label="Delete Transcript"
+                                        >
+                                            <FaTimes className="inline-block" />
+                                        </Button>
+                                    </div>
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    <TranscriptDetailDisplay
+                                        transcript={transcript}
+                                    />
+                                </Accordion.Body>
+                            </Accordion.Item>
+                        ))}
+                    </Accordion>
                 </Card.Body>
             </Card>
         </div>
