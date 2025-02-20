@@ -262,11 +262,15 @@ def fetch_links(
     user_ids: UserIDs = None,
     dry_run: bool = False,
     guidance: str = None,
-    max_items=5,
+    min_amount=5,
+    max_ids=5,
     tokens: tuple = None,
 ) -> List[WebSourceCollection | WebSource]:
-    max_items = int(max_items)
-    print(f"Fetch links: Fetching links for sources ({max_items}): {sources}")
+    min_amount = int(min_amount)
+    max_ids = int(max_ids)
+    print(
+        f"Fetch links: Fetching links for sources ({min_amount}->{max_ids}): {sources}"
+    )
     all_resolved_links: List[WebSourceCollection | WebSource] = []
     all_items: List[WebSource] = []
     for source in sources:
@@ -309,8 +313,14 @@ def fetch_links(
             print(f"Fetch links: Unable to fetch source {e=} \n\n {source=}")
 
     resolve_items: List[WebSourceCollection | WebSource] = None
-    if len(all_items) > max_items:
-        resolve_items = group_rss_items(all_items, guidance, min_amount=max_items)
+    if len(all_items) > max_ids:
+        resolve_items = group_rss_items(
+            all_items,
+            guidance,
+            min_amount=min_amount,
+            max_ids=max_ids,
+            user_ids=user_ids,
+        )
     else:
         resolve_items = all_items
         # [
@@ -323,9 +333,9 @@ def fetch_links(
         successful_results = []
         start_index = 0  # Start index for batching
 
-        while len(successful_results) < max_items and start_index < len(resolve_items):
+        while len(successful_results) < min_amount and start_index < len(resolve_items):
             print(
-                f"Fetch links: Starting batch processing with {max_items=}, starting from {start_index=}"
+                f"Fetch links: Starting batch processing with {min_amount=}, starting from {start_index=}"
             )
             batch_tasks = []
             task_mapping = []  # To track which item each task corresponds to
@@ -334,7 +344,7 @@ def fetch_links(
             )  # To track the number of tasks for each WebSourceCollection
             collection_item_map = {}  # Map to track items by their keys
 
-            end_index = min(start_index + max_items, len(resolve_items))
+            end_index = min(start_index + min_amount, len(resolve_items))
             print(
                 f"Fetch links: Collecting tasks for items: start_index={start_index}, end_index={end_index}"
             )
@@ -409,8 +419,8 @@ def fetch_links(
                     # Process results
                     result_index = 0
                     for item in resolve_items[start_index:end_index]:
-                        if len(successful_results) >= max_items:
-                            break  # Stop if max_items successful results are achieved
+                        if len(successful_results) >= min_amount:
+                            break  # Stop if min_amount successful results are achieved
                         if isinstance(item, WebSourceCollection):
                             collection_key = (item.title, item.max_amount)
                             task_count = collection_task_counts[collection_key]
@@ -438,7 +448,7 @@ def fetch_links(
         # Add successful results to all_resolved_links
         all_resolved_links.extend(successful_results)
     else:
-        all_resolved_links.extend(resolve_items[:max_items])
+        all_resolved_links.extend(resolve_items[:min_amount])
 
     print(f"Fetch links: Total resolved links: {len(all_resolved_links)}")
     return all_resolved_links

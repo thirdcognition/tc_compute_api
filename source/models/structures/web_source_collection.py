@@ -1,3 +1,4 @@
+from datetime import datetime
 import hashlib
 import json
 from typing import Any, Generator, List, Optional, Type, TypeVar
@@ -82,6 +83,11 @@ class WebSourceCollection(BaseModel):
         )
 
     title: Optional[str] = Field(default=None, description="Title of the collection.")
+    topic: Optional[str] = None
+    description: Optional[str] = Field(
+        default=None, description="Description for collection."
+    )
+    categories: Optional[List[str]] = Field(default_factory=list)
     max_amount: Optional[int] = Field(
         default=None, description="Maximum number of WebSource objects."
     )
@@ -93,6 +99,15 @@ class WebSourceCollection(BaseModel):
     )
     article: Optional[NewsArticle] = Field(
         default=None, description="Article generated from the websources"
+    )
+    publish_date: Optional[datetime] = None
+    organization_id: Optional[str] = Field(
+        default=None, description="Organization ID associated with the collection."
+    )
+    lang: Optional[str] = None
+    metadata: Optional[dict] = None
+    owner_id: Optional[str] = Field(
+        default=None, description="Owner ID associated with the collection."
     )
 
     def __init__(self, **data):
@@ -155,6 +170,10 @@ class WebSourceCollection(BaseModel):
         resolved_sources: List[WebSource] = []
         sources: List[WebSource] = None
 
+        if user_ids and self.owner_id is None:
+            self.organization_id = user_ids.organization_id
+            self.owner_id = user_ids.user_id
+
         if self.max_amount is None:
             sources = self.web_sources
         else:
@@ -188,17 +207,14 @@ class WebSourceCollection(BaseModel):
         return sources
 
     def create_panel_transcript_source_reference_sync(
-        self, supabase: Client, transcript: PanelTranscript
+        self, supabase: Client, transcript: PanelTranscript, user_ids: UserIDs = None
     ):
         references = []
         # Ensure the source_model is set
 
-        # for item in self.web_sources:
-        #     ref = item.create_panel_transcript_source_reference_sync(
-        #         supabase, transcript
-        #     )
-        #     if ref is not None:
-        #         references.append(ref)
+        if self.owner_id is None and user_ids:
+            self.owner_id = user_ids.user_id
+            self.organization_id = user_ids.organization_id
 
         if not self.source_model:
             self.save_to_database_sync(supabase)
@@ -214,20 +230,21 @@ class WebSourceCollection(BaseModel):
                 "url": None,
             },
             is_public=True,
+            owner_id=(
+                self.owner_id
+                if self.owner_id is not None
+                else (user_ids.user_id if user_ids is not None else None)
+            ),
+            organization_id=(
+                self.organization_id
+                if self.organization_id is not None
+                else (user_ids.organization_id if user_ids is not None else None)
+            ),
         )
         collection_reference.create_sync(supabase)
         references.append(collection_reference)
 
         return references
-
-    # def model_dump(self, **kwargs):
-    #     """
-    #     Dump all WebSource objects in the collection.
-
-    #     :param kwargs: Parameters to pass to each WebSource's dump method.
-    #     :return: A list of dumped models.
-    #     """
-    #     return [web_source.model_dump(**kwargs) for web_source in self.web_sources]
 
     def generate_tasks(self, tokens, user_ids: UserIDs):
         """
@@ -244,23 +261,39 @@ class WebSourceCollection(BaseModel):
         Save the WebSourceCollection as a SourceModel in the database and
         establish relationships with its web sources in the source_relationship table.
         """
+        # Save relationships between the collection and its web sources
+        content_to_hash = "".join(
+            str(web_source.original_content or "") for web_source in self.web_sources
+        )
+
         # Save the collection as a source
         if not self.source_model:
             self.source_model = SourceModel(
                 title=self.title,
+                is_public=True,
                 type="collection",
                 data={
                     "max_amount": self.max_amount,
                     "main_item": self.main_item,
                     "image": self.image,
+                    "description": self.description,
+                    "article": self.article.model_dump() if self.article else None,
+                    "categories": self.categories,
                 },
-                metadata={},
+                metadata={
+                    "image": str(self.image) if self.image else None,
+                    "publish_date": (
+                        self.publish_date.isoformat() if self.publish_date else None
+                    ),
+                },
+                owner_id=self.owner_id,
+                organization_id=self.organization_id,
             )
 
-        # Save relationships between the collection and its web sources
-        content_to_hash = "".join(
-            str(web_source.original_content or "") for web_source in self.web_sources
-        )
+        elif self.source_model.owner_id is None and self.owner_id is not None:
+            self.source_model.owner_id = self.owner_id
+            self.source_model.organization_id = self.organization_id
+
         self.source_model.content_hash = (
             hashlib.sha256(content_to_hash.encode("utf-8")).hexdigest()
             if content_to_hash
@@ -280,6 +313,9 @@ class WebSourceCollection(BaseModel):
                         source_id=self.source_model.id,
                         related_source_id=web_source.source_model.id,
                         relationship_type="parent_child_link",
+                        is_public=web_source.source_model.is_public,
+                        owner_id=web_source.source_model.owner_id,
+                        organization_id=web_source.source_model.organization_id,
                     )
                 )
         self.relationships = relationships
@@ -304,10 +340,14 @@ class WebSourceCollection(BaseModel):
             raise ValueError(f"No collection found with ID: {collection_id}")
 
         # Populate the collection fields
-        self.title = self.source_model.title
-        self.max_amount = self.source_model.data.get("max_amount")
-        self.main_item = self.source_model.data.get("main_item")
-        self.image = self.source_model.data.get("image")
+        if self.source_model.title:
+            self.title = self.title or self.source_model.title
+            self.max_amount = self.source_model.data.get("max_amount")
+            self.main_item = self.source_model.data.get("main_item")
+            self.image = self.source_model.data.get("image")
+
+        self.organization_id = self.organization_id or self.source_model.organization_id
+        self.owner_id = self.organization_id or self.source_model.owner_id
 
         # Fetch relationships and populate web sources
         relationships: list[

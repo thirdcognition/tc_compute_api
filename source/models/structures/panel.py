@@ -68,6 +68,7 @@ class PanelRequestData(BaseModel):
     hackernews: Optional[Union[HackerNewsConfig, List[HackerNewsConfig]]] = None
     news_guidance: Optional[str] = None
     news_items: Optional[int] = 5
+    segments: Optional[int] = 5
     languages: Optional[list[str]] = None
     cronjob: Optional[str] = None
     owner_id: Optional[str] = None

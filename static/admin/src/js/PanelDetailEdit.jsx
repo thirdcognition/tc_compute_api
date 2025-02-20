@@ -48,6 +48,9 @@ function PanelDetailEdit({
     const [newsItems, setNewsItems] = useState(
         parseInt(panel.metadata?.news_items || 5)
     );
+    const [segments, setSegments] = useState(
+        parseInt(panel.metadata?.segments || 5)
+    );
     const [languages, setLanguages] = useState(
         panel.metadata?.languages || ["English"]
     );
@@ -65,6 +68,7 @@ function PanelDetailEdit({
             hackerNewsConfigs,
             newsGuidance,
             newsItems,
+            segments,
             languages,
             is_public: isPublic
         };
@@ -231,6 +235,11 @@ function PanelDetailEdit({
                             </Form.Group>
                         </Card.Body>
                     </Card>
+                    <ArticleCountComponent
+                        value={segments}
+                        onChange={(value) => setSegments(value)}
+                    />
+
                     <ArticleCountComponent
                         value={newsItems}
                         onChange={(value) => setNewsItems(value)}

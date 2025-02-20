@@ -66,6 +66,7 @@ export const handleCreatePanel = async (params) => {
             hackernews: hackerNewsArray,
             news_guidance: params.newsGuidance,
             news_items: parseInt(params.newsItems || 5),
+            segments: parseInt(params.segments || 5),
             ...(params.is_public !== undefined && {
                 is_public: params.is_public
             })
@@ -112,6 +113,7 @@ export const handleUpdatePanel = async (panelId, params) => {
                 display_tag: params.displayTag,
                 news_guidance: params.newsGuidance,
                 news_items: parseInt(params.newsItems || 5),
+                segments: parseInt(params.segments || 5),
                 google_news: googleNewsArray,
                 yle_news: yleNewsArray,
                 techcrunch_news: techCrunchNewsArray,

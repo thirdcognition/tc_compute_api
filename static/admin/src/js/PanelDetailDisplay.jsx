@@ -15,6 +15,7 @@ const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
         const configs = {
             news_guidance: panel?.metadata?.news_guidance || "",
             news_items: parseInt(panel?.metadata?.news_items || 5),
+            segments: parseInt(panel?.metadata?.segments || 5),
             google_news: panel?.metadata?.google_news,
             yle_news: panel?.metadata?.yle_news,
             techcrunch_news: panel?.metadata?.techcrunch_news,
@@ -111,6 +112,15 @@ const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
                                             </a>
                                         </p>
                                     ))}
+                                </Card.Body>
+                            </Card>
+                        )}
+
+                        {metadata.segments && (
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title>Transcript segments</Card.Title>
+                                    <p>{metadata.segments}</p>
                                 </Card.Body>
                             </Card>
                         )}

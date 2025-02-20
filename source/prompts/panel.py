@@ -303,7 +303,6 @@ class TranscriptQualityCheckParseWrapper:
             print("Extracted JSON string:", json_string)
             cleaned_input = json_string
         else:
-            print("No JSON block found.")
             cleaned_input = self.cleaner.parse(raw_input)
 
         print(f"{cleaned_input=}")

@@ -1,11 +1,13 @@
 import React from "react";
 import { Form, Card } from "react-bootstrap";
 
-function ArticleCountComponent({ value, onChange }) {
+function ArticleCountComponent({ value, label, onChange }) {
     return (
         <Card className="mb-4 w-full">
             <Card.Header>
-                <label className="mb-1 self-start">Maximum news items</label>
+                <label className="mb-1 self-start">
+                    {label ? label : "Maximum news items"}
+                </label>
             </Card.Header>
             <Card.Body>
                 <div className="flex items-center w-full">

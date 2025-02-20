@@ -66,10 +66,10 @@ def create_panel_audio(
     )
     title_elements = [
         f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
-        conversation_config.output_language,
-        f"TTS Model: {tts_model}",
+        transcript.lang,
+        f"Model: {tts_model}",
         (
-            f"Voices: {default_voices.get('question')} (Q), {default_voices.get('answer')} (A)"
+            f"Q: {default_voices.get('question')}, A: {default_voices.get('answer')}"
             if default_voices.get("question") and default_voices.get("answer")
             else None
         ),

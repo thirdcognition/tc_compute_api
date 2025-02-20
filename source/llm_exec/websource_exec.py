@@ -3,6 +3,7 @@ from typing import List
 
 from langsmith import traceable
 from source.chains.init import get_chain
+from source.models.structures.user import UserIDs
 from source.models.structures.web_source import WebSource
 from source.models.structures.web_source_collection import WebSourceCollection
 from source.prompts.web_source import WebSourceGrouping
@@ -13,7 +14,7 @@ from source.prompts.web_source import WebSourceGrouping
     name="Group web sources",
 )
 def group_web_sources(
-    web_sources: List[WebSource], min_amount=5
+    web_sources: List[WebSource], min_amount=5, max_ids=5
 ) -> List[WebSourceCollection]:
     source_ids = {str(source.get_sorting_id()) for source in web_sources}
 
@@ -26,6 +27,7 @@ def group_web_sources(
             "start_with": "Humor or funny topic if available",
             "end_with": "Lighthearted, or funny topic if available",
             "min_groups": min_amount,
+            "max_ids": max_ids,
         }
     )
 
@@ -40,7 +42,9 @@ def group_web_sources(
         source_ids -= {str(source.get_sorting_id()) for source in filtered_sources}
         coll = WebSourceCollection(
             web_sources=filtered_sources,
-            title=grouping.ordered_group_titles[i],
+            title=group.title if group.title else f"Group {i}",
+            categories=group.categories if group.categories else [],
+            topic=group.topic if group.topic else None,
         )
         if i == main_item:
             coll.main_item = True
@@ -69,7 +73,11 @@ def group_web_sources(
     name="Group RSS sources",
 )
 def group_rss_items(
-    web_sources: List[WebSource], guidance="", min_amount=5
+    web_sources: List[WebSource],
+    guidance="",
+    min_amount=5,
+    max_ids=5,
+    user_ids: UserIDs = None,
 ) -> List[WebSourceCollection]:
     uniq_sources: dict[str, WebSource] = {}
     for source in web_sources:
@@ -119,6 +127,7 @@ def group_rss_items(
         ),
         "instructions": guidance,
         "min_groups": min_amount,
+        "max_ids": max_ids,
     }
     grouping = get_chain("group_rss_items_sync").invoke(params)
 
@@ -135,20 +144,40 @@ def group_rss_items(
     main_item = int(grouping.main_group)
     i = 0
     for i, group in enumerate(grouping.ordered_groups):
-        filtered_sources = [
-            source for source in web_sources if str(source.get_sorting_id()) in group
-        ]
+        filtered_sources: list[WebSource] = sorted(
+            [source for source in web_sources if str(source.get_sorting_id()) in group],
+            key=lambda source: source.publish_date,
+            reverse=True,  # Ensures sorting in descending order
+        )
 
         source_ids -= {str(source.get_sorting_id()) for source in filtered_sources}
+        image = next(
+            (
+                source.image
+                for source in filtered_sources
+                if getattr(source, "image", None)
+            ),
+            None,
+        )
         coll = WebSourceCollection(
             web_sources=filtered_sources,
-            title=(
-                grouping.ordered_group_titles[i]
-                if (len(grouping.ordered_group_titles) > i)
-                else f"Group {i}"
-            ),
-            max_amount=5,
+            title=group.title if group.title else f"Group {i}",
+            categories=group.categories if group.categories else [],
+            topic=group.topic if group.topic else None,
+            image=image,
+            publish_date=filtered_sources[0].publish_date,
+            # title=(
+            #     grouping.ordered_group_titles[i]
+            #     if (len(grouping.ordered_group_titles) > i)
+            #     else f"Group {i}"
+            # ),
+            max_amount=grouping.min_groups,
         )
+
+        if user_ids is not None:
+            coll.owner_id = user_ids.user_id
+            coll.organization_id = user_ids.organization_id
+
         if i == main_item:
             coll.main_item = True
         source_collections.append(coll)
@@ -164,8 +193,13 @@ def group_rss_items(
             None,
         )
         if remaining_source:
-            source_collections.append(
-                WebSourceCollection(web_sources=[remaining_source])
+            source = WebSourceCollection(
+                web_sources=[remaining_source], title="Remaining sources", categories=[]
             )
+            if user_ids is not None:
+                source.owner_id = user_ids.user_id
+                source.organization_id = user_ids.organization_id
+
+            source_collections.append(source)
 
     return source_collections

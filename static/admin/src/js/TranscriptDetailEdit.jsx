@@ -72,7 +72,7 @@ function TranscriptDetailEdit({
         });
         return Math.max(
             totalArticles + linksArray.length,
-            data?.metadata?.news_items || 1,
+            data?.metadata?.segments || data?.metadata?.news_items || 1,
             1
         );
     };

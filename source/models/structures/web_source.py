@@ -19,6 +19,7 @@ from source.prompts.web_source import NewsArticle
 
 class WebSource(BaseModel):
     title: str
+    topic: Optional[str] = None
     original_source: str
     resolved_source: Optional[str] = None
     source: str
@@ -266,7 +267,9 @@ class WebSource(BaseModel):
                             source_id=self.source_id,
                             related_source_id=source_model.id,
                             relationship_type="linked_news_items",
-                            is_public=True,
+                            is_public=source_model.is_public,
+                            owner_id=source_model.owner_id,
+                            organization_id=source_model.organization_id,
                         )
                         link_upsert.append(relationship)
 
@@ -416,7 +419,9 @@ class WebSource(BaseModel):
                             source_id=self.source_id,
                             related_source_id=source_model.id,
                             relationship_type="linked",
-                            is_public=True,
+                            is_public=source_model.is_public,
+                            owner_id=source_model.owner_id,
+                            organization_id=source_model.organization_id,
                         )
                         link_upsert.append(relationship)
 
@@ -429,7 +434,9 @@ class WebSource(BaseModel):
         if result:
             self._update_from_(result)
 
-    def _create_panel_transcript_source_reference(self, transcript: PanelTranscript):
+    def _create_panel_transcript_source_reference(
+        self, transcript: PanelTranscript, user_ids: UserIDs = None
+    ):
         print(f"Connect source to {self.source_id=} {transcript.id=}")
         # pretty_print(self, "news_item", True, print)
         return PanelTranscriptSourceReference(
@@ -446,15 +453,28 @@ class WebSource(BaseModel):
                 "lang": self.lang,
             },
             is_public=True,
-            owner_id=self.owner_id,
-            organization_id=self.organization_id,
+            owner_id=(
+                self.owner_id
+                if self.owner_id is not None
+                else (user_ids.user_id if user_ids is not None else None)
+            ),
+            organization_id=(
+                self.organization_id
+                if self.organization_id is not None
+                else (user_ids.organization_id if user_ids is not None else None)
+            ),
         )
 
     async def create_panel_transcript_source_reference(
-        self, supabase: AsyncClient, transcript: PanelTranscript
+        self,
+        supabase: AsyncClient,
+        transcript: PanelTranscript,
+        user_ids: UserIDs = None,
     ) -> PanelTranscriptSourceReference:
         if self.source_id is not None:
-            reference = self._create_panel_transcript_source_reference(transcript)
+            reference = self._create_panel_transcript_source_reference(
+                transcript, user_ids
+            )
             return await reference.create(supabase)
         else:
             print(
@@ -462,10 +482,12 @@ class WebSource(BaseModel):
             )
 
     def create_panel_transcript_source_reference_sync(
-        self, supabase: Client, transcript: PanelTranscript
+        self, supabase: Client, transcript: PanelTranscript, user_ids: UserIDs = None
     ) -> PanelTranscriptSourceReference:
         if self.source_id is not None:
-            reference = self._create_panel_transcript_source_reference(transcript)
+            reference = self._create_panel_transcript_source_reference(
+                transcript, user_ids
+            )
             return reference.create_sync(supabase)
         else:
             print(

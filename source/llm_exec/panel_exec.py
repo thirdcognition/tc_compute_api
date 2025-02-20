@@ -592,7 +592,7 @@ def transcript_summary_writer(
 
     subjects = "- " + "\n- ".join(
         [
-            source.title
+            source.title or (source.source_model.title if source.source_model else "")
             for source in sources
             if isinstance(source, WebSource) or isinstance(source, WebSourceCollection)
         ]

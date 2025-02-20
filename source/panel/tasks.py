@@ -214,6 +214,7 @@ def process_transcript_generation(
         hackernews=metadata.get("hackernews", None),
         news_guidance=metadata.get("news_guidance", None),
         news_items=metadata.get("news_items", 5),
+        segments=metadata.get("segments", 5),
         languages=metadata.get("languages", None),
         owner_id=str(panel.owner_id),
         organization_id=str(panel.organization_id),

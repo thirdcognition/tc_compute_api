@@ -17,6 +17,8 @@ ENV REACT_APP_DEBUG_MODE=${DEBUG_MODE}
 ENV REACT_APP_PORT=${PUBLIC_SERVER_PORT}
 ENV REACT_APP_PODCAST_NAME=${panel_defaults_podcast_name}
 
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+
 WORKDIR /static/admin
 RUN --mount=type=cache,target=/root/.npm npm install
 RUN --mount=type=cache,target=/root/.npm npm run build

@@ -77,7 +77,8 @@ def fetch_links_and_process_articles(
     sources: List,
     user_ids: UserIDs = None,
     guidance="",
-    max_items=5,
+    min_amount=5,
+    max_ids=5,
     tokens: tuple = None,
 ) -> List[WebSource | WebSourceCollection]:
     article_news_items = []
@@ -86,7 +87,8 @@ def fetch_links_and_process_articles(
         sources,
         user_ids=user_ids,
         guidance=guidance,
-        max_items=max_items,
+        min_amount=min_amount,
+        max_ids=max_ids,
         tokens=tokens,
     ):
         article_news_items.append(news_item)
@@ -349,13 +351,14 @@ def create_panel_transcript(
             sources,
             user_ids,
             guidance=request_data.news_guidance,
-            max_items=request_data.news_items,
+            min_amount=request_data.segments,
+            max_ids=request_data.news_items,
             tokens=tokens,
         )
 
         for item in ordered_groups:
             item.create_panel_transcript_source_reference_sync(
-                supabase_client, panel_transcript
+                supabase_client, panel_transcript, user_ids
             )
 
         # ordered_groups = group_web_sources(web_sources)
@@ -466,6 +469,15 @@ def create_panel_transcript_translation(
     conversation_config = conversation_config.model_copy()
     conversation_config.output_language = language
 
+    user_ids = (
+        UserIDs(
+            user_id=request_data.owner_id,
+            organization_id=request_data.organization_id,
+        )
+        if request_data.organization_id
+        else None
+    )
+
     title = construct_transcript_title(panel, conversation_config, request_data)
     panel_transcript = create_and_update_panel_transcript(
         supabase_client,
@@ -480,7 +492,7 @@ def create_panel_transcript_translation(
     try:
         for item in sources:
             item.create_panel_transcript_source_reference_sync(
-                supabase_client, panel_transcript
+                supabase_client, panel_transcript, user_ids=user_ids
             )
 
         # ordered_groups = group_web_sources(web_sources)
