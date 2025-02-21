@@ -226,8 +226,16 @@ class WebSourceCollection(BaseModel):
             type="web_source_collection",
             data={
                 "title": self.title,
-                "lang": None,
-                "url": None,
+                "image": str(self.image) if self.image else None,
+                "publish_date": (
+                    self.publish_date.isoformat() if self.publish_date else None
+                ),
+                "url": [
+                    source.resolved_source
+                    for source in self.web_sources
+                    if source.resolved_source
+                ],
+                "lang": self.lang,
             },
             is_public=True,
             owner_id=(
@@ -262,37 +270,67 @@ class WebSourceCollection(BaseModel):
         establish relationships with its web sources in the source_relationship table.
         """
         # Save relationships between the collection and its web sources
-        content_to_hash = "".join(
+        content_to_hash = "\n".join(
             str(web_source.original_content or "") for web_source in self.web_sources
         )
 
+        content_hash = (
+            hashlib.sha256(content_to_hash.encode("utf-8")).hexdigest()
+            if content_to_hash
+            else None
+        )
+
+        if not self.image:
+            self.update_image()
+
+        common_data = {
+            "max_amount": self.max_amount,
+            "main_item": self.main_item,
+            "image": self.image,
+            "description": self.description,
+            "article": self.article.model_dump() if self.article else None,
+            "categories": self.categories,
+        }
+        common_metadata = {
+            "image": str(self.image) if self.image else None,
+            "publish_date": (
+                self.publish_date.isoformat() if self.publish_date else None
+            ),
+            "children": [
+                {
+                    "image": source.image,
+                    "title": source.title,
+                    "publish_date": source.publish_date,
+                    "url": source.resolved_source or source.original_source,
+                    "source": source.source,
+                }
+                for source in self.web_sources
+                if isinstance(source, WebSource)
+            ],
+        }
+
         # Save the collection as a source
-        if not self.source_model:
+        if self.source_model:
+            # Update existing source_model fields
+            self.source_model.title = self.title
+            self.source_model.type = "collection"
+            self.source_model.lang = self.lang
+            self.source_model.content_hash = content_hash
+            self.source_model.is_public = True
+            self.source_model.data = common_data
+            self.source_model.metadata = common_metadata
+            self.source_model.owner_id = self.owner_id
+            self.source_model.organization_id = self.organization_id
+        else:
             self.source_model = SourceModel(
                 title=self.title,
                 is_public=True,
                 type="collection",
-                data={
-                    "max_amount": self.max_amount,
-                    "main_item": self.main_item,
-                    "image": self.image,
-                    "description": self.description,
-                    "article": self.article.model_dump() if self.article else None,
-                    "categories": self.categories,
-                },
-                metadata={
-                    "image": str(self.image) if self.image else None,
-                    "publish_date": (
-                        self.publish_date.isoformat() if self.publish_date else None
-                    ),
-                },
+                data=common_data,
+                metadata=common_metadata,
                 owner_id=self.owner_id,
                 organization_id=self.organization_id,
             )
-
-        elif self.source_model.owner_id is None and self.owner_id is not None:
-            self.source_model.owner_id = self.owner_id
-            self.source_model.organization_id = self.organization_id
 
         self.source_model.content_hash = (
             hashlib.sha256(content_to_hash.encode("utf-8")).hexdigest()
@@ -342,9 +380,11 @@ class WebSourceCollection(BaseModel):
         # Populate the collection fields
         if self.source_model.title:
             self.title = self.title or self.source_model.title
-            self.max_amount = self.source_model.data.get("max_amount")
-            self.main_item = self.source_model.data.get("main_item")
-            self.image = self.source_model.data.get("image")
+            self.max_amount = (
+                self.source_model.data.get("max_amount") or self.max_amount
+            )
+            self.main_item = self.source_model.data.get("main_item") or self.main_item
+            self.image = self.source_model.data.get("image") or self.image
 
         self.organization_id = self.organization_id or self.source_model.organization_id
         self.owner_id = self.organization_id or self.source_model.owner_id

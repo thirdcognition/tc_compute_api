@@ -70,7 +70,9 @@ export function fetchDataWithMemoization(
 
 export async function fetchPublicPanels(): Promise<any[]> {
     const panels = await fetchDataWithMemoization("/panel/discussions/");
-    return Array.isArray(panels) ? panels : [];
+    return Array.isArray(panels)
+        ? panels.filter((panel) => panel.metadata && panel.metadata.display_tag)
+        : [];
 }
 
 export async function fetchPanelFiles(panelId: string): Promise<{
@@ -150,11 +152,18 @@ export async function fetchPanelDetails(panelId: string): Promise<{
         const panelDetails = await fetchDataWithMemoization(
             `/panel/${panelId}/details`
         );
+        const language = session.getLanguage();
+        const filteredTranscripts = panelDetails.transcripts.filter(
+            (transcript: any) => transcript.lang === language
+        );
+        const filteredAudios = panelDetails.audios.filter(
+            (audio: any) => audio.lang === language
+        );
         return {
             discussionData: panelDetails.panel,
-            transcriptData: panelDetails.transcripts,
+            transcriptData: filteredTranscripts,
             transcriptSources: panelDetails.transcript_sources,
-            audioData: panelDetails.audios,
+            audioData: filteredAudios,
             filesData: {
                 transcript_urls: urlFormatter(panelDetails.transcript_urls),
                 audio_urls: urlFormatter(panelDetails.audio_urls)

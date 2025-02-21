@@ -90,21 +90,17 @@ def group_rss_items(
 
     groups: list[list[WebSource]] = []
     for source in web_sources:
-        if source.get_sorting_id() in used_ids:
+        sorting_id = source.get_sorting_id()
+        if sorting_id in used_ids:
             continue
-
-        links = source.get_links()
-        used_ids.append(source.get_sorting_id())
+        links = source.get_link_ids(source.rss_item, sorting_id)
+        used_ids.append(sorting_id)
         group = [source]
         if len(links) > 0:
             for link in links:
                 if link in source_ids and link not in used_ids:
                     item = next(
-                        (
-                            source
-                            for source in web_sources
-                            if source.get_sorting_id() == link
-                        ),
+                        (source for source in web_sources if sorting_id == link),
                         None,
                     )
                     if item:
@@ -121,7 +117,7 @@ def group_rss_items(
         + "\n - ".join([source.get_sorting_id() for source in web_sources]),
         "web_sources": "\n\n".join(
             [
-                f"{('Group ' + str(i + 1) + ':\n') if len(group) > 1 else ''}{'\n'.join([source.to_sorting_str(additional_details=len(group) == 1 and len(source.get_links()) < 1) for source in group])}"
+                f"{('Group ' + str(i + 1) + ':\n') if len(group) > 1 else ''}{'\n'.join([source.to_sorting_str(additional_details=False) for source in group])}"
                 for i, group in enumerate(groups)
             ]
         ),
@@ -144,8 +140,13 @@ def group_rss_items(
     main_item = int(grouping.main_group)
     i = 0
     for i, group in enumerate(grouping.ordered_groups):
+        group_ids = [item for item in group.ids]
         filtered_sources: list[WebSource] = sorted(
-            [source for source in web_sources if str(source.get_sorting_id()) in group],
+            [
+                source
+                for source in web_sources
+                if str(source.get_sorting_id()) in group_ids
+            ],
             key=lambda source: source.publish_date,
             reverse=True,  # Ensures sorting in descending order
         )
@@ -159,13 +160,16 @@ def group_rss_items(
             ),
             None,
         )
+
         coll = WebSourceCollection(
             web_sources=filtered_sources,
             title=group.title if group.title else f"Group {i}",
             categories=group.categories if group.categories else [],
             topic=group.topic if group.topic else None,
             image=image,
-            publish_date=filtered_sources[0].publish_date,
+            publish_date=(
+                filtered_sources[0].publish_date if len(filtered_sources) > 0 else None
+            ),
             # title=(
             #     grouping.ordered_group_titles[i]
             #     if (len(grouping.ordered_group_titles) > i)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { IoSendSharp } from "react-icons/io5";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
-import { trackEvent, Session } from "../helpers/gaTracking.ts";
+import { trackEvent, Session } from "../helpers/analytics.ts";
 
 interface Comment {
     id: string;

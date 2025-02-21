@@ -249,7 +249,8 @@ def generate_transcripts(
     if not async_result.ready() and elapsed_time >= timeout:
         print("Timeout reached! Revoking pending tasks...")
         for task in task_group:
-            if task is None or task.id is None:
+            if task is None or isinstance(task, str) or task.id is None:
+                print(f"Unable to resolve task: {task=}")
                 continue
             async_task_result = AsyncResult(task.id)
             task_state = async_task_result.state
@@ -411,13 +412,21 @@ def create_panel_transcript(
         if "images" not in panel_transcript.metadata:
             panel_transcript.metadata["images"] = []
 
-        panel_transcript.metadata["images"] = [
-            str(web_source.image)
-            for collection in combined_sources
-            if isinstance(collection, WebSourceCollection)
-            for web_source in collection.web_sources
-            if isinstance(web_source, WebSource) and web_source.image
-        ]
+        for source in combined_sources:
+            if isinstance(source, WebSourceCollection):
+                panel_transcript.metadata["images"].extend(
+                    [item.image for item in source.web_sources if item.image]
+                )
+            elif isinstance(source, WebSource):
+                panel_transcript.metadata["images"].append(source.image)
+
+        # panel_transcript.metadata["images"] = [
+        #     str(web_source.image)
+        #     for collection in combined_sources
+        #     if isinstance(collection, WebSourceCollection)
+        #     for web_source in collection.web_sources
+        #     if isinstance(web_source, WebSource) and web_source.image
+        # ]
 
         transcript_ids.append(panel_transcript.id)
 
@@ -510,15 +519,7 @@ def create_panel_transcript_translation(
         panel_transcript.metadata["description"] = transcript_summaries.description
 
         if "images" not in panel_transcript.metadata:
-            panel_transcript.metadata["images"] = []
-
-        panel_transcript.metadata["images"] = [
-            str(web_source.image)
-            for collection in combined_sources
-            if isinstance(collection, WebSourceCollection)
-            for web_source in collection.web_sources
-            if isinstance(web_source, WebSource) and web_source.image
-        ]
+            panel_transcript.metadata["images"] = parent_transcript.metadata["images"]
 
         upload_transcript_to_supabase(
             supabase_client,

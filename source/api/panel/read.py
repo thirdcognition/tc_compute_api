@@ -132,9 +132,9 @@ async def get_panel_details(supabase: AsyncClient, panel_id):
 
     transcript_sources = {}
     for transcript in transcripts:
-        transcript_sources[transcript.id] = await get_panel_transcript_sources_w_id(
-            supabase, transcript.id
-        )
+        sources = await get_panel_transcript_sources_w_id(supabase, transcript.id)
+        if sources and len(sources) > 0:
+            transcript_sources[transcript.id] = sources
 
     return PanelDetailsResponse(
         panel=panel,

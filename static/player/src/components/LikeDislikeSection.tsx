@@ -5,7 +5,7 @@ import {
     AiFillLike,
     AiFillDislike
 } from "react-icons/ai";
-import { trackEvent, Session } from "../helpers/gaTracking.ts";
+import { trackEvent, Session } from "../helpers/analytics.ts";
 
 interface LikeDislikeSectionProps {
     audioSrc: string;

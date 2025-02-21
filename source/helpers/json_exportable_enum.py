@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 
 class JSONExportableEnum(Enum):
@@ -26,3 +27,15 @@ class JSONExportableEnum(Enum):
             if item.value == value:
                 return item
         raise ValueError(f"{value} is not a valid {JSONExportableEnum.__name__} value")
+
+    @classmethod
+    def resolve(cls, value: Optional[str]) -> Optional["JSONExportableEnum"]:
+        """
+        Resolves a string or None into the Enum type or returns None if invalid.
+        """
+        if value is None:
+            return None  # Default to None or a fallback
+        try:
+            return cls(value)  # Attempt to convert to Enum
+        except ValueError:
+            return None  # Handle invalid value with a fallback

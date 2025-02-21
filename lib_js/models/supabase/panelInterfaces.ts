@@ -18,6 +18,7 @@ export interface PanelAudio extends SupabaseModel<PanelAudio> {
     updatedAt?: Date;
     ownerId?: string;
     organizationId?: string;
+    lang?: string;
 }
 
 export interface PanelDiscussion extends SupabaseModel<PanelDiscussion> {
@@ -32,6 +33,7 @@ export interface PanelDiscussion extends SupabaseModel<PanelDiscussion> {
     updatedAt?: Date;
     ownerId?: string;
     organizationId?: string;
+    lang?: string;
 }
 
 export interface PanelTranscript extends SupabaseModel<PanelTranscript> {

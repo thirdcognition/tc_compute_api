@@ -958,7 +958,7 @@ class TranscriptSummary(BaseModel):
         ...,
         title="Description",
         description="2-3 sentence description of the transcript.",
-        max_length=300,
+        max_length=500,
     )
     title: str = Field(
         ...,

@@ -10,6 +10,7 @@ from playwright.async_api import (
     Browser as AsyncBrowser,
 )
 from bs4 import BeautifulSoup, Tag
+import trafilatura
 from source.models.config.logging import logger
 import asyncio
 import nest_asyncio
@@ -17,12 +18,13 @@ from PIL import Image
 import io
 
 from source.models.structures.url_result import UrlResult
-from source.llm_exec.news_exec import (
-    text_format,
-    text_format_sync,
-    validate_news_article,
-    validate_news_article_sync,
-)
+
+# from source.llm_exec.news_exec import (
+#     # text_format,
+#     # text_format_sync,
+#     validate_news_article,
+#     validate_news_article_sync,
+# )
 
 
 def parse_publish_date(date_str):
@@ -58,6 +60,37 @@ def process_image(image_data: bytes) -> bytes:
         output = io.BytesIO()
         img.convert("RGB").save(output, format="JPEG")
         return output.getvalue()
+
+
+def clean_html(content: str) -> str:
+    """
+    Cleans the provided HTML content by:
+      - Removing <script> and <style> elements.
+      - Stripping all attributes except essential ones (e.g., src, href, alt, title).
+      - Preserving DOM structure and metadata.
+
+    Args:
+        content (str): The raw HTML content as a string.
+
+    Returns:
+        str: Cleaned and minimal HTML content as a string.
+    """
+    # List of attributes to preserve
+    allowed_attributes = {"src", "href", "alt", "title"}
+
+    # Parse the HTML content with BeautifulSoup
+    soup = BeautifulSoup(content, "html.parser")
+
+    # Remove unwanted elements like <script> and <style>
+    for tag in soup(["script", "style"]):
+        tag.decompose()  # Completely remove these tags from the DOM
+
+    # Remove all attributes except the allowed ones
+    for tag in soup.find_all(True):  # True matches all tags
+        tag.attrs = {k: v for k, v in tag.attrs.items() if k in allowed_attributes}
+
+    # Return the cleaned-up DOM and HTML as a single string
+    return str(soup)
 
 
 class LinkResolver:
@@ -148,9 +181,7 @@ class LinkResolver:
 
         return resolved_url, content
 
-    def _parse_content_with_soup(
-        self, content
-    ) -> tuple[str, dict, list[tuple[int, str]]]:
+    def _parse_content(self, content) -> tuple[str, dict, list[tuple[int, str]]]:
         soup = BeautifulSoup(content, "html.parser")
 
         # Extract metadata
@@ -195,7 +226,8 @@ class LinkResolver:
                     image_index += 1
 
         # Extract text
-        text = soup.get_text(separator="\n", strip=True)
+        # text = soup.get_text(separator="\n", strip=True)
+        text = trafilatura.extract(content, output_format="markdown")
 
         return text, metadata, image_urls
 
@@ -284,16 +316,17 @@ class LinkResolver:
     def _resolve_text_w_metadata_sync(
         self, content, title=None, description=None, resolve_images: bool = False
     ) -> tuple[str, dict, list[dict]]:
-        text, metadata, image_urls = self._parse_content_with_soup(content)
+        text, metadata, image_urls = self._parse_content(content)
         title = title or metadata.get("title", "")
         description = description or metadata.get("description", "")
 
-        text = text_format_sync(text)
+        # text = text_format_sync(text)
 
         # Validate content
-        is_valid, explanation = validate_news_article_sync(text, title, description)
-        if not is_valid:
-            raise Exception(f"Content validation failed: {explanation}")
+        # is_valid, explanation = validate_news_article_sync(text, title, description)
+        if not text:  # not is_valid:
+            raise Exception(f"Unable to fetch text for {title=}")
+            # raise Exception(f"Content validation failed: {explanation}")
 
         if resolve_images:
             image_data = self._fetch_images_sync(image_urls)
@@ -304,16 +337,17 @@ class LinkResolver:
     async def _resolve_text_w_metadata_async(
         self, content, title=None, description=None, resolve_images: bool = False
     ) -> tuple[str, dict, list[dict]]:
-        text, metadata, image_urls = self._parse_content_with_soup(content)
+        text, metadata, image_urls = self._parse_content(content)
         title = title or metadata.get("title", "")
         description = description or metadata.get("description", "")
 
-        text = await text_format(text)
+        # text = await text_format(text)
 
         # Validate content
-        is_valid, explanation = await validate_news_article(text, title, description)
-        if not is_valid:
-            raise Exception(f"Content validation failed: {explanation}")
+        # is_valid, explanation = await validate_news_article(text, title, description)
+        if not text:
+            raise Exception(f"Unable to fetch text for {title=}")
+            # raise Exception(f"Content validation failed: {explanation}")
 
         if resolve_images:
             image_data = await self._fetch_images_async(image_urls)
@@ -335,7 +369,7 @@ class LinkResolver:
             ),
             lang=metadata.get("og:locale", "EN").split("_")[0],
             metadata=json.dumps(metadata),
-            original_content=content,
+            original_content=clean_html(content),
             human_readable_content=text,
             image_data=image_data,
         )

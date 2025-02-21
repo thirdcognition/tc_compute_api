@@ -64,5 +64,9 @@ def langsmith_tracing_debug():
 
 langsmith_tracing_debug()
 
-set_debug(DEBUGMODE)
-set_verbose(DEBUGMODE)
+if DEBUGMODE:
+    set_debug(DEBUGMODE)
+    set_verbose(DEBUGMODE)
+else:
+    set_debug(False)
+    set_verbose(False)

@@ -152,9 +152,10 @@ class NewsArticle(BaseModel):
         description="URL to a hero image which is defined in the context. If context specifies no images, return as None.",
     )
     categories: Optional[List[str]] = Field(
-        default=None,
         title="Categories",
         description="List of categories based on the context. Must use the defined available category IDs.",
+        min_length=1,
+        default_factory=list,
     )
 
     def __str__(self) -> str:

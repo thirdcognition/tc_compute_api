@@ -1,8 +1,8 @@
 from cachetools import TTLCache
+
 from fastapi import HTTPException
 from supabase.client import AsyncClient, create_async_client, Client
 from supabase import ClientOptions, create_client
-
 from typing import Dict, Any, Optional
 
 from source.load_env import SETTINGS
@@ -65,6 +65,14 @@ def get_sync_supabase_client(
 
 
 class SessionStorage:
+    sync_supabase_client: Optional[Client] = None
+    storage: Dict[str, Any] = {}
+
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    code: Optional[str] = None
+    redirect: Optional[str] = None
+
     def __init__(
         self,
         access_token: str,
@@ -78,9 +86,9 @@ class SessionStorage:
         self.refresh_token = refresh_token
         self.code = code
         self.redirect = redirect
-        self.supabase_client: Optional[AsyncClient] = supabase_client
-        self.sync_supabase_client: Optional[Client] = sync_supabase_client
-        self.storage: Dict[str, Any] = {}
+        self.supabase_client = supabase_client
+        self.sync_supabase_client = sync_supabase_client
+        self.storage = {}
 
     async def get_supabase_client(self) -> AsyncClient:
         if self.supabase_client is None:

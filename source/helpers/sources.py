@@ -1,15 +1,18 @@
+# import copy
 import datetime
 import json
 import re
 import time
 from typing import List, Optional, Type, Union
-
 from celery import group
 from celery.result import AsyncResult
 import feedparser
+from feedparser.util import FeedParserDict
 from langsmith import traceable
 from pygooglenews import GoogleNews
 from supabase import Client
+
+# from app.core.redis import sync_memoize
 from source.helpers.resolve_url import LinkResolver, parse_publish_date
 from source.llm_exec.websource_exec import group_rss_items
 from source.models.structures.user import UserIDs
@@ -55,7 +58,12 @@ def parse_since_value(since_value):
 
 
 def create_web_source(
-    entry, source: str, lang: str, original_source: Optional[str] = None, category=None
+    entry,
+    source: str,
+    rss_source: str,
+    lang: str,
+    original_source: Optional[str] = None,
+    category=None,
 ) -> WebSource | None:
     """
     Helper function to create a WebSource object from an entry.
@@ -63,6 +71,7 @@ def create_web_source(
     try:
         result = WebSource(
             title=entry.title,
+            rss_source=rss_source or source,
             source=source,
             original_source=original_source or entry.link,
             description=getattr(entry, "summary", None),
@@ -91,8 +100,8 @@ def create_web_source(
         print(f"{source}: Issue with {original_source or entry.link} - {e}")
 
 
-def fetch_google_news_items(config: GoogleNewsConfig) -> List[WebSource]:
-    print(f"GoogleNews: Fetching news items with config: {config!r}")
+# @sync_memoize(ttl=300)
+def memoized_google_feed_parse(config: GoogleNewsConfig) -> List[FeedParserDict]:
     gn = GoogleNews(lang=config.lang, country=config.country)
     time_span = parse_since_value(config.since)
 
@@ -116,15 +125,45 @@ def fetch_google_news_items(config: GoogleNewsConfig) -> List[WebSource]:
     else:
         news = gn.top_news()
 
+    return news
+
+
+def fetch_google_news_items(config: GoogleNewsConfig) -> List[WebSource]:
+    print(f"GoogleNews: Fetching news items with config: {config!r}")
+
+    news = memoized_google_feed_parse(config)
+
+    print(f"GoogleNews: Memoized response: {news=}")
+
+    news["entries"] = [FeedParserDict(**item) for item in news["entries"]]
+
     print(f"GoogleNews: Number of news entries fetched: {len(news['entries'])}")
     news_items = []
     for entry in news["entries"]:
         print(f"GoogleNews: Processing news entry: {entry.title}")
-        news_item = create_web_source(entry, source="Google News", lang=config.lang)
+        news_item = create_web_source(
+            entry, source="Google News", rss_source="Google News", lang=config.lang
+        )
         if news_item is not None:
             news_items.append(news_item)
+        # links = WebSource.get_links(entry)
+        # print(f"GoogleNews: Get links results: \n\n{links=}\n\n")
+        # for link in links:
+        #     link_entry = FeedParserDict(**copy.deepcopy(entry))
+        #     link_entry.link = link[0]
+        #     link_entry.title = link[1]
+        #     news_item = create_web_source(
+        #         link_entry, source=link[2], rss_source="Google News", lang=config.lang
+        #     )
+        #     if news_item is not None:
+        #         news_items.append(news_item)
 
     return news_items
+
+
+# @sync_memoize(ttl=300)
+def memoized_feed_parse(feed_url) -> List[FeedParserDict]:
+    return feedparser.parse(feed_url)
 
 
 # Hacker News
@@ -160,7 +199,7 @@ def construct_hackernews_feed_url(config: HackerNewsConfig) -> str:
 def fetch_hackernews_items(config: HackerNewsConfig) -> List[WebSource]:
     feed_url = construct_hackernews_feed_url(config)
     print(f"HackerNews: Fetching HackerNews items from URL: {feed_url}")
-    feed = feedparser.parse(feed_url)
+    feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
     print(f"HackerNews: Number of items fetched: {len(feed.entries)}")
 
     news_items = []
@@ -179,7 +218,7 @@ def fetch_techcrunch_news_items(config: TechCrunchNewsConfig) -> List[WebSource]
     feed_url = "https://techcrunch.com/feed/"
 
     print(f"TechCrunch: Fetching TechCrunch news items from URL: {feed_url}")
-    feed = feedparser.parse(feed_url)
+    feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
     print(f"TechCrunch: Number of items fetched: {len(feed.entries)}")
 
     news_items = []
@@ -205,7 +244,7 @@ def fetch_yle_news_items(config: YleNewsConfig) -> List[WebSource]:
             feed_url += "&concepts=" + ",".join(concepts)
 
     print(f"Yle: Fetching Yle news items from URL: {feed_url}")
-    feed = feedparser.parse(feed_url)
+    feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
     print(f"Yle: Number of items fetched: {len(feed.entries)}")
 
     news_items = []

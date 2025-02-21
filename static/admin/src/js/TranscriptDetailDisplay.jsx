@@ -94,7 +94,11 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     <Card.Title>
                         {source.data.url ? (
                             <a
-                                href={source.data.url}
+                                href={
+                                    Array.isArray(source.data.url)
+                                        ? source.data.url[0]
+                                        : source.data.url
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

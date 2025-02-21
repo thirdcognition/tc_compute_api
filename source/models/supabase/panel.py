@@ -20,6 +20,7 @@ class PanelAudio(SupabaseModel):
     panel_id: UUID
     transcript_id: UUID
     title: Optional[str] = Field(default=None)
+    lang: Optional[str] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
     file: Optional[str] = Field(default=None)
     bucket_id: str = Field(default="public_panels")

@@ -7,12 +7,14 @@ COPY file_repository file_repository
 COPY static static
 
 ARG GA_MEASUREMENT_ID
+ARG POSTHOG_API_KEY
 ARG DEBUG_MODE
 ARG SERVER_PORT
 ARG panel_defaults_podcast_name
 
 # Set environment variables for React applications
 ENV REACT_APP_GA_MEASUREMENT_ID=${GA_MEASUREMENT_ID}
+ENV REACT_APP_POSTHOG_API_KEY=${POSTHOG_API_KEY}
 ENV REACT_APP_DEBUG_MODE=${DEBUG_MODE}
 ENV REACT_APP_PORT=${PUBLIC_SERVER_PORT}
 ENV REACT_APP_PODCAST_NAME=${panel_defaults_podcast_name}

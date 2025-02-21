@@ -1,9 +1,14 @@
 /// <reference types="react-scripts" />
-import ReactGA from "react-ga4";
+import posthog from "posthog-js";
 
-const DEBUG_MODE = process.env.REACT_APP_DEBUG_MODE === "true";
-const GA_MEASUREMENT_ID =
-    process.env.REACT_APP_GA_MEASUREMENT_ID || "G-5HQD9T8EHK";
+const POSTHOG_API_KEY = process.env.REACT_APP_POSTHOG_API_KEY || "";
+
+posthog.init(POSTHOG_API_KEY, {
+    api_host: "https://eu.i.posthog.com",
+    person_profiles: "always" // Create profiles for anonymous users as well
+});
+
+const DEBUG_MODE = true; // process.env.REACT_APP_DEBUG_MODE === "true";
 
 // Session management
 export const SESSION_KEY = "app_session";
@@ -35,13 +40,11 @@ const cleanupOldSessions = (): Session | null => {
     }
 };
 
-// Heartbeat to maintain session
 const updateHeartbeat = (session: Session): void => {
     session.lastHeartbeat = Date.now();
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 };
 
-// Generate a unique user ID if it doesn't exist
 export const getUserId = () => {
     let userId = localStorage.getItem("userId");
     if (!userId) {
@@ -59,18 +62,18 @@ export const trackEvent = (
     sessionRef: React.RefObject<Session | null>
 ) => {
     if (DEBUG_MODE) {
-        console.group("GA4 Event Tracking", GA_MEASUREMENT_ID);
+        console.group("PostHog Event Tracking");
         console.log("Event Name:", eventName);
         console.log("Category:", category);
         console.log("Label:", label);
         console.log("User ID:", userId.current);
-        console.log("Session_id", sessionRef.current?.id);
+        console.log("Session ID:", sessionRef.current?.id);
         console.groupEnd();
     }
 
-    ReactGA.event(eventName, {
-        event_category: category,
-        event_label: label,
+    posthog.capture(eventName, {
+        category,
+        label,
         user_id: userId.current,
         session_id: sessionRef.current?.id,
         timestamp: new Date().toISOString(),
@@ -78,14 +81,7 @@ export const trackEvent = (
         page_location: window.location.href,
         debug_mode: DEBUG_MODE
     });
-
-    if (!ReactGA.ga(() => {})) {
-        console.error("GA4 not initialized properly");
-        return;
-    }
 };
-
-let initialized = false;
 
 export const initializeAnalytics = (
     sessionRef: React.RefObject<Session | null>,
@@ -102,54 +98,41 @@ export const initializeAnalytics = (
 
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 
-    // Initialize GA if not already initialized
-    if (!initialized || !ReactGA.ga(() => {})) {
-        console.log("Initialize GA", GA_MEASUREMENT_ID);
-        ReactGA.initialize(GA_MEASUREMENT_ID, {
-            gtagOptions: {
-                debug_mode: DEBUG_MODE,
-                send_page_view: true
-            }
-        });
-        initialized = true;
+    const existingSession = cleanupOldSessions();
+    if (existingSession) {
+        sessionRef.current = existingSession;
     } else {
-        console.log("GA already initialized");
-        const existingSession = cleanupOldSessions();
-        if (existingSession) {
-            sessionRef.current = existingSession;
-        } else {
-            sessionRef.current = session;
-        }
+        sessionRef.current = session;
     }
 
-    ReactGA.send({
-        hitType: "pageview",
+    posthog.identify(userId.current || "anonymous", {
+        session_id: session.id
+    });
+
+    posthog.capture("$pageview", {
         page: window.location.pathname,
         title: document.title,
         location: window.location.href
     });
 
     if (DEBUG_MODE) {
-        console.log("GA4 Initialization:", {
-            measurementId: GA_MEASUREMENT_ID,
+        console.log("PostHog Initialization:", {
+            apiKey: POSTHOG_API_KEY,
             debug: DEBUG_MODE,
             sessionId: sessionId
         });
     }
 
-    // Set up heartbeat
     const heartbeatInterval = setInterval(() => {
         if (sessionRef.current) {
             updateHeartbeat(sessionRef.current);
         }
     }, HEARTBEAT_INTERVAL);
 
-    // Set up storage event listener to handle multiple tabs
     const handleStorageChange = (e: StorageEvent) => {
         if (e.key === SESSION_KEY && e.newValue && sessionRef.current) {
             const newSession = JSON.parse(e.newValue) as Session;
             if (newSession.tabId !== sessionRef.current.tabId) {
-                // Another tab is active, update our session if needed
                 sessionRef.current = newSession;
             }
         }
@@ -157,11 +140,8 @@ export const initializeAnalytics = (
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Cleanup
     return () => {
         clearInterval(heartbeatInterval);
         window.removeEventListener("storage", handleStorageChange);
     };
 };
-
-// Clean up old sessions

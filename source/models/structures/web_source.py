@@ -1,9 +1,11 @@
 import hashlib
 import re
 from typing import Any, List, Optional, Union
+from bs4 import BeautifulSoup
 from supabase.client import AsyncClient, Client
 
 # from source.helpers.shared import pretty_print
+from source.helpers.json_exportable_enum import JSONExportableEnum
 from source.llm_exec.news_exec import web_source_article_builder_sync
 from source.models.structures.url_result import UrlResult
 from source.models.supabase.sources import SourceModel, SourceRelationshipModel
@@ -17,19 +19,26 @@ from source.models.structures.user import UserIDs
 from source.prompts.web_source import NewsArticle
 
 
+class ResolveState(str, JSONExportableEnum):
+    FAILED = "failed"
+    RESOLVED = "resolved"
+    UNRESOLVED = "unresolved"
+
+
 class WebSource(BaseModel):
     title: str
     topic: Optional[str] = None
     original_source: str
     resolved_source: Optional[str] = None
     source: str
+    rss_source: Optional[str] = None
     source_id: Optional[str] = None
     source_model: Optional[SourceModel] = None
     description: Optional[str] = None
     original_content: Optional[str] = None
     url_result: Optional[UrlResult] = None
     article: Optional[NewsArticle] = None
-
+    resolve_state: Optional[ResolveState] = ResolveState.UNRESOLVED
     image: Optional[str] = None
     publish_date: Optional[datetime] = None
     categories: Optional[List[str]] = Field(default_factory=list)
@@ -81,6 +90,7 @@ class WebSource(BaseModel):
             self.source = obj.source or self.source
             self.publish_date = obj.publish_date or self.publish_date
             self.metadata = obj.metadata or self.metadata
+            self.resolve_state = ResolveState.RESOLVED
         elif isinstance(obj, NewsArticle):
             self.title = obj.title or self.title
             if self._verify_image(obj.image):
@@ -88,13 +98,19 @@ class WebSource(BaseModel):
             self.description = obj.description or self.description
             self.lang = obj.lang or self.lang
             self.categories = (
-                [category.value for category in obj.categories]
-                if obj.categories
-                else self.categories
+                [category for category in obj.categories]
+                if obj.categories and isinstance(obj.categories, list)
+                else (
+                    [self.categories]
+                    if isinstance(obj.categories, str)
+                    else self.categories
+                )
             )
+            self.resolve_state = ResolveState.RESOLVED
         elif isinstance(obj, SourceModel):
             self.resolved_source = obj.resolved_source or self.resolved_source
             self.source = obj.data.get("source")
+            self.rss_source = obj.data.get("rss_source")
             self.linked_items = obj.data.get("linked_items")
             self.title = obj.title or self.title
             self.image = obj.metadata.get("image") or self.image
@@ -103,6 +119,9 @@ class WebSource(BaseModel):
             self.categories = obj.data.get("categories") or self.categories
             self.original_content = (
                 obj.data.get("original_content") or self.original_content
+            )
+            self.resolve_state = ResolveState.resolve(
+                obj.data.get("resolve_state") or self.resolve_state
             )
             self.publish_date = (
                 datetime.fromisoformat(obj.metadata.get("publish_date"))
@@ -117,19 +136,43 @@ class WebSource(BaseModel):
                 self.url_result = UrlResult.model_validate(obj.data.get("url_result"))
             if obj.data.get("article"):
                 self.article = NewsArticle.model_validate(obj.data.get("article"))
+            if self.resolve_state is None:
+                if self.article is not None:
+                    self.resolve_state = ResolveState.RESOLVED
+                else:
+                    self.resolve_state = ResolveState.UNRESOLVED
+
         else:
             raise ValueError(f"Unsupported object type: {type(obj)}")
 
     def _populate_source_model(self):
         print(f"Populating source model for: {self.title} ({self.original_source})")
-        content_to_hash = (self.original_content or "") + (
-            str(self.article) if self.article else ""
+        content_to_hash = (
+            str(self.article) if self.article else (self.original_content or self.title)
         )
         content_hash = (
             hashlib.sha256(content_to_hash.encode("utf-8")).hexdigest()
             if content_to_hash
             else None
         )
+
+        common_data = {
+            "rss_source": self.rss_source,
+            "source": self.source,
+            "description": self.description,
+            "url_result": self.url_result.model_dump() if self.url_result else None,
+            "article": self.article.model_dump() if self.article else None,
+            "categories": self.categories,
+            "linked_items": self.linked_items,
+            "resolve_state": str(self.resolve_state) if self.resolve_state else None,
+        }
+
+        common_metadata = {
+            "image": str(self.image) if self.image else None,
+            "publish_date": (
+                self.publish_date.isoformat() if self.publish_date else None
+            ),
+        }
 
         if self.source_model:
             # Update existing source_model fields
@@ -142,20 +185,8 @@ class WebSource(BaseModel):
             self.source_model.lang = self.lang
             self.source_model.content_hash = content_hash
             self.source_model.is_public = True
-            self.source_model.data = {
-                "source": self.source,
-                "description": self.description,
-                "url_result": self.url_result.model_dump() if self.url_result else None,
-                "article": self.article.model_dump() if self.article else None,
-                "categories": self.categories,
-                "linked_items": self.linked_items,
-            }
-            self.source_model.metadata = {
-                "image": str(self.image) if self.image else None,
-                "publish_date": (
-                    self.publish_date.isoformat() if self.publish_date else None
-                ),
-            }
+            self.source_model.data = common_data
+            self.source_model.metadata = common_metadata
             self.source_model.owner_id = self.owner_id
             self.source_model.organization_id = self.organization_id
         else:
@@ -170,22 +201,8 @@ class WebSource(BaseModel):
                 lang=self.lang,
                 content_hash=content_hash,
                 is_public=True,
-                data={
-                    "source": self.source,
-                    "description": self.description,
-                    "url_result": (
-                        self.url_result.model_dump() if self.url_result else None
-                    ),
-                    "article": self.article.model_dump() if self.article else None,
-                    "categories": self.categories,
-                    "linked_items": self.linked_items,
-                },
-                metadata={
-                    "image": str(self.image) if self.image else None,
-                    "publish_date": (
-                        self.publish_date.isoformat() if self.publish_date else None
-                    ),
-                },
+                data=common_data,
+                metadata=common_metadata,
                 owner_id=self.owner_id,
                 organization_id=self.organization_id,
             )
@@ -242,7 +259,10 @@ class WebSource(BaseModel):
                 source_model: SourceModel = await SourceModel.fetch_from_supabase(
                     supabase, value=linked_item, id_column="original_source"
                 )
-                if source_model:
+                if source_model and (
+                    source_model.data.get("resolved_state") == "resolved"
+                    or source_model.data.get("article")
+                ):
                     # Check if the SourceRelationshipModel already exists
                     exists_relationship = (
                         await SourceRelationshipModel.exists_in_supabase(
@@ -311,18 +331,34 @@ class WebSource(BaseModel):
             ).hexdigest()
         return self._sorting_id
 
-    def get_links(self):
+    @classmethod
+    def get_links(cls, rss_item):
         links = []
-        if (
-            "<ol><li>" in self.rss_item["summary"]
-            or 'href="http' in self.rss_item["summary"]
-        ):
-            links = re.findall(r'href="(.*?)"', self.rss_item["summary"])
+        if "<ol><li>" in rss_item["summary"] or 'href="http' in rss_item["summary"]:
+            soup = BeautifulSoup(rss_item["summary"], "html.parser")
+            for li in soup.find_all("li"):
+                link_tag = li.find("a", href=True)
+                source_tag = li.find("font")
+                if link_tag:
+                    link = link_tag["href"]
+                    title = link_tag.get_text(strip=True)
+                    source = source_tag.get_text(strip=True) if source_tag else None
+                    if link != rss_item["link"]:
+                        links.append((link, title, source))
+        return links
+
+    @classmethod
+    def get_link_ids(cls, rss_item, filter_id=None):
+        links = []
+        if "<ol><li>" in rss_item["summary"] or 'href="http' in rss_item["summary"]:
+            links = re.findall(r'href="(.*?)"', rss_item["summary"])
             links = [
                 hashlib.md5(str(link).encode("utf-8")).hexdigest()
                 for link in links
-                if link != self.rss_item["link"]
+                if link != rss_item["link"]
             ]
+            if filter_id:
+                links = [link for link in links if link != filter_id]
         return links
 
     def to_sorting_str(self, additional_details=True):
@@ -341,7 +377,7 @@ class WebSource(BaseModel):
                 "<ol><li>" in self.rss_item["summary"]
                 or 'href="http' in self.rss_item["summary"]
             ):
-                links = self.get_links()
+                links = self.get_link_ids(self.rss_item, self.get_sorting_id())
                 if len(links) > 0:
                     str_rep += f"Alternative source: \n - {'\n - '.join(links)}\n\n"
             else:
@@ -367,7 +403,7 @@ class WebSource(BaseModel):
         # Format categories if they exist
         if categories and isinstance(categories, list):
             if self.article and categories == self.article.categories:
-                categories = ", ".join([cat.value for cat in categories])
+                categories = ", ".join([cat for cat in categories])
             else:
                 categories = ", ".join(categories)
 
@@ -394,7 +430,10 @@ class WebSource(BaseModel):
                 source_model: SourceModel = await SourceModel.fetch_from_supabase_sync(
                     supabase, value=linked_item, id_column="original_source"
                 )
-                if source_model:
+                if source_model and (
+                    source_model.data.get("resolved_state") == "resolved"
+                    or source_model.data.get("article")
+                ):
                     # Check if the SourceRelationshipModel already exists
                     exists_relationship = (
                         await SourceRelationshipModel.exists_in_supabase_sync(
@@ -497,15 +536,17 @@ class WebSource(BaseModel):
     def resolve_and_store_link(
         self, supabase: Client, user_ids: UserIDs = None
     ) -> bool:
-        print(f"Resolving and storing link for: {self.original_source}")
+        # print(f"Resolving and storing link for: {self.original_source}")
         if self.check_if_exists_sync(supabase):
-            print(f"Source exists, loading from Supabase for: {self.original_source}")
+            # print(f"Source exists, loading from Supabase for: {self.original_source}")
             self.load_from_supabase_sync(supabase)
-            return True
+            return (
+                self.resolve_state == ResolveState.RESOLVED or self.article is not None
+            )
         else:
             resolver = LinkResolver(reformat_text=True)
             try:
-                print(f"Resolving URL: {self.original_source}")
+                # print(f"Resolving URL: {self.original_source}")
                 url_result = resolver.resolve_url(
                     str(self.original_source),
                     title=self.title,
@@ -518,15 +559,17 @@ class WebSource(BaseModel):
                     if user_ids is not None:
                         self.owner_id = user_ids.user_id
                         self.organization_id = user_ids.organization_id
-                    print(
-                        f"Resolved URL successfully, saving source for: {self.title} ({self.original_source})"
-                    )
-                    self.create_and_save_source_sync(supabase)
+                    # print(
+                    #     f"Resolved URL successfully, saving source for: {self.title} ({self.original_source})"
+                    # )
+                    self.resolve_state = ResolveState.RESOLVED
                     return True
             except Exception as e:
-                print(f"Failed to resolve {self.original_source}: {e}")
+                self.resolve_state = ResolveState.FAILED
+                print(f"Failed to resolve {self.original_source}: {repr(e)}")
             finally:
-                print(f"Closing resolver for: {self.original_source}")
+                # print(f"Closing resolver for: {self.original_source}")
+                self.create_and_save_source_sync(supabase)
                 resolver.close()
         return False
 

@@ -14,6 +14,22 @@ class Session {
         this.navigate = navigate;
     }
 
+    setLanguage(language: string): void {
+        localStorage.setItem("language", language);
+    }
+
+    getLanguage(): string {
+        return localStorage.getItem("language") || "english";
+    }
+
+    setPanelId(panelId: string): void {
+        localStorage.setItem("panelId", panelId);
+    }
+
+    getPanelId(): string | null {
+        return localStorage.getItem("panelId");
+    }
+
     async login(email: string, password: string): Promise<string> {
         const data = await fetchData(`/auth/login`, {
             method: "POST",
@@ -42,9 +58,12 @@ class Session {
     }
 
     handleUnauthorized(): void {
-        if (this.navigate) {
-            this.navigate("/login");
-        }
+        console.log("Handle unauthorized");
+        // if (this.navigate) {
+        //     this.navigate("/login");
+        // }
+        this.logout();
+        window.location.reload();
     }
 }
 

@@ -1,12 +1,12 @@
 import React, { useRef, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import PanelList from "./components/PanelList.tsx";
 import Panel from "./components/Panel.tsx";
 import {
     initializeAnalytics,
     Session,
     getUserId
-} from "./helpers/gaTracking.ts";
+} from "./helpers/analytics.ts";
+import session from "./helpers/session.ts";
 
 function App() {
     const userId = useRef(getUserId());
@@ -20,12 +20,23 @@ function App() {
 
     // "bg-gray-100 dark:bg-gray-800
 
+    const defaultPanelId = session.getPanelId(); // Retrieve panelId from localStorage
+
     return (
         <Router basename="/player">
             <div className="min-h-screen">
                 <div className="min-h-screen flex flex-col items-center p-2 w-full">
                     <Routes>
-                        <Route path="/" element={<PanelList />} />
+                        <Route
+                            path="/"
+                            element={
+                                <Panel
+                                    userId={userId}
+                                    sessionRef={sessionRef}
+                                    defaultPanelId={defaultPanelId ?? undefined}
+                                />
+                            }
+                        />
                         <Route
                             path="/panel/:panelId"
                             element={

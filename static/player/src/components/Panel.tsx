@@ -1,19 +1,36 @@
 import React, { useRef, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { fetchPanelDetails } from "../helpers/fetch.ts";
+import { useParams, useNavigate } from "react-router-dom";
+import { fetchPanelDetails, fetchPublicPanels } from "../helpers/fetch.ts";
 import { urlFormatter } from "../helpers/url.ts";
 import CommentsSection from "./CommentsSection.tsx";
 import { Player } from "./Player.tsx";
-import { Session } from "../helpers/gaTracking.ts";
+import { Session, trackEvent } from "../helpers/analytics.ts";
+import session from "../helpers/session.ts";
+import { LANGUAGE_MAP } from "../helpers/options.ts";
 
 interface PanelProps {
     userId: React.RefObject<string>;
     sessionRef: React.RefObject<Session | null>;
+    defaultPanelId?: string; // Optional prop for default panelId
 }
 
-const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
-    const { panelId } = useParams<{ panelId?: string }>();
+const Panel: React.FC<PanelProps> = ({
+    userId,
+    sessionRef,
+    defaultPanelId
+}) => {
+    const { panelId: urlPanelId } = useParams<{ panelId?: string }>();
+    const [panelId, setPanelId] = useState<string | undefined>(
+        urlPanelId || defaultPanelId
+    );
+
+    console.log(panelId, defaultPanelId);
+
+    const navigate = useNavigate();
+
+    // const { panelId } = useParams<{ panelId?: string }>();
     const [transcriptId, setTranscriptId] = useState<string | null>(null);
+    const [transcript, setTranscript] = useState<any | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [audioOptions, setAudioOptions] = useState<
         {
@@ -35,12 +52,34 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
             };
         }>
     >([]);
+    const [panels, setPanels] = useState<any[]>([]); // State for public panels
+    const [selectedPanel, setSelectedPanel] = useState<string | null>(null); // State for selected panel
+
+    useEffect(() => {
+        async function fetchPanels() {
+            try {
+                const fetchedPanels = await fetchPublicPanels();
+                setPanels(fetchedPanels);
+            } catch (error) {
+                console.error("Error fetching public panels:", error);
+            }
+        }
+        fetchPanels();
+    }, []);
+
+    useEffect(() => {
+        if (!panelId && defaultPanelId) setPanelId(defaultPanelId);
+
+        if (urlPanelId) setPanelId(urlPanelId);
+    }, [urlPanelId, defaultPanelId]);
 
     useEffect(() => {
         if (!panelId) {
             console.error("Panel ID is undefined.");
             return;
         }
+
+        setSelectedPanel(panelId || null);
 
         async function fetchData() {
             if (typeof panelId !== "string") {
@@ -56,6 +95,8 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                     audioData,
                     filesData
                 } = await fetchPanelDetails(panelId);
+
+                console.log(transcriptData, audioData);
 
                 setTranscriptSources(
                     Object.entries(transcriptSources || {}).map(
@@ -118,6 +159,16 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                     if (audioEntries.length > 0) {
                         setAudioUrl(audioEntries[0].url); // Default to the latest
                         setTranscriptId(audioEntries[0].transcript_id);
+
+                        setTranscript(
+                            transcriptData.find(
+                                (transcript) =>
+                                    transcript.id ===
+                                    audioEntries[0].transcript_id
+                            ) || null
+                        );
+                    } else {
+                        setAudioUrl("none");
                     }
                 }
             } catch (error) {
@@ -140,14 +191,66 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
             metadata: {
                 images: currentSource?.data.image
                     ? [currentSource.data.image]
-                    : []
+                    : transcript?.metadata?.images || []
             }
         };
     };
 
+    const [selectedLanguage, setSelectedLanguage] = useState(
+        session.getLanguage()
+    );
+
+    const handleLanguageChange = (
+        event: React.ChangeEvent<HTMLSelectElement>
+    ) => {
+        const newLanguage = event.target.value;
+        setSelectedLanguage(newLanguage);
+        session.setLanguage(newLanguage);
+        trackEvent(
+            "language_switch",
+            "Panel",
+            `Language changed to: ${newLanguage}`,
+            userId,
+            sessionRef
+        );
+        window.location.reload(); // Refresh the browser
+    };
+
+    const handlePanelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedId = event.target.value;
+        setSelectedPanel(selectedId);
+        session.setPanelId(selectedId); // Save the selected panel to localStorage
+        trackEvent(
+            "show_switch",
+            "Panel",
+            `Show switched to: ${selectedId}`,
+            userId,
+            sessionRef
+        );
+        navigate(`/panel/${selectedId}`);
+    };
+
     return (
         <div>
-            {audioUrl ? (
+            <div className="mb-4 w-full">
+                <select
+                    value={panelId || undefined} // Use panelId directly
+                    onChange={handlePanelChange}
+                    className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
+        text-gray-800 dark:text-gray-300 hover:border-gray-500 dark:hover:border-gray-500
+        transition-colors duration-200 font-medium w-full text-center"
+                >
+                    <option value="" disabled>
+                        Select a show
+                    </option>
+                    {panels.map((panel) => (
+                        <option key={panel.id} value={panel.id}>
+                            {panel.metadata.display_tag}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            {audioUrl && audioUrl != "none" ? (
                 <div className="w-full">
                     {/* New container for the icon and text */}
                     {/* <div className="flex justify-center items-center space-x-4 mb-6 w-full">
@@ -161,6 +264,7 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                             {process.env.REACT_APP_PODCAST_NAME}
                         </span>
                     </div> */}
+
                     <Player
                         userId={userId}
                         sessionRef={sessionRef}
@@ -188,6 +292,13 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                                     onClick={() => {
                                         setAudioUrl(option.url);
                                         setTranscriptId(option.transcript_id);
+                                        trackEvent(
+                                            "episode_switch",
+                                            "Panel",
+                                            `Episode switched to: ${option.title}`,
+                                            userId,
+                                            sessionRef
+                                        );
                                     }}
                                 >
                                     {option.thumbnail && (
@@ -220,11 +331,36 @@ const Panel: React.FC<PanelProps> = ({ userId, sessionRef }) => {
                 </div>
             ) : (
                 <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-4">
-                    <p className="text-gray-600 dark:text-gray-400">
-                        {audioUrl === null
-                            ? "Loading audio..."
-                            : "No audio file available."}
-                    </p>
+                    {!panelId ? (
+                        <p className="text-gray-600 dark:text-gray-400">
+                            Please select your Show first...
+                        </p>
+                    ) : audioUrl === null ? (
+                        <p className="text-gray-600 dark:text-gray-400">
+                            Loading audio...
+                        </p>
+                    ) : (
+                        <div className="flex flex-col relative gap-2">
+                            <p className="text-gray-600 dark:text-gray-400">
+                                No episodes available for the selected language.
+                            </p>
+                            <select
+                                value={selectedLanguage}
+                                onChange={handleLanguageChange}
+                                className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
+                                    text-gray-800 dark:text-gray-300 hover:border-gray-500 dark:hover:border-gray-500
+                                    transition-colors duration-200 font-medium"
+                            >
+                                {Object.entries(LANGUAGE_MAP).map(
+                                    ([code, name]) => (
+                                        <option key={code} value={code}>
+                                            {name}
+                                        </option>
+                                    )
+                                )}
+                            </select>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

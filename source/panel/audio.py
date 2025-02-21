@@ -88,6 +88,7 @@ def create_panel_audio(
         panel_id=panel_id,
         transcript_id=transcript_id,
         title=title,
+        lang=transcript.lang,
         bucket_id=request_data.bucket_name,
         process_state=ProcessState.processing,
         metadata={

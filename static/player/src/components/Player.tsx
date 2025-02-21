@@ -12,8 +12,9 @@ import {
     TbVolume as VolumeUpIcon
 } from "react-icons/tb";
 import SpeedPopup from "./SpeedPopup.tsx";
-import LikeDislikeSection from "./LikeDislikeSection.tsx";
-import { trackEvent, Session } from "../helpers/gaTracking.ts";
+import { trackEvent, Session } from "../helpers/analytics.ts";
+import session from "../helpers/session.ts";
+import { LANGUAGE_MAP } from "../helpers/options.ts";
 
 interface PlayerProps {
     userId: React.RefObject<string>;
@@ -41,6 +42,9 @@ const Player: React.FC<PlayerProps> = ({
     const [showSpeedPopup, setShowSpeedPopup] = useState(false);
     const speedPopupRef = useRef<HTMLDivElement>(null);
     const [volume, setVolumeState] = useState(1); // Volume state (default: max volume)
+    const [selectedLanguage, setSelectedLanguage] = useState(
+        session.getLanguage()
+    );
 
     const setVolume = (newVolume: number) => {
         setVolumeState(newVolume);
@@ -87,19 +91,47 @@ const Player: React.FC<PlayerProps> = ({
             navigator.mediaSession.setActionHandler("play", () => {
                 audioRef.current?.play();
                 setIsPlaying(true);
+                trackEvent(
+                    "media_session_play",
+                    "Player",
+                    "Media session play triggered",
+                    userId,
+                    sessionRef
+                );
             });
 
             navigator.mediaSession.setActionHandler("pause", () => {
                 audioRef.current?.pause();
                 setIsPlaying(false);
+                trackEvent(
+                    "media_session_pause",
+                    "Player",
+                    "Media session pause triggered",
+                    userId,
+                    sessionRef
+                );
             });
 
             navigator.mediaSession.setActionHandler("seekbackward", () => {
                 skip(-10);
+                trackEvent(
+                    "media_session_seekbackward",
+                    "Player",
+                    "Media session seek backward triggered",
+                    userId,
+                    sessionRef
+                );
             });
 
             navigator.mediaSession.setActionHandler("seekforward", () => {
                 skip(10);
+                trackEvent(
+                    "media_session_seekforward",
+                    "Player",
+                    "Media session seek forward triggered",
+                    userId,
+                    sessionRef
+                );
             });
         }
     }, [transcript, audioRef]);
@@ -219,6 +251,22 @@ const Player: React.FC<PlayerProps> = ({
         };
     }, []);
 
+    const handleLanguageChange = (
+        event: React.ChangeEvent<HTMLSelectElement>
+    ) => {
+        const newLanguage = event.target.value;
+        setSelectedLanguage(newLanguage);
+        session.setLanguage(newLanguage);
+        trackEvent(
+            "language_switch",
+            "Player",
+            `Language changed to: ${newLanguage}`,
+            userId,
+            sessionRef
+        );
+        window.location.reload(); // Refresh the browser
+    };
+
     return (
         <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl mb-4 overflow-hidden">
             <div
@@ -247,8 +295,25 @@ const Player: React.FC<PlayerProps> = ({
 
                     <div className="space-y-4">
                         {/* Row 2: Playback Speed - Volume Controls */}
-                        <div className="flex justify-between items-center">
-                            <div className="relative">
+                        <div className="flex justify-between items-center gap-3">
+                            <div className="relative flox-none pr-2">
+                                <select
+                                    value={selectedLanguage}
+                                    onChange={handleLanguageChange}
+                                    className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
+        text-gray-800 dark:text-gray-300 hover:border-gray-500 dark:hover:border-gray-500
+        transition-colors duration-200 font-medium"
+                                >
+                                    {Object.entries(LANGUAGE_MAP).map(
+                                        ([code, name]) => (
+                                            <option key={code} value={code}>
+                                                {name}
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+                            </div>
+                            <div className="relative flex-none">
                                 <button
                                     onClick={() =>
                                         setShowSpeedPopup(!showSpeedPopup)
@@ -266,7 +331,7 @@ const Player: React.FC<PlayerProps> = ({
                                     />
                                 )}
                             </div>
-                            <div className="flex items-center space-x-4">
+                            <div className="flex flex-1 items-center space-x-4">
                                 <button
                                     onClick={() => setMuted(!muted)}
                                     className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
