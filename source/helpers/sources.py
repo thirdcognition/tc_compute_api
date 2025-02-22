@@ -133,9 +133,9 @@ def fetch_google_news_items(config: GoogleNewsConfig) -> List[WebSource]:
 
     news = memoized_google_feed_parse(config)
 
-    print(f"GoogleNews: Memoized response: {news=}")
+    # print(f"GoogleNews: Memoized response: {news=}")
 
-    news["entries"] = [FeedParserDict(**item) for item in news["entries"]]
+    # news["entries"] = [FeedParserDict(**item) for item in news["entries"]]
 
     print(f"GoogleNews: Number of news entries fetched: {len(news['entries'])}")
     news_items = []

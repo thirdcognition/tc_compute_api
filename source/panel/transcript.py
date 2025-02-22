@@ -401,6 +401,9 @@ def create_panel_transcript(
         else:
             final_transcript = "\n\n".join(all_transcripts)
 
+        if not final_transcript:
+            raise ValueError("Unable to create transcript, check logs.")
+
         transcript_summaries = transcript_summary_writer(
             final_transcript, combined_sources, conversation_config
         )
