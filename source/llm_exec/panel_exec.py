@@ -81,7 +81,7 @@ def transcript_rewriter(
     # orig_combined_transcript=None,
     previous_episodes: str = None,
 ):
-    guidance = ""
+    # guidance = ""
     retry_count = 0
     check_passed = False
     change_length = True
@@ -165,7 +165,7 @@ def transcript_rewriter(
         quality_check.pass_test = len(all_issues) == 0
         check_passed = quality_check.pass_test
 
-        guidance = ""
+        # guidance = ""
 
         if not check_passed or change_length:
             while len(all_issues) > 0 or change_length:
@@ -185,7 +185,7 @@ def transcript_rewriter(
                         ]
                     )
                 )
-                guidance += feedback + "\n"
+                # guidance += feedback + "\n"
                 chain = (
                     "transcript_rewriter"
                     # if change_length_int == 0
@@ -200,21 +200,24 @@ def transcript_rewriter(
                     f"Rewrite transcript due to failed check (use chain {chain}).\n{feedback=}"
                 )
 
-                try:
-                    transcript_content = _transcript_rewriter(
-                        transcript=transcript_content,
-                        content=content,
-                        feedback=feedback,
-                        conversation_config=conversation_config,
-                        # previous_transcripts=previous_transcripts,
-                        previous_episodes=previous_episodes,
-                        chain=chain,
-                        word_count=word_count,
-                    )
-                    change_length_int = 0
-                except ValueError as e:
-                    print(f"Error during transcript rewrite: {e}")
-                    transcript_content = prev_content
+                if feedback:
+                    try:
+                        transcript_content = _transcript_rewriter(
+                            transcript=transcript_content,
+                            content=content,
+                            feedback=feedback,
+                            conversation_config=conversation_config,
+                            # previous_transcripts=previous_transcripts,
+                            previous_episodes=previous_episodes,
+                            chain=chain,
+                            word_count=word_count,
+                        )
+                        change_length_int = 0
+                    except ValueError as e:
+                        print(f"Error during transcript rewrite: {e}")
+                        transcript_content = prev_content
+                else:
+                    check_passed = True
 
             # previous_transcripts += (
             #     f"\n\n{'Retry ' + str(retry_count) if retry_count > 0 else 'First version'}:\n"

@@ -1137,6 +1137,7 @@ transcript_extend = PromptFormatter(
         - Ensure the conversation starts with Person1 and ends with Person2.
         - You will be given a word count. The transcript output must have at least that many words.
         - Aim for a very long conversation. Use max_output_tokens limit.
+        - Do not return the same transcript. Always extend it in one way or another. Do not return the original transcript.
 
         3. Guidelines:
         - Focus on a specific topic or theme for the conversation.
@@ -1188,6 +1189,7 @@ transcript_extend = PromptFormatter(
         Transcript end.
 
         Make sure to return the whole transcript. Not just the extended parts.
+        Always extend the transcript. Do not return the original transcript.
         """
     ),
 )
@@ -1236,6 +1238,8 @@ transcript_compress = PromptFormatter(
         Transcript:
         {transcript}
         Transcript end.
+
+        Always reduce and shorten the transcript. Do not return the original transcript.
         """
     ),
 )
