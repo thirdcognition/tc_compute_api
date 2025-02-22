@@ -64,7 +64,7 @@ class TranscriptParser(BaseOutputParser[str]):
         return [block.strip() for block in blocks if block.strip()]
 
     @classmethod
-    def fix_blocks(blocks):
+    def fix_blocks(cls, blocks):
         corrected_blocks = []
 
         for block in blocks:
