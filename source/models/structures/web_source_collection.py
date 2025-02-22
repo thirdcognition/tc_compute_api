@@ -161,9 +161,11 @@ class WebSourceCollection(BaseModel):
 
         # Concatenate the string representations of all WebSource objects
         if self.max_amount is None:
-            return "\n\n".join(str(ws) for ws in self.web_sources)
+            return "\n\n".join([str(ws) for ws in self.web_sources if str(ws)])
         else:
-            return "\n\n".join(str(ws) for ws in self.web_sources[: self.max_amount])
+            return "\n\n".join(
+                [str(ws) for ws in self.web_sources[: self.max_amount] if str(ws)]
+            )
 
     def resolve_and_store_link(self, supabase: Client, user_ids: UserIDs = None):
         resolved = False

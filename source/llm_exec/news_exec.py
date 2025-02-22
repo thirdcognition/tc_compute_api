@@ -1,4 +1,5 @@
 from langsmith import traceable
+from langchain_core.messages import BaseMessage
 from source.chains.init import get_chain
 from source.models.structures.url_result import UrlResult
 from source.prompts.web_source import NewsArticle
@@ -29,6 +30,9 @@ def web_source_article_builder_sync(data: UrlResult) -> NewsArticle:
         payload["image_data"] = data.image_data
 
     result: NewsArticle = get_chain("web_source_builder_sync").invoke(payload)
+
+    if isinstance(result, BaseMessage):
+        raise ValueError("Generation failed: Received a BaseMessage.")
 
     print(f"Resulting article {result.title=}")
 

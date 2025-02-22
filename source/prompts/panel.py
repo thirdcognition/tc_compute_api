@@ -355,6 +355,7 @@ transcript_template = {
         - If you're provided with a list of previous episodes use their content and context in appropriate way and as defined by instructions.
         - Do not reduce the lenght of the original transcript.
         - Always return the whole transcript, not just the changed parts of fixes. Do not change things which have not been specified in the issues and instructions.
+        - Use the specified location to write transcript from the point of view of living in that area. Listener does not live in USA unless location specifies so.
         """,
     },
     "length": {
@@ -443,8 +444,6 @@ transcript_combiner = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
-
-
         Previous episodes:
         {previous_episodes}
         Previous episodes end.
@@ -521,6 +520,7 @@ transcript_rewriter = PromptFormatter(
         Person 2 role: {roles_person2}
         Dialogue Structure: {dialogue_structure}
         Engagement techniques: {engagement_techniques}
+        Location: {location}
         Other instructions: {user_instructions}
 
         Main Item:
@@ -704,6 +704,7 @@ transcript_writer = PromptFormatter(
         - Don't start from the middle of a conversation.
         - Align the listener before jumping into the discussion by briefing the subject.
         - Person1 and person2 should refer to each other with names, but don't start with them.
+        - Use the specified location to write transcript from the point of view of living in that area. Listener does not live in USA unless location specifies so.
 
         4. Instructions for using previous episodes:
         - Refer to previous episodes if there is direct connections to them.
@@ -760,6 +761,7 @@ transcript_writer = PromptFormatter(
         Current date: {date}
         Current time: {time}
         Word count: {word_count}
+        Location: {location}
 
         Additional instructions:
         {user_instructions}
@@ -874,7 +876,6 @@ transcript_intro_writer = PromptFormatter(
         - Use advanced TTS-specific markup to enhance the naturalness of the conversation.
         - Avoid repetitive phrases and ensure the dialogue flows naturally.
         - Incorporate engagement techniques to make the introduction dynamic and captivating.
-
 
         {ROLES_PERSON_INSTRUCT}
 
@@ -1155,7 +1156,7 @@ transcript_compress = PromptFormatter(
         3. Avoid adding filler words like, exactly, totally, absolutely, etc or expanding unnecessarily; focus solely on brevity and precision.
         4. Do not remove the name tags (e.g., `<person1>`, `<person2>`), and do not introduce new name tags.
 
-        Compress the transcript while preserving its coherence, clarity, and structure.
+        Reduce and shorten the transcript while preserving its coherence, clarity, and structure. Do not return the original transcript.
 
         {ROLES_PERSON_INSTRUCT}
 
@@ -1175,7 +1176,7 @@ transcript_compress = PromptFormatter(
         Person 2 role: {roles_person2}
         Other instructions: {user_instructions}
 
-        Reduce and compress the following transcript:
+        Reduce and shorten the following transcript:
 
         Transcript:
         {transcript}

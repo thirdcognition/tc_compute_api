@@ -46,6 +46,7 @@ class ConversationConfig(BaseModel):
     word_count: Optional[int] = custom_config["word_count"]
     longform: Optional[bool] = False
     text_to_speech: Optional[dict] = {}
+    location: Optional[str] = "Finland"
 
 
 class PanelRequestData(BaseModel):

@@ -199,7 +199,8 @@ def construct_hackernews_feed_url(config: HackerNewsConfig) -> str:
 def fetch_hackernews_items(config: HackerNewsConfig) -> List[WebSource]:
     feed_url = construct_hackernews_feed_url(config)
     print(f"HackerNews: Fetching HackerNews items from URL: {feed_url}")
-    feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
+    # feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
+    feed = memoized_feed_parse(feed_url)
     print(f"HackerNews: Number of items fetched: {len(feed.entries)}")
 
     news_items = []
@@ -218,7 +219,8 @@ def fetch_techcrunch_news_items(config: TechCrunchNewsConfig) -> List[WebSource]
     feed_url = "https://techcrunch.com/feed/"
 
     print(f"TechCrunch: Fetching TechCrunch news items from URL: {feed_url}")
-    feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
+    # feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
+    feed = memoized_feed_parse(feed_url)
     print(f"TechCrunch: Number of items fetched: {len(feed.entries)}")
 
     news_items = []
@@ -244,7 +246,8 @@ def fetch_yle_news_items(config: YleNewsConfig) -> List[WebSource]:
             feed_url += "&concepts=" + ",".join(concepts)
 
     print(f"Yle: Fetching Yle news items from URL: {feed_url}")
-    feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
+    # feed = [FeedParserDict(**item) for item in memoized_feed_parse(feed_url)]
+    feed = memoized_feed_parse(feed_url)
     print(f"Yle: Number of items fetched: {len(feed.entries)}")
 
     news_items = []

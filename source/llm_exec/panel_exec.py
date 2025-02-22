@@ -287,6 +287,7 @@ def _transcript_rewriter(
                 "date": current_date,
                 "time": current_time,
                 "word_count": word_count * 1.2,
+                "location": conversation_config.location or "Finland",
             }
         )
 
@@ -351,6 +352,7 @@ def transcript_writer(
                     if conversation_config.word_count
                     else ""
                 ),
+                "location": conversation_config.location or "Finland",
             }
         )
 
@@ -537,9 +539,9 @@ def transcript_compress(
                 "time": current_time,
             }
         )
-        if not isinstance(prev_result, BaseMessage) and count_words(
-            result
-        ) < count_words(prev_result):
+        if not isinstance(result, BaseMessage) and count_words(result) < count_words(
+            prev_result
+        ):
             prev_result = result
 
     if isinstance(prev_result, BaseMessage):
@@ -593,9 +595,9 @@ def transcript_extend(
                 "time": current_time,
             }
         )
-        if not isinstance(prev_result, BaseMessage) and count_words(
-            result
-        ) > count_words(prev_result):
+        if not isinstance(result, BaseMessage) and count_words(result) > count_words(
+            prev_result
+        ):
             prev_result = result
 
     if isinstance(prev_result, BaseMessage):
@@ -787,7 +789,9 @@ def generate_and_verify_transcript(
             content = str(source)
 
         if isinstance(sources, list):
-            content += "\n\n".join(map(str, sources))
+            content += "\n\n".join([src for src in map(str, sources) if src])
+        elif sources is not None:
+            content += str(sources)
 
     main_item = False
     if source is not None and (
@@ -862,7 +866,10 @@ def transcript_combiner(
     content = ""
     article_count = 1
     if sources is not None:
-        content = "\n\n".join(map(str, sources))
+        if isinstance(sources, list):
+            content += "\n\n".join([src for src in map(str, sources) if src])
+        else:
+            content += str(sources)
         article_count = len(sources)
     else:
         raise ValueError("Sources needed for combining resulting transcripts.")
@@ -950,7 +957,10 @@ def transcript_translate(
     content = ""
     article_count = 1
     if sources is not None:
-        content = "\n\n".join(map(str, sources))
+        if isinstance(sources, list):
+            content += "\n\n".join([src for src in map(str, sources) if src])
+        else:
+            content += str(sources)
         article_count = len(sources)
     else:
         raise ValueError("Sources needed for combining resulting transcripts.")
