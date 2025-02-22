@@ -556,9 +556,7 @@ class WebSource(BaseModel):
                 if len(url_result.human_readable_content) > 500:
                     self._update_from_(url_result)  # Replaced manual updates
                     self.build_article()  # Update article
-                    if user_ids is not None:
-                        self.owner_id = user_ids.user_id
-                        self.organization_id = user_ids.organization_id
+
                     # print(
                     #     f"Resolved URL successfully, saving source for: {self.title} ({self.original_source})"
                     # )
@@ -568,6 +566,9 @@ class WebSource(BaseModel):
                 self.resolve_state = ResolveState.FAILED
                 print(f"Failed to resolve {self.original_source}: {repr(e)}")
             finally:
+                if user_ids is not None:
+                    self.owner_id = user_ids.user_id
+                    self.organization_id = user_ids.organization_id
                 # print(f"Closing resolver for: {self.original_source}")
                 self.create_and_save_source_sync(supabase)
                 resolver.close()
