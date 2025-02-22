@@ -564,7 +564,7 @@ def transcript_extend(
     conversation_config: ConversationConfig = ConversationConfig(),
 ) -> bool:
     print(
-        f"transcript_compress - Starting with transcript ({count_words(transcript)}), conversation_config={conversation_config}"
+        f"transcript_extend - Starting with transcript ({count_words(transcript)}), conversation_config={conversation_config}"
     )
     retries = 3
     result = ""
@@ -604,7 +604,7 @@ def transcript_extend(
         print("Generation failed: Received a BaseMessage.")
         return transcript
 
-    print(f"transcript_compress - Completed with result ({count_words(prev_result)})")
+    print(f"transcript_extend - Completed with result ({count_words(prev_result)})")
 
     return prev_result
 

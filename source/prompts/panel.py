@@ -64,13 +64,68 @@ class TranscriptParser(BaseOutputParser[str]):
         return [block.strip() for block in blocks if block.strip()]
 
     @classmethod
+    def fix_blocks(blocks):
+        corrected_blocks = []
+
+        for block in blocks:
+            match = re.match(
+                r"<person(\d+)(.*?)>(.*?)</person\1>", block, re.DOTALL | re.IGNORECASE
+            )
+            if match:
+                # Block is valid, so we add it back to the corrected_blocks list
+                corrected_blocks.append(block)
+            else:
+                # Check for critical mismatches in block, e.g., nested mismatched tags
+                if re.search(
+                    r"<person(\d+)>.*?</person(\d+)>", block, re.DOTALL | re.IGNORECASE
+                ):
+                    tag_mismatches = re.findall(
+                        r"<person(\d+)>.*?</person(\d+)>",
+                        block,
+                        re.DOTALL | re.IGNORECASE,
+                    )
+                    for opening, closing in tag_mismatches:
+                        if opening != closing:
+                            raise OutputParserException(
+                                f"Critical mismatch in block tags:\n\n{block}"
+                            )
+                # Attempt to repair malformed blocks
+                open_tags = re.findall(r"<person(\d+)>", block, re.IGNORECASE)
+                close_tags = re.findall(r"</person(\d+)>", block, re.IGNORECASE)
+
+                # Balance mismatched open and closing tags
+                if len(open_tags) > len(close_tags):
+                    for tag in open_tags[len(close_tags) :]:
+                        block += f"</person{tag}>"
+                elif len(close_tags) > len(open_tags):
+                    for tag in close_tags[len(open_tags) :]:
+                        block = f"<person{tag}>" + block
+
+                # Verify after fixing
+                fixed_match = re.match(
+                    r"<person(\d+)(.*?)>(.*?)</person\1>",
+                    block,
+                    re.DOTALL | re.IGNORECASE,
+                )
+                if fixed_match:
+                    corrected_blocks.append(block)
+                else:
+                    raise OutputParserException(
+                        f"Unable to automatically fix malformed block:\n\n{block}"
+                    )
+
+        return corrected_blocks
+
+    @classmethod
     def validate_and_merge_blocks(cls, blocks: List[str]) -> List[str]:
         """Validate and merge consecutive blocks for the same speaker."""
         merged_blocks = []
         current_speaker = None
         current_content = []
 
-        for block in blocks:
+        fixed_blocks = cls.fix_blocks(blocks)
+
+        for block in fixed_blocks:
             match = re.match(
                 r"<person(\d+)(.*?)>(.*?)</person\1>", block, re.DOTALL | re.IGNORECASE
             )
@@ -1116,10 +1171,10 @@ transcript_extend = PromptFormatter(
         Podcast configuration:
         Current date: {date}
         Current time: {time}
-        Source Language: {source_language}
-        Target Language: {target_language}
+        Language: {output_language}
         Podcast Name: {podcast_name}
         Podcast Tagline: {podcast_tagline}
+        Dialogue Structure: {dialogue_structure}
         Conversation Style: {conversation_style}
         Person 1 role: {roles_person1}
         Person 2 role: {roles_person2}
