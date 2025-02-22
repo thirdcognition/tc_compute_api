@@ -60,8 +60,8 @@ def parse_since_value(since_value):
 def create_web_source(
     entry,
     source: str,
-    rss_source: str,
     lang: str,
+    rss_source: str = None,
     original_source: Optional[str] = None,
     category=None,
 ) -> WebSource | None:
