@@ -74,8 +74,8 @@ from source.prompts.hyde import hyde, hyde_document
 from source.prompts.panel import (
     verify_transcript_quality,
     transcript_rewriter,
-    transcript_rewriter_extend,
-    transcript_rewriter_reduce,
+    # transcript_rewriter_extend,
+    # transcript_rewriter_reduce,
     transcript_combiner,
     transcript_writer,
     transcript_bridge_writer,
@@ -83,6 +83,7 @@ from source.prompts.panel import (
     transcript_conclusion_writer,
     transcript_summary_formatter,
     transcript_compress,
+    transcript_extend,
     transcript_translate,
 )
 from source.prompts.web_source import (
@@ -452,18 +453,18 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
         True,
     ),
-    "transcript_rewriter_extend": (
-        "instruct_detailed",
-        transcript_rewriter_extend,
-        True,
-        True,
-    ),
-    "transcript_rewriter_reduce": (
-        "instruct_detailed",
-        transcript_rewriter_reduce,
-        True,
-        True,
-    ),
+    # "transcript_rewriter_extend": (
+    #     "instruct_detailed",
+    #     transcript_rewriter_extend,
+    #     True,
+    #     True,
+    # ),
+    # "transcript_rewriter_reduce": (
+    #     "instruct_detailed",
+    #     transcript_rewriter_reduce,
+    #     True,
+    #     True,
+    # ),
     "transcript_combiner": (
         "instruct_detailed_warm",
         transcript_combiner,
@@ -491,6 +492,12 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "transcript_compress": (
         "instruct",
         transcript_compress,
+        False,
+        True,
+    ),
+    "transcript_extend": (
+        "instruct_detailed",
+        transcript_extend,
         False,
         True,
     ),

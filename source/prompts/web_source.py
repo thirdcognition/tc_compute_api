@@ -290,13 +290,16 @@ class WebSourceGroupingValidator:
         if isinstance(raw_input, BaseMessage):
             raw_input = raw_input.content
 
-        json_block = re.search(r"```json\n(.*?)\n```", raw_input, re.DOTALL)
-        if json_block:
-            json_string = json_block.group(1).strip()
+        cleaned_input = ""
+        if "json" in raw_input:
+            json_block = re.search(r"```json\n(.*?)\n```", raw_input, re.DOTALL)
+            if json_block:
+                json_string = json_block.group(1).strip()
 
-            print("Extracted JSON string:", json_string)
-            cleaned_input = json_string
-        else:
+                print("Extracted JSON string:", json_string)
+                cleaned_input = json_string
+
+        if cleaned_input == "":
             cleaned_input = self.cleaner.parse(raw_input)
 
         # print(f"{cleaned_input=}")

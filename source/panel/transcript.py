@@ -534,7 +534,7 @@ def create_panel_transcript_translation(
         panel_transcript.process_state = ProcessState.failed
         panel_transcript.process_state_message = str(e)
         panel_transcript.update_sync(supabase=supabase_client)
-        raise RuntimeError("Failed to generate podcast transcript") from e
+        # raise RuntimeError("Failed to generate podcast transcript") from e
 
     return panel_transcript.id
 

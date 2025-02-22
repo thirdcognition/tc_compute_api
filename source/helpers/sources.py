@@ -390,7 +390,7 @@ def fetch_links(
             for idx, item in enumerate(
                 resolve_items[start_index:end_index], start=start_index
             ):
-                print(f"Fetch links: Processing item at index {idx}: {item}")
+                print(f"Fetch links: Processing item at index {idx}: {item.title}")
                 if isinstance(item, WebSourceCollection):
                     collection_key = (item.title, item.max_amount)
                     tasks = item.generate_tasks(tokens, user_ids)

@@ -31,7 +31,7 @@ def verify_transcript_quality(
     content: str,
     conversation_config: ConversationConfig = ConversationConfig(),
     main_item: bool = False,
-    length_instructions: str = "",
+    # length_instructions: str = "",
     previous_episodes: str = None,
 ) -> TranscriptQualityCheck:
     current_datetime = datetime.now()
@@ -54,7 +54,7 @@ def verify_transcript_quality(
                 if main_item
                 else "False"
             ),
-            "transcript_length": length_instructions,
+            # "transcript_length": length_instructions,
             "previous_episodes": (
                 previous_episodes if previous_episodes is not None else ""
             ),
@@ -78,7 +78,7 @@ def transcript_rewriter(
     word_count: int = 300,
     max_retries: int = 3,
     main_item: bool = False,
-    orig_combined_transcript=None,
+    # orig_combined_transcript=None,
     previous_episodes: str = None,
 ):
     guidance = ""
@@ -88,11 +88,11 @@ def transcript_rewriter(
 
     transcript_content = orig_transcript
     fallback_quality_check = TranscriptQualityCheck(pass_test=True, issues=[])
-    previous_transcripts = (
-        ""
-        if orig_combined_transcript is None
-        else "Original transcript:\n" + orig_combined_transcript
-    )
+    # previous_transcripts = (
+    #     ""
+    #     if orig_combined_transcript is None
+    #     else "Original transcript:\n" + orig_combined_transcript
+    # )
 
     while (not check_passed or change_length) and retry_count < max_retries:
         change_length = False
@@ -106,15 +106,25 @@ def transcript_rewriter(
             change_length = change_length_int != 0
 
         retries = 3
+        prev_content = transcript_content
 
-        while change_length and change_length_int < 0 and retries > 0:
+        while change_length and retries > 0:
             retries -= 1
             save_content = transcript_content
             try:
-                transcript_content = transcript_compress(
-                    transcript=transcript_content,
-                    conversation_config=conversation_config,
-                )
+                if change_length_int < 0:
+                    transcript_content = transcript_compress(
+                        transcript=transcript_content,
+                        conversation_config=conversation_config,
+                        target=word_count,
+                    )
+                elif change_length_int > 0:
+                    transcript_content = transcript_extend(
+                        transcript=transcript_content,
+                        content=content,
+                        conversation_config=conversation_config,
+                        target=word_count,
+                    )
                 change_length_int = 0
             except ValueError as e:
                 print(f"Error during transcript rewrite: {e}")
@@ -135,11 +145,11 @@ def transcript_rewriter(
                 content=content,
                 conversation_config=conversation_config,
                 main_item=main_item,
-                length_instructions=(
-                    length_instructions
-                    if change_length
-                    else "Transcript length is good."
-                ),
+                # length_instructions=(
+                #     length_instructions
+                #     if change_length
+                #     else "Transcript length is good."
+                # ),
                 previous_episodes=previous_episodes,
             )
         except Exception as e:
@@ -156,8 +166,6 @@ def transcript_rewriter(
         check_passed = quality_check.pass_test
 
         guidance = ""
-        prev_content = transcript_content
-        prev_len = count_words(transcript_content)
 
         if not check_passed or change_length:
             while len(all_issues) > 0 or change_length:
@@ -180,12 +188,12 @@ def transcript_rewriter(
                 guidance += feedback + "\n"
                 chain = (
                     "transcript_rewriter"
-                    if change_length_int == 0
-                    else (
-                        "transcript_rewriter_extend"
-                        if change_length_int == 1
-                        else "transcript_rewriter_reduce"
-                    )
+                    # if change_length_int == 0
+                    # else (
+                    #     "transcript_rewriter_extend"
+                    #     if change_length_int == 1
+                    #     else "transcript_rewriter_reduce"
+                    # )
                 )
 
                 print(
@@ -198,7 +206,7 @@ def transcript_rewriter(
                         content=content,
                         feedback=feedback,
                         conversation_config=conversation_config,
-                        previous_transcripts=previous_transcripts,
+                        # previous_transcripts=previous_transcripts,
                         previous_episodes=previous_episodes,
                         chain=chain,
                         word_count=word_count,
@@ -208,18 +216,23 @@ def transcript_rewriter(
                     print(f"Error during transcript rewrite: {e}")
                     transcript_content = prev_content
 
-            print(f"Rewritten transcript ({count_words(transcript_content)=})")
             # previous_transcripts += (
             #     f"\n\n{'Retry ' + str(retry_count) if retry_count > 0 else 'First version'}:\n"
             #     f"Input:\n{prev_content}\n\nIssues:\n{guidance}"
             # )
-            if (
-                check_passed
-                and (prev_len * 1.05) > count_words(transcript_content)
-                and retry_count > 2
-            ):
-                transcript_content = prev_content
-                retry_count = max_retries + 1
+
+            change_length = False
+            if word_count is not None:
+                change_length_int, length_instructions = check_transcript_length(
+                    transcript_content,
+                    content,
+                    word_count,
+                )
+                change_length = change_length_int != 0
+
+            if check_passed and not change_length:
+                print(f"Rewritten transcript ({count_words(transcript_content)=})")
+                break
 
         retry_count += 1
 
@@ -235,7 +248,7 @@ def _transcript_rewriter(
     content: str,
     feedback: str,
     conversation_config: ConversationConfig = ConversationConfig(),
-    previous_transcripts="",
+    # previous_transcripts="",
     previous_episodes: str = None,
     chain: str = "transcript_rewriter",
     main_item: bool = False,
@@ -260,7 +273,7 @@ def _transcript_rewriter(
                 "engagement_techniques": conversation_config.engagement_techniques,
                 "user_instructions": conversation_config.user_instructions,
                 "feedback": feedback,
-                "previous_transcripts": previous_transcripts,
+                # "previous_transcripts": previous_transcripts,
                 "previous_episodes": (
                     previous_episodes if previous_episodes is not None else ""
                 ),
@@ -398,6 +411,7 @@ def transcript_bridge_writer(
     name="Write transcript intro",
 )
 def transcript_intro_writer(
+    transcript: str,
     content: str,
     conversation_config: ConversationConfig = ConversationConfig(),
     previous_episodes: str = None,
@@ -414,6 +428,7 @@ def transcript_intro_writer(
         retries -= 1
         result = get_chain("transcript_intro_writer").invoke(
             {
+                "transcript": transcript,
                 "content": content,
                 "output_language": conversation_config.output_language,
                 "conversation_style": conversation_config.conversation_style,
@@ -493,6 +508,7 @@ def transcript_conclusion_writer(
 )
 def transcript_compress(
     transcript: str,
+    target: int = None,
     conversation_config: ConversationConfig = ConversationConfig(),
 ) -> bool:
     print(
@@ -503,11 +519,67 @@ def transcript_compress(
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
-    while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
+    prev_result = transcript
+    while (
+        result == ""
+        or isinstance(result, BaseMessage)
+        or (target is not None and target < count_words(prev_result))
+    ) and retries > 0:
         retries -= 1
         result = get_chain("transcript_compress").invoke(
             {
-                "transcript": transcript,
+                "transcript": prev_result,
+                "output_language": conversation_config.output_language,
+                "roles_person1": str(conversation_config.roles_person1),
+                "roles_person2": str(conversation_config.roles_person2),
+                "user_instructions": conversation_config.user_instructions,
+                "date": current_date,
+                "time": current_time,
+            }
+        )
+        if not isinstance(prev_result, BaseMessage) and count_words(
+            result
+        ) < count_words(prev_result):
+            prev_result = result
+
+    if isinstance(prev_result, BaseMessage):
+        print("Generation failed: Received a BaseMessage.")
+        return transcript
+
+    print(f"transcript_compress - Completed with result ({count_words(prev_result)})")
+
+    return prev_result
+
+
+@traceable(
+    run_type="llm",
+    name="Extend transcript",
+)
+def transcript_extend(
+    transcript: str,
+    content: str,
+    target: int = None,
+    conversation_config: ConversationConfig = ConversationConfig(),
+) -> bool:
+    print(
+        f"transcript_compress - Starting with transcript ({count_words(transcript)}), conversation_config={conversation_config}"
+    )
+    retries = 3
+    result = ""
+    current_datetime = datetime.now()
+    current_date = current_datetime.strftime("%Y-%m-%d (%a)")
+    current_time = current_datetime.strftime("%H:%M:%S")
+    prev_result = transcript
+    while (
+        result == ""
+        or isinstance(result, BaseMessage)
+        or (target is not None and target > count_words(prev_result))
+    ) and retries > 0:
+        retries -= 1
+        result = get_chain("transcript_extend").invoke(
+            {
+                "transcript": prev_result,
+                "content": content,
                 "output_language": conversation_config.output_language,
                 "conversation_style": conversation_config.conversation_style,
                 "roles_person1": str(conversation_config.roles_person1),
@@ -521,14 +593,18 @@ def transcript_compress(
                 "time": current_time,
             }
         )
+        if not isinstance(prev_result, BaseMessage) and count_words(
+            result
+        ) > count_words(prev_result):
+            prev_result = result
 
-    if isinstance(result, BaseMessage):
+    if isinstance(prev_result, BaseMessage):
         print("Generation failed: Received a BaseMessage.")
-        return ""
+        return transcript
 
-    print(f"transcript_compress - Completed with result ({count_words(result)})")
+    print(f"transcript_compress - Completed with result ({count_words(prev_result)})")
 
-    return result
+    return prev_result
 
 
 @traceable(
@@ -569,8 +645,7 @@ def _transcript_translate(
         )
 
     if isinstance(result, BaseMessage):
-        print("Generation failed: Received a BaseMessage.")
-        return ""
+        raise ValueError("Generation failed: Received a BaseMessage.")
 
     print(f"transcript_translate - Completed with result ({count_words(result)})")
 
@@ -792,7 +867,11 @@ def transcript_combiner(
     else:
         raise ValueError("Sources needed for combining resulting transcripts.")
 
-    combined_transcripts.append(transcript_intro_writer(content, conversation_config))
+    combined_transcripts.append(
+        transcript_intro_writer(
+            "\n".join(transcripts), content, conversation_config, previous_episodes
+        )
+    )
 
     for i in range(len(transcripts) - 1):
         try:
@@ -843,17 +922,17 @@ def transcript_combiner(
     try:
         transcript_content = transcript_rewriter(
             content=content,
-            orig_transcript=transcript_content,
+            orig_transcript=orig_transcript,
             conversation_config=conversation_config,
             word_count=word_count,
             max_retries=6,
             main_item=False,
-            orig_combined_transcript=orig_transcript,
+            # orig_combined_transcript=orig_transcript,
             previous_episodes=previous_episodes,
         )
     except Exception as e:
         print(f"Failed to rewrite the transcript: {e}")
-        raise
+        return orig_transcript
 
     return transcript_content
 
@@ -902,7 +981,7 @@ def transcript_translate(
             word_count=word_count,
             max_retries=6,
             main_item=False,
-            orig_combined_transcript=transcript_content,
+            # orig_combined_transcript=transcript_content,
         )
     except Exception as e:
         print(f"Failed to translate the transcript: {e}")

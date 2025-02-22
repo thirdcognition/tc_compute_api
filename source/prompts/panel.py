@@ -236,7 +236,8 @@ verify_transcript_quality = PromptFormatter(
         - When identifying issues (e.g., repetitive words, incomplete discussions), provide actionable suggestions for correction.
 
         **Key Instructions**:
-        - Always ensure the transcript aligns with the specified tone, content, language, and length requirements.
+        - Always ensure the transcript adheres to the content, language and other instructions.
+        - Check that the transcript follows specified Conversational style, dialogue structure and uses specified engagement techniques.
         - Flag improper mannerisms, style inconsistencies, factual inaccuracies, or incomplete content.
         - Provide explicit, constructive suggestions for improving flagged items.
 
@@ -278,13 +279,13 @@ verify_transcript_quality = PromptFormatter(
         Main Item:
         {main_item}
 
-        Transcript length:
-        {transcript_length}
-
-        Respond with "yes" or "no" and add a list of details for what to fix.
+        Create a list in the specified format for issues to fix, or return an empty list if there's nothing to fix.
         """
     ),
 )
+
+# Transcript length:
+# {transcript_length}
 
 
 class TranscriptQualityCheckParseWrapper:
@@ -296,16 +297,19 @@ class TranscriptQualityCheckParseWrapper:
         if hasattr(raw_input, "content"):  # Handle AIMessage or similar objects
             raw_input = raw_input.content
 
-        json_block = re.search(r"```json\n(.*?)\n```", raw_input, re.DOTALL)
-        if json_block:
-            json_string = json_block.group(1).strip()
+        cleaned_input = ""
+        if "json" in raw_input:
+            json_block = re.search(r"```json\n(.*?)\n```", raw_input, re.DOTALL)
+            if json_block:
+                json_string = json_block.group(1).strip()
 
-            print("Extracted JSON string:", json_string)
-            cleaned_input = json_string
-        else:
+                print("Extracted JSON string:", json_string)
+                cleaned_input = json_string
+
+        if cleaned_input == "":
             cleaned_input = self.cleaner.parse(raw_input)
 
-        print(f"{cleaned_input=}")
+        # print(f"{cleaned_input=}")
 
         return verify_transcript_quality_parser.parse(cleaned_input)
 
@@ -328,7 +332,7 @@ transcript_template = {
     "instructions": {
         "rewriter": """
         - You will receive a transcript, the content it was built from, specific configuration details, and a list of issues for improving the transcript.
-        - Your primary task is to rewrite the provided transcript for an AI Text-To-Speech (TTS) pipeline, ensuring it adheres to the suggestions from issues provided.
+        - Your primary task is to rewrite the provided transcript maintaining the length for an AI Text-To-Speech (TTS) pipeline, ensuring it adheres to the suggestions from issues provided.
         - Incorporate all suggestions into the rewritten transcript. Fixing the Issues is the most critical aspect and must be fully addressed.
         - Make the transcript as engaging and natural as possible. Person1 and Person2 will be simulated by different voice engines.
         - Introduce disfluencies, interruptions, and back-and-forth banter to make the conversation sound real and dynamic, but only if the suggestions allows for it.
@@ -349,6 +353,8 @@ transcript_template = {
         - Do not use childish humor or remarks. Make sure all humor is aligned with the content and is smart.
         - Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
         - If you're provided with a list of previous episodes use their content and context in appropriate way and as defined by instructions.
+        - Do not reduce the lenght of the original transcript.
+        - Always return the whole transcript, not just the changed parts of fixes. Do not change things which have not been specified in the issues and instructions.
         """,
     },
     "length": {
@@ -356,6 +362,7 @@ transcript_template = {
         - You will be given a word count. The transcript output must have at least that many words.
         - Do not reduce the length of the conversation. Make sure output transcript has as much content as the input transcript.
         - The resulting transcript should match the length of the previous transcript.
+        - Do not leave out anything from the original transcript and make sure to include all segments of provided transcript.
         """,
         "extend": """
         - Your primary goal is to significantly expand the transcript to meet or exceed the given word count.
@@ -391,7 +398,9 @@ transcript_combiner = PromptFormatter(
         {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
-        Your task is to combine the provided list of podcast transcripts into a single, cohesive transcript optimized for AI Text-To-Speech (TTS) pipelines. Follow these instructions:
+        Your task is to combine the provided list of podcast transcripts into a single, cohesive transcript optimized for AI Text-To-Speech (TTS) pipelines. You should not reduce the overall length of the transcript and all non overlapping content should be maintained.
+
+        Follow these instructions:
 
         1. Objective:
         - Merge the given transcripts into a unified, engaging, and natural conversation.
@@ -434,9 +443,7 @@ transcript_combiner = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
-        Transcripts start:
-        {transcript}
-        Transcripts end.
+
 
         Previous episodes:
         {previous_episodes}
@@ -456,6 +463,14 @@ transcript_combiner = PromptFormatter(
         Dialogue Structure: {dialogue_structure}
         Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
+
+        Combine following transcripts into a new transcript. Do not reduce the overall length.
+
+        Transcripts start:
+        {transcript}
+        Transcripts end.
+
+        Make sure to return the whole transcript, not just parts of it.
         """
     ),
 )
@@ -485,10 +500,6 @@ transcript_rewriter = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
-        Transcript start:
-        {transcript}
-        Transcript end.
-
         Issues (fix these):
         {feedback}
 
@@ -514,129 +525,137 @@ transcript_rewriter = PromptFormatter(
 
         Main Item:
         {main_item}
+
+        Fix the specified issues using provided instructions in the following transcript:
+
+        Transcript start:
+        {transcript}
+        Transcript end.
+
+        Make sure to return the whole transcript, not just parts of it.
         """
     ),
 )
 
 transcript_rewriter.parser = TranscriptParser()
 
-transcript_rewriter_extend = PromptFormatter(
-    system=textwrap.dedent(
-        f"""
-        {ACTOR_INTRODUCTIONS}
-        IDENTITY:
-        {transcript_template["identity"]}
+# transcript_rewriter_extend = PromptFormatter(
+#     system=textwrap.dedent(
+#         f"""
+#         {ACTOR_INTRODUCTIONS}
+#         IDENTITY:
+#         {transcript_template["identity"]}
 
-        {PRE_THINK_INSTRUCT}
+#         {PRE_THINK_INSTRUCT}
 
-        INSTRUCTION:
-        {transcript_template["instructions"]["rewriter"]}
-        {transcript_template["length"]["extend"]}
-        {ROLES_PERSON_INSTRUCT}
+#         INSTRUCTION:
+#         {transcript_template["instructions"]["rewriter"]}
+#         {transcript_template["length"]["extend"]}
+#         {ROLES_PERSON_INSTRUCT}
 
-        FORMAT:
-        {transcript_template["format"]}
+#         FORMAT:
+#         {transcript_template["format"]}
 
-        {textwrap.indent(load_fewshot_examples('transcript_rewriter_extend.txt'), prefix="        ")}
-        """
-    ),
-    user=textwrap.dedent(
-        """
-        Transcript start:
-        {transcript}
-        Transcript end.
+#         {textwrap.indent(load_fewshot_examples('transcript_rewriter_extend.txt'), prefix="        ")}
+#         """
+#     ),
+#     user=textwrap.dedent(
+#         """
+#         Transcript start:
+#         {transcript}
+#         Transcript end.
 
-        Issues (fix these):
-        {feedback}
+#         Issues (fix these):
+#         {feedback}
 
-        Content start:
-        {content}
-        Content end.
+#         Content start:
+#         {content}
+#         Content end.
 
-        Previous episodes:
-        {previous_episodes}
-        Previous episodes end.
+#         Previous episodes:
+#         {previous_episodes}
+#         Previous episodes end.
 
-        Transcript configuration:
-        Current date: {date}
-        Current time: {time}
-        Word count: {word_count}
-        Language: {output_language}
-        Conversation Style: {conversation_style}
-        Person 1 role: {roles_person1}
-        Person 2 role: {roles_person2}
-        Dialogue Structure: {dialogue_structure}
-        Engagement techniques: {engagement_techniques}
-        Other instructions: {user_instructions}
+#         Transcript configuration:
+#         Current date: {date}
+#         Current time: {time}
+#         Word count: {word_count}
+#         Language: {output_language}
+#         Conversation Style: {conversation_style}
+#         Person 1 role: {roles_person1}
+#         Person 2 role: {roles_person2}
+#         Dialogue Structure: {dialogue_structure}
+#         Engagement techniques: {engagement_techniques}
+#         Other instructions: {user_instructions}
 
-        Main Item:
-        {main_item}
-        """
-    ),
-)
+#         Main Item:
+#         {main_item}
+#         """
+#     ),
+# )
 
 
-# Transcript and Issue history :
-# {previous_transcripts}
-# Transcript and Issue history end.
+# # Transcript and Issue history :
+# # {previous_transcripts}
+# # Transcript and Issue history end.
 
-transcript_rewriter_extend.parser = TranscriptParser()
+# transcript_rewriter_extend.parser = TranscriptParser()
 
-transcript_rewriter_reduce = PromptFormatter(
-    system=textwrap.dedent(
-        f"""
-        {ACTOR_INTRODUCTIONS}
-        IDENTITY:
-        {transcript_template["identity"]}
+# transcript_rewriter_reduce = PromptFormatter(
+#     system=textwrap.dedent(
+#         f"""
+#         {ACTOR_INTRODUCTIONS}
+#         IDENTITY:
+#         {transcript_template["identity"]}
 
-        {PRE_THINK_INSTRUCT}
+#         {PRE_THINK_INSTRUCT}
 
-        INSTRUCTION:
-        {transcript_template["instructions"]["rewriter"]}
-        {transcript_template["length"]["reduce"]}
+#         INSTRUCTION:
+#         {transcript_template["instructions"]["rewriter"]}
+#         {transcript_template["length"]["reduce"]}
 
-        FORMAT:
-        {transcript_template["format"]}
+#         FORMAT:
+#         {transcript_template["format"]}
 
-        {textwrap.indent(load_fewshot_examples('transcript_rewriter_reduce.txt'), prefix="        ")}
-        """
-    ),
-    user=textwrap.dedent(
-        """
-        Transcript start:
-        {transcript}
-        Transcript end.
+#         {textwrap.indent(load_fewshot_examples('transcript_rewriter_reduce.txt'), prefix="        ")}
+#         """
+#     ),
+#     user=textwrap.dedent(
+#         """
+#         Transcript start:
+#         {transcript}
+#         Transcript end.
 
-        Issues (fix these):
-        {feedback}
+#         Issues (fix these):
+#         {feedback}
 
-        Content start:
-        {content}
-        Content end.
+#         Content start:
+#         {content}
+#         Content end.
 
-        Previous episodes:
-        {previous_episodes}
-        Previous episodes end.
+#         Previous episodes:
+#         {previous_episodes}
+#         Previous episodes end.
 
-        Transcript configuration:
-        Current date: {date}
-        Current time: {time}
-        Word count: {word_count}
-        Language: {output_language}
-        Conversation Style: {conversation_style}
-        Person 1 role: {roles_person1}
-        Person 2 role: {roles_person2}
-        Dialogue Structure: {dialogue_structure}
-        Engagement techniques: {engagement_techniques}
-        Other instructions: {user_instructions}
+#         Transcript configuration:
+#         Current date: {date}
+#         Current time: {time}
+#         Word count: {word_count}
+#         Language: {output_language}
+#         Conversation Style: {conversation_style}
+#         Person 1 role: {roles_person1}
+#         Person 2 role: {roles_person2}
+#         Dialogue Structure: {dialogue_structure}
+#         Engagement techniques: {engagement_techniques}
+#         Other instructions: {user_instructions}
 
-        Main Item:
-        {main_item}
-        """
-    ),
-)
+#         Main Item:
+#         {main_item}
+#         """
+#     ),
+# )
 
-transcript_rewriter_reduce.parser = TranscriptParser()
+# transcript_rewriter_reduce.parser = TranscriptParser()
 
 
 transcript_writer = PromptFormatter(
@@ -886,6 +905,12 @@ transcript_intro_writer = PromptFormatter(
         Person 2 role: {roles_person2}
         Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
+
+        Write an introduction for the following transcript. Last line should enable a smooth transition to the first line of the transcript.
+
+        Transcript start:
+        {transcript}
+        Transcript end.
         """
     ),
 )
@@ -1019,27 +1044,118 @@ transcript_summary_formatter = PromptFormatter(
         Podcast name: {podcast_name}
         Podcast tagline: {podcast_tagline}
 
-        Generate a title, subjects, and description based on the transcript and subjects.
+        Generate a title, subjects, and description based on the transcript and subjects with the defined language.
         """
     ),
 )
 
 transcript_summary_formatter.parser = TranscriptSummaryValidator()
 
+transcript_extend = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        IDENTITY:
+        {transcript_template["identity_extend"]}
+
+        {PRE_THINK_INSTRUCT}
+
+        INSTRUCTION:
+        Your primary goal is to significantly extend and expand the dialogue of a podcast transcript, optimized for AI Text-To-Speech (TTS) pipelines. This transcript will later be combined with others. Follow these instructions:
+
+        1. Objective:
+        - Keep the conversation between Person1 and Person2 engaging and natural.
+        - The conversation should go through all the provided content.
+        - The conversation should be long and detailed.
+        - Ensure the transcript is suitable for TTS pipelines and can be combined with other transcripts.
+        - Consider the content, define an Approach and a Plan for your output in <think>-tags before writing transcript.
+
+        2. Key Requirements:
+        - Language: Use the `Language` specified by the user to ensure the transcript aligns with the desired language.
+        - Dialogue: Follow the `Conversation Style` defined by the user to shape the tone and flow of the conversation. Ensure the dialogue reflects the roles defined in `Person 1 role` and `Person 2 role`.
+        - Structure: Adhere to the `Dialogue Structure` provided by the user to maintain the ordered flow of the conversation.
+        - Engagement: Incorporate the `Engagement techniques` specified by the user to make the conversation lively and dynamic. Use interruptions, disfluencies, interjections, and other techniques to simulate a real conversation.
+        - Instructions: Follow all `Other instructions` to ensure the transcript meets specific user-defined requirements.
+        - Do not use repetitive phrases like "totally," "absolutely," "exactly." "yeah, " "It's ", "It's like"
+        - Use advanced TTS-specific markup (excluding Amazon/Alexa-specific tags) to enhance the naturalness of the conversation.
+        - Ensure the conversation starts with Person1 and ends with Person2.
+        - You will be given a word count. The transcript output must have at least that many words.
+        - Aim for a very long conversation. Use max_output_tokens limit.
+
+        3. Guidelines:
+        - Focus on a specific topic or theme for the conversation.
+        - Break up long monologues into shorter, interactive exchanges.
+        - Add interruptions, interjections, and reactions to simulate a real conversation.
+        - Maintain the language, tone, and style specified by the user.
+        - Do not add laughter, e.g. "Ha" or "Ha ha", etc. in the script. Instead use witty comebacks or other reactive responses.
+        - Avoid use of "it", "it's", "is it", "it's like", "[it's, feels, etc] like [something]" but maintain the flow of conversation.
+        - Do not be repetitive, and make each item interesting and insightful.
+        - Do not use ask-answer structure. Add more dynamic conversational aspects.
+        - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
+        - Do not use childish humor or remarks. Make sure all humor is aligned with the content and is smart.
+        - Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
+        - Don't start from the middle of a conversation.
+        - Align the listener before jumping into the discussion by briefing the subject.
+        - Person1 and person2 should refer to each other with names, but don't start with them.
+
+        {ROLES_PERSON_INSTRUCT}
+
+        FORMAT:
+        {transcript_template["format"]}
+
+        {textwrap.indent(load_fewshot_examples('transcript_rewriter_extend.txt'), prefix="        ")}
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Content:
+        {content}
+        Content end.
+
+        Podcast configuration:
+        Current date: {date}
+        Current time: {time}
+        Source Language: {source_language}
+        Target Language: {target_language}
+        Podcast Name: {podcast_name}
+        Podcast Tagline: {podcast_tagline}
+        Conversation Style: {conversation_style}
+        Person 1 role: {roles_person1}
+        Person 2 role: {roles_person2}
+        Engagement techniques: {engagement_techniques}
+        Other instructions: {user_instructions}
+
+        Extend and expand the following transcript using specified instructions, content and configuration:
+
+        Transcript:
+        {transcript}
+        Transcript end.
+
+        Make sure to return the whole transcript. Not just the extended parts.
+        """
+    ),
+)
+
+transcript_extend.parser = TranscriptParser()
+
 transcript_compress = PromptFormatter(
     system=textwrap.dedent(
         f"""
         {ACTOR_INTRODUCTIONS}
         IDENTITY:
-        {transcript_template["identity"]}
+        {transcript_template["identity_reduce"]}
 
         {PRE_THINK_INSTRUCT}
 
         INSTRUCTION:
-        Reduce the amount of dialogue.
-        Do not use filler words like, Exactly, totally, absolute, etc.
-        Do not remove name usage, but don't add more either.
-        Keep transcript conversational.
+        You are tasked with reducing and compressing the length of a transcript while maintaining all the original content and meaning. The dialogue is structured using `<person1>...</person1>`, `<person2>...</person2>`, etc. Ensure the following:
+
+        1. Retain all key information, context, and meaning. This is a length reduction task, not a content omission task.
+        2. Consolidate or rephrase dialogue to reduce overall length without losing the conversational nature.
+        3. Avoid adding filler words like, exactly, totally, absolutely, etc or expanding unnecessarily; focus solely on brevity and precision.
+        4. Do not remove the name tags (e.g., `<person1>`, `<person2>`), and do not introduce new name tags.
+
+        Compress the transcript while preserving its coherence, clarity, and structure.
 
         {ROLES_PERSON_INSTRUCT}
 
@@ -1051,21 +1167,19 @@ transcript_compress = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
-        Transcript:
-        {transcript}
-        Transcript end.
-
         Podcast configuration:
         Current date: {date}
         Current time: {time}
-        Podcast Name: {podcast_name}
-        Podcast Tagline: {podcast_tagline}
         Language: {output_language}
-        Conversation Style: {conversation_style}
         Person 1 role: {roles_person1}
         Person 2 role: {roles_person2}
-        Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
+
+        Reduce and compress the following transcript:
+
+        Transcript:
+        {transcript}
+        Transcript end.
         """
     ),
 )
@@ -1077,16 +1191,15 @@ transcript_translate = PromptFormatter(
         f"""
         {ACTOR_INTRODUCTIONS}
         IDENTITY:
-        {transcript_template["identity"]}
+        You are a skilled translator specialized in preserving the context, tone, and structure of conversational transcripts. Your task is to accurately translate the following transcript into [Target Language] while adhering strictly to the instructions below:
 
-        INSTRUCTION:
-        Translate the provided transcript from the source language into the target language.
-        Ensure the translation preserves the conversational tone and context.
-        Do not add or omit any information.
-        Retain the original speaker names and dialogue formatting.
-        Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one.
-        Maintain the length of the original transcript. Do not reduce or extend the discussion.
-        Translate the article.
+        INSTRUCTIONS:
+        - Translate the transcript **exactly as written**, maintaining the original formatting and length.
+        - Retain the `<personN>...</personN>` structure, ensuring that speaker tags remain unchanged. For example, `<person1>` should appear in the translation as `<person1>`.
+        - Do not add, remove, or modify any content or information. The translation must preserve the conversational tone, flow, and context of the original transcript.
+        - Write all numbers in textual form in the [Target Language]. For example, in English, ten for 10 or zero point one for 0.1.
+        - Avoid shortening, summarizing, or extending any part of the discussion. The length of the transcript in the source language must match the translated version in the [Target Language].
+        - Ensure linguistic accuracy while respecting the document's constraints.
 
         FORMAT:
         {transcript_template["format"]}
@@ -1094,10 +1207,6 @@ transcript_translate = PromptFormatter(
     ),
     user=textwrap.dedent(
         """
-        Transcript:
-        {transcript}
-        Transcript end.
-
         Translation configuration:
         Current date: {date}
         Current time: {time}
@@ -1110,6 +1219,12 @@ transcript_translate = PromptFormatter(
         Person 2 role: {roles_person2}
         Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
+
+        Translate the transcript below while following specified instructions meticulously:
+
+        Transcript:
+        {transcript}
+        Transcript end.
         """
     ),
 )
