@@ -1,3 +1,4 @@
+import json
 import os
 from bs4 import BeautifulSoup
 import resend
@@ -261,6 +262,14 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
     if not SETTINGS.send_emails:
         print("Email sending is disabled.")
         return
+
+    if isinstance(transcript_ids, str):
+        try:
+            transcript_ids = json.loads(transcript_ids)
+            if isinstance(transcript_ids, str):
+                transcript_ids = [transcript_ids]
+        except json.JSONDecodeError:
+            transcript_ids = [transcript_ids]
 
     if email is None or len(transcript_ids) == 0:
         print(
