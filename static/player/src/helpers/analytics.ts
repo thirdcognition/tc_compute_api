@@ -59,7 +59,8 @@ export const trackEvent = (
     category: string,
     label: string | undefined,
     userId: React.RefObject<string>,
-    sessionRef: React.RefObject<Session | null>
+    sessionRef: React.RefObject<Session | null>,
+    customData?: Record<string, unknown> // Add custom data parameter
 ) => {
     if (DEBUG_MODE) {
         console.group("PostHog Event Tracking");
@@ -68,6 +69,9 @@ export const trackEvent = (
         console.log("Label:", label);
         console.log("User ID:", userId.current);
         console.log("Session ID:", sessionRef.current?.id);
+        if (customData) {
+            console.log("Custom Data:", customData); // Log custom data
+        }
         console.groupEnd();
     }
 
@@ -79,7 +83,8 @@ export const trackEvent = (
         timestamp: new Date().toISOString(),
         page_title: document.title,
         page_location: window.location.href,
-        debug_mode: DEBUG_MODE
+        debug_mode: DEBUG_MODE,
+        ...customData // Merge custom data
     });
 };
 
@@ -112,7 +117,10 @@ export const initializeAnalytics = (
     posthog.capture("$pageview", {
         page: window.location.pathname,
         title: document.title,
-        location: window.location.href
+        location: window.location.href,
+        ...(window.location.pathname.startsWith("/player/panel/") && {
+            panelId: window.location.pathname.split("/player/panel/")[1]
+        })
     });
 
     if (DEBUG_MODE) {

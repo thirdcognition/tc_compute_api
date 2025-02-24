@@ -104,8 +104,8 @@ function AppContent() {
         }
     }
 
-    function handleLogin() {
-        fetchPanels();
+    async function handleLogin() {
+        await fetchPanels();
         navigate(redirectPath);
     }
 

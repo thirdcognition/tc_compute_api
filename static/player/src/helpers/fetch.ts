@@ -154,10 +154,12 @@ export async function fetchPanelDetails(panelId: string): Promise<{
         );
         const language = session.getLanguage();
         const filteredTranscripts = panelDetails.transcripts.filter(
-            (transcript: any) => transcript.lang === language
+            (transcript: any) =>
+                transcript.lang?.toLowerCase() === language?.toLowerCase()
         );
         const filteredAudios = panelDetails.audios.filter(
-            (audio: any) => audio.lang === language
+            (audio: any) =>
+                audio.lang?.toLowerCase() === language?.toLowerCase()
         );
         return {
             discussionData: panelDetails.panel,

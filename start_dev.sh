@@ -17,7 +17,7 @@ cleanup() {
 }
 
 # Trap SIGINT and SIGTERM and call cleanup()
-trap cleanup SIGINT #SIGTERM
+# trap cleanup SIGINT #SIGTERM
 
 # Function to display messages in tmux or fallback to console
 display_message() {
@@ -68,17 +68,17 @@ start_tmux_session() {
 # }
 
 # Monitor the main process (uvicorn) and trigger cleanup if it is killed
-monitor_main_process() {
-    UVICORN_PID=$(pgrep -f "uvicorn app.server:app --host 0.0.0.0 --port $SERVER_PORT")
-    if [ -z "$UVICORN_PID" ]; then
-        tmux display-message "Failed to retrieve uvicorn PID. Exiting..."
-    fi
-    while kill -0 "$UVICORN_PID" 2>/dev/null; do
-        sleep 1
-    done
-    display_message "Main process (uvicorn) terminated. Triggering cleanup..."
-    cleanup
-}
+# monitor_main_process() {
+#     UVICORN_PID=$(pgrep -f "uvicorn app.server:app --host 0.0.0.0 --port $SERVER_PORT")
+#     if [ -z "$UVICORN_PID" ]; then
+#         tmux display-message "Failed to retrieve uvicorn PID. Exiting..."
+#     fi
+#     while kill -0 "$UVICORN_PID" 2>/dev/null; do
+#         sleep 1
+#     done
+#     display_message "Main process (uvicorn) terminated. Triggering cleanup..."
+#     # cleanup
+# }
 
 # Set tmux hooks to trigger cleanup if any pane is closed
 setup_tmux_hooks() {

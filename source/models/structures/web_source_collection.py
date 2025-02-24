@@ -360,7 +360,7 @@ class WebSourceCollection(BaseModel):
                 )
         self.relationships = relationships
         if len(relationships) > 0:
-            print(relationships)
+            # print(relationships)
 
             self.relationships = SourceRelationshipModel.upsert_to_supabase_sync(
                 supabase, relationships

@@ -21,7 +21,11 @@ interface PlayerProps {
     sessionRef: React.RefObject<Session | null>;
     audioSrc: string;
     transcript: {
+        panelId: string;
+        panelDisplayTag: string | null;
+        transcriptId: string;
         title: string;
+        sources: any;
         metadata: {
             images: string[];
         };
@@ -92,11 +96,19 @@ const Player: React.FC<PlayerProps> = ({
                 audioRef.current?.play();
                 setIsPlaying(true);
                 trackEvent(
-                    "media_session_play",
+                    "player_play",
                     "Player",
                     "Media session play triggered",
                     userId,
-                    sessionRef
+                    sessionRef,
+                    {
+                        currentTime: audioRef.current?.currentTime || 0,
+                        duration: audioRef.current?.duration || 0,
+                        transctiptTitle: transcript?.title || "unknown",
+                        transcriptId: transcript?.transcriptId || "unknown",
+                        panelId: transcript.panelId || "unknown",
+                        panelTag: transcript.panelDisplayTag || "unknown"
+                    }
                 );
             });
 
@@ -104,33 +116,59 @@ const Player: React.FC<PlayerProps> = ({
                 audioRef.current?.pause();
                 setIsPlaying(false);
                 trackEvent(
-                    "media_session_pause",
+                    "player_pause",
                     "Player",
                     "Media session pause triggered",
                     userId,
-                    sessionRef
+                    sessionRef,
+                    {
+                        currentTime: audioRef.current?.currentTime || 0,
+                        duration: audioRef.current?.duration || 0,
+                        transctiptTitle: transcript?.title || "unknown",
+                        transcriptId: transcript?.transcriptId || "unknown",
+                        panelId: transcript.panelId || "unknown",
+                        panelTag: transcript.panelDisplayTag || "unknown"
+                    }
                 );
             });
 
             navigator.mediaSession.setActionHandler("seekbackward", () => {
                 skip(-10);
                 trackEvent(
-                    "media_session_seekbackward",
+                    "player_seekbackward",
                     "Player",
                     "Media session seek backward triggered",
                     userId,
-                    sessionRef
+                    sessionRef,
+                    {
+                        currentTime: audioRef.current?.currentTime || 0,
+                        duration: audioRef.current?.duration || 0,
+                        transctiptTitle: transcript?.title || "unknown",
+                        transcriptId: transcript?.transcriptId || "unknown",
+                        panelId: transcript.panelId || "unknown",
+                        panelTag: transcript.panelDisplayTag || "unknown",
+                        seekOffset: -10
+                    }
                 );
             });
 
             navigator.mediaSession.setActionHandler("seekforward", () => {
                 skip(10);
                 trackEvent(
-                    "media_session_seekforward",
+                    "player_seekforward",
                     "Player",
                     "Media session seek forward triggered",
                     userId,
-                    sessionRef
+                    sessionRef,
+                    {
+                        currentTime: audioRef.current?.currentTime || 0,
+                        duration: audioRef.current?.duration || 0,
+                        transctiptTitle: transcript?.title || "unknown",
+                        transcriptId: transcript?.transcriptId || "unknown",
+                        panelId: transcript.panelId || "unknown",
+                        panelTag: transcript.panelDisplayTag || "unknown",
+                        seekOffset: 10
+                    }
                 );
             });
         }
@@ -141,7 +179,7 @@ const Player: React.FC<PlayerProps> = ({
             if (isPlaying) {
                 audioRef.current.pause();
                 trackEvent(
-                    "pause",
+                    "player_pause",
                     "Player",
                     "Pause Audio",
                     userId,
@@ -155,11 +193,23 @@ const Player: React.FC<PlayerProps> = ({
                         .then(() => {
                             setIsPlaying(true);
                             trackEvent(
-                                "play",
+                                "player_play",
                                 "Player",
                                 "Play Audio",
                                 userId,
-                                sessionRef
+                                sessionRef,
+                                {
+                                    currentTime:
+                                        audioRef.current?.currentTime || 0,
+                                    duration: audioRef.current?.duration || 0,
+                                    transctiptTitle:
+                                        transcript?.title || "unknown",
+                                    transcriptId:
+                                        transcript?.transcriptId || "unknown",
+                                    panelId: transcript.panelId || "unknown",
+                                    panelTag:
+                                        transcript.panelDisplayTag || "unknown"
+                                }
                             );
                         })
                         .catch((error) => {
@@ -175,11 +225,19 @@ const Player: React.FC<PlayerProps> = ({
         if (audioRef.current) {
             audioRef.current.currentTime += seconds;
             trackEvent(
-                "skip",
+                "player_skip",
                 "Player",
                 `Skip ${seconds > 0 ? "Forward" : "Backward"}: ${Math.abs(seconds)}s`,
                 userId,
-                sessionRef
+                sessionRef,
+                {
+                    currentTime: audioRef.current?.currentTime || 0,
+                    duration: audioRef.current?.duration || 0,
+                    transctiptTitle: transcript?.title || "unknown",
+                    transcriptId: transcript?.transcriptId || "unknown",
+                    panelId: transcript.panelId || "unknown",
+                    panelTag: transcript.panelDisplayTag || "unknown"
+                }
             );
         }
     };
@@ -220,11 +278,19 @@ const Player: React.FC<PlayerProps> = ({
             }
 
             trackEvent(
-                "speed_change",
+                "player_speed_change",
                 "Player",
                 `Speed: ${newSpeed}x`,
                 userId,
-                sessionRef
+                sessionRef,
+                {
+                    currentTime: audioRef.current?.currentTime || 0,
+                    duration: audioRef.current?.duration || 0,
+                    transctiptTitle: transcript?.title || "unknown",
+                    transcriptId: transcript?.transcriptId || "unknown",
+                    panelId: transcript.panelId || "unknown",
+                    panelTag: transcript.panelDisplayTag || "unknown"
+                }
             );
         }
     };
@@ -258,17 +324,44 @@ const Player: React.FC<PlayerProps> = ({
         setSelectedLanguage(newLanguage);
         session.setLanguage(newLanguage);
         trackEvent(
-            "language_switch",
+            "player_language_switch",
             "Player",
             `Language changed to: ${newLanguage}`,
             userId,
-            sessionRef
+            sessionRef,
+            {
+                currentTime: audioRef.current?.currentTime || 0,
+                duration: audioRef.current?.duration || 0,
+                transctiptTitle: transcript?.title || "unknown",
+                transcriptId: transcript?.transcriptId || "unknown",
+                panelId: transcript.panelId || "unknown",
+                panelTag: transcript.panelDisplayTag || "unknown"
+            }
         );
         window.location.reload(); // Refresh the browser
     };
 
+    const handleAudioEnded = () => {
+        console.log("Playback completed!");
+        trackEvent(
+            "player_complete_audio",
+            "Player",
+            "Complete Audio playback",
+            userId,
+            sessionRef,
+            {
+                currentTime: audioRef.current?.currentTime || 0,
+                duration: audioRef.current?.duration || 0,
+                transctiptTitle: transcript?.title || "unknown",
+                transcriptId: transcript?.transcriptId || "unknown",
+                panelId: transcript.panelId || "unknown",
+                panelTag: transcript.panelDisplayTag || "unknown"
+            }
+        );
+    };
+
     return (
-        <div className="w-full max-w-2xl bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl mb-4 overflow-hidden">
+        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl mb-4 overflow-hidden">
             <div
                 className="relative w-full h-[680px] bg-top bg-cover bg-no-repeat"
                 style={{
@@ -291,6 +384,7 @@ const Player: React.FC<PlayerProps> = ({
                         src={audioSrc}
                         onLoadedMetadata={handleLoadedMetadata}
                         onTimeUpdate={handleTimeUpdate}
+                        onEnded={handleAudioEnded}
                     />
 
                     <div className="space-y-4">

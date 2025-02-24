@@ -1,12 +1,33 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchPanelDetails, fetchPublicPanels } from "../helpers/fetch.ts";
 import { urlFormatter } from "../helpers/url.ts";
-import CommentsSection from "./CommentsSection.tsx";
+import { FaImage } from "react-icons/fa";
 import { Player } from "./Player.tsx";
 import { Session, trackEvent } from "../helpers/analytics.ts";
 import session from "../helpers/session.ts";
 import { LANGUAGE_MAP } from "../helpers/options.ts";
+const Accordion: React.FC<{
+    title: string;
+    setOpen?: boolean; // Optional prop
+    children: React.ReactNode;
+    buttonClassName?: string; // Optional prop for button styling
+}> = ({ title, setOpen = false, children, buttonClassName }) => {
+    // Default to false
+    const [isOpen, setIsOpen] = useState(setOpen);
+
+    return (
+        <div>
+            <button
+                className={`w-full text-left ${buttonClassName || "py-2 px-4 font-medium text-gray-800 dark:text-gray-400"}`}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                {isOpen ? "▼" : "►"} {title}
+            </button>
+            {isOpen && <div className="px-4 py-2">{children}</div>}
+        </div>
+    );
+};
 
 interface PanelProps {
     userId: React.RefObject<string>;
@@ -24,36 +45,35 @@ const Panel: React.FC<PanelProps> = ({
         urlPanelId || defaultPanelId
     );
 
-    console.log(panelId, defaultPanelId);
-
     const navigate = useNavigate();
 
     // const { panelId } = useParams<{ panelId?: string }>();
     const [transcriptId, setTranscriptId] = useState<string | null>(null);
-    const [transcript, setTranscript] = useState<any | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [audioOptions, setAudioOptions] = useState<
         {
             url: string;
             date: string;
             transcript_id: string;
+            transcript: any;
             title: string;
             thumbnail?: string;
         }[]
     >([]);
-    const [transcriptSources, setTranscriptSources] = useState<
+    const [sourceData, setSourceData] = useState<
         Array<{
             id: string;
-            data: {
+            data: Array<{
                 url: string;
                 title: string;
                 publish_date: string;
                 image: string;
-            };
+            }>;
         }>
     >([]);
     const [panels, setPanels] = useState<any[]>([]); // State for public panels
     const [selectedPanel, setSelectedPanel] = useState<string | null>(null); // State for selected panel
+    const [panelData, setPanelData] = useState<any>(null);
 
     useEffect(() => {
         async function fetchPanels() {
@@ -96,28 +116,38 @@ const Panel: React.FC<PanelProps> = ({
                     filesData
                 } = await fetchPanelDetails(panelId);
 
-                console.log(transcriptData, audioData);
+                // console.log(transcriptData, audioData, transcriptSources);
 
-                setTranscriptSources(
+                setPanelData(discussionData);
+
+                setSourceData(
                     Object.entries(transcriptSources || {}).map(
-                        ([id, sources]: [string, any]) => ({
-                            id,
-                            data: {
-                                url: sources[0]?.data?.url || "",
-                                title: sources[0]?.data?.title || "Untitled",
-                                publish_date:
-                                    sources[0]?.data?.publish_date || "",
-                                image: sources[0]?.data?.image || ""
-                            }
-                        })
-                    ) as Array<{
+                        ([id, sources]: [string, any]) => {
+                            const transcript = transcriptData.filter(
+                                (t) => t.id === id
+                            )[0];
+                            return {
+                                id,
+                                data: sources.map((s, i) => ({
+                                    id: s?.id,
+                                    url: s?.data?.url || "",
+                                    title: s?.data?.title || "",
+                                    publish_date: s?.data?.publish_date || "",
+                                    image:
+                                        s?.data?.image ||
+                                        transcript?.metadta?.images[i] ||
+                                        ""
+                                }))
+                            };
+                        }
+                    ) as unknown as Array<{
                         id: string;
-                        data: {
+                        data: Array<{
                             url: string;
                             title: string;
                             publish_date: string;
                             image: string;
-                        };
+                        }>;
                     }>
                 );
 
@@ -133,11 +163,15 @@ const Panel: React.FC<PanelProps> = ({
                             const sources =
                                 transcriptSources[audio.transcript_id] || [];
                             const thumbnail =
-                                sources.length > 0
-                                    ? sources[0].data?.image
-                                    : null;
+                                (sources.length > 0
+                                    ? sources.filter((s) => !!s.image).data
+                                          ?.image
+                                    : null) ||
+                                transcript?.metadata?.images?.at(0) ||
+                                "null";
                             return {
                                 transcript_id: audio.transcript_id,
+                                transcript: transcript || null,
                                 url: formattedAudioUrls[audio.id],
                                 date: new Date(
                                     audio.created_at
@@ -153,20 +187,15 @@ const Panel: React.FC<PanelProps> = ({
                                 created_at: new Date(audio.created_at).getTime()
                             };
                         })
+                        .filter((i) => i.transcript !== null)
                         .sort((a, b) => b.created_at - a.created_at) // Sort by created_at descending
                         .slice(0, 5); // Limit to 5 most recent episodes
+
+                    // console.log(audioEntries);
                     setAudioOptions(audioEntries);
                     if (audioEntries.length > 0) {
                         setAudioUrl(audioEntries[0].url); // Default to the latest
                         setTranscriptId(audioEntries[0].transcript_id);
-
-                        setTranscript(
-                            transcriptData.find(
-                                (transcript) =>
-                                    transcript.id ===
-                                    audioEntries[0].transcript_id
-                            ) || null
-                        );
                     } else {
                         setAudioUrl("none");
                     }
@@ -182,16 +211,25 @@ const Panel: React.FC<PanelProps> = ({
         const currentAudio = audioOptions.find(
             (option) => option.url === audioUrl
         );
-        const currentSource = transcriptSources.find(
+        const currentTranscript = currentAudio?.transcript;
+        const currentSources = sourceData.filter(
             (source) => source.id === transcriptId
         );
 
         return {
-            title: currentAudio?.title || "Untitled",
+            title: currentTranscript?.title || "Untitled",
+            panelId: currentTranscript?.panel_id,
+            panelDisplayTag: panelData?.metadata?.display_tag,
+            transcriptId: currentTranscript?.id,
+            sources: currentSources,
             metadata: {
-                images: currentSource?.data.image
-                    ? [currentSource.data.image]
-                    : transcript?.metadata?.images || []
+                images:
+                    (currentTranscript?.metadata?.images?.length || 0) > 0
+                        ? currentTranscript?.metadata?.images || []
+                        : currentSources
+                              ?.at(0)
+                              ?.data?.filter((i) => !!i.image)
+                              ?.map((i) => i.image)
             }
         };
     };
@@ -211,44 +249,170 @@ const Panel: React.FC<PanelProps> = ({
             "Panel",
             `Language changed to: ${newLanguage}`,
             userId,
-            sessionRef
+            sessionRef,
+            {
+                language: newLanguage,
+                panelId: selectedPanel
+            }
         );
         window.location.reload(); // Refresh the browser
     };
 
-    const handlePanelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const handlePanelChange = (event: any) => {
         const selectedId = event.target.value;
-        setSelectedPanel(selectedId);
-        session.setPanelId(selectedId); // Save the selected panel to localStorage
         trackEvent(
             "show_switch",
             "Panel",
             `Show switched to: ${selectedId}`,
             userId,
-            sessionRef
+            sessionRef,
+            {
+                panelId: selectedPanel,
+                changePanel: selectedId
+            }
         );
+        setSelectedPanel(selectedId);
+        session.setPanelId(selectedId); // Save the selected panel to localStorage
         navigate(`/panel/${selectedId}`);
     };
 
+    const renderSources = (sources) => {
+        return (
+            sources
+                ?.at(0)
+                ?.data?.filter((i) => !!i.title)
+                ?.map((option) => (
+                    <div
+                        key={option.url}
+                        className=" w-full flex items-start p-2 rounded-md cursor-pointer bg-white dark:bg-gray-900"
+                    >
+                        {option.image ? (
+                            <img
+                                src={option.image}
+                                alt={option.title}
+                                className="w-12 h-12 mr-4 rounded object-cover flex-none"
+                            />
+                        ) : (
+                            <div className="w-12 h-12 mr-4 rounded flex-none flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                                <FaImage className="text-gray-500 dark:text-gray-400 w-6 h-6" />
+                            </div>
+                        )}
+
+                        <div className="flex-1 self-center overflow-hidden">
+                            <div className="flex flex-col">
+                                {(Array.isArray(option.url)
+                                    ? option.url
+                                    : [option.url]
+                                )?.filter((url) => !!url).length > 0 ? (
+                                    <Accordion
+                                        title={option.title}
+                                        buttonClassName="text-sm text-gray-800 dark:text-gray-400"
+                                    >
+                                        {(Array.isArray(option.url)
+                                            ? option.url
+                                            : [option.url]
+                                        )
+                                            ?.filter((url) => !!url)
+                                            ?.map((url, index) => (
+                                                <a
+                                                    key={index}
+                                                    href={url.trim()}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs block text-gray-500 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                                                >
+                                                    {index + 1}: {url.trim()}
+                                                </a>
+                                            ))}
+                                    </Accordion>
+                                ) : (
+                                    <span className="text-sm text-gray-800 dark:text-gray-400">
+                                        {option.title}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )) || <div>No sources found.</div>
+        );
+    };
+
+    const renderEpisodes = (audioOptions) => {
+        return audioOptions.map((option) => (
+            <div
+                key={option.url}
+                className={`w-full flex items-start p-2 rounded-md cursor-pointer ${
+                    audioUrl === option.url
+                        ? "bg-gray-100 border-2 border-[#FD7E61] dark:bg-gray-700 dark:border-[#FD7E61]"
+                        : "bg-white dark:bg-gray-900"
+                }`}
+                onClick={() => {
+                    setAudioUrl(option.url);
+                    setTranscriptId(option.transcript_id);
+                    trackEvent(
+                        "episode_switch",
+                        "Panel",
+                        `Episode switched to: ${option.title}`,
+                        userId,
+                        sessionRef,
+                        {
+                            transctiptTitle: option.title || "unknown",
+                            transcriptId: option.transcript_id || "unknown",
+                            panelId: panelId || "unknown"
+                        }
+                    );
+                }}
+            >
+                {option.thumbnail && (
+                    <img
+                        src={option.thumbnail}
+                        alt={option.title}
+                        className="w-12 h-12 mr-4 rounded object-cover"
+                    />
+                )}
+                <div className="flex-1 w-full overflow-hidden">
+                    <span
+                        className={`block text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap text-gray-800 dark:text-gray-400`}
+                    >
+                        {option.title}
+                    </span>
+                    <span
+                        className={`block text-xs ${
+                            audioUrl === option.url
+                                ? "text-[#FD7E61]"
+                                : "text-gray-500 dark:text-gray-400"
+                        } text-right`}
+                    >
+                        {option.date}
+                    </span>
+                </div>
+            </div>
+        ));
+    };
+
+    const transcriptData = getTranscript();
+
     return (
-        <div>
-            <div className="mb-4 w-full">
-                <select
-                    value={panelId || undefined} // Use panelId directly
-                    onChange={handlePanelChange}
-                    className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
-        text-gray-800 dark:text-gray-300 hover:border-gray-500 dark:hover:border-gray-500
-        transition-colors duration-200 font-medium w-full text-center"
-                >
-                    <option value="" disabled>
-                        Select a show
-                    </option>
-                    {panels.map((panel) => (
-                        <option key={panel.id} value={panel.id}>
-                            {panel.metadata.display_tag}
-                        </option>
-                    ))}
-                </select>
+        <div className="max-w-2xl w-full">
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                {panels.map((panel) => (
+                    <button
+                        key={panel.id}
+                        onClick={() =>
+                            handlePanelChange({ target: { value: panel.id } })
+                        }
+                        disabled={panelId === panel.id}
+                        className={`px-4 py-2 rounded-full font-medium border transition-colors duration-200
+                ${
+                    panelId === panel.id
+                        ? "bg-[#FD7E61] text-white border-[#FD7E61]"
+                        : "bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-600 "
+                }
+                `}
+                    >
+                        {panel.metadata.display_tag}
+                    </button>
+                ))}
             </div>
             {audioUrl && audioUrl != "none" ? (
                 <div className="w-full">
@@ -269,7 +433,7 @@ const Panel: React.FC<PanelProps> = ({
                         userId={userId}
                         sessionRef={sessionRef}
                         audioSrc={audioUrl}
-                        transcript={getTranscript()} // Pass transcript as a prop
+                        transcript={transcriptData} // Pass transcript as a prop
                     />
                     {/* <CommentsSection
                         userId={userId}
@@ -277,56 +441,20 @@ const Panel: React.FC<PanelProps> = ({
                         audioUrl={audioUrl}
                     /> */}
                     <div className="mt-4 bg-gray-100 dark:bg-gray-800 rounded-lg shadow-xl p-4">
-                        <h3 className="text-lg font-medium text-gray-800 dark:text-gray-400 mb-2">
-                            Episodes
-                        </h3>
-                        <div className="space-y-2">
-                            {audioOptions.map((option) => (
-                                <div
-                                    key={option.url}
-                                    className={`flex items-start p-2 rounded-md cursor-pointer ${
-                                        audioUrl === option.url
-                                            ? "bg-gray-100 border-2 border-[#FD7E61] dark:bg-gray-700 dark:border-[#FD7E61]"
-                                            : "bg-white dark:bg-gray-900"
-                                    }`}
-                                    onClick={() => {
-                                        setAudioUrl(option.url);
-                                        setTranscriptId(option.transcript_id);
-                                        trackEvent(
-                                            "episode_switch",
-                                            "Panel",
-                                            `Episode switched to: ${option.title}`,
-                                            userId,
-                                            sessionRef
-                                        );
-                                    }}
-                                >
-                                    {option.thumbnail && (
-                                        <img
-                                            src={option.thumbnail}
-                                            alt={option.title}
-                                            className="w-12 h-12 mr-4 rounded object-cover"
-                                        />
-                                    )}
-                                    <div className="flex-1">
-                                        <span
-                                            className={`block text-sm font-medium text-gray-800 dark:text-gray-400`}
-                                        >
-                                            {option.title}
-                                        </span>
-                                        <span
-                                            className={`block text-xs ${
-                                                audioUrl === option.url
-                                                    ? "text-[#FD7E61]"
-                                                    : "text-gray-500 dark:text-gray-400"
-                                            } text-right`}
-                                        >
-                                            {option.date}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        {(
+                            transcriptData?.sources
+                                ?.at(0)
+                                ?.data?.filter((i) => !!i.title) || []
+                        ).length > 0 ? (
+                            <Accordion title="Episode Subjects">
+                                {renderSources(transcriptData.sources)}
+                            </Accordion>
+                        ) : (
+                            ""
+                        )}
+                        <Accordion title="Other Episodes">
+                            {renderEpisodes(audioOptions)}
+                        </Accordion>
                     </div>
                 </div>
             ) : (
