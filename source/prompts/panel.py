@@ -1264,6 +1264,13 @@ transcript_translate = PromptFormatter(
         - Write all numbers in textual form in the [Target Language]. For example, in English, ten for 10 or zero point one for 0.1.
         - Avoid shortening, summarizing, or extending any part of the discussion. The length of the transcript in the source language must match the translated version in the [Target Language].
         - Ensure linguistic accuracy while respecting the document's constraints.
+        - Adjust expressions, idioms, and colloquialisms to their natural equivalents in the [Target Language], preserving the intended meaning and cultural relevance wherever applicable.
+        - Maintain a conversational tone by using casual, everyday language appropriate to the context and culture of the [Target Language].
+        - Emphasize clarity and readability while remaining faithful to the original word choice, ensuring that the conversation sounds natural and authentic in the [Target Language].
+        - Pay close attention to context-specific tone variations, such as humor, sarcasm, or formality, and replicate these accurately in the translation.
+        - Use punctuation and grammar conventions consistent with the norms of the [Target Language], ensuring proper alignment with the conversational style.
+        - Keep speaker interruptions, pauses, or overlapping dialogue intact, simulating how the interaction appears in the original transcript.
+        - Avoid literal translations of culturally unique phrases; instead, use their functional equivalents if they exist, or add clarification where required to maintain understanding.
 
         FORMAT:
         {transcript_template["format"]}
