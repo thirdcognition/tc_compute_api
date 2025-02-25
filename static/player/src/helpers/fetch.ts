@@ -57,12 +57,15 @@ export async function fetchData(
 }
 
 const memoizedFetchData = memoize(fetchData);
+const memoizedFetchDataLongCache = memoize(fetchData, 60000 * 15);
 
 export function fetchDataWithMemoization(
     endpoint: string,
-    options: FetchOptions = {},
-    forceCache: boolean = false
+    options: FetchOptions = { method: "GET" },
+    forceCache: boolean = false,
+    shortCache: boolean = false
 ): Promise<any> {
+    const fn = shortCache ? memoizedFetchData : memoizedFetchDataLongCache;
     if (
         options.method &&
         options.method.toUpperCase() !== "GET" &&
@@ -70,7 +73,7 @@ export function fetchDataWithMemoization(
     ) {
         return fetchData(endpoint, options);
     }
-    return memoizedFetchData(endpoint, options);
+    return fn(endpoint, options);
 }
 
 export async function fetchPublicPanels(): Promise<any[]> {
