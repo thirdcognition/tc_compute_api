@@ -670,22 +670,33 @@ def transcript_summary_writer(
         f"transcript_summary_writer - Starting with transcript ({count_words(transcript)} words)"
     )
 
-    subjects = "- " + "\n- ".join(
-        [
-            source.title or (source.source_model.title if source.source_model else "")
-            for source in sources
-            if isinstance(source, WebSource) or isinstance(source, WebSourceCollection)
-        ]
-    )
+    # subjects = "- " + "\n- ".join(
+    #     [
+    #         source.title or (source.source_model.title if source.source_model else "")
+    #         for source in sources
+    #         if isinstance(source, (WebSource, WebSourceCollection))
+    #     ]
+    # )
 
     retries = 3
     result = None
     while not result and retries > 0:
         retries -= 1
-        result = get_chain("transcript_summary_formatter_sync").invoke(
+        result: TranscriptSummary = get_chain(
+            "transcript_summary_formatter_sync"
+        ).invoke(
             {
                 "transcript": transcript,
-                "subjects": subjects,
+                "subjects": "\n\n".join(
+                    [
+                        (
+                            source.short_string()
+                            if isinstance(source, (WebSource, WebSourceCollection))
+                            else str(source or "")
+                        )
+                        for source in sources
+                    ]
+                ),
                 "podcast_name": conversation_config.podcast_name,
                 "podcast_tagline": conversation_config.podcast_tagline,
                 "output_language": conversation_config.output_language,
@@ -697,6 +708,27 @@ def transcript_summary_writer(
 
     if not result:
         raise ValueError("Failed to generate transcript summary after retries.")
+
+    for item in result.subjects:
+        if item.references:
+            new_references = []
+            for reference in item.references:
+                for source in sources:
+                    match = source.find_match(reference)
+                    if match:
+                        new_references.append(
+                            {
+                                "id": match.source_id
+                                or (
+                                    match.source_model.id if match.source_model else ""
+                                ),
+                                "title": match.title,
+                                "image": match.image,
+                                "url": match.get_url(),
+                                "publish_date": match.publish_date,
+                            }
+                        )
+            item.references = new_references
 
     print("transcript_summary_writer - Completed.")
     return result
@@ -767,6 +799,7 @@ def generate_and_verify_transcript(
     sources: List[WebSource | WebSourceCollection | str] = None,
     previous_transcripts: List[str] = None,
     previous_episodes: str = None,
+    add_detail: bool = False,
 ) -> str:
     """
     Generate a podcast transcript and verify its quality.
@@ -778,7 +811,7 @@ def generate_and_verify_transcript(
     """
     urls = urls or []
 
-    if isinstance(sources, WebSource) or isinstance(sources, WebSourceCollection):
+    if isinstance(sources, (WebSource, WebSourceCollection)):
         if sources is None:
             source = sources
             sources = None
@@ -797,13 +830,11 @@ def generate_and_verify_transcript(
             content += str(sources)
 
     main_item = False
-    if source is not None and (
-        isinstance(source, WebSource) or isinstance(source, WebSourceCollection)
-    ):
+    if source is not None and (isinstance(source, (WebSource, WebSourceCollection))):
         main_item = source.main_item
 
     orig_transcript_content = ""
-    if (sources or isinstance(source, WebSourceCollection)) and total_count == 1:
+    if (sources or isinstance(source, WebSourceCollection)) and add_detail:
         for item in sources if sources else source.web_sources:
             try:
                 orig_transcript_content += transcript_writer(

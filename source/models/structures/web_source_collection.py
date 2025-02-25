@@ -1,7 +1,7 @@
 from datetime import datetime
 import hashlib
 import json
-from typing import Any, Generator, List, Optional, Type, TypeVar
+from typing import Any, Generator, List, Optional, Type, TypeVar, Union
 from supabase import AsyncClient, Client
 from source.llm_exec.news_exec import web_source_article_builder_sync
 from source.prompts.web_source import NewsArticle
@@ -82,6 +82,7 @@ class WebSourceCollection(BaseModel):
             field_name="web_sources",
         )
 
+    source_id: Optional[str] = None
     title: Optional[str] = Field(default=None, description="Title of the collection.")
     topic: Optional[str] = None
     description: Optional[str] = Field(
@@ -115,6 +116,19 @@ class WebSourceCollection(BaseModel):
         if self.web_sources:
             self.filter_sources()
 
+    def short_id(cls, title: Optional[str] = None) -> str:
+        """
+        Generate a short form of source_model.id (UUID) or create an ID from title.
+
+        :param title: The title to generate an ID from if source_model.id is not available.
+        :return: A short id (first 8 characters of UUID) or hashed id from title.
+        """
+        if cls.source_model and cls.source_model.id:
+            return str(cls.source_model.id).split("-")[0]
+        elif title:
+            return hashlib.sha256(title.encode("utf-8")).hexdigest()[:8]
+        return "unknown_id"
+
     def filter_sources(self):
         """
         Remove duplicate WebSource objects based on their sorting ID.
@@ -142,6 +156,66 @@ class WebSourceCollection(BaseModel):
                 self.image = web_source.image
                 return
         self.image = None
+
+    def short_string(self, key: Optional[str] = None, reverse: bool = False) -> str:
+        """
+        Return all WebSource objects as a single string in the specified order.
+
+        :param key: The attribute of WebSource to sort by (e.g., 'title', 'publish_date').
+        :param reverse: Whether to sort in descending order.
+        :return: A single string representation of all WebSource objects.
+        """
+        if key:
+            # Sort the web sources based on the specified key
+            self.web_sources.sort(
+                key=lambda ws: getattr(ws, key, None), reverse=reverse
+            )
+
+        ret_str = f"ID({self.short_id()}) - {self.title}:\n\n"
+
+        # Concatenate the string representations of all WebSource objects
+        if self.max_amount is None:
+            ret_str += "\n\n".join(
+                [ws.short_string() for ws in self.web_sources if ws.short_string()]
+            )
+        else:
+            ret_str += "\n\n".join(
+                [
+                    ws.short_string()
+                    for ws in self.web_sources[: self.max_amount]
+                    if ws.short_string()
+                ]
+            )
+        return ret_str
+
+    def find_match(
+        self, search_id: str
+    ) -> Optional[Union["WebSourceCollection", WebSource]]:
+        """
+        Recursively search for a matching source within the collection or its children
+        by `search_id` against `short_id` or `source_model.id`.
+
+        :param search_id: The string to search for in `short_id` or `source_model.id`.
+        :return: The matching WebSourceCollection or WebSource instance if found, else None.
+        """
+
+        search_id_cleaned = str(search_id).strip()
+        if search_id_cleaned.startswith("ID(") and search_id_cleaned.endswith(")"):
+            search_id_cleaned = search_id_cleaned[3:-1].strip()
+
+        if self.short_id(self.title) == str(search_id) or (
+            self.source_model and str(self.source_model.id) == str(search_id)
+        ):
+            return self
+
+        if self.web_sources:
+            for web_source in self.web_sources:
+                if hasattr(web_source, "find_match"):
+                    result = web_source.find_match(search_id)
+                    if result:
+                        return result
+
+        return None
 
     def to_ordered_string(
         self, key: Optional[str] = None, reverse: bool = False
@@ -208,6 +282,21 @@ class WebSourceCollection(BaseModel):
 
         return sources
 
+    def get_url(self):
+        urls = []
+        for source in self.web_sources:
+            url = (
+                source.get_url()
+                if isinstance(source, (WebSource, "WebSourceCollection"))
+                else None
+            )
+            if isinstance(url, list):
+                urls.extend(url)
+            elif url:
+                urls.append(url)
+
+        return url
+
     def create_panel_transcript_source_reference_sync(
         self, supabase: Client, transcript: PanelTranscript, user_ids: UserIDs = None
     ):
@@ -232,11 +321,7 @@ class WebSourceCollection(BaseModel):
                 "publish_date": (
                     self.publish_date.isoformat() if self.publish_date else None
                 ),
-                "url": [
-                    source.resolved_source
-                    for source in self.web_sources
-                    if source.resolved_source
-                ],
+                "url": self.get_url(),
                 "lang": self.lang,
             },
             is_public=True,
@@ -382,6 +467,7 @@ class WebSourceCollection(BaseModel):
         # Populate the collection fields
         if self.source_model.title:
             self.title = self.title or self.source_model.title
+            self.source_id = self.source_id or str(self.source_model.id)
             self.max_amount = (
                 self.source_model.data.get("max_amount") or self.max_amount
             )
@@ -459,7 +545,7 @@ class WebSourceCollection(BaseModel):
             )
             if source_model:
                 # Convert SourceModel to WebSource
-                web_source = cls()
+                web_source = WebSource()
                 web_source._update_from_(source_model)
                 linked_sources.append(web_source)
 

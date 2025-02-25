@@ -230,9 +230,22 @@ const Panel: React.FC<PanelProps> = ({
             (option) => option.url === audioUrl
         );
         const currentTranscript = currentAudio?.transcript;
-        const currentSources = sourceData.filter(
-            (source) => source.id === transcriptId
-        );
+        let currentSources;
+
+        if (
+            Array.isArray(currentTranscript?.metadata?.subjects) &&
+            typeof currentTranscript.metadata.subjects[0] === "object"
+        ) {
+            currentSources = [
+                {
+                    data: currentTranscript.metadata?.subjects
+                }
+            ];
+        } else {
+            currentSources = sourceData.filter(
+                (source) => source.id === transcriptId
+            );
+        }
 
         return {
             title: currentTranscript?.title || "Untitled",
@@ -295,64 +308,98 @@ const Panel: React.FC<PanelProps> = ({
         navigate(`/panel/${selectedId}`);
     };
 
+    const sourceItem = (option) => (
+        <div
+            key={option.url}
+            className=" w-full flex items-start p-2 rounded-md cursor-pointer bg-white dark:bg-gray-900 mb-2"
+        >
+            {option.image ? (
+                <img
+                    src={option.image}
+                    alt={option.title}
+                    className="w-12 h-12 mr-4 rounded object-cover flex-none"
+                />
+            ) : (
+                <div className="w-12 h-12 mr-4 rounded flex-none flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                    <FaImage className="text-gray-500 dark:text-gray-400 w-6 h-6" />
+                </div>
+            )}
+
+            <div className="flex-1 self-center overflow-hidden">
+                <div className="flex flex-col">
+                    {(Array.isArray(option.url)
+                        ? option.url
+                        : [option.url]
+                    )?.filter((url) => !!url).length > 1 ? (
+                        <Accordion
+                            title={option.title}
+                            buttonClassName="text-sm text-gray-800 dark:text-gray-400 mb-2"
+                        >
+                            {(Array.isArray(option.url)
+                                ? option.url
+                                : [option.url]
+                            )
+                                ?.filter((url) => !!url)
+                                ?.map((url, index) => (
+                                    <a
+                                        key={index}
+                                        href={url.trim()}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs block text-gray-500 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                                    >
+                                        {index + 1}: {url.trim()}
+                                    </a>
+                                ))}
+                        </Accordion>
+                    ) : (
+                        <>
+                            <span className="text-sm text-gray-800 dark:text-gray-400">
+                                {option.title}
+                            </span>
+                            {option.url ? (
+                                <a
+                                    key={option.url}
+                                    href={option.url.trim()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs block text-gray-500 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                                >
+                                    1: {option.url.trim()}
+                                </a>
+                            ) : (
+                                ""
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     const renderSources = (sources) => {
+        console.log(sources);
         return (
             sources
                 ?.at(0)
                 ?.data?.filter((i) => !!i.title)
-                ?.map((option) => (
-                    <div
-                        key={option.url}
-                        className=" w-full flex items-start p-2 rounded-md cursor-pointer bg-white dark:bg-gray-900"
-                    >
-                        {option.image ? (
-                            <img
-                                src={option.image}
-                                alt={option.title}
-                                className="w-12 h-12 mr-4 rounded object-cover flex-none"
-                            />
-                        ) : (
-                            <div className="w-12 h-12 mr-4 rounded flex-none flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                                <FaImage className="text-gray-500 dark:text-gray-400 w-6 h-6" />
-                            </div>
-                        )}
-
-                        <div className="flex-1 self-center overflow-hidden">
-                            <div className="flex flex-col">
-                                {(Array.isArray(option.url)
-                                    ? option.url
-                                    : [option.url]
-                                )?.filter((url) => !!url).length > 0 ? (
-                                    <Accordion
-                                        title={option.title}
-                                        buttonClassName="text-sm text-gray-800 dark:text-gray-400"
-                                    >
-                                        {(Array.isArray(option.url)
-                                            ? option.url
-                                            : [option.url]
-                                        )
-                                            ?.filter((url) => !!url)
-                                            ?.map((url, index) => (
-                                                <a
-                                                    key={index}
-                                                    href={url.trim()}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs block text-gray-500 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
-                                                >
-                                                    {index + 1}: {url.trim()}
-                                                </a>
-                                            ))}
-                                    </Accordion>
-                                ) : (
-                                    <span className="text-sm text-gray-800 dark:text-gray-400">
-                                        {option.title}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )) || <div>No sources found.</div>
+                ?.map((option) => {
+                    if (option.references) {
+                        return (
+                            <Accordion
+                                title={option.title}
+                                buttonClassName="text-sm text-gray-800 dark:text-gray-400 mb-2 ml-4"
+                            >
+                                <span className="text-sm block text-gray-800 dark:text-gray-400 p-2 mb-4">
+                                    {option.description}
+                                </span>
+                                {option.references.map(sourceItem)}
+                            </Accordion>
+                        );
+                    } else {
+                        return sourceItem(option);
+                    }
+                }) || <div>No sources found.</div>
         );
     };
 

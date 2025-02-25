@@ -6,14 +6,28 @@ UVICORN_PID=""
 cleanup() {
     echo "Stopping tmux session..."
     if tmux has-session -t server_session 2>/dev/null; then
+        echo "Capturing contents of the tmux main pane..."
+        tmux capture-pane -t server_session:0
+        tmux save-buffer /tmp/tmux_main_pane_contents.txt
+    fi
+    if tmux has-session -t server_session 2>/dev/null; then
         tmux kill-session -t server_session
+
     fi
     if [ -n "$FSWATCH_PID" ] && kill -0 "$FSWATCH_PID" 2>/dev/null; then
         echo "Stopping fswatch process..."
         kill "$FSWATCH_PID"
     fi
     UVICORN_PID=""
+    kill -9 $(ps aux | grep celery | awk '{print $2}')
+    kill -9 $(ps aux | grep spawn_main | awk '{print $2}')
+    kill -9 $(ps aux | grep uvicorn | awk '{print $2}')
     echo "Shutdown complete."
+    if [ -f /tmp/tmux_main_pane_contents.txt ]; then
+        echo "Contents of the tmux main pane:"
+        cat /tmp/tmux_main_pane_contents.txt
+        rm /tmp/tmux_main_pane_contents.txt
+    fi
 }
 
 # Trap SIGINT and SIGTERM and call cleanup()

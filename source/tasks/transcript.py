@@ -13,7 +13,7 @@ def serialize_sources(item):
     if isinstance(item, list):
         # print(f"Serialize Sources: Detected list with {len(item)} items")
         return [serialize_sources(i) for i in item]
-    elif isinstance(item, WebSource) or isinstance(item, WebSourceCollection):
+    elif isinstance(item, (WebSource, WebSourceCollection)):
         # print(f"Serialize Sources: Detected {type(item)}")
         return json.dumps(item.model_dump(), default=str)
     elif isinstance(item, str):

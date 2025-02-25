@@ -540,7 +540,7 @@ def create_panel_transcript_translation(
 
 
 def load_last_transcripts_with_content(
-    supabase_client: Client, panel_id: UUID, num_transcripts: int
+    supabase_client: Client, panel_id: UUID, num_transcripts: int, lang: str = "english"
 ) -> List[Tuple[PanelTranscript, str]]:
     """
     Load the last N transcripts for a given panelId from Supabase, including their content.
@@ -560,7 +560,12 @@ def load_last_transcripts_with_content(
     )
 
     # Sort by updated_at in descending order and limit to num_transcripts
-    transcripts = [t for t in transcripts if t.process_state == ProcessState.done]
+    transcripts = [
+        t
+        for t in transcripts
+        if t.process_state == ProcessState.done
+        and (not t.lang or str(t.lang).lower() == str(lang).lower())
+    ]
     transcripts.sort(key=lambda t: t.updated_at)
     transcripts = transcripts[:num_transcripts]
 

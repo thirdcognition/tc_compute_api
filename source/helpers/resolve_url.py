@@ -20,13 +20,6 @@ import io
 
 from source.models.structures.url_result import UrlResult
 
-# from source.llm_exec.news_exec import (
-#     # text_format,
-#     # text_format_sync,
-#     validate_news_article,
-#     validate_news_article_sync,
-# )
-
 
 def parse_publish_date(date_str):
     try:
@@ -324,10 +317,12 @@ class LinkResolver:
         # text = text_format_sync(text)
 
         # Validate content
-        is_valid, explanation = validate_news_article_sync(text, title, description)
-        if not is_valid:
-            # raise Exception(f"Unable to fetch text for {title=}")
-            raise Exception(f"Content validation failed: {explanation}")
+        if text:
+            is_valid, explanation = validate_news_article_sync(text, title, description)
+            if not is_valid:
+                raise Exception(f"Content validation failed: {explanation}")
+        else:
+            raise Exception(f"Unable to fetch text for {title=}")
 
         if resolve_images:
             image_data = self._fetch_images_sync(image_urls)
@@ -345,10 +340,14 @@ class LinkResolver:
         # text = await text_format(text)
 
         # Validate content
-        is_valid, explanation = await validate_news_article(text, title, description)
-        if not is_valid:
-            # raise Exception(f"Unable to fetch text for {title=}")
-            raise Exception(f"Content validation failed: {explanation}")
+        if text:
+            is_valid, explanation = await validate_news_article(
+                text, title, description
+            )
+            if not is_valid:
+                raise Exception(f"Content validation failed: {explanation}")
+        else:
+            raise Exception(f"Unable to fetch text for {title=}")
 
         if resolve_images:
             image_data = await self._fetch_images_async(image_urls)

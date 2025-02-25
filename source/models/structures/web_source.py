@@ -385,6 +385,52 @@ class WebSource(BaseModel):
 
         return str_rep
 
+    def short_id(cls, title: Optional[str] = None) -> str:
+        """
+        Generate a short form of source_model.id (UUID) or create an ID from title.
+
+        :param title: The title to generate an ID from if source_model.id is not available.
+        :return: A short id (first 8 characters of UUID) or hashed id from title.
+        """
+        if cls.source_model and cls.source_model.id:
+            return str(cls.source_model.id).split("-")[0]
+        elif title:
+            return hashlib.sha256(title.encode("utf-8")).hexdigest()[:8]
+        return "unknown_id"
+
+    def find_match(self, search_id: str) -> Optional["WebSource"]:
+        """
+        Recursively search for a matching source within the collection or its children
+        by `search_id` against `short_id` or `source_model.id`.
+
+        :param search_id: The string to search for in `short_id` or `source_model.id`.
+        :return: The matching WebSourceCollection or WebSource instance if found, else None.
+        """
+
+        search_id_cleaned = str(search_id).strip()
+        if search_id_cleaned.startswith("ID(") and search_id_cleaned.endswith(")"):
+            search_id_cleaned = search_id_cleaned[3:-1].strip()
+
+        if self.short_id(self.title) == str(search_id) or (
+            self.source_model and str(self.source_model.id) == str(search_id)
+        ):
+            return self
+        return None
+
+    def short_string(self):
+        # Construct the string representation
+        title = self._get_field("title", "title", "title")
+        description = self._get_field("description", "description", "description")
+
+        # Combine all parts into a list
+        parts = [
+            f"ID({self.short_id()}) {title}:" if title else None,
+            f"{description}" if description else None,
+        ]
+
+        # Filter out None values and join parts with newlines
+        return "\n".join(filter(None, parts))
+
     def __str__(self):
         """
         Generate a string representation of the WebSource instance.
@@ -472,6 +518,13 @@ class WebSource(BaseModel):
         )
         if result:
             self._update_from_(result)
+
+    def get_url(self):
+        return self.resolved_source or (
+            self.original_source
+            if self.resolve_state == ResolveState.UNRESOLVED
+            else None
+        )
 
     def _create_panel_transcript_source_reference(
         self, transcript: PanelTranscript, user_ids: UserIDs = None

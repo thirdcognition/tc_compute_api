@@ -111,7 +111,7 @@ class TranscriptParser(BaseOutputParser[str]):
                     corrected_blocks.append(block)
                 else:
                     raise OutputParserException(
-                        f"Unable to automatically fix malformed block:\n\n{block}"
+                        f"Unable to automatically fix malformed block. Be sure to use the correct structure `<Person1>...</Person1><Person2>...</Person2>`:\n\n{block}"
                     )
 
         return corrected_blocks
@@ -494,6 +494,7 @@ transcript_combiner = PromptFormatter(
         - Extend ongoing events with previous episodes when possible to create progression.
         - Highlight specific connections for encagement. Do not over emphasise connections between subjects and episodes.
         - Expand on ideas from previous episodes to introduce fresh perspectives and maintain engagement if there's overlap with current content.
+        - When extending on previous episodes, mention the previous episode in a casual way.
 
 
         {ROLES_PERSON_INSTRUCT}
@@ -1035,12 +1036,29 @@ transcript_conclusion_writer = PromptFormatter(
 transcript_conclusion_writer.parser = TranscriptParser()
 
 
-class TranscriptSummary(BaseModel):
-    main_subject: str = Field(
-        ..., title="Main subject", description="Main or most important subject."
+class SummarySubject(BaseModel):
+    title: str = Field(
+        ...,
+        title="Title",
+        description="Generated title for the transcript.",
+        max_length=90,
     )
-    subjects: List[str] = Field(
-        ..., title="Subjects", description="List of subjects/topics covered."
+    description: str = Field(
+        ...,
+        title="Description",
+        description="2-3 sentence description of the subject.",
+        max_length=500,
+    )
+    references: List[str | dict] = Field(
+        ...,
+        title="references",
+        description="List of IDs of used references as strings",
+    )
+
+
+class TranscriptSummary(BaseModel):
+    subjects: List[SummarySubject] = Field(
+        ..., title="Subjects", description="An ordered list of subjects/topics covered."
     )
     description: str = Field(
         ...,
@@ -1062,7 +1080,6 @@ transcript_summary_parser = PydanticOutputParser(pydantic_object=TranscriptSumma
 class TranscriptSummaryValidator:
     def parse(self, raw_input: str) -> TranscriptSummary:
         # Clean the <think> and <reflection> tags
-        print(f"{raw_input=}")
         cleaned_input = raw_input
         if isinstance(raw_input, BaseMessage):
             cleaned_input = raw_input.content
@@ -1082,7 +1099,7 @@ transcript_summary_formatter = PromptFormatter(
         - A concise and engaging title summarizing subjects with max 90 chars.
         - Do not use generalizations in title.
         - A main subject that's the most important one.
-        - A list of subjects/topics covered in the transcript.
+        - A list of subjects/topics covered in the transcript with their details.
         - A 2-3 sentence description summarizing the transcript.
         - Make sure to not use podcast_name or podcast_tagline in your words.
         - Use the defined language.
