@@ -8,10 +8,10 @@ Input:
 <Person2>Good choice. They’re perfect for that.</Person2>
 
 Output:
-<Person1>I stopped at the store earlier and got some apples.</Person1>
-<Person2>Oh, which kind?</Person2>
-<Person1>Granny Smith. They’re my go-to for baking pies.</Person1>
-<Person2>Great choice—they’re perfect for that.</Person2>
+<Person1>Stopped by the store for apples.</Person1>
+<Person2>Granny Smith?</Person2>
+<Person1>You know it—great for pies.</Person1>
+<Person2>Solid pick.</Person2>
 
 EXAMPLE 2:
 Input:
@@ -24,9 +24,9 @@ Input:
 
 Output:
 <Person1>What’s your favorite cheese?</Person1>
-<Person2>Edam! Simple and great.</Person2>
-<Person1>Same here, especially with crackers.</Person1>
-<Person2>Exactly, it’s so good.</Person2>
+<Person2>Edam. You?</Person1>
+<Person1>Same, especially with crackers.</Person1>
+<Person2>So good!</Person2>
 
 EXAMPLE 3:
 Input:
@@ -38,10 +38,10 @@ Input:
 <Person2>That sounds unforgettable. I hope I can experience it one day.</Person2>
 
 Output:
-<Person1>Have you ever been to Paris?</Person1>
-<Person2>No, but I’d love to visit someday.</Person2>
-<Person1>The city is amazing, and the Eiffel Tower is breathtaking from the top.</Person1>
-<Person2>I hope I can experience that one day.</Person2>
+<Person1>Ever been to Paris?</Person1>
+<Person2>Not yet, but I’d love to go.</Person2>
+<Person1>The Eiffel Tower’s view is incredible.</Person1>
+<Person2>I hope to see it someday.</Person2>
 
 EXAMPLE 4:
 Input:
@@ -53,10 +53,10 @@ Input:
 <Person2>It was. The sound of the water was so calming after the hike.</Person2>
 
 Output:
-<Person1>Are you into hiking?</Person1>
-<Person2>Yes! Mountain trails are my favorite.</Person2>
-<Person1>Same here. The views are worth it every time.</Person1>
-<Person2>I just did a hike to a waterfall. It was so peaceful.</Person2>
+<Person1>Do you like hiking?</Person1>
+<Person2>Love it, especially in the mountains.</Person2>
+<Person1>Same! The views make it so rewarding.</Person1>
+<Person2>I recently did a trail with a waterfall. Super calming.</Person2>
 
 EXAMPLE 5:
 Input:
@@ -66,8 +66,8 @@ Input:
 <Person2>What kind of apples did you buy?</Person2>
 
 Output:
-<Person1>I stopped by the store and picked up some apples.</Person1>
-<Person2>What type of apples did you end up getting?</Person2>
+<Person1>I grabbed some apples from the store.</Person1>
+<Person2>Which kind did you go for?</Person2>
 
 EXAMPLE 6:
 Input:
@@ -77,8 +77,8 @@ Input:
 <Person2>Absolutely. I recently hiked a trail with a waterfall at the end.</Person2>
 
 Output:
-<Person1>Do you enjoy hiking?</Person1>
-<Person2>I do! Mountain trails are the best.</Person2>
+<Person1>Are you into hiking?</Person1>
+<Person2>Oh, absolutely! Mountains are my favorite.</Person2>
 
 EXAMPLE 7:
 Input:
@@ -88,8 +88,8 @@ Input:
 <Person2>Now I’m even more excited to watch it.</Person2>
 
 Output:
-<Person1>Have you seen the latest episode of that series?</Person1>
-<Person2>Not yet, but now I’m excited.</Person2>
+<Person1>Seen the latest episode?</Person1>
+<Person2>Not yet, but I’m hyped.</Person2>
 
 EXAMPLE 8:
 Input:
@@ -99,5 +99,5 @@ Input:
 <Person2>Both, but I prefer acoustic for its warm tone.</Person2>
 
 Output:
-<Person1>Do you play any instruments?</Person1>
-<Person2>I play both acoustic and electric guitar but prefer acoustic for its tone.</Person2>
+<Person1>Do you play music?</Person1>
+<Person2>Yeah, acoustic and electric guitar—acoustic's my favorite.</Person2>

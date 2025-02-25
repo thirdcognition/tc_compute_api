@@ -255,6 +255,11 @@ verify_transcript_quality = PromptFormatter(
         - Avoid written-out laughter (e.g., "Ha, Ha ha") and substitute with clever or witty responses where applicable.
         - Ensure humor matches the tone of the content. For serious topics, humor should be respectful and context-appropriate.
         - Numbers should always be written as text in the transcript. For example, in English, ten for 10 or zero point one for 0.1.
+        - Verify that linguistic fluency is preserved, ensuring the transcript adheres to the grammatical and syntactical norms of the language in question.
+        - If the language is not English, confirm that conversational elements reflect the spoken nature of the language, such as correct usage of idiomatic expressions, proper word order, and cultural nuances.
+        - Where appropriate, adapt spoken contractions or informal structures (e.g., in English "gonna" instead of "going to") to make the dialogue sound authentic and natural.
+        - Ensure multilingual content maintains an accurate voice and tone reflective of the speakers, and provide consistent translations or context where needed for terms not readily understood by the audience.
+        - Review non-English text carefully for proper syntax, agreement, and context-sensitive phrasing, ensuring it flows as though naturally spoken.
 
         2. **Structure & Turn Limits**:
         - Check that speaker turns do not exceed 600 characters.
@@ -388,31 +393,29 @@ transcript_template = {
     "instructions": {
         "rewriter": """
         - You will receive a transcript, the content it was built from, specific configuration details, and a list of issues for improving the transcript.
-        - Your primary task is to rewrite the provided transcript maintaining the length for an AI Text-To-Speech (TTS) pipeline, ensuring it adheres to the suggestions from issues provided.
-        - Incorporate all suggestions into the rewritten transcript. Fixing the Issues is the most critical aspect and must be fully addressed.
-        - Make the transcript as engaging and natural as possible. Person1 and Person2 will be simulated by different voice engines.
-        - Introduce disfluencies, interruptions, and back-and-forth banter to make the conversation sound real and dynamic, but only if the suggestions allows for it.
-        - Avoid repetitive phrases like "totally," "absolutely," "exactly," or "definitely." Use them sparingly. Do not use filler words.
-        - Avoid use of "it", "it's", "is it", "it's like", "[it's, feels, etc] like [something]" but maintain the flow of conversation.
-        - Do not be repetitive, and make each item interesting and insightful.
-        - Do not use ask-answer structure. Add more dynamic conversational aspects.
-        - Avoid question-answer-question dynamic. Make the output be like a discussion about a subject, not back and forth.
-        - Break up long monologues into shorter sentences with interjections from the other speaker.
-        - Maintain the language specified by the user for writing the transcript.
-        - Use Previous transcripts and issues to guide the rewriting process.
-        - Make sure not to repeat problems indicated in previous transcript retries and their issues.
-        - Ensure the rewritten transcript includes a proper introduction and conclusion.
-        - If the content is labeled as the "Main Item," emphasize that this is the central topic of the episode.
-        - Highlight the "Main Item" if the configuration specifies it as true, ensuring it is the focal point of the transcript.
-        - You will be given a set of Issues. Make sure to implement the suggestions defined in them.
-        - Do not add laughter, e.g. "Ha" or "Ha ha", etc. in the script. Instead use witty comebacks or other reactive responses.
-        - Do not use childish humor or remarks. Make sure all humor is aligned with the content and is smart.
-        - Humor must be aligned with the content. If the subject matter is tragic or serious, do not add light hearted humor.
-        - If you're provided with a list of previous episodes use their content and context in appropriate way and as defined by instructions.
-        - Do not reduce the lenght of the original transcript.
-        - Always return the whole transcript, not just the changed parts of fixes. Do not change things which have not been specified in the issues and instructions.
-        - Use the specified location to write transcript from the point of view of living in that area. Listener does not live in USA unless location specifies so.
-        - Always write all numbers as text. For example, in English, ten for 10 or zero point one for 0.1.
+        - Your primary task is to revise the provided transcript by addressing ONLY the specific issues outlined. Do NOT make changes to parts of the transcript not specified in the issues provided.
+        - While fixing issues, ensure the changes blend naturally into the conversation and maintain the flow and tone of the original transcript.
+        - If the instructions for an issue include rewrites, ensure your changes adhere to the rewriting requirements such as adding conversational dynamics, humor (when appropriate), or other stylistic improvements as defined in the original instructions.
+        - Fixing the Issues is the most critical aspect and must be fully addressed. Unspecified parts of the transcript must remain UNCHANGED.
+        - Ensure that the transcript adheres to AI Text-To-Speech (TTS) pipeline requirements by maintaining the original length and improving natural engagement.
+        - Incorporate disfluencies, interruptions, and back-and-forth banter only into parts specified in the issues. Do NOT introduce new conversational elements into unspecified areas.
+        - Avoid repetitive phrases like "totally," "absolutely," "exactly," or "definitely," using them sparingly. Do not use filler words.
+        - Avoid words like "it", "it's", "is it", "it's like", "[it's, feels, etc.] like [something]" in rewritten sections, but preserve the flow of the original where not specified.
+        - Ensure changes avoid being repetitive and make every section addressed insightful and engaging.
+        - Do NOT use an ask-answer or question-answer-question structure; rather, focus on creating discussions and dynamic exchanges in problem areas.
+        - Break up long monologues into shorter sentences with interjections from the other speaker ONLY where issues specify changes.
+        - Maintain the language specified by the user for the transcript.
+        - Avoid repeating mistakes flagged in previous transcript retries and their issues.
+        - If a "Main Item" is specified, ensure the transcript highlights it as the focal discussion, but ONLY adjust relevant sections if issues indicate so.
+        - Introduce proper introductions or conclusions ONLY if prompted by the issues or rewrite instructions.
+        - Use previous episodes or related content for context ONLY if issues specify their inclusion or require links to earlier topics.
+        - Do not add laughter, e.g., "Ha" or "Ha ha." Instead, use witty comebacks or reactive responses in revision sections when appropriate.
+        - Avoid childish humor or off-topic remarks. Make sure all humor is relevant and aligns with the content subject matter. Omit humor entirely when handling serious or tragic topics.
+        - Always write all numbers as text, e.g., ten for 10 or zero point one for 0.1.
+        - Ensure the rewritten transcript retains the same length as the original transcript.
+        - ALWAYS return the FULL transcript, including unchanged and revised parts. Ensure unchanged sections match their original version exactly.
+        - Write from the perspective of living in the specified location. If no location is provided, avoid any assumptions of the listener living in the USA.
+        - Ensure all changes align with the instructions and do not introduce any arbitrary modifications.
         """,
     },
     "length": {

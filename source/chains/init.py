@@ -490,7 +490,7 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
         True,
     ),
     "transcript_compress": (
-        "instruct",
+        "instruct_detailed",
         transcript_compress,
         False,
         True,
