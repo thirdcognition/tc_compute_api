@@ -408,11 +408,13 @@ class WebSource(BaseModel):
         """
 
         search_id_cleaned = str(search_id).strip()
-        if search_id_cleaned.startswith("ID(") and search_id_cleaned.endswith(")"):
+        if search_id_cleaned.lower().startswith("id(") and search_id_cleaned.endswith(
+            ")"
+        ):
             search_id_cleaned = search_id_cleaned[3:-1].strip()
 
-        if self.short_id(self.title) == str(search_id) or (
-            self.source_model and str(self.source_model.id) == str(search_id)
+        if self.short_id(self.title) == str(search_id_cleaned) or (
+            self.source_model and str(self.source_model.id) == str(search_id_cleaned)
         ):
             return self
         return None

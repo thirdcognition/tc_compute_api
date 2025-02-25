@@ -200,18 +200,20 @@ class WebSourceCollection(BaseModel):
         """
 
         search_id_cleaned = str(search_id).strip()
-        if search_id_cleaned.startswith("ID(") and search_id_cleaned.endswith(")"):
+        if search_id_cleaned.lower().startswith("id(") and search_id_cleaned.endswith(
+            ")"
+        ):
             search_id_cleaned = search_id_cleaned[3:-1].strip()
 
-        if self.short_id(self.title) == str(search_id) or (
-            self.source_model and str(self.source_model.id) == str(search_id)
+        if self.short_id(self.title) == str(search_id_cleaned) or (
+            self.source_model and str(self.source_model.id) == str(search_id_cleaned)
         ):
             return self
 
         if self.web_sources:
             for web_source in self.web_sources:
                 if hasattr(web_source, "find_match"):
-                    result = web_source.find_match(search_id)
+                    result = web_source.find_match(search_id_cleaned)
                     if result:
                         return result
 
