@@ -511,7 +511,8 @@ validate_news_article = PromptFormatter(
         - Validate the provided content/HTML for:
           - Presence of the original article information.
           - Alignment with the provided title and description.
-          - Allowance of mentions of content policies, privacy policies, or automated system responses, as long as the original article is present.
+          - Content policies, privacy policies, or automated system responses, are allowed to an extent as long as the original article is present
+          - If 403, access denied, or any other http error is mentioned in the content, the article is not valid.
         - Return "yes" if the content is valid and meets all criteria, otherwise return "no" with a list of issues.
         - If the content does not contain the original article information, fail the validation.
 

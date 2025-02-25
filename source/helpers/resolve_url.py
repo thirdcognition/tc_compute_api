@@ -11,6 +11,7 @@ from playwright.async_api import (
 )
 from bs4 import BeautifulSoup, Tag
 import trafilatura
+from source.llm_exec.news_exec import validate_news_article, validate_news_article_sync
 from source.models.config.logging import logger
 import asyncio
 import nest_asyncio
@@ -323,10 +324,10 @@ class LinkResolver:
         # text = text_format_sync(text)
 
         # Validate content
-        # is_valid, explanation = validate_news_article_sync(text, title, description)
-        if not text:  # not is_valid:
-            raise Exception(f"Unable to fetch text for {title=}")
-            # raise Exception(f"Content validation failed: {explanation}")
+        is_valid, explanation = validate_news_article_sync(text, title, description)
+        if not is_valid:
+            # raise Exception(f"Unable to fetch text for {title=}")
+            raise Exception(f"Content validation failed: {explanation}")
 
         if resolve_images:
             image_data = self._fetch_images_sync(image_urls)
@@ -344,10 +345,10 @@ class LinkResolver:
         # text = await text_format(text)
 
         # Validate content
-        # is_valid, explanation = await validate_news_article(text, title, description)
-        if not text:
-            raise Exception(f"Unable to fetch text for {title=}")
-            # raise Exception(f"Content validation failed: {explanation}")
+        is_valid, explanation = await validate_news_article(text, title, description)
+        if not is_valid:
+            # raise Exception(f"Unable to fetch text for {title=}")
+            raise Exception(f"Content validation failed: {explanation}")
 
         if resolve_images:
             image_data = await self._fetch_images_async(image_urls)
