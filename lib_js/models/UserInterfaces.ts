@@ -1,7 +1,7 @@
 // models/UserInterfaces.ts
 
 import { SupabaseClient } from "@supabase/supabase-js";
-import { UserData } from "./data/UserDataInterfaces";
+import { UserData } from "./structures/UserDataInterfaces";
 import {
     Organizations,
     UserProfile,

@@ -1,4 +1,4 @@
-import { UserData } from "./data/userData.js";
+import { UserData } from "./structures/userData.js";
 import { OrganizationUsersModel } from "./supabase/organization.js";
 
 class User {

@@ -116,17 +116,17 @@ class WebSourceCollection(BaseModel):
         if self.web_sources:
             self.filter_sources()
 
-    def short_id(cls, title: Optional[str] = None) -> str:
+    def short_id(self) -> str:
         """
         Generate a short form of source_model.id (UUID) or create an ID from title.
 
         :param title: The title to generate an ID from if source_model.id is not available.
         :return: A short id (first 8 characters of UUID) or hashed id from title.
         """
-        if cls.source_model and cls.source_model.id:
-            return str(cls.source_model.id).split("-")[0]
-        elif title:
-            return hashlib.sha256(title.encode("utf-8")).hexdigest()[:8]
+        if self.source_model and self.source_model.id:
+            return str(self.source_model.id).split("-")[0]
+        elif self.title:
+            return hashlib.sha256(self.title.encode("utf-8")).hexdigest()[:8]
         return "unknown_id"
 
     def filter_sources(self):
@@ -205,7 +205,7 @@ class WebSourceCollection(BaseModel):
         ):
             search_id_cleaned = search_id_cleaned[3:-1].strip()
 
-        if self.short_id(self.title) == str(search_id_cleaned) or (
+        if self.short_id() == str(search_id_cleaned) or (
             self.source_model and str(self.source_model.id) == str(search_id_cleaned)
         ):
             return self

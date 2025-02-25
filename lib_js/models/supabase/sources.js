@@ -12,6 +12,7 @@ class SourceTypeEnum extends Enum {
         this.IMAGE = "image";
         this.TOPIC = "topic";
         this.CONCEPT = "concept";
+        this.COLLECTION = "collection";
         Object.freeze(this);
     }
 }
@@ -120,14 +121,18 @@ export class SourceRelationshipModel extends SupabaseModel {
         }
     };
 
-    static async saveToSupabase(supabase, instance, onConflict = null) {
+    static async saveToSupabase(
+        supabase,
+        instance,
+        onConflict = ["sourceId", "relatedSourceId"]
+    ) {
         return super.saveToSupabase(supabase, instance, onConflict);
     }
 
     static async upsertToSupabase(
         supabase,
         instances,
-        onConflict = ["source_id", ""],
+        onConflict = ["sourceId", "relatedSourceId"],
         idColumn = "sourceId"
     ) {
         return super.upsertToSupabase(
