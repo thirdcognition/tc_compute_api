@@ -1,3 +1,11 @@
+-- reduce --
+
+Rewrite the output example with more words so that it is more natural, fluent and maintains a conversation. Do not make it feel abrupt or janky. It should moderatly reduce the amount of words, but maintain the natural flow of language. Maintain all of the aspects of input in the output but in reduced output.
+
+Output the whole block.
+
+Output 4 options in separate codeblocks. Use <person1>...</person1><person2>...</person2>-structure
+
 -- bridge --
 Write an output to transition the input transcripts with a bridge with these instructions:
 Transition between last line from transcript 1 and first line from transcript 2.
