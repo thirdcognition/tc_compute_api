@@ -254,6 +254,7 @@ verify_transcript_quality = PromptFormatter(
         - Limit overuse of words like "Absolutely," "Exactly," "Totally," or phrases like "It's like," or "[it, feel, etc.] like [something]." Flag excessive repetition as an improvement point.
         - Avoid written-out laughter (e.g., "Ha, Ha ha") and substitute with clever or witty responses where applicable.
         - Ensure humor matches the tone of the content. For serious topics, humor should be respectful and context-appropriate.
+        - Numbers should always be written as text in the transcript. For example, in English, ten for 10 or zero point one for 0.1.
 
         2. **Structure & Turn Limits**:
         - Check that speaker turns do not exceed 600 characters.
@@ -411,6 +412,7 @@ transcript_template = {
         - Do not reduce the lenght of the original transcript.
         - Always return the whole transcript, not just the changed parts of fixes. Do not change things which have not been specified in the issues and instructions.
         - Use the specified location to write transcript from the point of view of living in that area. Listener does not live in USA unless location specifies so.
+        - Always write all numbers as text. For example, in English, ten for 10 or zero point one for 0.1.
         """,
     },
     "length": {
@@ -472,6 +474,7 @@ transcript_combiner = PromptFormatter(
         - Avoid repetition of ideas or phrases across the combined content.
         - Use advanced TTS-specific markup (excluding Amazon/Alexa-specific tags) to enhance the naturalness of the conversation.
         - Ensure the conversation starts with Person1 and ends with Person2.
+        - Always write all numbers as text. For example, in English, ten for 10 or zero point one for 0.1.
 
         3. Guidelines:
         - Identify overlapping or redundant sections in the input transcripts and consolidate them.
@@ -743,6 +746,7 @@ transcript_writer = PromptFormatter(
         - Ensure the conversation starts with Person1 and ends with Person2.
         - You will be given a word count. The transcript output must have at least that many words.
         - Aim for a very long conversation. Use max_output_tokens limit.
+        - Always write all numbers as text. For example, in English, ten for 10 or zero point one for 0.1.
 
         3. Guidelines:
         - Focus on a specific topic or theme for the conversation.
