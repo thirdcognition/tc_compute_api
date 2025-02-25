@@ -13,8 +13,7 @@ import {
 } from "react-icons/tb";
 import SpeedPopup from "./SpeedPopup.tsx";
 import { trackEvent, Session } from "../helpers/analytics.ts";
-import session from "../helpers/session.ts";
-import { LANGUAGE_MAP } from "../helpers/options.ts";
+import session from "../helpers/session.tsx";
 
 interface PlayerProps {
     userId: React.RefObject<string>;
@@ -26,6 +25,7 @@ interface PlayerProps {
         transcriptId: string;
         title: string;
         sources: any;
+        languageOptions: Record<string, string> | null;
         metadata: {
             images: string[];
         };
@@ -321,7 +321,6 @@ const Player: React.FC<PlayerProps> = ({
         event: React.ChangeEvent<HTMLSelectElement>
     ) => {
         const newLanguage = event.target.value;
-        setSelectedLanguage(newLanguage);
         session.setLanguage(newLanguage);
         trackEvent(
             "player_language_switch",
@@ -338,7 +337,9 @@ const Player: React.FC<PlayerProps> = ({
                 panelTag: transcript.panelDisplayTag || "unknown"
             }
         );
-        window.location.reload(); // Refresh the browser
+        setSelectedLanguage(newLanguage);
+        session.refreshApp();
+        // window.location.reload(); // Refresh the browser
     };
 
     const handleAudioEnded = () => {
@@ -390,23 +391,27 @@ const Player: React.FC<PlayerProps> = ({
                     <div className="space-y-4">
                         {/* Row 2: Playback Speed - Volume Controls */}
                         <div className="flex justify-between items-center gap-3">
-                            <div className="relative flox-none pr-2">
-                                <select
-                                    value={selectedLanguage}
-                                    onChange={handleLanguageChange}
-                                    className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
+                            {transcript.languageOptions &&
+                                Object.keys(transcript.languageOptions).length >
+                                    1 && (
+                                    <div className="relative flox-none pr-2">
+                                        <select
+                                            value={selectedLanguage}
+                                            onChange={handleLanguageChange}
+                                            className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
         text-gray-800 dark:text-gray-300 hover:border-gray-500 dark:hover:border-gray-500
         transition-colors duration-200 font-medium"
-                                >
-                                    {Object.entries(LANGUAGE_MAP).map(
-                                        ([code, name]) => (
-                                            <option key={code} value={code}>
-                                                {name}
-                                            </option>
-                                        )
-                                    )}
-                                </select>
-                            </div>
+                                        >
+                                            {Object.entries(
+                                                transcript.languageOptions
+                                            ).map(([code, name]) => (
+                                                <option key={code} value={code}>
+                                                    {name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
                             <div className="relative flex-none">
                                 <button
                                     onClick={() =>

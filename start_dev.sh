@@ -117,4 +117,4 @@ tmux select-layout -t server_session even-vertical
 tmux attach-session -t server_session
 
 # Monitor the main process
-monitor_main_process &
+# monitor_main_process &

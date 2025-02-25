@@ -63,6 +63,32 @@
                 });
             }
         </script>
+        <script>
+            // Store the last reload time in localStorage
+            const LAST_RELOAD_KEY = "lastReloadTime";
+
+            // Function to reload the page if more than 1 hour has passed
+            function checkAndReload() {
+                const lastReload = localStorage.getItem(LAST_RELOAD_KEY);
+                const now = Date.now();
+
+                // Check if more than 1 hour (3600000 ms) has passed
+                if (!lastReload || now - parseInt(lastReload, 10) > 3600000) {
+                    localStorage.setItem(LAST_RELOAD_KEY, now.toString());
+                    window.location.reload();
+                }
+            }
+
+            // Listen for visibility change events
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible") {
+                    checkAndReload();
+                }
+            });
+
+            // Set the initial reload time on page load
+            localStorage.setItem(LAST_RELOAD_KEY, Date.now().toString());
+        </script>
         <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.

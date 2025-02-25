@@ -1,5 +1,5 @@
 import { urlFormatter, config } from "./url.ts";
-import session from "./session.ts";
+import session from "./session.tsx";
 
 interface FetchOptions extends RequestInit {
     headers?: HeadersInit;
@@ -60,9 +60,14 @@ const memoizedFetchData = memoize(fetchData);
 
 export function fetchDataWithMemoization(
     endpoint: string,
-    options: FetchOptions = {}
+    options: FetchOptions = {},
+    forceCache: boolean = false
 ): Promise<any> {
-    if (options.method && options.method.toUpperCase() !== "GET") {
+    if (
+        options.method &&
+        options.method.toUpperCase() !== "GET" &&
+        !forceCache
+    ) {
         return fetchData(endpoint, options);
     }
     return memoizedFetchData(endpoint, options);
@@ -150,13 +155,22 @@ export async function fetchPanelDetails(panelId: string): Promise<{
 }> {
     try {
         const panelDetails = await fetchDataWithMemoization(
-            `/panel/${panelId}/details`
+            `/panel/${panelId}/details`,
+            {},
+            true
         );
-        const language = session.getLanguage();
-        const filteredTranscripts = panelDetails.transcripts.filter(
+        let language = session.getLanguage();
+        let filteredTranscripts = panelDetails.transcripts.filter(
             (transcript: any) =>
                 transcript.lang?.toLowerCase() === language?.toLowerCase()
         );
+        if (filteredTranscripts.length == 0) {
+            language = "english";
+            filteredTranscripts = panelDetails.transcripts.filter(
+                (transcript: any) =>
+                    transcript.lang?.toLowerCase() === language?.toLowerCase()
+            );
+        }
         const filteredAudios = panelDetails.audios.filter(
             (audio: any) =>
                 audio.lang?.toLowerCase() === language?.toLowerCase()

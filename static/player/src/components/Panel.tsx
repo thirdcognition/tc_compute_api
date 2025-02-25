@@ -5,8 +5,8 @@ import { urlFormatter } from "../helpers/url.ts";
 import { FaImage } from "react-icons/fa";
 import { Player } from "./Player.tsx";
 import { Session, trackEvent } from "../helpers/analytics.ts";
-import session from "../helpers/session.ts";
-import { LANGUAGE_MAP } from "../helpers/options.ts";
+import session from "../helpers/session.tsx";
+import { capitalizeFirstLetter } from "../helpers/lib.ts";
 const Accordion: React.FC<{
     title: string;
     setOpen?: boolean; // Optional prop
@@ -44,6 +44,11 @@ const Panel: React.FC<PanelProps> = ({
     const [panelId, setPanelId] = useState<string | undefined>(
         urlPanelId || defaultPanelId
     );
+
+    const [languageOptions, setLanguageOptions] = useState<Record<
+        string,
+        string
+    > | null>(null);
 
     const navigate = useNavigate();
 
@@ -93,6 +98,122 @@ const Panel: React.FC<PanelProps> = ({
         if (urlPanelId) setPanelId(urlPanelId);
     }, [urlPanelId, defaultPanelId]);
 
+    async function configureTranscriptData() {
+        if (typeof panelId !== "string") {
+            console.error("Panel ID is undefined.");
+            return;
+        }
+
+        try {
+            const {
+                discussionData,
+                transcriptData,
+                transcriptSources,
+                audioData,
+                filesData
+            } = await fetchPanelDetails(panelId);
+
+            // console.log(transcriptData, audioData, transcriptSources);
+
+            setPanelData(discussionData);
+            if (discussionData?.metadata?.languages) {
+                const langs = { english: "English" };
+                for (
+                    let index = 0;
+                    index < discussionData.metadata?.languages.length;
+                    index++
+                ) {
+                    const element = discussionData.metadata?.languages[index];
+                    langs[element.toLowerCase()] =
+                        capitalizeFirstLetter(element);
+                }
+
+                setLanguageOptions(langs);
+            }
+
+            setSourceData(
+                Object.entries(transcriptSources || {}).map(
+                    ([id, sources]: [string, any]) => {
+                        const transcript = transcriptData.filter(
+                            (t) => t.id === id
+                        )[0];
+                        return {
+                            id,
+                            data: sources.map((s, i) => ({
+                                id: s?.id,
+                                url: s?.data?.url || "",
+                                title: s?.data?.title || "",
+                                publish_date: s?.data?.publish_date || "",
+                                image:
+                                    s?.data?.image ||
+                                    transcript?.metadta?.images[i] ||
+                                    ""
+                            }))
+                        };
+                    }
+                ) as unknown as Array<{
+                    id: string;
+                    data: Array<{
+                        url: string;
+                        title: string;
+                        publish_date: string;
+                        image: string;
+                    }>;
+                }>
+            );
+
+            if (audioData && filesData && filesData.audio_urls) {
+                const formattedAudioUrls = urlFormatter(filesData.audio_urls);
+                const audioEntries = audioData
+                    .map((audio) => {
+                        const transcript = transcriptData.filter(
+                            (t) => t.id === audio.transcript_id
+                        )[0];
+                        const sources =
+                            transcriptSources[audio.transcript_id] || [];
+                        const thumbnail =
+                            (sources.length > 0
+                                ? sources.filter((s) => !!s.image).data?.image
+                                : null) ||
+                            transcript?.metadata?.images?.at(0) ||
+                            "null";
+                        return {
+                            transcript_id: audio.transcript_id,
+                            transcript: transcript || null,
+                            url: formattedAudioUrls[audio.id],
+                            date: new Date(audio.created_at).toLocaleDateString(
+                                undefined,
+                                {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                    hour: "numeric",
+                                    minute: "numeric"
+                                }
+                            ),
+                            title: transcript?.title || "Untitled",
+                            thumbnail,
+                            created_at: new Date(audio.created_at).getTime()
+                        };
+                    })
+                    .filter((i) => i.transcript !== null)
+                    .sort((a, b) => b.created_at - a.created_at) // Sort by created_at descending
+                    .slice(0, 5); // Limit to 5 most recent episodes
+
+                // console.log(audioEntries);
+                setAudioOptions(audioEntries);
+                if (audioEntries.length > 0) {
+                    setAudioUrl(audioEntries[0].url); // Default to the latest
+                    setTranscriptId(audioEntries[0].transcript_id);
+                } else {
+                    setAudioUrl("none");
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching panel data:", error);
+        }
+    }
+
     useEffect(() => {
         if (!panelId) {
             console.error("Panel ID is undefined.");
@@ -101,110 +222,7 @@ const Panel: React.FC<PanelProps> = ({
 
         setSelectedPanel(panelId || null);
 
-        async function fetchData() {
-            if (typeof panelId !== "string") {
-                console.error("Panel ID is undefined.");
-                return;
-            }
-
-            try {
-                const {
-                    discussionData,
-                    transcriptData,
-                    transcriptSources,
-                    audioData,
-                    filesData
-                } = await fetchPanelDetails(panelId);
-
-                // console.log(transcriptData, audioData, transcriptSources);
-
-                setPanelData(discussionData);
-
-                setSourceData(
-                    Object.entries(transcriptSources || {}).map(
-                        ([id, sources]: [string, any]) => {
-                            const transcript = transcriptData.filter(
-                                (t) => t.id === id
-                            )[0];
-                            return {
-                                id,
-                                data: sources.map((s, i) => ({
-                                    id: s?.id,
-                                    url: s?.data?.url || "",
-                                    title: s?.data?.title || "",
-                                    publish_date: s?.data?.publish_date || "",
-                                    image:
-                                        s?.data?.image ||
-                                        transcript?.metadta?.images[i] ||
-                                        ""
-                                }))
-                            };
-                        }
-                    ) as unknown as Array<{
-                        id: string;
-                        data: Array<{
-                            url: string;
-                            title: string;
-                            publish_date: string;
-                            image: string;
-                        }>;
-                    }>
-                );
-
-                if (audioData && filesData && filesData.audio_urls) {
-                    const formattedAudioUrls = urlFormatter(
-                        filesData.audio_urls
-                    );
-                    const audioEntries = audioData
-                        .map((audio) => {
-                            const transcript = transcriptData.filter(
-                                (t) => t.id === audio.transcript_id
-                            )[0];
-                            const sources =
-                                transcriptSources[audio.transcript_id] || [];
-                            const thumbnail =
-                                (sources.length > 0
-                                    ? sources.filter((s) => !!s.image).data
-                                          ?.image
-                                    : null) ||
-                                transcript?.metadata?.images?.at(0) ||
-                                "null";
-                            return {
-                                transcript_id: audio.transcript_id,
-                                transcript: transcript || null,
-                                url: formattedAudioUrls[audio.id],
-                                date: new Date(
-                                    audio.created_at
-                                ).toLocaleDateString(undefined, {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                    hour: "numeric",
-                                    minute: "numeric"
-                                }),
-                                title: transcript?.title || "Untitled",
-                                thumbnail,
-                                created_at: new Date(audio.created_at).getTime()
-                            };
-                        })
-                        .filter((i) => i.transcript !== null)
-                        .sort((a, b) => b.created_at - a.created_at) // Sort by created_at descending
-                        .slice(0, 5); // Limit to 5 most recent episodes
-
-                    // console.log(audioEntries);
-                    setAudioOptions(audioEntries);
-                    if (audioEntries.length > 0) {
-                        setAudioUrl(audioEntries[0].url); // Default to the latest
-                        setTranscriptId(audioEntries[0].transcript_id);
-                    } else {
-                        setAudioUrl("none");
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching panel data:", error);
-            }
-        }
-        fetchData();
+        configureTranscriptData();
     }, [panelId]);
 
     const getTranscript = () => {
@@ -222,6 +240,7 @@ const Panel: React.FC<PanelProps> = ({
             panelDisplayTag: panelData?.metadata?.display_tag,
             transcriptId: currentTranscript?.id,
             sources: currentSources,
+            languageOptions: languageOptions,
             metadata: {
                 images:
                     (currentTranscript?.metadata?.images?.length || 0) > 0
@@ -242,7 +261,6 @@ const Panel: React.FC<PanelProps> = ({
         event: React.ChangeEvent<HTMLSelectElement>
     ) => {
         const newLanguage = event.target.value;
-        setSelectedLanguage(newLanguage);
         session.setLanguage(newLanguage);
         trackEvent(
             "language_switch",
@@ -255,7 +273,8 @@ const Panel: React.FC<PanelProps> = ({
                 panelId: selectedPanel
             }
         );
-        window.location.reload(); // Refresh the browser
+        setSelectedLanguage(newLanguage);
+        session.refreshApp();
     };
 
     const handlePanelChange = (event: any) => {
@@ -469,24 +488,30 @@ const Panel: React.FC<PanelProps> = ({
                         </p>
                     ) : (
                         <div className="flex flex-col relative gap-2">
-                            <p className="text-gray-600 dark:text-gray-400">
-                                No episodes available for the selected language.
-                            </p>
-                            <select
-                                value={selectedLanguage}
-                                onChange={handleLanguageChange}
-                                className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
+                            {languageOptions &&
+                                Object.keys(languageOptions).length > 1 && (
+                                    <>
+                                        <p className="text-gray-600 dark:text-gray-400">
+                                            No episodes available for the
+                                            selected language.
+                                        </p>
+                                        <select
+                                            value={selectedLanguage}
+                                            onChange={handleLanguageChange}
+                                            className="px-3 py-1 rounded-lg bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
                                     text-gray-800 dark:text-gray-300 hover:border-gray-500 dark:hover:border-gray-500
                                     transition-colors duration-200 font-medium"
-                            >
-                                {Object.entries(LANGUAGE_MAP).map(
-                                    ([code, name]) => (
-                                        <option key={code} value={code}>
-                                            {name}
-                                        </option>
-                                    )
+                                        >
+                                            {Object.entries(
+                                                languageOptions
+                                            ).map(([code, name]) => (
+                                                <option key={code} value={code}>
+                                                    {name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </>
                                 )}
-                            </select>
                         </div>
                     )}
                 </div>
