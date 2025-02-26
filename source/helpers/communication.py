@@ -283,7 +283,8 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
 
     # Fetch transcript details
     transcripts = PanelTranscript.fetch_existing_from_supabase_sync(
-        supabase, values=[transcript_ids]
+        supabase,
+        values=transcript_ids if isinstance(transcript_ids, list) else [transcript_ids],
     )
 
     # Initialize EmailConfig
@@ -320,6 +321,12 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
 # Celery task
 @celery_app.task
 def send_email_about_new_shows_task(transcript_ids: list[str]):
+    if isinstance(transcript_ids, str):
+        try:
+            transcript_ids = json.loads(transcript_ids)
+        except json.JSONDecodeError:
+            transcript_ids = transcript_ids
+
     send_email_about_new_shows(transcript_ids)
 
 
