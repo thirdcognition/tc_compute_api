@@ -2,7 +2,7 @@ import json
 import os
 from bs4 import BeautifulSoup
 import resend
-from typing import List, Union
+from typing import Any, List, Union
 import base64
 from supabase import Client
 import mailchimp_marketing as MailchimpMarketing
@@ -138,7 +138,7 @@ def generate_email_from_template(
             f"{SETTINGS.public_host_address}{SETTINGS.player_uri_path}panel/{panel.id}"
         )
         metadata = transcript.metadata or {}
-        subjects = metadata.get("subjects", [])
+        subjects: list[dict[str, Any]] = metadata.get("subjects", [])
         description = metadata.get("description", "No description available.")
         sources = PanelTranscriptSourceReference.fetch_existing_from_supabase_sync(
             supabase, filter={"transcript_id": transcript.id}
@@ -159,18 +159,38 @@ def generate_email_from_template(
             else ""
         )
         subjects_html = "".join(
-            f"<li style='font-family: {config.font_family}; color: {config.text_color}; background-color: {config.background_color};'>{subject}</li>"
+            f"<li style='font-family: {config.font_family}; color: {config.text_color}; background-color: {config.background_color};'>"
+            f"<strong>{subject.get('title', '')}</strong>: {subject.get('description', '')}"
+            + (
+                f"<ul>{''.join(f'<li>[{i + 1}] <a href=\"{ref}\" style=\"font-family: {config.font_family}; color: {config.link_color}; text-decoration: underline;\">{ref}</a></li>' for i, ref in enumerate(subject.get('references', [])) if isinstance(ref, str))}</ul>"
+                if subject.get("references")
+                else ""
+            )
+            + "</li>"
             for subject in subjects
         )
+
         subjects_html_block = (
             f"<p style='font-family: {config.font_family}; color: {config.text_color}; background-color: {config.background_color};'><strong>Subjects:</strong></p><ul>{subjects_html}</ul>"
             if subjects
             else ""
         )
-        description_html = (
-            f"<p style='font-family: {config.font_family}; color: {config.text_color}; background-color: {config.background_color};'>{description}</p>"
-            if config.show_description
-            else ""
+
+        body_text += (
+            "Subjects:\n\n"
+            + "\n".join(
+                f"- {subject.get('title')}: {subject.get('description')}"
+                + (
+                    "\n  References:\n  "
+                    + "\n  ".join(
+                        f"[{i + 1}] {ref}" for i, ref in enumerate(subject.references)
+                    )
+                    if subject.get("references", [])
+                    else ""
+                )
+                for subject in subjects
+            )
+            + "\n\n\n"
         )
         sources_html_block = (
             f"<p style='font-family: {config.font_family}; color: {config.text_color}; background-color: {config.background_color};'><strong>Sources:</strong></p><ul>{sources_html}</ul>"
@@ -179,6 +199,12 @@ def generate_email_from_template(
         )
 
         # Append to HTML content
+        description_html = (
+            f"<p style='font-family: {config.font_family}; color: {config.text_color}; background-color: {config.background_color};'>{description}</p>"
+            if config.show_description
+            else ""
+        )
+
         body_html += f"""
         <table class="container" style="background-color: {config.background_color}; padding: {config.block_padding}; margin-bottom: {config.margin_bottom};">
             <tr>
@@ -283,7 +309,8 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
 
     # Fetch transcript details
     transcripts = PanelTranscript.fetch_existing_from_supabase_sync(
-        supabase, values=[transcript_ids]
+        supabase,
+        values=transcript_ids if isinstance(transcript_ids, list) else [transcript_ids],
     )
 
     # Initialize EmailConfig
@@ -320,6 +347,12 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
 # Celery task
 @celery_app.task
 def send_email_about_new_shows_task(transcript_ids: list[str]):
+    if isinstance(transcript_ids, str):
+        try:
+            transcript_ids = json.loads(transcript_ids)
+        except json.JSONDecodeError:
+            transcript_ids = transcript_ids
+
     send_email_about_new_shows(transcript_ids)
 
 
