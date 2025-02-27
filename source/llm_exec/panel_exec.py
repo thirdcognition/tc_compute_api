@@ -1,3 +1,4 @@
+from enum import Enum
 import re
 from typing import List, Union
 from datetime import datetime
@@ -31,7 +32,7 @@ def verify_transcript_quality(
     content: str,
     conversation_config: ConversationConfig = ConversationConfig(),
     main_item: bool = False,
-    # length_instructions: str = "",
+    length_instructions: str = "",
     previous_episodes: str = None,
 ) -> TranscriptQualityCheck:
     current_datetime = datetime.now()
@@ -54,7 +55,7 @@ def verify_transcript_quality(
                 if main_item
                 else "False"
             ),
-            # "transcript_length": length_instructions,
+            "transcript_length": length_instructions,
             "previous_episodes": (
                 previous_episodes if previous_episodes is not None else ""
             ),
@@ -94,6 +95,10 @@ def transcript_rewriter(
     #     else "Original transcript:\n" + orig_combined_transcript
     # )
 
+    length_change_fail = False
+
+    word_count = min(word_count, count_words(content) // 1.25)
+
     while (not check_passed or change_length) and retry_count < max_retries:
         change_length = False
         length_instructions = ""
@@ -108,18 +113,18 @@ def transcript_rewriter(
         retries = 3
         prev_content = transcript_content
 
-        while change_length and retries > 0:
+        while not length_change_fail and change_length and retries > 0:
             retries -= 1
             save_content = transcript_content
             try:
                 if change_length_int < 0:
-                    transcript_content = transcript_compress(
+                    transcript_content, length_change_fail = transcript_compress(
                         transcript=transcript_content,
                         conversation_config=conversation_config,
                         target=word_count,
                     )
                 elif change_length_int > 0:
-                    transcript_content = transcript_extend(
+                    transcript_content, length_change_fail = transcript_extend(
                         transcript=transcript_content,
                         content=content,
                         conversation_config=conversation_config,
@@ -128,14 +133,16 @@ def transcript_rewriter(
                 change_length_int = 0
             except ValueError as e:
                 print(f"Error during transcript rewrite: {e}")
+                length_change_fail = True
                 transcript_content = save_content
 
-            change_length_int, length_instructions = check_transcript_length(
-                transcript_content,
-                content,
-                word_count,
-            )
-            change_length = change_length_int != 0
+            if transcript_content != save_content:
+                change_length_int, length_instructions = check_transcript_length(
+                    transcript_content,
+                    content,
+                    word_count,
+                )
+                change_length = change_length_int != 0
 
         print("Verify transcript quality...")
         quality_check = fallback_quality_check
@@ -145,11 +152,11 @@ def transcript_rewriter(
                 content=content,
                 conversation_config=conversation_config,
                 main_item=main_item,
-                # length_instructions=(
-                #     length_instructions
-                #     if change_length
-                #     else "Transcript length is good."
-                # ),
+                length_instructions=(
+                    length_instructions
+                    if change_length
+                    else "Transcript length is good."
+                ),
                 previous_episodes=previous_episodes,
             )
         except Exception as e:
@@ -180,7 +187,7 @@ def transcript_rewriter(
                     if check_passed
                     else "\n\n".join(
                         [
-                            f"Issue {str(i + 1)}:\nTitle: {issue.title}\n Segments:\n{'\n\n'.join(issue.transcript_segments)}\nSuggested fix: {issue.suggestions}"
+                            f"Issue {str(i + 1)}:\nTitle: {issue.title}\nCoverage: {issue.issue_coverage.value}\nSegments:\n{'\n----\n'.join(issue.transcript_segments) if len(issue.transcript_segments) > 0 else ''}\nSuggested fix:\n{issue.suggestions}"
                             for i, issue in enumerate(issues)
                         ]
                     )
@@ -188,12 +195,12 @@ def transcript_rewriter(
                 # guidance += feedback + "\n"
                 chain = (
                     "transcript_rewriter"
-                    # if change_length_int == 0
-                    # else (
-                    #     "transcript_rewriter_extend"
-                    #     if change_length_int == 1
-                    #     else "transcript_rewriter_reduce"
-                    # )
+                    if change_length_int == 0
+                    else (
+                        "transcript_rewriter_extend"
+                        if change_length_int == 1
+                        else "transcript_rewriter_reduce"
+                    )
                 )
 
                 print(
@@ -225,17 +232,25 @@ def transcript_rewriter(
             # )
 
             change_length = False
+            prev_content_len = count_words(prev_content)
+            transcript_content_len = count_words(transcript_content)
             if word_count is not None:
                 change_length_int, length_instructions = check_transcript_length(
                     transcript_content,
                     content,
                     word_count,
                 )
-                change_length = change_length_int != 0
+                change_length = (
+                    change_length_int != 0
+                    and is_near(prev_content_len, transcript_content_len, 10)
+                    != RangeCheck.WITHIN
+                )
 
             if check_passed and not change_length:
                 print(f"Rewritten transcript ({count_words(transcript_content)=})")
                 break
+            else:
+                length_change_fail = False
 
         retry_count += 1
 
@@ -264,6 +279,7 @@ def _transcript_rewriter(
     current_time = current_datetime.strftime("%H:%M:%S")
     while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
         retries -= 1
+        orig_len = count_words(transcript)
         result = get_chain(chain).invoke(
             {
                 "content": content,
@@ -294,10 +310,25 @@ def _transcript_rewriter(
             }
         )
 
+        if not isinstance(result, BaseMessage):
+            result_len = count_words(result)
+            target = (
+                RangeCheck.BELOW
+                if "extend" in chain
+                else RangeCheck.ABOVE
+                if "reduce" in chain
+                else None
+            )
+            if is_near(result_len, orig_len, 10) == target:
+                print(
+                    f"transcript_rewriter: Transcript length considerably outside of target: ({str(orig_len - result_len)})"
+                )
+                result = ""
+
     if isinstance(result, BaseMessage):
         raise ValueError("Generation failed: Received a BaseMessage.")
 
-    print(f"LLM result {count_words(result)=}")
+    print(f"transcript_rewriter: LLM result {count_words(result)=}")
 
     return result
 
@@ -515,22 +546,25 @@ def transcript_compress(
     transcript: str,
     target: int = None,
     conversation_config: ConversationConfig = ConversationConfig(),
-) -> bool:
+    min_reduce_percentage: int = 10,
+) -> tuple[str, bool]:
     print(
         f"transcript_compress - Starting with transcript ({count_words(transcript)}), conversation_config={conversation_config}"
     )
     retries = 3
+    is_near_fail_count = 0  # Tracks failures specific to `is_near`
     result = ""
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
     prev_result = transcript
+
     while (
-        result == ""
-        or isinstance(result, BaseMessage)
+        (result == "" or isinstance(result, BaseMessage))
         or (target is not None and target < count_words(prev_result))
     ) and retries > 0:
         retries -= 1
+        prev_count = count_words(prev_result)
         result = get_chain("transcript_compress").invoke(
             {
                 "transcript": prev_result,
@@ -542,10 +576,34 @@ def transcript_compress(
                 "time": current_time,
             }
         )
-        if not isinstance(result, BaseMessage) and count_words(result) < count_words(
-            prev_result
-        ):
-            prev_result = result
+
+        if isinstance(result, BaseMessage):
+            print("Received a BaseMessage. Retrying...")
+            continue
+
+        result_count = count_words(result)
+
+        # Validate compression using `is_near`
+        compression_check = is_near(
+            result_count,
+            prev_count,
+            percentage=min_reduce_percentage,
+        )
+        if compression_check != RangeCheck.BELOW:
+            print(
+                f"transcript_compress - New result length is longer or within {str(min_reduce_percentage)}% of the previous result; ignoring."
+            )
+            is_near_fail_count += 1
+            # Stop if `is_near` fails more than 2 times
+            if is_near_fail_count >= 2:
+                print("Failed to compress transcript sufficiently after 2 attempts.")
+                break
+        else:
+            print(
+                f"transcript_compress - Reduced by ({str(prev_count - result_count)} missing target by: {str(result_count - target)})"
+            )
+            prev_result = result  # Accept the new compressed result
+            is_near_fail_count = 0  # Reset failure count for valid compression
 
     if isinstance(prev_result, BaseMessage):
         print("Generation failed: Received a BaseMessage.")
@@ -553,7 +611,9 @@ def transcript_compress(
 
     print(f"transcript_compress - Completed with result ({count_words(prev_result)})")
 
-    return prev_result
+    result_count = count_words(prev_result)
+
+    return prev_result, is_near(result_count, target, 10) == RangeCheck.WITHIN
 
 
 @traceable(
@@ -565,22 +625,26 @@ def transcript_extend(
     content: str,
     target: int = None,
     conversation_config: ConversationConfig = ConversationConfig(),
-) -> bool:
+    min_extend_percentage: int = 10,
+) -> tuple[str, bool]:
     print(
         f"transcript_extend - Starting with transcript ({count_words(transcript)}), conversation_config={conversation_config}"
     )
     retries = 3
+    is_near_fail_count = 0  # Tracks failures specific to `is_near`
     result = ""
     current_datetime = datetime.now()
     current_date = current_datetime.strftime("%Y-%m-%d (%a)")
     current_time = current_datetime.strftime("%H:%M:%S")
     prev_result = transcript
+
     while (
-        result == ""
-        or isinstance(result, BaseMessage)
+        retries > 0
+        and (result == "" or isinstance(result, BaseMessage))
         or (target is not None and target > count_words(prev_result))
-    ) and retries > 0:
+    ):
         retries -= 1
+        prev_count = count_words(prev_result)
         result = get_chain("transcript_extend").invoke(
             {
                 "transcript": prev_result,
@@ -598,10 +662,36 @@ def transcript_extend(
                 "time": current_time,
             }
         )
-        if not isinstance(result, BaseMessage) and count_words(result) > count_words(
-            prev_result
-        ):
-            prev_result = result
+
+        if isinstance(result, BaseMessage):
+            print("Received a BaseMessage. Retrying...")
+            continue
+
+        result_count = count_words(result)
+
+        growth_check = is_near(
+            result_count,
+            prev_count,
+            percentage=min_extend_percentage,
+        )
+        # Validate growth using `is_near`
+        if growth_check != RangeCheck.ABOVE:
+            print(
+                f"transcript_extend - New result length is less or within {str(min_extend_percentage)}% of the previous result; ignoring."
+            )
+            is_near_fail_count += 1
+            # Stop if `is_near` fails more than 2 times
+            if is_near_fail_count >= 2:
+                print(
+                    "Failed to generate a sufficiently larger result after 2 attempts."
+                )
+                break
+        else:
+            print(
+                f"transcript_extend - Extended with ({str(result_count - prev_count)} missing target by: {str(target - result_count)})"
+            )
+            prev_result = result  # Accept the new result
+            is_near_fail_count = 0  # Reset failure count for meaningful growth
 
     if isinstance(prev_result, BaseMessage):
         print("Generation failed: Received a BaseMessage.")
@@ -609,7 +699,9 @@ def transcript_extend(
 
     print(f"transcript_extend - Completed with result ({count_words(prev_result)})")
 
-    return prev_result
+    result_count = count_words(prev_result)
+
+    return prev_result, is_near(result_count, target, 10) == RangeCheck.WITHIN
 
 
 @traceable(
@@ -734,6 +826,37 @@ def transcript_summary_writer(
     return result
 
 
+class RangeCheck(Enum):
+    BELOW = -1
+    WITHIN = 0
+    ABOVE = 1
+
+    def __bool__(self):
+        return self == RangeCheck.WITHIN
+
+
+def is_near(number, target, percentage) -> RangeCheck:
+    """
+    Check if 'number' is near 'target' by a specified percentage.
+
+    :param number: The number to check.
+    :param target: The reference number.
+    :param percentage: The percentage for proximity (e.g., 10 for 10%).
+    :return:
+        RangeCheck.BELOW if 'number' is below the range,
+        RangeCheck.WITHIN if 'number' is within the range,
+        RangeCheck.ABOVE if 'number' is above the range.
+    """
+    margin = target * (percentage / 100)  # Convert percentage to a fraction
+    lower_bound = target - margin
+    upper_bound = target + margin
+    if number < lower_bound:
+        return RangeCheck.BELOW
+    elif number > upper_bound:
+        return RangeCheck.ABOVE
+    return RangeCheck.WITHIN
+
+
 def check_transcript_length(
     transcript: str,
     content: str,
@@ -751,33 +874,47 @@ def check_transcript_length(
         print(
             f"Word count: Checking for target word count: {word_count_in_transcript=} {target_word_count=}"
         )
-        multiplier = target_word_count / word_count_in_transcript
-        if multiplier > 1.25:
+        comparison_result = is_near(
+            word_count_in_transcript, target_word_count, 25
+        )  # 25% margin
+
+        if comparison_result == RangeCheck.BELOW:  # Too short
+            multiplier = target_word_count / word_count_in_transcript
             change_length = 1
             if multiplier > 2:
-                length_instruction = "The transcript is too short. It should be at least three times as long. Give extensive feedback on the possible ways to extend the transcript."
-                #  Try to extend on details, content, considerations and explanation. The transcript needs to be considerably longer. The transcript is too short, add more details. Write a longer version of the transcript. Do not return the same transcript. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details.
+                length_instruction = (
+                    "The transcript is too short. It should be at least three times as long. "
+                    "Give extensive feedback on the possible ways to extend the transcript."
+                )
             elif multiplier > 1.5:
-                length_instruction = "The transcript is too short. It should be at least twice as long. Give feedback on the possible ways to extend the transcript."
-
-                # Try to extend on details from content and discussion of the topic. The transcript needs to be longer. The transcript is too short, write a longer version of it. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details.
+                length_instruction = (
+                    "The transcript is too short. It should be at least twice as long. "
+                    "Give feedback on the possible ways to extend the transcript."
+                )
             else:
-                length_instruction = "The transcript is too short. It should be slightly longer. Give feedback on how to extend the dialogue."
-            # conversation_config.user_instructions = (
-            #     f"{orig_user_instr} {length_instruction}."
-            # )
-        elif multiplier < 0.75:
+                length_instruction = (
+                    "The transcript is too short. It should be slightly longer. "
+                    "Give feedback on how to extend the dialogue."
+                )
+        elif comparison_result == RangeCheck.ABOVE:  # Too long
+            multiplier = word_count_in_transcript / target_word_count
             change_length = -1
-            if multiplier < 0.33:
-                length_instruction = "The transcript is too long. It should be at least three times shorter. Give extensive feedback on the possible ways to shorten the transcript."
-                #  Try to extend on details, content, considerations and explanation. The transcript needs to be considerably longer. The transcript is too short, add more details. Write a longer version of the transcript. Do not return the same transcript. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details.
-            elif multiplier < 0.5:
-                length_instruction = "The transcript is too long. It should be half the length. Give feedback on the possible ways to shorten the transcript."
-
-                # Try to extend on details from content and discussion of the topic. The transcript needs to be longer. The transcript is too long, write a longer version of it. Rewrite the transcript to be longer. Add more dialogue. Add more considerations. Add more insights. Add more details.
+            if multiplier > 3:
+                length_instruction = (
+                    "The transcript is too long. It should be at least three times shorter. "
+                    "Give extensive feedback on the possible ways to shorten the transcript."
+                )
+            elif multiplier > 2:
+                length_instruction = (
+                    "The transcript is too long. It should be half the length. "
+                    "Give feedback on the possible ways to shorten the transcript."
+                )
             else:
-                length_instruction = "The transcript is too long. It should be slightly shorter. Give feedback on how to shorten the dialogue."
-        else:
+                length_instruction = (
+                    "The transcript is too long. It should be slightly shorter. "
+                    "Give feedback on how to shorten the dialogue."
+                )
+        else:  # Near target
             print(
                 f"Word count: Matches target close enough. {target_word_count=} {word_count_in_transcript=}"
             )

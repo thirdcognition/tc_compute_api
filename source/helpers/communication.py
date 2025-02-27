@@ -183,7 +183,8 @@ def generate_email_from_template(
                 + (
                     "\n  References:\n  "
                     + "\n  ".join(
-                        f"[{i + 1}] {ref}" for i, ref in enumerate(subject.references)
+                        f"[{i + 1}] {ref}"
+                        for i, ref in enumerate(subject.get("references", []))
                     )
                     if subject.get("references", [])
                     else ""
