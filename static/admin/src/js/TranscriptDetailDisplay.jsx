@@ -17,7 +17,8 @@ import {
     FaClock,
     FaRegStar,
     FaCalendarAlt,
-    FaSyncAlt
+    FaSyncAlt,
+    FaImage
 } from "react-icons/fa";
 import CronjobComponent from "./components/CronjobComponent.jsx";
 import { Button, Card, Accordion } from "react-bootstrap";
@@ -41,12 +42,41 @@ const TranscriptDetailDisplay = ({ transcript }) => {
 
     useEffect(() => {
         fetchPanelDetails(transcript.panel_id).then((response) => {
+            const processedSources = Object.entries(
+                response.transcriptSources || {}
+            ).map(([id, sources]) => {
+                const transcript = response.transcriptData.find(
+                    (t) => t.id === id
+                );
+                if (
+                    Array.isArray(transcript?.metadata?.subjects) &&
+                    typeof transcript.metadata.subjects[0] === "object"
+                ) {
+                    return {
+                        id,
+                        data: transcript.metadata?.subjects
+                    };
+                }
+                // Fallback to processing transcriptSources
+                return {
+                    id,
+                    data: sources.map((s, i) => ({
+                        id: s?.id,
+                        url: s?.data?.url || "",
+                        title: s?.data?.title || "",
+                        publish_date: s?.data?.publish_date || "",
+                        image:
+                            s?.data?.image ||
+                            transcript?.metadata?.images?.[i] ||
+                            ""
+                    }))
+                };
+            });
+
+            setTranscriptSources(processedSources);
             setTranscriptUrls(response.filesData.transcript_urls);
             setAudioUrls(response.filesData.audio_urls);
             setAudios(response.audioData);
-            setTranscriptSources(
-                response.transcriptSources[transcript.id] || []
-            );
         });
     }, [transcript.panel_id, transcript.id]);
 
@@ -80,40 +110,90 @@ const TranscriptDetailDisplay = ({ transcript }) => {
         ));
     };
 
-    const renderSources = () => {
-        return transcriptSources.map((source) => (
-            <Card key={source.id} className="mb-4">
-                {source.data.image && (
-                    <Card.Img
-                        variant="top"
-                        src={source.data.image}
-                        alt={source.data.title}
-                    />
-                )}
-                <Card.Body>
-                    <Card.Title>
-                        {source.data.url ? (
-                            <a
-                                href={
-                                    Array.isArray(source.data.url)
-                                        ? source.data.url[0]
-                                        : source.data.url
-                                }
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {source.data.title}
-                            </a>
-                        ) : (
-                            source.data.title
-                        )}
-                    </Card.Title>
-                    <Card.Text>
-                        {new Date(source.data.publish_date).toLocaleString()}
-                    </Card.Text>
-                </Card.Body>
-            </Card>
-        ));
+    const sourceItem = (option) => (
+        <Card key={option.url} className="mb-4">
+            {option.image && (
+                <Card.Img
+                    variant="top"
+                    src={option.image}
+                    alt={option.title}
+                    className="rounded object-cover"
+                />
+            )}
+            <Card.Body>
+                <Card.Title>
+                    {Array.isArray(option.url) && option.url.length > 1 ? (
+                        <Accordion>
+                            <Accordion.Item eventKey="0">
+                                <Accordion.Header>
+                                    {option.title}
+                                </Accordion.Header>
+                                <Accordion.Body>
+                                    {option.url.map((url, index) => (
+                                        <a
+                                            key={index}
+                                            href={url.trim()}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs block text-gray-500 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                                        >
+                                            {index + 1}: {url.trim()}
+                                        </a>
+                                    ))}
+                                </Accordion.Body>
+                            </Accordion.Item>
+                        </Accordion>
+                    ) : (
+                        <a
+                            href={
+                                Array.isArray(option.url)
+                                    ? option.url[0]
+                                    : option.url
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs block text-gray-500 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                        >
+                            {option.title}
+                        </a>
+                    )}
+                </Card.Title>
+                <Card.Text>
+                    {new Date(option.publish_date).toLocaleString()}
+                </Card.Text>
+            </Card.Body>
+        </Card>
+    );
+
+    const renderSources = (id) => {
+        return (
+            transcriptSources
+                ?.filter((t) => t.id === id)
+                ?.at(0)
+                ?.data?.filter((i) => !!i.title)
+                ?.map((option) => {
+                    console.log("option", option);
+                    if (option.references) {
+                        return (
+                            <Accordion key={option.title} className="mb-4">
+                                <Accordion.Item eventKey="0">
+                                    <Accordion.Header>
+                                        {option.title}
+                                    </Accordion.Header>
+                                    <Accordion.Body>
+                                        <Card.Text className="mb-4">
+                                            {option.description}
+                                        </Card.Text>
+                                        {option.references.map(sourceItem)}
+                                    </Accordion.Body>
+                                </Accordion.Item>
+                            </Accordion>
+                        );
+                    } else {
+                        return sourceItem(option);
+                    }
+                }) || <div>No sources found.</div>
+        );
     };
 
     const toggleSourcesVisibility = () => {
@@ -462,7 +542,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                             {isSourcesVisible ? "Hide Sources" : "View Sources"}
                         </Accordion.Header>
                         <Accordion.Body>
-                            {isSourcesVisible && renderSources()}
+                            {isSourcesVisible && renderSources(transcript.id)}
                         </Accordion.Body>
                     </Accordion.Item>
                 )}

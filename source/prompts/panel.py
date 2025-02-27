@@ -1,3 +1,4 @@
+from enum import Enum
 import re
 from source.prompts.base import TagsParser, clean_tags
 import textwrap
@@ -196,6 +197,12 @@ class TranscriptParser(BaseOutputParser[str]):
         return "\n".join(blocks)
 
 
+class TranscriptIssueCoverage(str, Enum):
+    WHOLE_TRANSCRIPT = "whole transcript"
+    MULTIPLE_SEGMENTS = "multiple segments"
+    SINGLE_SEGMENT = "single segment"
+
+
 class TranscriptQualityIssue(BaseModel):
     title: str = Field(..., title="Title", description="Title describing the issue.")
     details: str = Field(
@@ -207,7 +214,7 @@ class TranscriptQualityIssue(BaseModel):
     transcript_segments: list[str] = Field(
         ...,
         title="Transcript segments",
-        description="One or more segments which have the issue and need to be fixed.",
+        description="One or more segments which have the issue and need to be fixed. Format should match original content: <personN>...</personN><personM>...</personM>",
         min_length=1,
     )
     severity: int = Field(
@@ -217,13 +224,18 @@ class TranscriptQualityIssue(BaseModel):
         min=1,
         max=5,
     )
+    issue_coverage: TranscriptIssueCoverage = Field(
+        ...,
+        title="Issue coverage",
+        description="Coverage for the issue impacting the transcript: 'whole transcript', 'multiple segments', or 'single segment'.",
+    )
 
 
 class TranscriptQualityCheck(BaseModel):
     pass_test: bool = Field(
         ...,
         title="Valid transcript",
-        description="Boolean value indicating if transcript passes quality check.",
+        description="Boolean indicating whether the transcript passes the quality check. Set to True only if no issues are present.",
     )
     issues: List[TranscriptQualityIssue] = Field(
         ...,
@@ -337,16 +349,13 @@ verify_transcript_quality = PromptFormatter(
         Engagement techniques: {engagement_techniques}
         Other instructions: {user_instructions}
 
-        Main Item:
-        {main_item}
+        Main Item: {main_item}
+        Transcript length: {transcript_length}
 
         Create a list in the specified format for issues to fix, or return an empty list if there's nothing to fix.
         """
     ),
 )
-
-# Transcript length:
-# {transcript_length}
 
 
 class TranscriptQualityCheckParseWrapper:
@@ -432,12 +441,14 @@ transcript_template = {
         - Incorporate suggestions, ideas, or issues from the provided list to extend the content meaningfully.
         - Strive for maximum word count by fully utilizing the max_output_tokens limit without compromising quality.
         - Prioritize length and depth in the output, transforming brief conversations into extensive, detailed discussions.
+        - Do not leave out anything from the original transcript and make sure to include all segments of provided transcript.
         """,
         "reduce": """
         - Compress the transcript to fit within a specified word count.
         - Use the provided examples, instructions, and issue list for refinement.
         - Focus on reducing length while preserving all key content and addressing issues highlighted.
         - Prioritize concise phrasing to achieve the shortest possible version without losing meaning.
+        - Do not leave out anything from the original transcript and make sure to include all segments of provided transcript.
         """,
     },
     "format": """
@@ -601,123 +612,134 @@ transcript_rewriter = PromptFormatter(
 
 transcript_rewriter.parser = TranscriptParser()
 
-# transcript_rewriter_extend = PromptFormatter(
-#     system=textwrap.dedent(
-#         f"""
-#         {ACTOR_INTRODUCTIONS}
-#         IDENTITY:
-#         {transcript_template["identity"]}
+transcript_rewriter_extend = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        IDENTITY:
+        {transcript_template["identity"]}
 
-#         {PRE_THINK_INSTRUCT}
+        {PRE_THINK_INSTRUCT}
 
-#         INSTRUCTION:
-#         {transcript_template["instructions"]["rewriter"]}
-#         {transcript_template["length"]["extend"]}
-#         {ROLES_PERSON_INSTRUCT}
+        INSTRUCTION:
+        {transcript_template["instructions"]["rewriter"]}
+        {transcript_template["length"]["extend"]}
+        {ROLES_PERSON_INSTRUCT}
 
-#         FORMAT:
-#         {transcript_template["format"]}
+        {textwrap.indent(load_fewshot_examples('transcript_rewriter_extend.txt'), prefix="        ")}
 
-#         {textwrap.indent(load_fewshot_examples('transcript_rewriter_extend.txt'), prefix="        ")}
-#         """
-#     ),
-#     user=textwrap.dedent(
-#         """
-#         Transcript start:
-#         {transcript}
-#         Transcript end.
+        FORMAT:
+        {transcript_template["format"]}
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Issues (fix these):
+        {feedback}
 
-#         Issues (fix these):
-#         {feedback}
+        Content start:
+        {content}
+        Content end.
 
-#         Content start:
-#         {content}
-#         Content end.
+        Previous episodes:
+        {previous_episodes}
+        Previous episodes end.
 
-#         Previous episodes:
-#         {previous_episodes}
-#         Previous episodes end.
+        Transcript configuration:
+        Current date: {date}
+        Current time: {time}
+        Word count: {word_count}
+        Language: {output_language}
+        Conversation Style: {conversation_style}
+        Person 1 role: {roles_person1}
+        Person 2 role: {roles_person2}
+        Dialogue Structure: {dialogue_structure}
+        Engagement techniques: {engagement_techniques}
+        Other instructions: {user_instructions}
 
-#         Transcript configuration:
-#         Current date: {date}
-#         Current time: {time}
-#         Word count: {word_count}
-#         Language: {output_language}
-#         Conversation Style: {conversation_style}
-#         Person 1 role: {roles_person1}
-#         Person 2 role: {roles_person2}
-#         Dialogue Structure: {dialogue_structure}
-#         Engagement techniques: {engagement_techniques}
-#         Other instructions: {user_instructions}
+        Main Item:
+        {main_item}
 
-#         Main Item:
-#         {main_item}
-#         """
-#     ),
-# )
+        Extend and expand and fix the specified issues using provided instructions in the following transcript:
+
+        Transcript start:
+        {transcript}
+        Transcript end.
+
+        Make sure to return the whole transcript. Not just the extended or fixed parts.
+        Always extend the transcript. Do not return the original transcript.
+        """
+    ),
+)
 
 
-# # Transcript and Issue history :
-# # {previous_transcripts}
-# # Transcript and Issue history end.
+# Transcript and Issue history :
+# {previous_transcripts}
+# Transcript and Issue history end.
 
-# transcript_rewriter_extend.parser = TranscriptParser()
+transcript_rewriter_extend.parser = TranscriptParser()
 
-# transcript_rewriter_reduce = PromptFormatter(
-#     system=textwrap.dedent(
-#         f"""
-#         {ACTOR_INTRODUCTIONS}
-#         IDENTITY:
-#         {transcript_template["identity"]}
+transcript_rewriter_reduce = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        IDENTITY:
+        {transcript_template["identity"]}
 
-#         {PRE_THINK_INSTRUCT}
+        {PRE_THINK_INSTRUCT}
 
-#         INSTRUCTION:
-#         {transcript_template["instructions"]["rewriter"]}
-#         {transcript_template["length"]["reduce"]}
+        INSTRUCTION:
+        {transcript_template["instructions"]["rewriter"]}
+        {transcript_template["length"]["reduce"]}
 
-#         FORMAT:
-#         {transcript_template["format"]}
+        {textwrap.indent(load_fewshot_examples('transcript_rewriter_reduce.txt'), prefix="        ")}
 
-#         {textwrap.indent(load_fewshot_examples('transcript_rewriter_reduce.txt'), prefix="        ")}
-#         """
-#     ),
-#     user=textwrap.dedent(
-#         """
-#         Transcript start:
-#         {transcript}
-#         Transcript end.
+        FORMAT:
+        {transcript_template["format"]}
+        """
+    ),
+    user=textwrap.dedent(
+        """
 
-#         Issues (fix these):
-#         {feedback}
+        Issues (fix these):
+        {feedback}
 
-#         Content start:
-#         {content}
-#         Content end.
+        Content start:
+        {content}
+        Content end.
 
-#         Previous episodes:
-#         {previous_episodes}
-#         Previous episodes end.
+        Previous episodes:
+        {previous_episodes}
+        Previous episodes end.
 
-#         Transcript configuration:
-#         Current date: {date}
-#         Current time: {time}
-#         Word count: {word_count}
-#         Language: {output_language}
-#         Conversation Style: {conversation_style}
-#         Person 1 role: {roles_person1}
-#         Person 2 role: {roles_person2}
-#         Dialogue Structure: {dialogue_structure}
-#         Engagement techniques: {engagement_techniques}
-#         Other instructions: {user_instructions}
+        Transcript configuration:
+        Current date: {date}
+        Current time: {time}
+        Word count: {word_count}
+        Language: {output_language}
+        Conversation Style: {conversation_style}
+        Person 1 role: {roles_person1}
+        Person 2 role: {roles_person2}
+        Dialogue Structure: {dialogue_structure}
+        Engagement techniques: {engagement_techniques}
+        Other instructions: {user_instructions}
 
-#         Main Item:
-#         {main_item}
-#         """
-#     ),
-# )
+        Main Item:
+        {main_item}
 
-# transcript_rewriter_reduce.parser = TranscriptParser()
+        Reduce and shorten and fix the specified issues using provided instructions in the following transcript:
+
+        Transcript start:
+        {transcript}
+        Transcript end.
+
+        Make sure to return the whole transcript. Not just the reduced or fixed parts.
+        Always reduce and shorten the transcript. Do not return the original transcript.
+        """
+    ),
+)
+
+transcript_rewriter_reduce.parser = TranscriptParser()
 
 
 transcript_writer = PromptFormatter(
