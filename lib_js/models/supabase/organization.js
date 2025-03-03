@@ -16,6 +16,18 @@ export class UserProfileModel extends SupabaseModel {
             dbColumn: "profile_picture"
         },
         metadata: { type: "json", required: false, dbColumn: "metadata" },
+        lang: { type: "string", required: false, dbColumn: "lang" },
+        activePanelId: {
+            type: "uuid",
+            required: false,
+            dbColumn: "active_panel_id"
+        },
+        preferences: { type: "json", required: false, dbColumn: "preferences" },
+        paymentDetails: {
+            type: "json",
+            required: false,
+            dbColumn: "payment_details"
+        },
         disabled: { type: "boolean", required: false, dbColumn: "disabled" },
         disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
         createdAt: { type: "date", required: false, dbColumn: "created_at" },
@@ -30,6 +42,20 @@ export class UserProfileModel extends SupabaseModel {
             required: false,
             dbColumn: "active_conversation_id"
         }
+    };
+}
+
+// Define UserDataModel
+export class UserDataModel extends SupabaseModel {
+    static TABLE_NAME = "user_data";
+    static TABLE_FIELDS = {
+        id: { type: "uuid", required: false, dbColumn: "id" },
+        authId: { type: "uuid", required: false, dbColumn: "auth_id" },
+        item: { type: "string", required: true, dbColumn: "item" },
+        targetId: { type: "uuid", required: false, dbColumn: "target_id" },
+        data: { type: "json", required: false, dbColumn: "data" },
+        createdAt: { type: "date", required: false, dbColumn: "created_at" },
+        updatedAt: { type: "date", required: false, dbColumn: "updated_at" }
     };
 }
 

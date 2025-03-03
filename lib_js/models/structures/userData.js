@@ -4,13 +4,36 @@ import {
     OrganizationTeamModel,
     OrganizationRoleModel,
     OrganizationTeamMembersModel,
-    OrganizationUsersModel
+    OrganizationUsersModel,
+    UserDataModel
 } from "../supabase/organization.js";
 import {
     ACLGroupUsersModel,
     ACLGroupUsersWithItems,
     ACLGroupModel
 } from "../supabase/acl.js";
+
+export class UserAvatarData {
+    constructor(email = null, name = null, profilePicture = null) {
+        this.email = email;
+        this.name = name;
+        this.profilePicture = profilePicture;
+    }
+}
+
+export class UserPreferencesData {
+    constructor(
+        lang = null,
+        metadata = null,
+        preferences = null,
+        paymentDetails = null
+    ) {
+        this.lang = lang;
+        this.metadata = metadata;
+        this.preferences = preferences;
+        this.paymentDetails = paymentDetails;
+    }
+}
 
 export class UserOrganizationRequestData {
     constructor(email = null, authId = null, metadata = null, isAdmin = false) {
@@ -22,12 +45,12 @@ export class UserOrganizationRequestData {
 }
 
 export class UserData {
-    constructor(supabase, authId, userData = null) {
+    constructor(supabase, authId, userProfileData = null) {
         this.listeners = [];
         this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
         this.authId = authId;
         this.supabase = supabase;
-        this.profile = userData;
+        this.profile = userProfileData;
         this.organizations = null;
         this.teams = null;
         this.roles = null;
@@ -35,6 +58,7 @@ export class UserData {
         this.asUser = null;
         this.userInAclGroup = null;
         this.aclGroup = null;
+        this.userData = null; // To store fetched user_data
     }
 
     listen(callback) {
@@ -311,5 +335,52 @@ export class UserData {
             return this.asUser[organizationId].isAdmin;
         }
         return false;
+    }
+
+    // New Methods for UserData
+    async fetchUserData(refresh = false) {
+        if (!this.userData || refresh) {
+            this.userData = await UserDataModel.fetchExistingFromSupabase(
+                this.supabase,
+                { authId: this.authId }
+            );
+        }
+        return this.userData;
+    }
+
+    async defineUserData(userDataItem, replace = false) {
+        userDataItem.authId = this.authId;
+
+        if (replace && !userDataItem.id) {
+            const existingItems = await UserDataModel.fetchExistingFromSupabase(
+                this.supabase,
+                {
+                    authId: this.authId,
+                    item: userDataItem.item,
+                    targetId: userDataItem.targetId
+                }
+            );
+
+            if (existingItems.length > 0) {
+                existingItems.sort(
+                    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                );
+                userDataItem.id = existingItems[0].id;
+            }
+        }
+
+        return await userDataItem.create(this.supabase);
+    }
+
+    async matchUserData(filters) {
+        if (!this.userData) {
+            await this.fetchUserData();
+        }
+
+        return this.userData.filter((userDataItem) =>
+            Object.entries(filters).every(
+                ([key, value]) => userDataItem[key] === value
+            )
+        );
     }
 }

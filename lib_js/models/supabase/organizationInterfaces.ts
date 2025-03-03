@@ -8,12 +8,26 @@ export interface UserProfile extends SupabaseModel<UserProfile> {
     name?: string;
     profilePicture?: string;
     metadata?: object;
+    lang?: string;
+    activePanelId?: string;
+    preferences?: object;
+    paymentDetails?: object;
     disabled?: boolean;
     disabledAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
     activeOrganizationId?: string;
     activeConversationId?: string;
+}
+
+export interface UserData extends SupabaseModel<UserData> {
+    id?: string;
+    authId?: string;
+    item: string;
+    targetId?: string;
+    data?: object;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface OrganizationRole extends SupabaseModel<OrganizationRole> {

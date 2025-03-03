@@ -1,6 +1,9 @@
 import asyncio
 from app.core.session_storage import SessionStorage, get_storage
-from source.models.supabase.organization import OrganizationsModel  # Updated import
+from source.models.supabase.organization import (
+    OrganizationsModel,
+    UserDataModel,
+)  # Updated import
 from source.models.supabase.organization import (
     OrganizationRoleModel,
     OrganizationTeamModel,
@@ -8,7 +11,7 @@ from source.models.supabase.organization import (
     OrganizationUsersModel,
     UserProfileModel,
 )
-from source.models.structures.user import UserData
+from source.models.structures.user import UserData, UserAvatarData, UserPreferencesData
 from supabase.client import AsyncClient
 from uuid import UUID
 from typing import Dict, List, Optional
@@ -20,8 +23,10 @@ class User:
         self.supabase: AsyncClient = supabase
         self.model: UserData = user_data
         self.auth_id = UUID(auth_id)
-        self._organization_dict: Dict[UUID, OrganizationsModel] = {}  # Updated type
+        self._organization_dict: Dict[UUID, OrganizationsModel] = {}
         self._initialize_task: Optional[asyncio.Task] = None
+        self._profile: Optional[UserAvatarData] = None
+        self._preferences: Optional[UserPreferencesData] = None
 
     @property
     def is_initialized(self) -> bool:
@@ -40,7 +45,7 @@ class User:
 
     async def connect_to_organization(
         self,
-        organization: OrganizationsModel,  # Updated type
+        organization: OrganizationsModel,
         set_as_admin: bool = None,
         update_existing: bool = False,
     ) -> None:
@@ -89,6 +94,53 @@ class User:
         await self.model.profile.update(self.supabase)
 
     @property
+    def active_panel_id(self) -> Optional[UUID]:
+        return self.model.profile.active_panel_id
+
+    @active_panel_id.setter
+    async def set_active_panel(self, panel_id: UUID) -> None:
+        self.model.profile.active_panel_id = panel_id
+        await self.model.profile.update(self.supabase)
+
+    @property
+    def preferences(self) -> UserPreferencesData:
+        if not self._preferences:
+            self._preferences = UserPreferencesData(
+                lang=self.model.profile.lang,
+                metadata=self.model.profile.metadata,
+                preferences=self.model.profile.preferences,
+                payment_details=self.model.profile.payment_details,
+            )
+        return self._preferences
+
+    @preferences.setter
+    async def preferences(self, new_preferences: UserPreferencesData) -> None:
+        self.model.profile.lang = new_preferences.lang
+        self.model.profile.metadata = new_preferences.metadata
+        self.model.profile.preferences = new_preferences.preferences
+        self.model.profile.payment_details = new_preferences.payment_details
+        await self.model.profile.update(self.supabase)
+        self._preferences = new_preferences
+
+    @property
+    def avatar(self) -> UserAvatarData:
+        if not self._avatar:
+            self._avatar = UserAvatarData(
+                email=self.model.profile.email,
+                name=self.model.profile.name,
+                profile_picture=self.model.profile.profile_picture,
+            )
+        return self._profile
+
+    @avatar.setter
+    async def avatar(self, new_profile: UserAvatarData) -> None:
+        self.model.profile.email = new_profile.email
+        self.model.profile.name = new_profile.name
+        self.model.profile.profile_picture = new_profile.profile_picture
+        await self.model.profile.update(self.supabase)
+        self._profile = new_profile
+
+    @property
     def organization_access_disabled(self) -> bool:
         return self.model.as_user[self.active_organization_id].disabled
 
@@ -105,7 +157,7 @@ class User:
         return self.model.as_user[self.active_conversation_id]
 
     @property
-    def organization(self) -> Optional[OrganizationsModel]:  # Updated type
+    def organization(self) -> Optional[OrganizationsModel]:
         return self.get_organization_by_id(self.active_organization_id)
 
     @property
@@ -120,28 +172,28 @@ class User:
     def memberships(self) -> List[OrganizationTeamMembersModel]:
         return self.model.get_memberships_by_organization(self.user_id)
 
+    @property
+    async def user_data(self) -> List[UserDataModel]:
+        return await self.model.fetch_user_data()
+
+    async def update_user_data(self, item: UserDataModel):
+        await self.model.define_user_data(item)
+
+    async def match_user_data(self, **filters) -> List[UserDataModel]:
+        return await self.model.match_user_data(**filters)
+
     async def _init_organizations(
         self, refresh: bool = False
-    ) -> Dict[UUID, OrganizationsModel]:  # Updated type
-        """
-        Create or refresh OrganizationsModel instances from the items stored in self.organizations.
-
-        :param refresh: Whether to refresh the data from Supabase, defaults to False
-        :type refresh: bool, optional
-        :return: The dictionary of OrganizationsModel instances, keyed by organization ID
-        :rtype: Dict[UUID, OrganizationsModel]
-        """
+    ) -> Dict[UUID, OrganizationsModel]:
         if refresh or not self._organization_dict:
             if not self.model.organizations:
                 await self.model.fetch_organizations()
             if not self._organization_dict:
                 self._organization_dict = {}
 
-            # Use existing OrganizationsModel instances
             for organization in self.model.organizations:
                 self._organization_dict[organization.id] = organization
 
-            # Remove instances for organizations that no longer exist
             for organization_id in list(self._organization_dict.keys()):
                 if not any(
                     organization.id == organization_id
@@ -153,53 +205,20 @@ class User:
 
     async def get_organization_by_id(
         self, organization_id: UUID
-    ) -> Optional[OrganizationsModel]:  # Updated type
-        """
-        Get an OrganizationsModel instance by its ID.
-
-        :param organization_id: The ID of the organization
-        :type organization_id: UUID
-        :return: The OrganizationsModel instance, or None if not found
-        :rtype: Optional[OrganizationsModel]
-        """
+    ) -> Optional[OrganizationsModel]:
         if not self._organization_dict:
             await self._init_organizations()
 
         return self._organization_dict.get(organization_id)
 
-    async def fetch_acl_groups(self, refresh: bool = False) -> None:
-        """
-        Fetch the ACL groups for the user.
-
-        :param refresh: Whether to refresh the data from Supabase, defaults to False
-        :type refresh: bool, optional
-        """
-        await self.model.fetch_acl_groups(refresh)
+    # async def fetch_acl_groups(self, refresh: bool = False) -> None:
+    #     await self.model.fetch_acl_groups(refresh)
 
     async def has_access_to_item(self, item_id: UUID, item_type: str) -> bool:
-        """
-        Check if the user has access to a specific item.
-
-        :param item_id: The ID of the item
-        :type item_id: UUID
-        :param item_type: The type of the item
-        :type item_type: str
-        :return: True if the user has access, False otherwise
-        :rtype: bool
-        """
         return await self.model.has_access_to_item(item_id, item_type)
 
 
 async def get_current_user(supabase: AsyncClient) -> User:
-    """
-    Fetches the current user from the session storage or initializes a new one if not found.
-
-    Args:
-        supabase (AsyncClient): The Supabase client instance.
-
-    Returns:
-        User: The current user.
-    """
     session: Session = await supabase.auth.get_session()
     session_store: SessionStorage = get_storage(session.access_token)
 

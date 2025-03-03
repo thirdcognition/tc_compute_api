@@ -10,7 +10,10 @@ class User {
         this.authId = authId;
         this._organizationDict = {};
         this._initializeTask = null;
+        this._avatar = null;
+        this._preferences = null;
     }
+
     listen(callback) {
         if (
             typeof callback === "function" &&
@@ -26,6 +29,7 @@ class User {
             (listener) => listener(this, ...args) !== false
         );
     }
+
     get isInitialized() {
         return this._initializeTask !== null && this._initializeTask.done;
     }
@@ -99,6 +103,55 @@ class User {
 
     async setActiveConversation(conversationId) {
         this.model.profile.activeConversationId = conversationId;
+        await this.model.profile.update(this.supabase);
+    }
+
+    get activePanelId() {
+        return this.model.profile.activePanelId;
+    }
+
+    async setActivePanel(panelId) {
+        this.model.profile.activePanelId = panelId;
+        await this.model.profile.update(this.supabase);
+    }
+
+    get avatar() {
+        if (!this._avatar) {
+            this._avatar = {
+                email: this.model.profile.email,
+                name: this.model.profile.name,
+                profilePicture: this.model.profile.profilePicture
+            };
+        }
+        return this._avatar;
+    }
+
+    async setAvatar(newAvatar) {
+        this.model.profile.email = newAvatar.email;
+        this.model.profile.name = newAvatar.name;
+        this.model.profile.profilePicture = newAvatar.profilePicture;
+        this._avatar = newAvatar;
+        await this.model.profile.update(this.supabase);
+    }
+
+    get preferences() {
+        if (!this._preferences) {
+            this._preferences = {
+                lang: this.model.profile.lang,
+                metadata: this.model.profile.metadata,
+                preferences: this.model.profile.preferences,
+                paymentDetails: this.model.profile.paymentDetails
+            };
+        }
+        return this._preferences;
+    }
+
+    async setPreferences(newPreferences) {
+        this.model.profile.lang = newPreferences.lang;
+        this.model.profile.metadata = newPreferences.metadata;
+        this.model.profile.preferences = newPreferences.preferences;
+        this.model.profile.paymentDetails = newPreferences.paymentDetails;
+        this._preferences = newPreferences;
         await this.model.profile.update(this.supabase);
     }
 
@@ -187,6 +240,19 @@ class User {
 
     async hasAccessToItem(itemId, itemType) {
         return await this.model.hasAccessToItem(itemId, itemType);
+    }
+
+    // New Methods for UserData
+    async getUserData() {
+        return await this.model.fetchUserData();
+    }
+
+    async updateUserData(userDataItem) {
+        return await this.model.defineUserData(userDataItem);
+    }
+
+    async matchUserData(filters) {
+        return await this.model.matchUserData(filters);
     }
 }
 

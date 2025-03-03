@@ -7,6 +7,7 @@ from source.models.supabase.organization import (
     OrganizationUsersModel,
     OrganizationsModel,
     UserProfileModel,
+    UserDataModel,
 )
 from source.models.supabase.acl import (
     ACLGroupUsersModel,
@@ -35,12 +36,25 @@ class CreateOrganizationUserRequestData(BaseModel):
     is_admin: bool = False
 
 
+class UserAvatarData(BaseModel):
+    email: Optional[str]
+    name: Optional[str]
+    profile_picture: Optional[str]
+
+
+class UserPreferencesData(BaseModel):
+    lang: Optional[str]
+    metadata: Optional[Dict]
+    preferences: Optional[Dict]
+    payment_details: Optional[Dict]
+
+
 class UserData:
     def __init__(
         self,
         supabase: AsyncClient,
         auth_id: UUID,
-        user_data: Optional[UserProfileModel] = None,
+        user_profile_data: Optional[UserProfileModel] = None,
     ):
         """
         Initialize a UserData object.
@@ -49,12 +63,12 @@ class UserData:
         :type supabase: AsyncClient
         :param auth_id: The authentication ID of the user. Used to fetch user-specific data.
         :type auth_id: UUID
-        :param user_data: The user data, defaults to None. If provided, it is used to initialize the profile attribute.
-        :type user_data: Optional[UserProfile], optional
+        :param user_profile_data: The user data, defaults to None. If provided, it is used to initialize the profile attribute.
+        :type user_profile_data: Optional[UserProfile], optional
         """
         self.auth_id: UUID = auth_id
         self.supabase: AsyncClient = supabase
-        self.profile: Optional[UserProfileModel] = user_data
+        self.profile: Optional[UserProfileModel] = user_profile_data
         # The organizations the user is a part of. Initialized as None and fetched when needed.
         self.organizations: Optional[List[OrganizationsModel]] = None
         # The teams the user is a part of, organized by organization ID. Initialized as None and fetched when needed.
@@ -71,6 +85,7 @@ class UserData:
         self.user_in_acl_group: Optional[List[ACLGroupUsersModel]] = None
         # The ACL group models the user is a part of. Initialized as None and fetched when needed.
         self.acl_group: Optional[List[ACLGroupModel]] = None
+        self.user_data: Optional[List[UserDataModel]] = None
 
     @staticmethod
     async def create_organization_user(
@@ -110,11 +125,11 @@ class UserData:
                 service_client: AsyncClient = (
                     service_client or await get_supabase_service_client()
                 )
-                user_data = await service_client.rpc(
+                user_profile_data = await service_client.rpc(
                     "get_user_id_by_email", {"email": request_data.email}
                 ).execute()
-                if len(user_data.data) > 0:
-                    auth_id = user_data.data[0]["id"]
+                if len(user_profile_data.data) > 0:
+                    auth_id = user_profile_data.data[0]["id"]
 
         elif request_data.auth_id is not None:
             # Check existence directly with the class method using auth_id
@@ -131,12 +146,12 @@ class UserData:
                 service_client: AsyncClient = (
                     service_client or await get_supabase_service_client()
                 )
-                user_data = await service_client.auth.admin.get_user_by_id(
+                user_profile_data = await service_client.auth.admin.get_user_by_id(
                     request_data.auth_id
                 )
                 auth_id = (
-                    user_data.user.id
-                    if (user_data.user and user_data.user.id)
+                    user_profile_data.user.id
+                    if (user_profile_data.user and user_profile_data.user.id)
                     else None
                 )
         else:
@@ -357,6 +372,46 @@ class UserData:
                     )
         return self.roles
 
+    async def fetch_user_data(self, refresh: bool = False) -> List[UserDataModel]:
+        """
+        Fetch the user_data of user from Supabase.
+
+        :param refresh: Whether to refresh the data from Supabase, defaults to False
+        :type refresh: bool, optional
+        :return: The list of user_data available in Supabase
+        :rtype: Dict[UUID, List[OrganizationRole]]
+        """
+        if not self.user_data or refresh:
+            self.user_data = await UserDataModel.fetch_existing_from_supabase(
+                self.supabase,
+                filter={"auth_id": str(self.profile.auth_id)},
+            )
+        return self.user_data
+
+    async def define_user_data(
+        self, user_data: UserDataModel, replace: bool = False
+    ) -> UserDataModel:
+        user_data.auth_id = self.profile.auth_id
+
+        if replace and user_data.id is None:
+            existing_items: list[
+                UserDataModel
+            ] = await UserDataModel.fetch_existing_from_supabase(
+                self.supabase,
+                filter={
+                    "auth_id": str(self.profile.auth_id),
+                    "item": user_data.item,
+                    "target_id": user_data.target_id,
+                },
+            )
+            if len(existing_items) > 0:
+                existing_items = sorted(
+                    existing_items, key=lambda item: item.created_at, reverse=True
+                )
+                user_data.id = existing_items[0].id
+
+        return await user_data.create(self.supabase)
+
     async def fetch_memberships(
         self, refresh: bool = False
     ) -> Dict[UUID, List[OrganizationTeamMembersModel]]:
@@ -576,3 +631,26 @@ class UserData:
         if organization_id in self.as_user:
             return self.as_user[organization_id].is_admin
         return False
+
+    async def match_user_data(self, **filters) -> list[UserDataModel]:
+        """
+        Generalized method to fetch user data based on provided filters.
+
+        Args:
+            **filters: Key-value pairs to filter user data.
+
+        Returns:
+            A list of UserDataModel instances that match all provided filters.
+        """
+        if not self.profile:
+            await self.fetch_user_profile()
+        if not self.user_data:
+            await self.fetch_user_data()
+
+        return [
+            user_data_item
+            for user_data_item in self.user_data
+            if all(
+                getattr(user_data_item, key) == value for key, value in filters.items()
+            )
+        ]

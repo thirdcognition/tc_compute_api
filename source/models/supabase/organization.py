@@ -18,6 +18,10 @@ class UserProfileModel(SupabaseModel):
     name: Optional[str] = Field(default=None)
     profile_picture: Optional[str] = Field(default=None)
     metadata: Optional[Dict] = Field(default=None)
+    lang: Optional[str] = Field(default=None)
+    active_panel_id: Optional[UUID] = Field(default=None)
+    preferences: Optional[Dict] = Field(default=None)
+    payment_details: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)
@@ -32,6 +36,17 @@ class UserProfileModel(SupabaseModel):
         elif isinstance(v, dict):
             return json.dumps(v)
         return v
+
+
+class UserDataModel(SupabaseModel):
+    TABLE_NAME: ClassVar[str] = "user_data"
+    id: Optional[UUID] = Field(default=None)
+    auth_id: Optional[UUID] = Field(default=None)
+    item: str
+    target_id: Optional[UUID] = Field(default=None)
+    data: Optional[Dict] = Field(default=None)
+    created_at: Optional[datetime] = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
 
 
 class OrganizationRoleModel(SupabaseModel):

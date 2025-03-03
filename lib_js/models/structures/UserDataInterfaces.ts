@@ -7,9 +7,23 @@ import {
     OrganizationTeam,
     OrganizationRole,
     OrganizationTeamMembers,
-    OrganizationUsers
+    OrganizationUsers,
+    UserData as UserDataModel
 } from "../supabase/organizationInterfaces";
 import { ACLGroupUsers, ACLGroup } from "../supabase/aclInterfaces";
+
+export interface UserAvatarData {
+    email: string | null;
+    name: string | null;
+    profilePicture: string | null;
+}
+
+export interface UserPreferencesData {
+    lang: string | null;
+    metadata: Record<string, unknown> | null;
+    preferences: Record<string, unknown> | null;
+    paymentDetails: Record<string, unknown> | null;
+}
 
 export interface UserOrganizationRequestData {
     email: string | null;
@@ -29,6 +43,7 @@ export interface UserData {
     asUser: Record<string, OrganizationUsers> | null;
     userInAclGroup: ACLGroupUsers[] | null;
     aclGroup: ACLGroup[] | null;
+    userData: UserDataModel[] | null;
 
     // Methods
     saveAllToSupabase(): Promise<void>;
@@ -64,4 +79,12 @@ export interface UserData {
         callback: (model: UserData, ...args: unknown[]) => boolean | void
     ): this;
     notifyListeners(...args: unknown[]): void;
+
+    // New Methods for UserData
+    fetchUserData(refresh?: boolean): Promise<UserDataModel[]>;
+    defineUserData(
+        userDataItem: UserDataModel,
+        replace?: boolean
+    ): Promise<UserDataModel>;
+    matchUserData(filters: Partial<UserDataModel>): Promise<UserDataModel[]>;
 }
