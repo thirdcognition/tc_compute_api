@@ -167,7 +167,15 @@ def process_transcript_task(
         transcript_ids = process_transcript_generation(
             tokens, transcript, panel, metadata, supabase_client
         )
-        return [str(transcript_id) for transcript_id in transcript_ids]
+        ret_ids = []
+        for transcript_id in transcript_ids:
+            if isinstance(transcript_id, list):
+                ret_ids.extend([str(id) for id in transcript_id])
+            else:
+                ret_ids.append(str(transcript_id))
+
+        return ret_ids
+        # return [str(transcript_id) for transcript_id in transcript_ids ]
     else:
         return None
 

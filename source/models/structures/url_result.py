@@ -14,7 +14,7 @@ class UrlResult(BaseModel):
     publish_date: Optional[datetime] = None
     categories: Optional[List[str]] = None
     lang: Optional[str] = None
-    original_content: Optional[str] = None
+    # original_content: Optional[str] = None
     metadata: Optional[str] = None
     human_readable_content: Optional[str] = None
 

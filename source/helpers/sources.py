@@ -60,7 +60,7 @@ def parse_since_value(since_value):
 def create_web_source(
     entry,
     source: str,
-    lang: str,
+    lang: str = "NA",
     rss_source: str = None,
     original_source: Optional[str] = None,
     category=None,
@@ -70,24 +70,26 @@ def create_web_source(
     """
     try:
         result = WebSource(
-            title=entry.title,
+            title=entry.title if entry is not None else "User provided source",
             rss_source=rss_source or source,
             source=source,
             original_source=original_source or entry.link,
             description=getattr(entry, "summary", None),
             image=(
                 entry.enclosures[0].href
-                if hasattr(entry, "enclosures") and entry.enclosures
+                if entry is not None
+                and hasattr(entry, "enclosures")
+                and entry.enclosures
                 else None
             ),
             publish_date=(
                 parse_publish_date(entry.published.replace("GMT", "+0000"))
-                if hasattr(entry, "published") and entry.published
+                if entry is not None and hasattr(entry, "published") and entry.published
                 else None
             ),
             categories=(
                 [category.term for category in entry.tags]
-                if hasattr(entry, "tags")
+                if entry is not None and hasattr(entry, "tags")
                 else []
                 if category is None
                 else [category]
@@ -266,18 +268,14 @@ def fetch_urls_items(urls: List[str]) -> List[WebSource]:
 
     for url in urls:
         try:
-            url_results = resolver.resolve_url(url)
-            news_item = WebSource(
-                title=url_results.title,
+            # url_results = resolver.resolve_url(url)
+            news_item = create_web_source(
+                entry=None,
                 source="url",
                 original_source=url,
-                description=url_results.description,
-                image=url_results.image,
-                publish_date=url_results.publish_date,
-                categories=url_results.categories,
-                lang=url_results.lang,
             )
-            news_items.append(news_item)
+            if news_item is not None:
+                news_items.append(news_item)
         except Exception as e:
             print(f"Failed to resolve {url}: {e}")
 
@@ -355,7 +353,8 @@ def fetch_links(
             print(f"Fetch links: Unable to fetch source {e=} \n\n {source=}")
 
     resolve_items: List[WebSourceCollection | WebSource] = None
-    if len(all_items) > max_ids:
+    print(f"Length of {len(all_items)=}, \n\n{all_items=}")
+    if len(all_items) > (max_ids + 1):
         resolve_items = group_rss_items(
             all_items,
             guidance,
@@ -473,13 +472,13 @@ def fetch_links(
                             if any(
                                 collection_results
                             ):  # Check if all tasks in the group were successful
-                                item.load_from_supabase(supabase=supabase)
+                                item.load_from_supabase_sync(supabase=supabase)
                                 successful_results.append(item)
                         else:
                             if task_results[
                                 result_index
                             ]:  # Check if the standalone task was successful
-                                item.load_from_supabase(supabase=supabase)
+                                item.load_from_supabase_sync(supabase=supabase)
                                 successful_results.append(item)
                             result_index += 1
                 else:
@@ -523,10 +522,11 @@ def deduplicate_and_validate_configs(
     ]
 
 
-def manage_news_sources(
-    request_data: PanelRequestData = PanelRequestData(), metadata: dict = {}
-):
+def manage_news_sources(request_data: PanelRequestData = None, metadata: dict = {}):
     sources = []
+
+    if request_data is None:
+        raise ValueError("News sources must be defined")
 
     sources.extend(
         deduplicate_and_validate_configs(

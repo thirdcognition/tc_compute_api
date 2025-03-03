@@ -137,7 +137,6 @@ export const handleUpdatePanel = async (panelId, params) => {
 };
 
 export const handleCreateTranscript = async (params) => {
-    const longForm = params.longForm || false;
     const linksArray = params.discussionData?.metadata?.input_source || [];
     const googleNewsArray = params.discussionData?.metadata?.google_news || [];
     const yleNewsArray = params.discussionData?.metadata?.yle_news || [];
@@ -156,15 +155,7 @@ export const handleCreateTranscript = async (params) => {
         totalArticles +=
             sourceArray.reduce((val, config) => val + config.articles, 0) || 0;
     });
-    const articleCount = Math.max(totalArticles + (linksArray || []).length, 1);
-    const maxNumChunks = Math.max(
-        longForm ? Math.ceil((params.wordCount * 5) / 8192) : 1,
-        longForm ? articleCount : 1
-    );
-    const minChunkSize = Math.max(
-        Math.min(300, params.wordCount),
-        Math.min(Math.floor((params.wordCount / articleCount) * 3), 8192)
-    );
+
     try {
         const taskId = await createTranscript({
             title: params.title,
@@ -187,15 +178,15 @@ export const handleCreateTranscript = async (params) => {
                         : (params.outputLanguage !== "English"
                               ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
                               : "") + params.userInstructions,
-                output_language: params.outputLanguage,
-                max_num_chunks: maxNumChunks,
-                min_chunk_size: minChunkSize
+                output_language: params.outputLanguage
             },
             max_output_tokens: Math.min(params.wordCount * 5, 8192),
             longform: params.longForm,
             bucket_name: "public_panels",
             panel_id: params.panelId,
-            cronjob: params.cronjob
+            cronjob: params.cronjob,
+            segments: params.segments,
+            news_items: params.newsItems
         });
         return { taskId, success: true };
     } catch (error) {

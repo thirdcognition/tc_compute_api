@@ -369,7 +369,7 @@ class LinkResolver:
             ),
             lang=metadata.get("og:locale", "EN").split("_")[0],
             metadata=json.dumps(metadata),
-            original_content=clean_html(content),
+            # original_content=clean_html(content),
             human_readable_content=text,
             image_data=image_data,
         )

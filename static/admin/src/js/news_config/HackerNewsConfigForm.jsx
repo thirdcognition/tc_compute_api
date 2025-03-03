@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Form, Button, Card } from "react-bootstrap";
-import ArticleCountComponent from "../components/ArticleCountComponent";
 
 function HackerNewsConfigForm({ initialConfigs = [], onConfigsChange }) {
     const [configFields, setConfigFields] = useState(initialConfigs);

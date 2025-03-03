@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Form, Button, Card } from "react-bootstrap";
-import ArticleCountComponent from "../components/ArticleCountComponent";
 import ArticleReleasedWithinComponent from "../components/ArticleReleasedWithinComponent";
 import LanguageComponent from "../components/LanguageComponent";
 import CountryComponent from "../components/CountryComponent";

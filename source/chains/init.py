@@ -162,6 +162,13 @@ def init_llm(
         # use_structured_mode = True
 
     if model.provider == "AZURE":
+        completions = {
+            "max_tokens": model.max_tokens if "o1" not in model.model else None,
+            "max_completion_tokens": model.max_tokens if "o1" in model.model else None,
+        }
+        completions = {
+            key: value for key, value in completions.items() if value is not None
+        }
         llm = model.class_model(
             azure_deployment=model.model,
             api_version=provider.api_version,
@@ -172,8 +179,7 @@ def init_llm(
             ),
             # timeout=60000,
             request_timeout=120,
-            max_tokens=model.max_tokens if "o1" not in model.model else None,
-            max_completion_tokens=model.max_tokens if "o1" in model.model else None,
+            **completions,
             max_retries=2,
             **common_kwargs,
         )

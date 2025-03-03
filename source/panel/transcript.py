@@ -322,7 +322,7 @@ def create_panel_transcript(
         input_sources = set()
 
         if request_data.input_source:
-            input_sources = (
+            input_sources.update(
                 request_data.input_source
                 if isinstance(request_data.input_source, list)
                 else [request_data.input_source]

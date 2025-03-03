@@ -269,7 +269,22 @@ class WebSourceCollection(BaseModel):
 
         return resolved
 
-    def load_from_supabase(self, supabase: Client):
+    async def load_from_supabase(self, supabase: AsyncClient):
+        sources: List[WebSource] = None
+
+        if self.max_amount is None:
+            sources = self.web_sources
+        else:
+            sources = self.web_sources[: self.max_amount]
+
+        for item in sources:
+            item.load_from_supabase(supabase)
+
+        self.web_sources = sources
+
+        return sources
+
+    def load_from_supabase_sync(self, supabase: Client):
         sources: List[WebSource] = None
 
         if self.max_amount is None:
@@ -360,7 +375,16 @@ class WebSourceCollection(BaseModel):
         """
         # Save relationships between the collection and its web sources
         content_to_hash = "\n".join(
-            str(web_source.original_content or "") for web_source in self.web_sources
+            (
+                web_source.source_model.content_hash or str(self.article)
+                if self.article
+                else (
+                    web_source.url_result.human_readable_content
+                    if web_source.url_result
+                    else web_source.title
+                )
+            )
+            for web_source in self.web_sources
         )
 
         content_hash = (

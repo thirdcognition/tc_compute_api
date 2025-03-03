@@ -236,11 +236,13 @@ function PanelDetailEdit({
                         </Card.Body>
                     </Card>
                     <ArticleCountComponent
+                        label="Requested total segments"
                         value={segments}
                         onChange={(value) => setSegments(value)}
                     />
 
                     <ArticleCountComponent
+                        label="Maximum news items per segment"
                         value={newsItems}
                         onChange={(value) => setNewsItems(value)}
                     />
