@@ -12,14 +12,7 @@ import {
     getWordCountDescription,
     formatCronjob
 } from "./helpers/ui.js";
-import {
-    FaTimes,
-    FaClock,
-    FaRegStar,
-    FaCalendarAlt,
-    FaSyncAlt,
-    FaImage
-} from "react-icons/fa";
+import { FaTimes, FaClock, FaCalendarAlt } from "react-icons/fa";
 import CronjobComponent from "./components/CronjobComponent.jsx";
 import { Button, Card, Accordion } from "react-bootstrap";
 import { pollTaskStatus } from "./helpers/pollState.js";
@@ -32,6 +25,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
         transcript.generation_cronjob || transcript.metadata?.cronjob || ""
     ); // Editable cronjob in seconds
     const config = transcript.metadata?.conversation_config || {};
+    const [panelData, setPanelData] = useState([]);
     const [audios, setAudios] = useState([]);
     const [transcriptUrls, setTranscriptUrls] = useState({});
     const [audioUrls, setAudioUrls] = useState({});
@@ -42,6 +36,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
 
     useEffect(() => {
         fetchPanelDetails(transcript.panel_id).then((response) => {
+            setPanelData(response.discussionData);
             const processedSources = Object.entries(
                 response.transcriptSources || {}
             ).map(([id, sources]) => {
@@ -246,7 +241,15 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                     transcript.metadata?.conversation_config?.output_language ||
                     "English",
                 longForm: transcript.metadata?.longform,
-                cronjob: cronjob
+                cronjob: "",
+                newsItems:
+                    transcript.metadata?.news_items ||
+                    panelData?.metadata?.news_items ||
+                    5,
+                segments:
+                    transcript.metadata?.segments ||
+                    panelData?.metadata?.segments ||
+                    5
             });
             if (success && taskId) {
                 console.log(

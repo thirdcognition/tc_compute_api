@@ -38,12 +38,12 @@ def deserialize_sources(item_json):
         # print(
         #     "Deserialize Sources: Detected dictionary with 'web_sources' key, parsing as WebSourceCollection"
         # )
-        return WebSourceCollection.model_validate(item_json, strict=True)
+        return WebSourceCollection.model_validate(item_json)
     elif isinstance(item_json, dict):
         # print(
         #     "Deserialize Sources: Detected dictionary without 'web_sources' key, parsing as WebSource"
         # )
-        return WebSource.model_validate(item_json, strict=True)
+        return WebSource.model_validate(item_json)
     elif isinstance(item_json, str):
         # print("Deserialize Sources: Detected string")
         try:

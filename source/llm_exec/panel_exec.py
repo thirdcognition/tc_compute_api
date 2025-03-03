@@ -97,6 +97,9 @@ def transcript_rewriter(
 
     length_change_fail = False
 
+    if content is None or len(content) < 1:
+        raise ValueError("Content is empty, unable to continue generation.")
+
     word_count = min(word_count, count_words(content) // 1.25)
 
     while (not check_passed or change_length) and retry_count < max_retries:
@@ -347,6 +350,9 @@ def transcript_writer(
     print(
         f"transcript_writer - Starting with content ({count_words(content)}), conversation_config={conversation_config}"
     )
+    if content is None or len(content) < 1:
+        raise ValueError("Content is empty, unable to continue generation.")
+
     retries = 3
     result = ""
     current_datetime = datetime.now()
@@ -1044,6 +1050,9 @@ def transcript_combiner(
         article_count = len(sources)
     else:
         raise ValueError("Sources needed for combining resulting transcripts.")
+
+    if content is None or len(content) < 1:
+        raise ValueError("Content is empty, unable to generate transcript.")
 
     combined_transcripts.append(
         transcript_intro_writer(

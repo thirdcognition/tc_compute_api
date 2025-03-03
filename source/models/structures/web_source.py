@@ -49,7 +49,7 @@ class WebSource(BaseModel):
     organization_id: Optional[str] = None
     main_item: bool = False
 
-    rss_item: Any = None
+    rss_item: Optional[Any] = None
 
     _sorting_id: str = None
 

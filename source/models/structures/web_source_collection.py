@@ -269,7 +269,22 @@ class WebSourceCollection(BaseModel):
 
         return resolved
 
-    def load_from_supabase(self, supabase: Client):
+    async def load_from_supabase(self, supabase: AsyncClient):
+        sources: List[WebSource] = None
+
+        if self.max_amount is None:
+            sources = self.web_sources
+        else:
+            sources = self.web_sources[: self.max_amount]
+
+        for item in sources:
+            item.load_from_supabase(supabase)
+
+        self.web_sources = sources
+
+        return sources
+
+    def load_from_supabase_sync(self, supabase: Client):
         sources: List[WebSource] = None
 
         if self.max_amount is None:
