@@ -35,7 +35,7 @@ class WebSource(BaseModel):
     source_id: Optional[str] = None
     source_model: Optional[SourceModel] = None
     description: Optional[str] = None
-    original_content: Optional[str] = None
+    # original_content: Optional[str] = None
     url_result: Optional[UrlResult] = None
     article: Optional[NewsArticle] = None
     resolve_state: Optional[ResolveState] = ResolveState.UNRESOLVED
@@ -70,7 +70,7 @@ class WebSource(BaseModel):
             [
                 image_to_check in (self.url_result.image or ""),
                 image_to_check in (self.url_result.metadata or ""),
-                image_to_check in (self.url_result.original_content or ""),
+                # image_to_check in (self.url_result.original_content or ""),
                 image_to_check in (self.url_result.human_readable_content or ""),
             ]
         )
@@ -85,7 +85,7 @@ class WebSource(BaseModel):
             self.description = obj.description or self.description
             self.lang = obj.lang or self.lang
             self.categories = obj.categories or self.categories
-            self.original_content = obj.human_readable_content or self.original_content
+            # self.original_content = obj.human_readable_content or self.original_content
             self.resolved_source = obj.resolved_url or self.resolved_source
             self.source = obj.source or self.source
             self.publish_date = obj.publish_date or self.publish_date
@@ -117,9 +117,9 @@ class WebSource(BaseModel):
             self.description = obj.data.get("description") or self.description
             self.lang = obj.lang or self.lang
             self.categories = obj.data.get("categories") or self.categories
-            self.original_content = (
-                obj.data.get("original_content") or self.original_content
-            )
+            # self.original_content = (
+            #     obj.data.get("original_content") or self.original_content
+            # )
             self.resolve_state = ResolveState.resolve(
                 obj.data.get("resolve_state") or self.resolve_state
             )
@@ -148,7 +148,13 @@ class WebSource(BaseModel):
     def _populate_source_model(self):
         print(f"Populating source model for: {self.title} ({self.original_source})")
         content_to_hash = (
-            str(self.article) if self.article else (self.original_content or self.title)
+            str(self.article)
+            if self.article
+            else (
+                self.url_result.human_readable_content
+                if self.url_result
+                else self.title
+            )
         )
         content_hash = (
             hashlib.sha256(content_to_hash.encode("utf-8")).hexdigest()
@@ -443,9 +449,7 @@ class WebSource(BaseModel):
         # Construct the string representation
         title = self._get_field("title", "title", "title")
         description = self._get_field("description", "description", "description")
-        content = self._get_field(
-            "article", "human_readable_content", "original_content"
-        )
+        content = self._get_field("article", "human_readable_content", "description")
         categories = self._get_field("categories", "categories", "categories")
 
         # Format categories if they exist
@@ -631,16 +635,16 @@ class WebSource(BaseModel):
 
     def build_article(self):
         print(f"Formatting content for: {self.original_source}")
-        # try:
-        if self.original_content:
-            self.article = None
-            # try:
-            self.article = web_source_article_builder_sync(self.url_result)
-            # Extract details to the instance after generation
-            if self.article:
-                self._update_from_(self.article)  # Replaced manual updates
+        try:
+            if self.url_result:
+                self.article = None
+                try:
+                    self.article = web_source_article_builder_sync(self.url_result)
+                    # Extract details to the instance after generation
+                    if self.article:
+                        self._update_from_(self.article)  # Replaced manual updates
 
-            # except Exception as e:
-            #     logger.error(f"Failed to format text: {e}")
-        # except Exception as e:
-        #     print(f"Failed to format content for: {self.original_source}: {e}")
+                except Exception as e:
+                    print(f"Failed to format text: {e}")
+        except Exception as e:
+            print(f"Failed to format content for: {self.original_source}: {e}")
