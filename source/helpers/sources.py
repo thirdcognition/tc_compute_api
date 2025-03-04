@@ -353,7 +353,6 @@ def fetch_links(
             print(f"Fetch links: Unable to fetch source {e=} \n\n {source=}")
 
     resolve_items: List[WebSourceCollection | WebSource] = None
-    print(f"Length of {len(all_items)=}, \n\n{all_items=}")
     if len(all_items) > (max_ids + 1):
         resolve_items = group_rss_items(
             all_items,

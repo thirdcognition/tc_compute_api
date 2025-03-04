@@ -303,6 +303,14 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
             "No email defined or length of transcript_ids is 0, skipping email sending"
         )
         return
+    new_ids = []
+    for id in transcript_ids:
+        if isinstance(id, list):
+            new_ids.extend(new_ids)
+        else:
+            new_ids.append(new_ids)
+
+    transcript_ids = new_ids
 
     print(f"Send email to Email: {email} for Transcript IDs: {transcript_ids}")
 
