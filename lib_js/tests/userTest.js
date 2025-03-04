@@ -4,7 +4,7 @@ import { OrganizationsModel } from "../models/supabase/organization.js";
 import { User } from "../models/user.js";
 import { authenticate } from "./authTest.js";
 import { ApiConfig } from "../helpers/ApiHelper.js";
-import { createOrganizationUser } from "../tc_api/createUser.js";
+import CreateUserApi from "../tc_api/createUser.js";
 import assert from "assert";
 import dotenv from "dotenv";
 
@@ -48,7 +48,7 @@ describe("User Model Tests", function () {
             session.access_token,
             session.refresh_token
         );
-        newUser = await createOrganizationUser(
+        newUser = await CreateUserApi.createOrganizationUser(
             supabase,
             newOrg.id,
             requestData,

@@ -24,56 +24,54 @@ export interface PanelFiles {
 }
 
 /**
- * Function type definitions for panel.js
+ * Interface for the PanelAPI object.
  */
-export type GetPanelFunction = (
-    supabase: SupabaseClient,
-    panelId: string
-) => Promise<PanelDiscussionModel>;
+export interface PanelAPI {
+    getPanel(
+        supabase: SupabaseClient,
+        panelId: string
+    ): Promise<PanelDiscussionModel>;
 
-export type ListPanelsFunction = (
-    supabase: SupabaseClient
-) => Promise<PanelDiscussionModel[]>;
+    listPanels(supabase: SupabaseClient): Promise<PanelDiscussionModel[]>;
 
-export type GetPanelDetailsFunction = (
-    supabase: SupabaseClient,
-    panelId: string
-) => Promise<PanelDetails>;
+    getPanelDetails(
+        supabase: SupabaseClient,
+        panelId: string
+    ): Promise<PanelDetails>;
 
-export type GetPanelFilesFunction = (
-    supabase: SupabaseClient,
-    panelId: string
-) => Promise<PanelFiles>;
+    getPanelFiles(
+        supabase: SupabaseClient,
+        panelId: string
+    ): Promise<PanelFiles>;
 
-export type GetPanelTranscriptFunction = (
-    supabase: SupabaseClient,
-    transcriptId: string
-) => Promise<PanelTranscriptModel>;
+    getPanelTranscript(
+        supabase: SupabaseClient,
+        transcriptId: string
+    ): Promise<PanelTranscriptModel>;
 
-export type ListPanelTranscriptsFunction = (
-    supabase: SupabaseClient
-) => Promise<PanelTranscriptModel[]>;
+    listPanelTranscripts(
+        supabase: SupabaseClient
+    ): Promise<PanelTranscriptModel[]>;
 
-export type ListPanelTranscriptsByPanelIdFunction = (
-    supabase: SupabaseClient,
-    panelId: string
-) => Promise<PanelTranscriptModel[]>;
+    listPanelTranscriptsByPanelId(
+        supabase: SupabaseClient,
+        panelId: string
+    ): Promise<PanelTranscriptModel[]>;
 
-export type GetPanelAudioFunction = (
-    supabase: SupabaseClient,
-    audioId: string
-) => Promise<PanelAudioModel>;
+    getPanelAudio(
+        supabase: SupabaseClient,
+        audioId: string
+    ): Promise<PanelAudioModel>;
 
-export type ListPanelAudiosFunction = (
-    supabase: SupabaseClient
-) => Promise<PanelAudioModel[]>;
+    listPanelAudios(supabase: SupabaseClient): Promise<PanelAudioModel[]>;
 
-export type ListPanelAudiosByPanelIdFunction = (
-    supabase: SupabaseClient,
-    panelId: string
-) => Promise<PanelAudioModel[]>;
+    listPanelAudiosByPanelId(
+        supabase: SupabaseClient,
+        panelId: string
+    ): Promise<PanelAudioModel[]>;
 
-export type GetPanelTranscriptSourcesFunction = (
-    supabase: SupabaseClient,
-    transcriptId: string
-) => Promise<PanelTranscriptSourceReferenceModel[]>;
+    getPanelTranscriptSources(
+        supabase: SupabaseClient,
+        transcriptId: string
+    ): Promise<PanelTranscriptSourceReferenceModel[]>;
+}

@@ -2,7 +2,7 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 import { ApiConfig } from "../helpers/ApiHelperInterfaces";
-import { UserOrganizationRequestData } from "../models/data/UserDataInterfaces";
+import { UserOrganizationRequestData } from "../models/structures/UserDataInterfaces";
 
 export interface CreateUserParams {
     organizationId: string;
@@ -30,3 +30,25 @@ export type CreateOrganizationUserRequestData = {
     metadata: Record<string, unknown>; // JSON object
     is_admin: boolean;
 };
+
+/**
+ * Interface for the CreateUserAPI object.
+ */
+export interface CreateUserAPI {
+    convertToCreateOrganizationUserRequestData(
+        requestData: ConvertToCreateOrganizationUserRequestDataParams
+    ): CreateOrganizationUserRequestData;
+
+    createUser(
+        organizationId: string,
+        requestData: UserOrganizationRequestData,
+        apiConfig: ApiConfig
+    ): Promise<unknown>;
+
+    createOrganizationUser(
+        supabase: SupabaseClient,
+        organizationId: string,
+        requestData: UserOrganizationRequestData,
+        apiConfig: ApiConfig
+    ): Promise<unknown>;
+}
