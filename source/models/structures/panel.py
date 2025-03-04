@@ -53,7 +53,7 @@ class PanelRequestData(BaseModel):
     title: str = "New public morning show"
     input_source: Union[str, List[str]] = ""
     input_text: Optional[str] = ""
-    tts_model: str = "geminimulti"
+    tts_model: str = "elevenlabs"
     longform: bool = False
     bucket_name: str = "public_panels"
     display_tag: Optional[str] = ""

@@ -456,12 +456,19 @@ class SupabaseModel(BaseModel):
                 query.eq(id_column, filter)
 
         if values is not None:
+            if isinstance(values, str):
+                values = [values]
+            strvals = []
             for value in values:
                 if isinstance(value, dict):
                     for key, item in value.items():
                         query.in_(key, item)
-                else:
+                elif isinstance(value, list):
                     query.in_(id_column, value)
+                else:
+                    strvals.append(value)
+            if len(strvals) > 0:
+                query.in_(id_column, strvals)
 
         response: APIResponse = await query.execute()
         if not response.data:
@@ -506,12 +513,19 @@ class SupabaseModel(BaseModel):
                 query.eq(id_column, filter)
 
         if values is not None:
+            if isinstance(values, str):
+                values = [values]
+            strvals = []
             for value in values:
                 if isinstance(value, dict):
                     for key, item in value.items():
                         query.in_(key, item)
-                else:
+                elif isinstance(value, list):
                     query.in_(id_column, value)
+                else:
+                    strvals.append(value)
+            if len(strvals) > 0:
+                query.in_(id_column, strvals)
 
         response: APIResponse = query.execute()
         if not response.data:

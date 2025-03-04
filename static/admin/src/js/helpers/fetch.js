@@ -179,8 +179,6 @@ export async function updatePanel(panelId, data) {
             body: JSON.stringify(data)
         });
 
-        console.log("response", response);
-
         if (response) {
             return { success: true, response: response };
         } else {

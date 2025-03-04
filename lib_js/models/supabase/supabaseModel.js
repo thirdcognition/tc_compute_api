@@ -449,19 +449,30 @@ export class SupabaseModel {
             }
         }
 
-        if (values.length > 0) {
+        if (values !== null && values !== undefined) {
+            if (typeof values === "string") {
+                values = [values];
+            }
+            const strValues = [];
             for (const value of values) {
-                if (typeof value === "object") {
+                if (typeof value === "object" && !Array.isArray(value)) {
                     for (const key in value) {
                         const dbColumn =
                             this.TABLE_FIELDS[key]?.dbColumn || key;
                         query = query.in(dbColumn, value[key]);
                     }
-                } else {
+                } else if (Array.isArray(value)) {
                     const dbColumn =
                         this.TABLE_FIELDS[idColumn]?.dbColumn || idColumn;
                     query = query.in(dbColumn, value);
+                } else {
+                    strValues.push(value);
                 }
+            }
+            if (strValues.length > 0) {
+                const dbColumn =
+                    this.TABLE_FIELDS[idColumn]?.dbColumn || idColumn;
+                query = query.in(dbColumn, strValues);
             }
         }
 

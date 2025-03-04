@@ -40,8 +40,6 @@ function PanelDetailEdit({
     const [yleNewsConfigs, setYleNewsConfigs] = useState(
         panel.metadata?.yle_news || []
     );
-    const [expandedDescriptionIndex, setExpandedDescriptionIndex] =
-        useState(null);
     const [newsGuidance, setNewsGuidance] = useState(
         panel.metadata?.news_guidance || ""
     );

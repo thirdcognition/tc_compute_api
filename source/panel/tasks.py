@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import Tuple
 from uuid import UUID
 from celery import Task, chord
@@ -111,6 +112,17 @@ def handle_transcript_cron_results(new_transcript_ids):
     :param new_transcript_ids: List of new transcript IDs.
     """
     if new_transcript_ids:
+        if isinstance(new_transcript_ids, str):
+            try:
+                new_transcript_ids = json.loads(new_transcript_ids)
+            except json.JSONDecodeError as e:
+                print(f"Unable to decode transcript ids: {e=}")
+        if any(isinstance(i, list) for i in new_transcript_ids):
+            new_transcript_ids = [
+                str(item) for sublist in new_transcript_ids for item in sublist
+            ]
+        else:
+            new_transcript_ids = [str(id) for id in new_transcript_ids]
         send_email_about_new_shows_task.delay(new_transcript_ids)
 
 
@@ -164,6 +176,11 @@ def process_transcript_task(
         metadata = (panel.metadata or {}) if panel else {}
 
         # Process transcript generation
+        # transcript_ids = PanelTranscript.fetch_existing_from_supabase_sync(
+        #     supabase_client, filter={"transcript_parent_id": transcript.id}
+        # )
+        # transcript_ids = [transcript.id for transcript in transcript_ids]
+        # transcript_ids.append(transcript.id)
         transcript_ids = process_transcript_generation(
             tokens, transcript, panel, metadata, supabase_client
         )

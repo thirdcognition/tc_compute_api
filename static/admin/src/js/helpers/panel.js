@@ -67,10 +67,12 @@ export const handleCreatePanel = async (params) => {
             news_guidance: params.newsGuidance,
             news_items: parseInt(params.newsItems || 5),
             segments: parseInt(params.segments || 5),
+            languages: params.languages,
             ...(params.is_public !== undefined && {
                 is_public: params.is_public
             })
         });
+
         return { panelId, success: true };
     } catch (error) {
         console.error("Error creating panel:", error);
@@ -156,6 +158,13 @@ export const handleCreateTranscript = async (params) => {
             sourceArray.reduce((val, config) => val + config.articles, 0) || 0;
     });
 
+    params.segments =
+        params.segments || params.discussionData?.metadata?.segments;
+    params.newsItems =
+        params.newsItems || params.discussionData?.metadata?.news_items;
+    params.newsGuidance =
+        params.newsGuidance || params.discussionData?.metadata?.news_guidance;
+
     try {
         const taskId = await createTranscript({
             title: params.title,
@@ -186,7 +195,8 @@ export const handleCreateTranscript = async (params) => {
             panel_id: params.panelId,
             cronjob: params.cronjob,
             segments: params.segments,
-            news_items: params.newsItems
+            news_items: params.newsItems,
+            news_guidance: params.newsGuidance
         });
         return { taskId, success: true };
     } catch (error) {

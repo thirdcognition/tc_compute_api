@@ -31,7 +31,15 @@ def get_supabase_client() -> Client:
     pass
 
 
-def send_email_about_new_shows(transcript_ids: List[str]):
+# Celery task
+@celery_app.task
+def send_email_about_new_shows_task(transcript_ids: list[str]):
+    if isinstance(transcript_ids, str):
+        try:
+            transcript_ids = json.loads(transcript_ids)
+        except json.JSONDecodeError as e:
+            print(f"Unable to decode transcript ids: {e=}")
+
     if not SETTINGS.send_emails:
         print("Email sending is disabled.")
         return
@@ -293,26 +301,16 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
     if isinstance(transcript_ids, str):
         try:
             transcript_ids = json.loads(transcript_ids)
-            if isinstance(transcript_ids, str):
-                transcript_ids = [transcript_ids]
-        except json.JSONDecodeError:
-            transcript_ids = [transcript_ids]
+        except json.JSONDecodeError as e:
+            print(f"Unable to decode transcript ids: {e=}")
 
     if email is None or len(transcript_ids) == 0:
         print(
             "No email defined or length of transcript_ids is 0, skipping email sending"
         )
         return
-    new_ids = []
-    for id in transcript_ids:
-        if isinstance(id, list):
-            new_ids.extend(new_ids)
-        else:
-            new_ids.append(new_ids)
 
-    transcript_ids = new_ids
-
-    print(f"Send email to Email: {email} for Transcript IDs: {transcript_ids}")
+    print(f"Send email to Email: {email} for Transcript IDs: {repr(transcript_ids)}")
 
     supabase = get_sync_supabase_service_client()
 
@@ -351,18 +349,6 @@ def send_new_shows_email_task(email: str, transcript_ids: List[str]):
         print(f"Email sent successfully: {email_response}")
     except Exception as e:
         print(f"Failed to send email: {e}")
-
-
-# Celery task
-@celery_app.task
-def send_email_about_new_shows_task(transcript_ids: list[str]):
-    if isinstance(transcript_ids, str):
-        try:
-            transcript_ids = json.loads(transcript_ids)
-        except json.JSONDecodeError:
-            transcript_ids = transcript_ids
-
-    send_email_about_new_shows(transcript_ids)
 
 
 def send_email_to_mailchimp_group(
