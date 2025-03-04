@@ -2,15 +2,15 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 import {
-    UserProfile,
-    Organizations,
-    OrganizationTeam,
-    OrganizationRole,
-    OrganizationTeamMembers,
-    OrganizationUsers,
-    UserData as UserDataModel
+    UserProfileModel,
+    OrganizationsModel,
+    OrganizationTeamModel,
+    OrganizationRoleModel,
+    OrganizationTeamMembersModel,
+    OrganizationUsersModel,
+    UserDataModel
 } from "../supabase/organizationInterfaces";
-import { ACLGroupUsers, ACLGroup } from "../supabase/aclInterfaces";
+import { ACLGroupUsersModel, ACLGroupModel } from "../supabase/aclInterfaces";
 
 export interface UserAvatarData {
     email: string | null;
@@ -35,27 +35,33 @@ export interface UserOrganizationRequestData {
 export interface UserData {
     authId: string;
     supabase: SupabaseClient;
-    profile: UserProfile | null;
-    organizations: Organizations[] | null;
-    teams: Record<string, OrganizationTeam[]> | null;
-    roles: Record<string, OrganizationRole[]> | null;
-    memberships: Record<string, OrganizationTeamMembers[]> | null;
-    asUser: Record<string, OrganizationUsers> | null;
-    userInAclGroup: ACLGroupUsers[] | null;
-    aclGroup: ACLGroup[] | null;
+    profile: UserProfileModel | null;
+    organizations: OrganizationsModel[] | null;
+    teams: Record<string, OrganizationTeamModel[]> | null;
+    roles: Record<string, OrganizationRoleModel[]> | null;
+    memberships: Record<string, OrganizationTeamMembersModel[]> | null;
+    asUser: Record<string, OrganizationUsersModel> | null;
+    userInAclGroup: ACLGroupUsersModel[] | null;
+    aclGroup: ACLGroupModel[] | null;
     userData: UserDataModel[] | null;
 
     // Methods
     saveAllToSupabase(): Promise<void>;
-    fetchUserProfile(refresh?: boolean): Promise<UserProfile | null>;
-    fetchOrganizations(refresh?: boolean): Promise<Organizations[]>;
-    fetchTeams(refresh?: boolean): Promise<Record<string, OrganizationTeam[]>>;
-    fetchRoles(refresh?: boolean): Promise<Record<string, OrganizationRole[]>>;
+    fetchUserProfile(refresh?: boolean): Promise<UserProfileModel | null>;
+    fetchOrganizations(refresh?: boolean): Promise<OrganizationsModel[]>;
+    fetchTeams(
+        refresh?: boolean
+    ): Promise<Record<string, OrganizationTeamModel[]>>;
+    fetchRoles(
+        refresh?: boolean
+    ): Promise<Record<string, OrganizationRoleModel[]>>;
     fetchMemberships(
         refresh?: boolean
-    ): Promise<Record<string, OrganizationTeamMembers[]>>;
-    fetchAsUser(refresh?: boolean): Promise<Record<string, OrganizationUsers>>;
-    fetchAcl(refresh?: boolean): Promise<ACLGroupUsers[]>;
+    ): Promise<Record<string, OrganizationTeamMembersModel[]>>;
+    fetchAsUser(
+        refresh?: boolean
+    ): Promise<Record<string, OrganizationUsersModel>>;
+    fetchAcl(refresh?: boolean): Promise<ACLGroupUsersModel[]>;
     inAclGroup(aclGroupId: string): Promise<boolean>;
     hasAccessToItem(itemId: string, itemType: string): Promise<boolean>;
     connectWithAclGroup(
@@ -67,11 +73,15 @@ export interface UserData {
         organizationId: string,
         aclGroupId: string
     ): Promise<void>;
-    getTeamsByOrganization(organizationId: string): Promise<OrganizationTeam[]>;
-    getRolesByOrganization(organizationId: string): Promise<OrganizationRole[]>;
+    getTeamsByOrganization(
+        organizationId: string
+    ): Promise<OrganizationTeamModel[]>;
+    getRolesByOrganization(
+        organizationId: string
+    ): Promise<OrganizationRoleModel[]>;
     getMembershipsByOrganization(
         organizationId: string
-    ): Promise<OrganizationTeamMembers[]>;
+    ): Promise<OrganizationTeamMembersModel[]>;
     inOrganization(organizationId: string): Promise<boolean>;
     isAdminInOrganization(organizationId: string): Promise<boolean>;
 

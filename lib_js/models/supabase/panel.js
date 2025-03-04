@@ -41,7 +41,7 @@ export class PanelAudioModel extends SupabaseModel {
             required: false,
             dbColumn: "process_state"
         },
-        processFailMessage: {
+        processStateMessage: {
             type: "string",
             required: false,
             dbColumn: "process_state_message"
@@ -137,7 +137,7 @@ export class PanelTranscriptModel extends SupabaseModel {
             required: false,
             dbColumn: "process_state"
         },
-        processFailMessage: {
+        processStateMessage: {
             type: "string",
             required: false,
             dbColumn: "process_state_message"

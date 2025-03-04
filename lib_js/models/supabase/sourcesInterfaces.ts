@@ -1,10 +1,22 @@
 import { SupabaseModel } from "./SupabaseModelInterface";
 
-export interface Source extends SupabaseModel<Source> {
+export enum SourceTypeEnum {
+    DOCUMENT = "document",
+    WEBPAGE = "webpage",
+    WEBSITE = "website",
+    VIDEO = "video",
+    AUDIO = "audio",
+    IMAGE = "image",
+    TOPIC = "topic",
+    CONCEPT = "concept",
+    COLLECTION = "collection"
+}
+
+export interface SourceModel extends SupabaseModel<SourceModel> {
     id: string;
     originalSource?: string;
     resolvedSource?: string;
-    type?: string; // Assuming SourceType is a string enum
+    type?: SourceTypeEnum;
     title?: string;
     lang?: string;
     contentHash?: string;
@@ -20,7 +32,7 @@ export interface Source extends SupabaseModel<Source> {
     updatedBy?: string;
 }
 
-export interface SourceChunk extends SupabaseModel<SourceChunk> {
+export interface SourceChunkModel extends SupabaseModel<SourceChunkModel> {
     id: string;
     sourceId?: string;
     chunkNextId?: string;
@@ -33,7 +45,8 @@ export interface SourceChunk extends SupabaseModel<SourceChunk> {
     organizationId?: string;
 }
 
-export interface SourceRelationship extends SupabaseModel<SourceRelationship> {
+export interface SourceRelationshipModel
+    extends SupabaseModel<SourceRelationshipModel> {
     sourceId: string;
     relatedSourceId: string;
     relationshipType?: string;

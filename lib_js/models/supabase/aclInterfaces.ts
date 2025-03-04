@@ -1,6 +1,18 @@
 import { SupabaseModel } from "./SupabaseModelInterface";
 
-export interface ACLGroup extends SupabaseModel<ACLGroup> {
+export enum ACLEnum {
+    PUBLIC = "public",
+    GROUP = "group",
+    PRIVATE = "private"
+}
+
+export enum UserACLEnum {
+    ADM = "adm",
+    RW = "rw",
+    RO = "ro"
+}
+
+export interface ACLGroupModel extends SupabaseModel<ACLGroupModel> {
     id?: string;
     name: string;
     description?: string;
@@ -12,9 +24,9 @@ export interface ACLGroup extends SupabaseModel<ACLGroup> {
     organizationId?: string;
 }
 
-export interface ACLGroupItems extends SupabaseModel<ACLGroupItems> {
+export interface ACLGroupItemsModel extends SupabaseModel<ACLGroupItemsModel> {
     aclGroupId: string;
-    acl?: string; // Assuming ACL is a string enum
+    acl?: ACLEnum;
     itemId: string;
     itemType: string;
     disabled?: boolean;
@@ -25,11 +37,11 @@ export interface ACLGroupItems extends SupabaseModel<ACLGroupItems> {
     organizationId?: string;
 }
 
-export interface ACLGroupUsers extends SupabaseModel<ACLGroupUsers> {
+export interface ACLGroupUsersModel extends SupabaseModel<ACLGroupUsersModel> {
     authId: string;
     userId: string;
     aclGroupId: string;
-    acl?: string; // Assuming UserACL is a string enum
+    acl?: UserACLEnum;
     disabled?: boolean;
     disabledAt?: Date;
     createdAt?: Date;
@@ -37,17 +49,17 @@ export interface ACLGroupUsers extends SupabaseModel<ACLGroupUsers> {
     organizationId?: string;
 }
 
-export interface ACLGroupUsersWithItems {
+export interface ACLGroupUsersWithItemsModel {
     organizationId?: string;
     aclGroupId: string;
     itemId: string;
     itemType: string;
-    itemAcl: string; // Assuming ACL is a string enum
+    itemAcl: ACLEnum;
     itemCreatedAt?: Date;
     itemDisabled: boolean;
     itemDisabledAt?: Date;
     authId: string;
-    userAcl: string; // Assuming UserACL is a string enum
+    userAcl: UserACLEnum;
     userId: string;
     userCreatedAt?: Date;
     userDisabled: boolean;

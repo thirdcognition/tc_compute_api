@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseModel } from "./SupabaseModelInterface";
 
-export interface UserProfile extends SupabaseModel<UserProfile> {
+export interface UserProfileModel extends SupabaseModel<UserProfileModel> {
     id?: string;
     authId?: string;
     email?: string;
@@ -20,7 +20,7 @@ export interface UserProfile extends SupabaseModel<UserProfile> {
     activeConversationId?: string;
 }
 
-export interface UserData extends SupabaseModel<UserData> {
+export interface UserDataModel extends SupabaseModel<UserDataModel> {
     id?: string;
     authId?: string;
     item: string;
@@ -30,7 +30,8 @@ export interface UserData extends SupabaseModel<UserData> {
     updatedAt?: Date;
 }
 
-export interface OrganizationRole extends SupabaseModel<OrganizationRole> {
+export interface OrganizationRoleModel
+    extends SupabaseModel<OrganizationRoleModel> {
     id?: string;
     name: string;
     description?: string;
@@ -43,7 +44,8 @@ export interface OrganizationRole extends SupabaseModel<OrganizationRole> {
     organizationId?: string;
 }
 
-export interface OrganizationTeam extends SupabaseModel<OrganizationTeam> {
+export interface OrganizationTeamModel
+    extends SupabaseModel<OrganizationTeamModel> {
     id?: string;
     name: string;
     metadata?: object;
@@ -55,8 +57,8 @@ export interface OrganizationTeam extends SupabaseModel<OrganizationTeam> {
     organizationId?: string;
 }
 
-export interface OrganizationTeamMembers
-    extends SupabaseModel<OrganizationTeamMembers> {
+export interface OrganizationTeamMembersModel
+    extends SupabaseModel<OrganizationTeamMembersModel> {
     authId: string;
     userId: string;
     teamId: string;
@@ -68,7 +70,8 @@ export interface OrganizationTeamMembers
     organizationId?: string;
 }
 
-export interface OrganizationUsers extends SupabaseModel<OrganizationUsers> {
+export interface OrganizationUsersModel
+    extends SupabaseModel<OrganizationUsersModel> {
     authId?: string;
     userId?: string;
     organizationId?: string;
@@ -80,18 +83,25 @@ export interface OrganizationUsers extends SupabaseModel<OrganizationUsers> {
     updatedAt?: Date;
 
     inAclGroup(supabase: SupabaseClient, aclGroupId: string): Promise<boolean>;
+
     connectWithAclGroup(
         supabase: SupabaseClient,
         aclGroupId: string,
         acl: string
     ): Promise<void>;
+
     disconnectWithAclGroup(
         supabase: SupabaseClient,
         aclGroupId: string
     ): Promise<void>;
+
+    create(
+        supabase: SupabaseClient,
+        groupsWithLevels?: Record<string, string>
+    ): Promise<OrganizationUsersModel>;
 }
 
-export interface Organizations extends SupabaseModel<Organizations> {
+export interface OrganizationsModel extends SupabaseModel<OrganizationsModel> {
     id?: string;
     defaultAclGroupId?: string;
     name?: string;

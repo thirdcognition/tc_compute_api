@@ -7,19 +7,19 @@ import {
     UserPreferencesData
 } from "./structures/UserDataInterfaces";
 import {
-    Organizations,
-    UserProfile,
-    UserData as UserDataModel,
-    OrganizationUsers,
-    OrganizationTeam,
-    OrganizationRole
+    OrganizationsModel,
+    UserProfileModel,
+    UserDataModel,
+    OrganizationUsersModel,
+    OrganizationTeamModel,
+    OrganizationRoleModel
 } from "./supabase/organizationInterfaces";
 
 export interface User {
     supabase: SupabaseClient;
     model: UserData | null;
     authId: string;
-    _organizationDict: Record<string, Organizations>;
+    _organizationDict: Record<string, OrganizationsModel>;
     _initializeTask: Promise<void> | null;
     _avatar: UserAvatarData | null;
     _preferences: UserPreferencesData | null;
@@ -35,12 +35,12 @@ export interface User {
     readonly isAdmin: boolean;
     readonly avatar: UserAvatarData;
     readonly preferences: UserPreferencesData;
-    readonly profile: UserProfile;
-    readonly organizationUser: OrganizationUsers;
-    readonly organization: Organizations;
-    readonly teams: OrganizationTeam[];
-    readonly roles: OrganizationRole[];
-    readonly memberships: OrganizationUsers[];
+    readonly profile: UserProfileModel;
+    readonly organizationUser: OrganizationUsersModel;
+    readonly organization: OrganizationsModel;
+    readonly teams: OrganizationTeamModel[];
+    readonly roles: OrganizationRoleModel[];
+    readonly memberships: OrganizationUsersModel[];
 
     // Methods acting as setters
     setActiveOrganization(organizationId: string): Promise<void>;
@@ -52,14 +52,14 @@ export interface User {
     // Methods
     initialize(): Promise<void>;
     connectToOrganization(
-        organization: Organizations,
+        organization: OrganizationsModel,
         setAsAdmin?: boolean | null,
         updateExisting?: boolean
     ): Promise<void>;
     _initOrganizations(
         refresh?: boolean
-    ): Promise<Record<string, Organizations>>;
-    getOrganizationById(organizationId: string): Promise<Organizations>;
+    ): Promise<Record<string, OrganizationsModel>>;
+    getOrganizationById(organizationId: string): Promise<OrganizationsModel>;
     fetchAclGroups(refresh?: boolean): Promise<void>;
     hasAccessToItem(itemId: string, itemType: string): Promise<boolean>;
 
@@ -67,10 +67,10 @@ export interface User {
     notifyListeners(...args: unknown[]): void;
 
     // New Getters
-    getOrganization(): Promise<Organizations>;
-    getTeams(): Promise<OrganizationTeam[]>;
-    getRoles(): Promise<OrganizationRole[]>;
-    getMemberships(): Promise<OrganizationUsers[]>;
+    getOrganization(): Promise<OrganizationsModel>;
+    getTeams(): Promise<OrganizationTeamModel[]>;
+    getRoles(): Promise<OrganizationRoleModel[]>;
+    getMemberships(): Promise<OrganizationUsersModel[]>;
 
     // New Methods for UserData
     getUserData(): Promise<UserDataModel[]>;

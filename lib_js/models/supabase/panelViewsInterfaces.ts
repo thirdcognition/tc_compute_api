@@ -1,7 +1,7 @@
 import { SupabaseModel } from "./SupabaseModelInterface";
 
-export interface ViewUserPanelDiscussion
-    extends SupabaseModel<ViewUserPanelDiscussion> {
+export interface ViewUserPanelDiscussionModel
+    extends SupabaseModel<ViewUserPanelDiscussionModel> {
     userDataId?: string;
     panelDiscussionId?: string;
     authId?: string;
@@ -14,8 +14,8 @@ export interface ViewUserPanelDiscussion
     userDataUpdatedAt?: Date;
 }
 
-export interface ViewUserPanelTranscript
-    extends SupabaseModel<ViewUserPanelTranscript> {
+export interface ViewUserPanelTranscriptModel
+    extends SupabaseModel<ViewUserPanelTranscriptModel> {
     userDataId?: string;
     panelTranscriptId?: string;
     authId?: string;
@@ -32,7 +32,8 @@ export interface ViewUserPanelTranscript
     userDataUpdatedAt?: Date;
 }
 
-export interface ViewUserPanelAudio extends SupabaseModel<ViewUserPanelAudio> {
+export interface ViewUserPanelAudioModel
+    extends SupabaseModel<ViewUserPanelAudioModel> {
     userDataId?: string;
     panelAudioId?: string;
     authId?: string;

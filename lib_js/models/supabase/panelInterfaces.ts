@@ -1,6 +1,6 @@
 import { SupabaseModel } from "./SupabaseModelInterface";
 
-export interface PanelAudio extends SupabaseModel<PanelAudio> {
+export interface PanelAudioModel extends SupabaseModel<PanelAudioModel> {
     id?: string;
     panelId: string;
     transcriptId: string;
@@ -8,8 +8,8 @@ export interface PanelAudio extends SupabaseModel<PanelAudio> {
     tags?: string[];
     file?: string;
     bucketId?: string;
-    processState?: string; // Enum: ProcessState
-    processFailMessage?: string;
+    processState?: "none" | "waiting" | "processing" | "failed" | "done"; // Updated to string literal type
+    processStateMessage?: string;
     metadata?: object;
     isPublic?: boolean;
     disabled?: boolean;
@@ -21,7 +21,8 @@ export interface PanelAudio extends SupabaseModel<PanelAudio> {
     lang?: string;
 }
 
-export interface PanelDiscussion extends SupabaseModel<PanelDiscussion> {
+export interface PanelDiscussionModel
+    extends SupabaseModel<PanelDiscussionModel> {
     id?: string;
     title?: string;
     tags?: string[];
@@ -36,7 +37,8 @@ export interface PanelDiscussion extends SupabaseModel<PanelDiscussion> {
     lang?: string;
 }
 
-export interface PanelTranscript extends SupabaseModel<PanelTranscript> {
+export interface PanelTranscriptModel
+    extends SupabaseModel<PanelTranscriptModel> {
     id?: string;
     panelId: string;
     title?: string;
@@ -46,7 +48,7 @@ export interface PanelTranscript extends SupabaseModel<PanelTranscript> {
     type?: string;
     transcript?: object;
     processState?: string; // Enum: ProcessState
-    processFailMessage?: string;
+    processStateMessage?: string;
     generationCronjob?: string;
     generationParent?: string;
     metadata?: object;
@@ -59,8 +61,8 @@ export interface PanelTranscript extends SupabaseModel<PanelTranscript> {
     organizationId?: string;
 }
 
-export interface PanelTranscriptOrder
-    extends SupabaseModel<PanelTranscriptOrder> {
+export interface PanelTranscriptOrderModel
+    extends SupabaseModel<PanelTranscriptOrderModel> {
     id?: string;
     panelId: string;
     transcriptId?: string;
@@ -76,8 +78,8 @@ export interface PanelTranscriptOrder
     organizationId?: string;
 }
 
-export interface PanelTranscriptSourceReference
-    extends SupabaseModel<PanelTranscriptSourceReference> {
+export interface PanelTranscriptSourceReferenceModel
+    extends SupabaseModel<PanelTranscriptSourceReferenceModel> {
     id?: string;
     transcriptId: string;
     sourceId: string;
