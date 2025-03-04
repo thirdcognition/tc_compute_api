@@ -1,5 +1,13 @@
 import { SupabaseModel } from "./SupabaseModelInterface";
 
+export enum ProcessStateEnum {
+    NONE = "none",
+    WAITING = "waiting",
+    PROCESSING = "processing",
+    FAILED = "failed",
+    DONE = "done"
+}
+
 export interface PanelAudioModel extends SupabaseModel<PanelAudioModel> {
     id?: string;
     panelId: string;
@@ -8,7 +16,7 @@ export interface PanelAudioModel extends SupabaseModel<PanelAudioModel> {
     tags?: string[];
     file?: string;
     bucketId?: string;
-    processState?: "none" | "waiting" | "processing" | "failed" | "done"; // Updated to string literal type
+    processState?: ProcessStateEnum;
     processStateMessage?: string;
     metadata?: object;
     isPublic?: boolean;
@@ -47,7 +55,7 @@ export interface PanelTranscriptModel
     bucketId?: string;
     type?: string;
     transcript?: object;
-    processState?: string; // Enum: ProcessState
+    processState?: ProcessStateEnum;
     processStateMessage?: string;
     generationCronjob?: string;
     generationParent?: string;
