@@ -36,6 +36,7 @@ export interface SupabaseModel<T> {
     create(supabase: SupabaseClient): Promise<T>;
     read(supabase: SupabaseClient, idColumn?: string): Promise<T | null>;
     update(supabase: SupabaseClient): Promise<T>;
+    delete(supabase: SupabaseClient, idColumn?: string): Promise<T>;
     exists(supabase: SupabaseClient, idColumn?: string): Promise<boolean>;
 
     listen(callback: (model: T, ...args: unknown[]) => boolean | void): this;
