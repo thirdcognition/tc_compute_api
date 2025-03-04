@@ -59,7 +59,7 @@ langchain-google-genai = "^2.0.9"
 google-cloud-translate = "^3.20.0"
 trafilatura = "^2.0.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 black = "^23.9.1"
 flake8 = "^6.1.0"
 autopep8 = "^2.0.2"

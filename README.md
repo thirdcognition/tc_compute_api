@@ -127,7 +127,7 @@ docker build --platform linux/amd64 -t markushaverinen/tc_ms_poc_base . -f Docke
 
 ### Build runnable
 ```bash
-source .env && docker build --platform linux/amd64 --build-arg GA_MEASUREMENT_ID=$GA_MEASUREMENT_ID --build-arg DEBUG_MODE=$DEBUG_MODE --build-arg SERVER_PORT=$SERVER_PORT -t markushaverinen/tc_poc . -f Dockerfile
+source .env && docker build --platform linux/amd64 --build-arg GA_MEASUREMENT_ID=$GA_MEASUREMENT_ID --build-arg POSTHOG_API_KEY=$POSTHOG_API_KEY --build-arg panel_defaults_podcast_name=$panel_defaults_podcast_name --build-arg DEBUG_MODE=$DEBUG_MODE --build-arg SERVER_PORT=$SERVER_PORT -t markushaverinen/tc_poc . -f Dockerfile
 ```
 
 ### Run docker

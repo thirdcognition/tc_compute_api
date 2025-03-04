@@ -1,6 +1,6 @@
-db/
-.venv/
+db
+.venv
 .gitignore
-build/
-node_modules/
+build
+node_modules
 celerybeat-schedule.db

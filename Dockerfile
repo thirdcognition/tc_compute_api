@@ -20,17 +20,22 @@ ENV REACT_APP_PORT=${PUBLIC_SERVER_PORT}
 ENV REACT_APP_PODCAST_NAME=${panel_defaults_podcast_name}
 
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+# RUN npx -y playwright@1.50.1 install chromium --with-deps
 
-WORKDIR /static/admin
-RUN --mount=type=cache,target=/root/.npm npm install
-RUN --mount=type=cache,target=/root/.npm npm run build
-WORKDIR /
+# WORKDIR /static/admin
+RUN --mount=type=cache,target=/root/.npm cd /static/admin && npm install && npm run build && cd /
+# RUN --mount=type=cache,target=/root/.npm npm run build
+# WORKDIR /
 
 # Install and build for /static/player/
-WORKDIR /static/player
-RUN --mount=type=cache,target=/root/.npm npm install
-RUN --mount=type=cache,target=/root/.npm npm run build
-WORKDIR /
+# WORKDIR /static/player
+RUN --mount=type=cache,target=/root/.npm cd /static/player && npm install && npm run build && cd /
+# RUN --mount=type=cache,target=/root/.npm npm run build
+# WORKDIR /
+
+RUN playwright install chromium
+# RUN --mount=type=cache,target=/root/.cache/ms-playwright playwright install-deps
+
 
 RUN chmod +x start_server.sh
 # RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
