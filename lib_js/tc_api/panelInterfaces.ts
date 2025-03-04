@@ -13,6 +13,8 @@ export interface PanelDetails {
     panel: PanelDiscussionModel;
     transcripts: PanelTranscriptModel[];
     audios: PanelAudioModel[];
+    transcriptUrls: Record<string, string> | undefined;
+    audioUrls: Record<string, string> | undefined;
 }
 
 /**
