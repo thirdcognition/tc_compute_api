@@ -3,7 +3,7 @@ import {
     PanelTranscriptModel,
     PanelAudioModel,
     PanelTranscriptSourceReferenceModel
-} from "../models/supabase/panel.js";
+} from "../models/supabase/panelInterfaces";
 import { SupabaseClient } from "@supabase/supabase-js";
 
 /**
