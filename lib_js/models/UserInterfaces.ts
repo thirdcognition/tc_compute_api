@@ -73,7 +73,7 @@ export interface User {
     getMemberships(): Promise<OrganizationUsersModel[]>;
 
     // New Methods for UserData
-    getUserData(refresh: boolean): Promise<UserDataModel[]>;
+    getUserData(refresh?: boolean): Promise<UserDataModel[]>;
     updateUserData(userDataItem: UserDataModel): Promise<UserDataModel>;
     matchUserData(filters: Partial<UserDataModel>): Promise<UserDataModel[]>;
 }
