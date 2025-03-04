@@ -62,7 +62,7 @@ export function fetchDataWithMemoization(endpoint, options = {}) {
     return memoizedFetchData(endpoint, options);
 }
 
-export async function fetchPublicPanels() {
+export async function fetchPanels() {
     const panels = await fetchDataWithMemoization("/panel/discussions/");
     return Array.isArray(panels) ? panels : [];
 }

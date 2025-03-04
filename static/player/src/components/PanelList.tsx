@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchPublicPanels } from "../helpers/fetch.ts";
+import { fetchPanels } from "../helpers/fetch.ts";
 
 interface Panel {
     id: string;
@@ -15,7 +15,7 @@ const PanelList: React.FC = () => {
     useEffect(() => {
         async function fetchPanels() {
             try {
-                const fetchedPanels = await fetchPublicPanels();
+                const fetchedPanels = await fetchPanels();
                 const formattedPanels = fetchedPanels.map((panel: any) => ({
                     id: panel.id,
                     name: panel.title || "Unnamed Show",

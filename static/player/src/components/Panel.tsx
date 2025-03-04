@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchPanelDetails, fetchPublicPanels } from "../helpers/fetch.ts";
+import { fetchPanelDetails, fetchPanels } from "../helpers/fetch.ts";
 import { urlFormatter } from "../helpers/url.ts";
 import { FaImage } from "react-icons/fa";
 import { Player } from "./Player.tsx";
@@ -83,7 +83,7 @@ const Panel: React.FC<PanelProps> = ({
     useEffect(() => {
         async function fetchPanels() {
             try {
-                const fetchedPanels = await fetchPublicPanels();
+                const fetchedPanels = await fetchPanels();
                 setPanels(fetchedPanels);
             } catch (error) {
                 console.error("Error fetching public panels:", error);

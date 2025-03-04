@@ -14,7 +14,7 @@ import LoginForm from "./js/LoginForm.jsx";
 import PanelEdit from "./js/PanelEdit.jsx";
 import PanelDetails from "./js/PanelDetails.jsx";
 import session from "./js/helpers/session.js";
-import { fetchPublicPanels } from "./js/helpers/fetch.js";
+import { fetchPanels } from "./js/helpers/fetch.js";
 import ConfirmationDialog from "./js/components/ConfirmationDialog.jsx";
 import {
     setToggleDialog,
@@ -91,7 +91,7 @@ function AppContent() {
 
     async function fetchPanels() {
         try {
-            const panelsData = await fetchPublicPanels();
+            const panelsData = await fetchPanels();
             const sortedPanels = Array.isArray(panelsData)
                 ? panelsData.sort(
                       (a, b) => new Date(b.created_at) - new Date(a.created_at)

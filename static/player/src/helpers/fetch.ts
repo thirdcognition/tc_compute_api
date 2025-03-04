@@ -76,7 +76,7 @@ export function fetchDataWithMemoization(
     return fn(endpoint, options);
 }
 
-export async function fetchPublicPanels(): Promise<any[]> {
+export async function fetchPanels(): Promise<any[]> {
     const panels = await fetchDataWithMemoization("/panel/discussions/");
     return Array.isArray(panels)
         ? panels.filter((panel) => panel.metadata && panel.metadata.display_tag)
