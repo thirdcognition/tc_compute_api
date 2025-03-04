@@ -243,8 +243,8 @@ class User {
     }
 
     // New Methods for UserData
-    async getUserData() {
-        return await this.model.fetchUserData();
+    async getUserData(refresh = false) {
+        return await this.model.fetchUserData(refresh);
     }
 
     async updateUserData(userDataItem) {
