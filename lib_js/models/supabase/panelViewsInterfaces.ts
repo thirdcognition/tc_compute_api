@@ -8,8 +8,8 @@ export interface ViewUserPanelDiscussionModel
     title?: string;
     tags?: string[];
     item?: string;
-    userDataData?: object;
-    panelDiscussionMetadata?: object;
+    userDataData?: Record<string, unknown>;
+    panelDiscussionMetadata?: Record<string, unknown>;
     userDataCreatedAt?: Date;
     userDataUpdatedAt?: Date;
 }
@@ -22,12 +22,12 @@ export interface ViewUserPanelTranscriptModel
     item?: string;
     title?: string;
     lang?: string;
-    transcript?: object;
+    transcript?: Record<string, unknown>;
     file?: string;
     bucketId?: string;
     type?: string;
-    userDataData?: object;
-    panelTranscriptMetadata?: object;
+    userDataData?: Record<string, unknown>;
+    panelTranscriptMetadata?: Record<string, unknown>;
     userDataCreatedAt?: Date;
     userDataUpdatedAt?: Date;
 }
@@ -42,8 +42,8 @@ export interface ViewUserPanelAudioModel
     lang?: string;
     file?: string;
     bucketId?: string;
-    userDataData?: object;
-    panelAudioMetadata?: object;
+    userDataData?: Record<string, unknown>;
+    panelAudioMetadata?: Record<string, unknown>;
     userDataCreatedAt?: Date;
     userDataUpdatedAt?: Date;
 }

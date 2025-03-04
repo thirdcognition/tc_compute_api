@@ -18,7 +18,7 @@ export interface PanelAudioModel extends SupabaseModel<PanelAudioModel> {
     bucketId?: string;
     processState?: ProcessStateEnum;
     processStateMessage?: string;
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
@@ -34,7 +34,7 @@ export interface PanelDiscussionModel
     id?: string;
     title?: string;
     tags?: string[];
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
@@ -54,12 +54,12 @@ export interface PanelTranscriptModel
     file?: string;
     bucketId?: string;
     type?: string;
-    transcript?: object;
+    transcript?: Record<string, unknown>;
     processState?: ProcessStateEnum;
     processStateMessage?: string;
     generationCronjob?: string;
     generationParent?: string;
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
@@ -76,7 +76,7 @@ export interface PanelTranscriptOrderModel
     transcriptId?: string;
     beforeId?: string;
     afterId?: string;
-    data?: object;
+    data?: Record<string, unknown>;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
@@ -92,7 +92,7 @@ export interface PanelTranscriptSourceReferenceModel
     transcriptId: string;
     sourceId: string;
     type?: string;
-    data?: object;
+    data?: Record<string, unknown>;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;

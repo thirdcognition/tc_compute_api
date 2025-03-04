@@ -20,8 +20,8 @@ export interface SourceModel extends SupabaseModel<SourceModel> {
     title?: string;
     lang?: string;
     contentHash?: string;
-    data?: object;
-    metadata?: object;
+    data?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
@@ -37,8 +37,8 @@ export interface SourceChunkModel extends SupabaseModel<SourceChunkModel> {
     sourceId?: string;
     chunkNextId?: string;
     chunkPrevId?: string;
-    data?: object;
-    metadata?: object;
+    data?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
     isPublic?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
@@ -50,7 +50,7 @@ export interface SourceRelationshipModel
     sourceId: string;
     relatedSourceId: string;
     relationshipType?: string;
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;

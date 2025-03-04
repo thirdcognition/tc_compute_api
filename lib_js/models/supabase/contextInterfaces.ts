@@ -2,7 +2,7 @@ import { SupabaseModel } from "./SupabaseModelInterface";
 
 export interface ContextQuery extends SupabaseModel<ContextQuery> {
     id: string;
-    params?: object;
+    params?: Record<string, unknown>;
     createdAt?: Date;
     updatedAt?: Date;
     ownerId?: string;
@@ -13,7 +13,7 @@ export interface ContextQueryResponse
     extends SupabaseModel<ContextQueryResponse> {
     id: string;
     queryId?: string;
-    responseData?: object;
+    responseData?: Record<string, unknown>;
     disabled?: boolean;
     disabledAt?: Date;
     createdAt?: Date;
@@ -25,7 +25,7 @@ export interface ContextQueryResponse
 export interface ContextQueryResult extends SupabaseModel<ContextQueryResult> {
     id: string;
     queryId?: string;
-    resultData?: object;
+    resultData?: Record<string, unknown>;
     createdAt?: Date;
     updatedAt?: Date;
     ownerId?: string;

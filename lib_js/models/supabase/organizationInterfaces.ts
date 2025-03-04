@@ -7,11 +7,11 @@ export interface UserProfileModel extends SupabaseModel<UserProfileModel> {
     email?: string;
     name?: string;
     profilePicture?: string;
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     lang?: string;
     activePanelId?: string;
-    preferences?: object;
-    paymentDetails?: object;
+    preferences?: Record<string, unknown>;
+    paymentDetails?: Record<string, unknown>;
     disabled?: boolean;
     disabledAt?: Date;
     createdAt?: Date;
@@ -25,7 +25,7 @@ export interface UserDataModel extends SupabaseModel<UserDataModel> {
     authId?: string;
     item: string;
     targetId?: string;
-    data?: object;
+    data?: Record<string, unknown>;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -36,7 +36,7 @@ export interface OrganizationRoleModel
     name: string;
     description?: string;
     seniority: number;
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     disabled?: boolean;
     disabledAt?: Date;
     createdAt?: Date;
@@ -48,7 +48,7 @@ export interface OrganizationTeamModel
     extends SupabaseModel<OrganizationTeamModel> {
     id?: string;
     name: string;
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     disabled?: boolean;
     disabledAt?: Date;
     createdAt?: Date;
@@ -75,7 +75,7 @@ export interface OrganizationUsersModel
     authId?: string;
     userId?: string;
     organizationId?: string;
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     isAdmin?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
@@ -107,7 +107,7 @@ export interface OrganizationsModel extends SupabaseModel<OrganizationsModel> {
     name?: string;
     website?: string;
     logo?: string;
-    metadata?: object;
+    metadata?: Record<string, unknown>;
     disabled?: boolean;
     disabledAt?: Date;
     createdAt?: Date;
