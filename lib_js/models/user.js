@@ -135,7 +135,7 @@ class User {
     }
 
     get preferences() {
-        if (!this._preferences) {
+        if (!this._preferences && this.model?.profile) {
             this._preferences = {
                 lang: this.model.profile.lang,
                 metadata: this.model.profile.metadata,
