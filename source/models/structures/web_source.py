@@ -1,6 +1,7 @@
 import hashlib
 import re
 from typing import Any, List, Optional, Union
+from uuid import UUID
 from bs4 import BeautifulSoup
 from supabase.client import AsyncClient, Client
 
@@ -32,7 +33,7 @@ class WebSource(BaseModel):
     resolved_source: Optional[str] = None
     source: str
     rss_source: Optional[str] = None
-    source_id: Optional[str] = None
+    source_id: Optional[Union[str, UUID]] = None
     source_model: Optional[SourceModel] = None
     description: Optional[str] = None
     # original_content: Optional[str] = None
@@ -45,8 +46,8 @@ class WebSource(BaseModel):
     linked_items: Optional[List[str]] = Field(default_factory=list)
     lang: Optional[str] = None
     metadata: Optional[dict] = None
-    owner_id: Optional[str] = None
-    organization_id: Optional[str] = None
+    owner_id: Optional[Union[str, UUID]] = None
+    organization_id: Optional[Union[str, UUID]] = None
     main_item: bool = False
 
     rss_item: Optional[Any] = None
