@@ -4,7 +4,7 @@ import json
 from typing import Any, Generator, List, Optional, Type, TypeVar, Union
 from supabase import AsyncClient, Client
 from source.llm_exec.news_exec import web_source_article_builder_sync
-from source.prompts.web_source import NewsArticle
+from source.models.structures.news_article import NewsArticle
 from source.tasks.web_sources import generate_resolve_tasks_for_websources
 from source.models.structures.user import UserIDs
 from source.models.structures.web_source import WebSource

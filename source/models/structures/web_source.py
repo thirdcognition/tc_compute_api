@@ -8,6 +8,7 @@ from supabase.client import AsyncClient, Client
 # from source.helpers.shared import pretty_print
 from source.helpers.json_exportable_enum import JSONExportableEnum
 from source.llm_exec.news_exec import web_source_article_builder_sync
+from source.models.structures.news_article import NewsArticle
 from source.models.structures.url_result import UrlResult
 from source.models.supabase.sources import SourceModel, SourceRelationshipModel
 from pydantic import BaseModel, Field
@@ -17,7 +18,6 @@ from source.helpers.resolve_url import LinkResolver
 from source.models.structures.user import UserIDs
 
 # from source.models.config.logging import logger
-from source.prompts.web_source import NewsArticle
 
 
 class ResolveState(str, JSONExportableEnum):

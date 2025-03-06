@@ -11,7 +11,7 @@ from source.chains.init import get_chain
 # )
 from source.models.structures.web_source import WebSource
 from source.models.structures.web_source_collection import WebSourceCollection
-from source.models.structures.panel import ConversationConfig
+from source.models.structures.panel import ConversationConfig, SummaryReference
 from source.prompts.panel import (
     TranscriptQualityCheck,
     TranscriptSummary,
@@ -811,20 +811,23 @@ def transcript_summary_writer(
         if item.references:
             new_references = []
             for reference in item.references:
+                if isinstance(reference, SummaryReference):
+                    reference = reference.id
+
                 for source in sources:
                     match = source.find_match(reference)
                     if match:
                         new_references.append(
-                            {
-                                "id": match.source_id
+                            SummaryReference(
+                                id=match.source_id
                                 or (
                                     match.source_model.id if match.source_model else ""
                                 ),
-                                "title": match.title,
-                                "image": match.image,
-                                "url": match.get_url(),
-                                "publish_date": match.publish_date,
-                            }
+                                title=match.title,
+                                image=match.image,
+                                url=match.get_url(),
+                                publish_date=match.publish_date,
+                            )
                         )
             item.references = new_references
 

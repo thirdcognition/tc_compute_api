@@ -2,7 +2,7 @@ import json
 import os
 from bs4 import BeautifulSoup
 import resend
-from typing import Any, List, Union
+from typing import List, Union
 import base64
 from supabase import Client
 import mailchimp_marketing as MailchimpMarketing
@@ -17,6 +17,7 @@ from source.models.config.email_config import EmailConfig
 # from source.models.config.logging import logger
 from postgrest.base_request_builder import APIResponse
 
+from source.models.structures.panel import SummaryReference, SummarySubject
 from source.models.supabase.panel import (
     PanelDiscussion,
     PanelTranscript,
@@ -146,7 +147,10 @@ def generate_email_from_template(
             f"{SETTINGS.public_host_address}{SETTINGS.player_uri_path}panel/{panel.id}"
         )
         metadata = transcript.metadata or {}
-        subjects: list[dict[str, Any]] = metadata.get("subjects", [])
+        subjects: list[SummarySubject] = [
+            SummarySubject.model_validate(subject)
+            for subject in metadata.get("subjects", [])
+        ]
         description = metadata.get("description", "No description available.")
         sources = PanelTranscriptSourceReference.fetch_existing_from_supabase_sync(
             supabase, filter={"transcript_id": transcript.id}
@@ -168,10 +172,10 @@ def generate_email_from_template(
         )
         subjects_html = "".join(
             f"<li style='font-family: {config.font_family}; color: {config.text_color}; background-color: {config.background_color};'>"
-            f"<strong>{subject.get('title', '')}</strong>: {subject.get('description', '')}"
+            f"<strong>{subject.title or ''}</strong>: {subject.description or ''}"
             + (
-                f"<ul>{''.join(f'<li>[{i + 1}] <a href=\"{ref}\" style=\"font-family: {config.font_family}; color: {config.link_color}; text-decoration: underline;\">{ref}</a></li>' for i, ref in enumerate(subject.get('references', [])) if isinstance(ref, str))}</ul>"
-                if subject.get("references")
+                f"<ul>{''.join((f'<li>[{i + 1}] <a href=\"{ref.url}\" style=\"font-family: {config.font_family}; color: {config.link_color}; text-decoration: underline;\">{ref.title}</a></li>') if isinstance(ref, SummaryReference) else (f'<li>[{i + 1}] {ref}</li>') for i, ref in enumerate(subject.references or []))}</ul>"
+                if subject.references
                 else ""
             )
             + "</li>"
@@ -187,14 +191,18 @@ def generate_email_from_template(
         body_text += (
             "Subjects:\n\n"
             + "\n".join(
-                f"- {subject.get('title')}: {subject.get('description')}"
+                f"- {subject.title}: {subject.description}"
                 + (
                     "\n  References:\n  "
                     + "\n  ".join(
-                        f"[{i + 1}] {ref}"
-                        for i, ref in enumerate(subject.get("references", []))
+                        (
+                            f"[{i + 1}] {ref.title} ({ref.url})"
+                            if isinstance(ref, SummaryReference)
+                            else f"[{i + 1}] {ref}"
+                        )
+                        for i, ref in enumerate(subject.references or [])
                     )
-                    if subject.get("references", [])
+                    if subject.references or []
                     else ""
                 )
                 for subject in subjects

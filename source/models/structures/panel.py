@@ -1,8 +1,9 @@
+from datetime import datetime
 import os
 import json
 from typing import Optional, Union, List
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from source.models.structures.sources import (
     GoogleNewsConfig,
     YleNewsConfig,
@@ -78,3 +79,49 @@ class PanelRequestData(BaseModel):
 
     def to_json(self):
         return json.dumps(self.model_dump(), default=str)
+
+
+class SummaryReference(BaseModel):
+    id: Optional[str]
+    title: str
+    image: Optional[str] = None
+    url: Optional[str] = None
+    publish_date: Optional[datetime] = None
+
+
+class SummarySubject(BaseModel):
+    title: str = Field(
+        ...,
+        title="Title",
+        description="Generated title for the transcript.",
+        max_length=90,
+    )
+    description: str = Field(
+        ...,
+        title="Description",
+        description="2-3 sentence description of the subject.",
+        max_length=500,
+    )
+    references: List[str | SummaryReference] = Field(
+        ...,
+        title="references",
+        description="List of IDs of used references as strings",
+    )
+
+
+class TranscriptSummary(BaseModel):
+    subjects: List[SummarySubject] = Field(
+        ..., title="Subjects", description="An ordered list of subjects/topics covered."
+    )
+    description: str = Field(
+        ...,
+        title="Description",
+        description="2-3 sentence description of the transcript.",
+        max_length=500,
+    )
+    title: str = Field(
+        ...,
+        title="Title",
+        description="Generated title for the transcript.",
+        max_length=90,
+    )

@@ -1,5 +1,6 @@
 from enum import Enum
 import re
+from source.models.structures.panel import TranscriptSummary
 from source.prompts.base import TagsParser, clean_tags
 import textwrap
 from typing import List, Union
@@ -1056,45 +1057,6 @@ transcript_conclusion_writer = PromptFormatter(
 )
 
 transcript_conclusion_writer.parser = TranscriptParser()
-
-
-class SummarySubject(BaseModel):
-    title: str = Field(
-        ...,
-        title="Title",
-        description="Generated title for the transcript.",
-        max_length=90,
-    )
-    description: str = Field(
-        ...,
-        title="Description",
-        description="2-3 sentence description of the subject.",
-        max_length=500,
-    )
-    references: List[str | dict] = Field(
-        ...,
-        title="references",
-        description="List of IDs of used references as strings",
-    )
-
-
-class TranscriptSummary(BaseModel):
-    subjects: List[SummarySubject] = Field(
-        ..., title="Subjects", description="An ordered list of subjects/topics covered."
-    )
-    description: str = Field(
-        ...,
-        title="Description",
-        description="2-3 sentence description of the transcript.",
-        max_length=500,
-    )
-    title: str = Field(
-        ...,
-        title="Title",
-        description="Generated title for the transcript.",
-        max_length=90,
-    )
-
 
 transcript_summary_parser = PydanticOutputParser(pydantic_object=TranscriptSummary)
 

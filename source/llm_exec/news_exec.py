@@ -1,8 +1,8 @@
 from langsmith import traceable
 from langchain_core.messages import BaseMessage
 from source.chains.init import get_chain
+from source.models.structures.news_article import NewsArticle
 from source.models.structures.url_result import UrlResult
-from source.prompts.web_source import NewsArticle
 from typing import Tuple
 
 
