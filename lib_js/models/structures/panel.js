@@ -138,3 +138,64 @@ export class TranscriptSummary {
         this.title = title;
     }
 }
+
+export class PanelMetadata {
+    constructor({
+        title = null,
+        inputSource = null,
+        inputText = null,
+        ttsModel = null,
+        longform = null,
+        displayTag = null,
+        conversationConfig = null,
+        googleNews = null,
+        yleNews = null,
+        techcrunchNews = null,
+        hackernews = null,
+        newsGuidance = null,
+        newsItems = null,
+        segments = null,
+        languages = null,
+        description = null
+    } = {}) {
+        this.title = title; // Optional title.
+        this.inputSource = inputSource; // Optional input source (string or string array).
+        this.inputText = inputText; // Optional input text.
+        this.ttsModel = ttsModel; // Optional TTS model.
+        this.longform = longform; // Optional boolean indicating if long-form content.
+        this.displayTag = displayTag; // Optional display tag.
+        this.conversationConfig = conversationConfig; // Optional conversation configuration.
+        this.googleNews = googleNews; // Optional Google News configuration (single or array).
+        this.yleNews = yleNews; // Optional Yle News configuration (single or array).
+        this.techcrunchNews = techcrunchNews; // Optional TechCrunch News configuration (single or array).
+        this.hackernews = hackernews; // Optional Hacker News configuration (single or array).
+        this.newsGuidance = newsGuidance; // Optional news guidance.
+        this.newsItems = newsItems; // Optional number of news items.
+        this.segments = segments; // Optional number of segments.
+        this.languages = languages; // Optional list of languages.
+        this.description = description; // Optional description.
+    }
+}
+
+export class TranscriptMetadata {
+    constructor({
+        images,
+        longform,
+        subjects,
+        description,
+        conversationConfig
+    }) {
+        this.images = images; // List of image URLs.
+        this.longform = longform; // Indicates if it's long-form content.
+        this.subjects = subjects; // List of subjects with descriptions and references.
+        this.description = description; // Summary of the segment's discussion.
+        this.conversationConfig = conversationConfig; // Details for panel setup and dialogue.
+    }
+}
+
+export class AudioMetadata {
+    constructor({ ttsModel = null, conversationConfig = null } = {}) {
+        this.ttsModel = ttsModel; // Optional TTS model.
+        this.conversationConfig = conversationConfig; // Optional conversation configuration.
+    }
+}

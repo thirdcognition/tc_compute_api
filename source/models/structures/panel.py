@@ -125,3 +125,54 @@ class TranscriptSummary(BaseModel):
         description="Generated title for the transcript.",
         max_length=90,
     )
+
+
+class PanelMetadata(BaseModel):
+    title: Optional[str] = None
+    input_source: Optional[Union[str, List[str]]] = None
+    input_text: Optional[str] = None
+    tts_model: Optional[str] = None
+    longform: Optional[bool] = None
+    display_tag: Optional[str] = None
+    conversation_config: Optional[ConversationConfig] = None
+    google_news: Optional[Union[GoogleNewsConfig, List[GoogleNewsConfig]]] = None
+    yle_news: Optional[Union[YleNewsConfig, List[YleNewsConfig]]] = None
+    techcrunch_news: Optional[
+        Union[TechCrunchNewsConfig, List[TechCrunchNewsConfig]]
+    ] = None
+    hackernews: Optional[Union[HackerNewsConfig, List[HackerNewsConfig]]] = None
+    news_guidance: Optional[str] = None
+    news_items: Optional[int] = None
+    segments: Optional[int] = None
+    languages: Optional[List[str]] = None
+    description: Optional[str] = None
+
+
+class TranscriptMetadata(BaseModel):
+    images: Optional[List[str]] = Field(
+        ..., title="Images", description="List of image URLs."
+    )
+    longform: Optional[bool] = Field(
+        ..., title="Longform", description="Indicates if it's long-form content."
+    )
+    subjects: Optional[List[SummarySubject]] = Field(
+        ...,
+        title="Subjects",
+        description="List of subjects with descriptions and references.",
+    )
+    description: Optional[str] = Field(
+        ..., title="Description", description="Summary of the segment's discussion."
+    )
+    conversation_config: Optional[ConversationConfig] = Field(
+        ...,
+        title="Conversation Configuration",
+        description="Details for panel setup and dialogue.",
+    )
+
+
+# New metadata class for panels
+
+
+class AudioMetadata(BaseModel):
+    tts_model: Optional[str] = None
+    conversation_config: Optional[ConversationConfig] = None
