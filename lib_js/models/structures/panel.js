@@ -14,34 +14,34 @@ export class HostProfile {
  */
 export class ConversationConfig {
     constructor({
-        outputLanguage = "English",
-        conversationStyle = ["casual", "humorous"],
-        rolesPerson1 = null,
-        rolesPerson2 = null,
-        dialogueStructure = null,
-        engagementTechniques = null,
-        userInstructions = null,
-        podcastName = "",
-        podcastTagline = "",
+        output_language = "English",
+        conversation_style = ["casual", "humorous"],
+        roles_person1 = null,
+        roles_person2 = null,
+        dialogue_structure = null,
+        engagement_techniques = null,
+        user_instructions = null,
+        podcast_name = "",
+        podcast_tagline = "",
         creativity = 0.7,
-        wordCount = 200,
+        word_count = 200,
         longform = false,
-        textToSpeech = {},
+        text_to_speech = {},
         location = "Finland"
     } = {}) {
-        this.outputLanguage = outputLanguage;
-        this.conversationStyle = conversationStyle;
-        this.rolesPerson1 = rolesPerson1;
-        this.rolesPerson2 = rolesPerson2;
-        this.dialogueStructure = dialogueStructure;
-        this.engagementTechniques = engagementTechniques;
-        this.userInstructions = userInstructions;
-        this.podcastName = podcastName;
-        this.podcastTagline = podcastTagline;
+        this.output_language = output_language;
+        this.conversation_style = conversation_style;
+        this.roles_person1 = roles_person1;
+        this.roles_person2 = roles_person2;
+        this.dialogue_structure = dialogue_structure;
+        this.engagement_techniques = engagement_techniques;
+        this.user_instructions = user_instructions;
+        this.podcast_name = podcast_name;
+        this.podcast_tagline = podcast_tagline;
         this.creativity = creativity;
-        this.wordCount = wordCount;
+        this.word_count = word_count;
         this.longform = longform;
-        this.textToSpeech = textToSpeech;
+        this.text_to_speech = text_to_speech;
         this.location = location;
     }
 }
@@ -142,35 +142,35 @@ export class TranscriptSummary {
 export class PanelMetadata {
     constructor({
         title = null,
-        inputSource = null,
-        inputText = null,
-        ttsModel = null,
+        input_source = null,
+        input_text = null,
+        tts_model = null,
         longform = null,
-        displayTag = null,
-        conversationConfig = null,
-        googleNews = null,
-        yleNews = null,
-        techcrunchNews = null,
+        display_tag = null,
+        conversation_config = null,
+        google_news = null,
+        yle_news = null,
+        techcrunch_news = null,
         hackernews = null,
-        newsGuidance = null,
-        newsItems = null,
+        news_guidance = null,
+        news_items = null,
         segments = null,
         languages = null,
         description = null
     } = {}) {
         this.title = title; // Optional title.
-        this.inputSource = inputSource; // Optional input source (string or string array).
-        this.inputText = inputText; // Optional input text.
-        this.ttsModel = ttsModel; // Optional TTS model.
+        this.input_source = input_source; // Optional input source (string or string array).
+        this.input_text = input_text; // Optional input text.
+        this.tts_model = tts_model; // Optional TTS model.
         this.longform = longform; // Optional boolean indicating if long-form content.
-        this.displayTag = displayTag; // Optional display tag.
-        this.conversationConfig = conversationConfig; // Optional conversation configuration.
-        this.googleNews = googleNews; // Optional Google News configuration (single or array).
-        this.yleNews = yleNews; // Optional Yle News configuration (single or array).
-        this.techcrunchNews = techcrunchNews; // Optional TechCrunch News configuration (single or array).
+        this.display_tag = display_tag; // Optional display tag.
+        this.conversation_config = conversation_config; // Optional conversation configuration.
+        this.google_news = google_news; // Optional Google News configuration (single or array).
+        this.yle_news = yle_news; // Optional Yle News configuration (single or array).
+        this.techcrunch_news = techcrunch_news; // Optional TechCrunch News configuration (single or array).
         this.hackernews = hackernews; // Optional Hacker News configuration (single or array).
-        this.newsGuidance = newsGuidance; // Optional news guidance.
-        this.newsItems = newsItems; // Optional number of news items.
+        this.news_guidance = news_guidance; // Optional news guidance.
+        this.news_items = news_items; // Optional number of news items.
         this.segments = segments; // Optional number of segments.
         this.languages = languages; // Optional list of languages.
         this.description = description; // Optional description.
@@ -183,19 +183,19 @@ export class TranscriptMetadata {
         longform,
         subjects,
         description,
-        conversationConfig
+        conversation_config
     }) {
         this.images = images; // List of image URLs.
         this.longform = longform; // Indicates if it's long-form content.
         this.subjects = subjects; // List of subjects with descriptions and references.
         this.description = description; // Summary of the segment's discussion.
-        this.conversationConfig = conversationConfig; // Details for panel setup and dialogue.
+        this.conversation_config = conversation_config; // Details for panel setup and dialogue.
     }
 }
 
 export class AudioMetadata {
-    constructor({ ttsModel = null, conversationConfig = null } = {}) {
-        this.ttsModel = ttsModel; // Optional TTS model.
-        this.conversationConfig = conversationConfig; // Optional conversation configuration.
+    constructor({ tts_model = null, conversation_config = null } = {}) {
+        this.tts_model = tts_model; // Optional TTS model.
+        this.conversation_config = conversation_config; // Optional conversation configuration.
     }
 }

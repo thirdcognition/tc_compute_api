@@ -1,26 +1,17 @@
-/**
- * TypeScript interface representing the structure of a UrlResult.
- */
 export interface UrlResult {
-    origUrl?: string | null;
-    resolvedUrl?: string | null;
+    orig_url?: string | null;
+    resolved_url?: string | null;
     title?: string | null;
     source?: string | null;
     description?: string | null;
     image?: string | null;
-    imageData?: Array<Record<string, unknown>> | null;
-    publishDate?: Date | null;
+    image_data?: Array<Record<string, unknown>> | null;
+    publish_date?: Date | null;
     categories?: string[] | null;
     lang?: string | null;
-    originalContent?: string | null;
+    original_content?: string | null;
     metadata?: string | null;
-    humanReadableContent?: string | null;
-
-    /**
-     * Convert the UrlResult instance to a snake_case object.
-     * @returns {Object} Snake_case representation of the UrlResult.
-     */
-    toSnakeCase(): object;
+    human_readable_content?: string | null;
 
     /**
      * String representation of the UrlResult instance.

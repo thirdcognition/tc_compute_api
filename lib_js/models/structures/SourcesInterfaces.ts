@@ -12,7 +12,7 @@ export enum GooglenewsFeedType {
  * Interface representing the structure and methods of a GoogleNewsConfig.
  */
 export interface GoogleNewsConfig {
-    feedType?: GooglenewsFeedType | null;
+    feed_type?: GooglenewsFeedType | null;
     lang?: string;
     country?: string;
     topic?: string | string[] | null;
@@ -41,7 +41,7 @@ export enum HackerNewsFeedType {
  * Interface representing the structure and methods of a HackerNewsConfig.
  */
 export interface HackerNewsConfig {
-    feedType: HackerNewsFeedType;
+    feed_type: HackerNewsFeedType;
     query?: string | null;
     points?: number | null;
     comments?: number | null;
@@ -76,7 +76,7 @@ export enum YleLanguage {
  * Interface representing the structure and methods of a YleNewsConfig.
  */
 export interface YleNewsConfig {
-    feedType?: YleFeedType | null;
+    feed_type?: YleFeedType | null;
     type?: YleFeedType | null;
     articles?: number | null;
     topics?: string[] | null;

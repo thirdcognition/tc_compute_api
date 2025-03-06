@@ -13,7 +13,7 @@ export const GooglenewsFeedType = {
  */
 export class GoogleNewsConfig {
     constructor({
-        feedType = null,
+        feed_type = null,
         lang = "en",
         country = "US",
         topic = null,
@@ -22,7 +22,7 @@ export class GoogleNewsConfig {
         since = "1d",
         articles = null
     } = {}) {
-        this.feedType = feedType;
+        this.feed_type = feed_type;
         this.lang = lang;
         this.country = country;
         this.topic = topic;
@@ -53,13 +53,13 @@ export const HackerNewsFeedType = {
  */
 export class HackerNewsConfig {
     constructor({
-        feedType,
+        feed_type,
         query = null,
         points = null,
         comments = null,
         articles = null
     } = {}) {
-        this.feedType = feedType;
+        this.feed_type = feed_type;
         this.query = query;
         this.points = points;
         this.comments = comments;
@@ -98,14 +98,14 @@ export const YleLanguage = {
  */
 export class YleNewsConfig {
     constructor({
-        feedType = null,
+        feed_type = null,
         type = null,
         articles = null,
         topics = null,
         locations = null,
         lang = YleLanguage.FI
     } = {}) {
-        this.feedType = feedType;
+        this.feed_type = feed_type;
         this.type = type;
         this.articles = articles;
         this.topics = topics;

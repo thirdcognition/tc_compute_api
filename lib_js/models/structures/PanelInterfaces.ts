@@ -18,19 +18,19 @@ export interface HostProfile {
  * Interface representing the structure and methods of a ConversationConfig.
  */
 export interface ConversationConfig {
-    outputLanguage?: string;
-    conversationStyle?: string[];
-    rolesPerson1?: HostProfile | null;
-    rolesPerson2?: HostProfile | null;
-    dialogueStructure?: string[] | null;
-    engagementTechniques?: string[] | null;
-    userInstructions?: string | null;
-    podcastName?: string;
-    podcastTagline?: string;
+    output_language?: string;
+    conversation_style?: string[];
+    roles_person_1?: HostProfile | null;
+    roles_person_2?: HostProfile | null;
+    dialogue_structure?: string[] | null;
+    engagement_techniques?: string[] | null;
+    user_instructions?: string | null;
+    podcast_name?: string;
+    podcast_tagline?: string;
     creativity?: number;
-    wordCount?: number;
+    word_count?: number;
     longform?: boolean;
-    textToSpeech?: Record<string, unknown>;
+    text_to_speech?: Record<string, unknown>;
     location?: string;
 }
 
@@ -91,18 +91,18 @@ export interface TranscriptSummary {
 
 export interface PanelMetadata {
     title?: string; // Optional title.
-    inputSource?: string | string[]; // Optional input source (string or string array).
-    inputText?: string; // Optional input text.
-    ttsModel?: string; // Optional TTS model.
+    input_source?: string | string[]; // Optional input source (string or string array).
+    input_text?: string; // Optional input text.
+    tts_model?: string; // Optional TTS model.
     longform?: boolean; // Optional boolean indicating if long-form content.
-    displayTag?: string; // Optional display tag.
-    conversationConfig?: ConversationConfig; // Optional conversation configuration.
-    googleNews?: GoogleNewsConfig | GoogleNewsConfig[]; // Optional Google News configuration (single or array).
-    yleNews?: YleNewsConfig | YleNewsConfig[]; // Optional Yle News configuration (single or array).
-    techcrunchNews?: TechCrunchNewsConfig | TechCrunchNewsConfig[]; // Optional TechCrunch News configuration (single or array).
+    display_tag?: string; // Optional display tag.
+    conversation_config?: ConversationConfig; // Optional conversation configuration.
+    google_news?: GoogleNewsConfig | GoogleNewsConfig[]; // Optional Google News configuration (single or array).
+    yle_news?: YleNewsConfig | YleNewsConfig[]; // Optional Yle News configuration (single or array).
+    techcrunch_news?: TechCrunchNewsConfig | TechCrunchNewsConfig[]; // Optional TechCrunch News configuration (single or array).
     hackernews?: HackerNewsConfig | HackerNewsConfig[]; // Optional Hacker News configuration (single or array).
-    newsGuidance?: string; // Optional news guidance.
-    newsItems?: number; // Optional number of news items.
+    news_guidance?: string; // Optional news guidance.
+    news_items?: number; // Optional number of news items.
     segments?: number; // Optional number of segments.
     languages?: string[]; // Optional list of languages.
     description?: string; // Optional description.
@@ -113,10 +113,10 @@ export interface TranscriptMetadata {
     longform?: boolean; // Indicates if it's long-form content.
     subjects?: SummarySubject[]; // List of subjects with descriptions and references.
     description?: string; // Summary of the segment's discussion.
-    conversationConfig?: ConversationConfig; // Details for panel setup and dialogue.
+    conversation_config?: ConversationConfig; // Details for panel setup and dialogue.
 }
 
 export interface AudioMetadata {
-    ttsModel?: string; // Optional TTS model.
-    conversationConfig?: ConversationConfig; // Optional conversation configuration.
+    tts_model?: string; // Optional TTS model.
+    conversation_config?: ConversationConfig; // Optional conversation configuration.
 }
