@@ -1,3 +1,8 @@
+import {
+    AudioMetadata,
+    PanelMetadata,
+    TranscriptMetadata
+} from "../structures/PanelInterfaces";
 import { SupabaseModel } from "./SupabaseModelInterface";
 
 export enum ProcessStateEnum {
@@ -18,7 +23,7 @@ export interface PanelAudioModel extends SupabaseModel<PanelAudioModel> {
     bucketId?: string;
     processState?: ProcessStateEnum;
     processStateMessage?: string;
-    metadata?: Record<string, unknown>;
+    metadata?: AudioMetadata;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
@@ -34,7 +39,7 @@ export interface PanelDiscussionModel
     id?: string;
     title?: string;
     tags?: string[];
-    metadata?: Record<string, unknown>;
+    metadata?: PanelMetadata;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
@@ -59,7 +64,7 @@ export interface PanelTranscriptModel
     processStateMessage?: string;
     generationCronjob?: string;
     generationParent?: string;
-    metadata?: Record<string, unknown>;
+    metadata?: TranscriptMetadata;
     isPublic?: boolean;
     disabled?: boolean;
     disabledAt?: Date;
