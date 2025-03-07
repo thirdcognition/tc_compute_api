@@ -41,6 +41,12 @@ function castToType(type, value) {
             );
             return value;
         }
+    } else if (
+        typeof type === "object" &&
+        Object.values(type).includes(value)
+    ) {
+        // Handle enums like ProcessStateEnum
+        return value;
     } else {
         throw new Error(`Invalid type argument: "${type}"`);
     }

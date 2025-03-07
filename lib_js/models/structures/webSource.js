@@ -2,12 +2,19 @@ import { SourceModel } from "../supabase/sources.js";
 
 import { UrlResult } from "./urlResult.js";
 import { NewsArticle } from "./newsArticle.js";
+import { Enum } from "../supabase/supabaseModel.js";
 
-export const ResolveState = {
-    FAILED: "failed",
-    RESOLVED: "resolved",
-    UNRESOLVED: "unresolved"
-};
+class ResolveStateEnum extends Enum {
+    constructor() {
+        super();
+        this.FAILED = "failed";
+        this.RESOLVED = "resolved";
+        this.UNRESOLVED = "unresolved";
+        Object.freeze(this);
+    }
+}
+
+export const ResolveState = new ResolveStateEnum();
 
 export class WebSource {
     constructor({
