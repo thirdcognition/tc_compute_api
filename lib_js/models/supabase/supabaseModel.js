@@ -3,6 +3,49 @@ import { validate as validateUUID } from "uuid";
 import { v4 as uuidv4 } from "uuid";
 import { throwApiError } from "../../helpers/errors.js";
 
+function castToType(type, value) {
+    if (typeof type === "string") {
+        switch (type.toLowerCase()) {
+            case "string":
+                return String(value);
+            case "number": {
+                const num = Number(value);
+                if (isNaN(num)) {
+                    throw new Error(`Cannot cast value "${value}" to Number`);
+                }
+                return num;
+            }
+            case "boolean":
+                return value === "true" || value === true;
+            case "date": {
+                const date = new Date(value);
+                if (isNaN(date.getTime())) {
+                    throw new Error(`Cannot cast value "${value}" to Date`);
+                }
+                return date;
+            }
+            default:
+                return value;
+        }
+    } else if (typeof type === "function") {
+        if (type.prototype.fromValue) {
+            const enumInstance = new type();
+            return enumInstance.fromValue(value);
+        }
+        // Assuming "type" is a class or constructor function
+        try {
+            return new type(value);
+        } catch (e) {
+            console.error(
+                `Failed to cast value to ${typeof type}, error: ${e}`
+            );
+            return value;
+        }
+    } else {
+        throw new Error(`Invalid type argument: "${type}"`);
+    }
+}
+
 export class SupabaseModel {
     static TABLE_NAME = "";
     static TABLE_FIELDS = {};
@@ -23,7 +66,7 @@ export class SupabaseModel {
                       : undefined;
             this.attributes[key] =
                 val !== undefined
-                    ? val
+                    ? castToType(field.type, val)
                     : field.type === "uuid" && field.required
                       ? uuidv4()
                       : null;
