@@ -48,7 +48,9 @@ function castToType(type, value) {
         // Handle enums like ProcessStateEnum
         return value;
     } else {
-        throw new Error(`Invalid type argument: "${type}"`);
+        throw new Error(
+            `Invalid type argument: "${typeof type}" with value("${value}")`
+        );
     }
 }
 
