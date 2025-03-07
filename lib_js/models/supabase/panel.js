@@ -105,12 +105,6 @@ export class PanelDiscussionModel extends SupabaseModel {
             type: "uuid",
             required: false,
             dbColumn: "organization_id"
-        },
-        lang: {
-            type: "string",
-            required: false,
-            dbColumn: "lang",
-            default: null
         }
     };
 }
@@ -173,6 +167,12 @@ export class PanelTranscriptModel extends SupabaseModel {
             type: "uuid",
             required: false,
             dbColumn: "organization_id"
+        },
+        lang: {
+            type: "string",
+            required: false,
+            dbColumn: "lang",
+            default: null
         }
     };
 }

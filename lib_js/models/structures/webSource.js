@@ -65,10 +65,10 @@ export class WebSource {
             this.lang = obj.lang || this.lang;
             this.categories = obj.categories || this.categories;
             this.originalContent =
-                obj.humanReadableContent || this.originalContent;
-            this.resolvedSource = obj.resolvedUrl || this.resolvedSource;
+                obj.human_readable_content || this.originalContent;
+            this.resolvedSource = obj.resolved_url || this.resolvedSource;
             this.source = obj.source || this.source;
-            this.publishDate = obj.publishDate || this.publishDate;
+            this.publishDate = obj.publish_date || this.publishDate;
             this.metadata = obj.metadata || this.metadata;
             this.resolveState = ResolveState.RESOLVED;
         } else if (obj instanceof NewsArticle) {

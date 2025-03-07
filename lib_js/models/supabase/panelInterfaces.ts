@@ -47,7 +47,6 @@ export interface PanelDiscussionModel
     updatedAt?: Date;
     ownerId?: string;
     organizationId?: string;
-    lang?: string;
 }
 
 export interface PanelTranscriptModel
@@ -72,6 +71,7 @@ export interface PanelTranscriptModel
     updatedAt?: Date;
     ownerId?: string;
     organizationId?: string;
+    lang?: string;
 }
 
 export interface PanelTranscriptOrderModel
