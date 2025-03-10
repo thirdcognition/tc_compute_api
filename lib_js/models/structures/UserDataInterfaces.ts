@@ -96,5 +96,8 @@ export interface UserData {
         userDataItem: UserDataModel,
         replace?: boolean
     ): Promise<UserDataModel>;
-    matchUserData(filters: Partial<UserDataModel>): Promise<UserDataModel[]>;
+    matchUserData(
+        filters: Partial<UserDataModel>,
+        refresh?: boolean
+    ): Promise<UserDataModel[]>;
 }

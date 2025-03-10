@@ -372,9 +372,9 @@ export class UserData {
         return await userDataItem.create(this.supabase);
     }
 
-    async matchUserData(filters) {
+    async matchUserData(filters, refresh = false) {
         if (!this.userData) {
-            await this.fetchUserData();
+            await this.fetchUserData(refresh);
         }
 
         return this.userData.filter((userDataItem) =>
