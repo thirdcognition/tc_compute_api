@@ -7,7 +7,10 @@ function castToType(type, value) {
     if (typeof type === "string") {
         switch (type.toLowerCase()) {
             case "string":
-                return String(value);
+                if (value === "null") {
+                    value = null;
+                }
+                return value ? String(value) : value;
             case "number": {
                 const num = Number(value);
                 if (isNaN(num)) {
