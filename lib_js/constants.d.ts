@@ -1,4 +1,4 @@
-declare class Constants {
+export declare class Constants {
     userData: {
         PANEL_SUB: string;
     };

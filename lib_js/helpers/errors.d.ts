@@ -12,7 +12,7 @@ export declare class ApiError {
  * Function signature for throwApiError.
  * Throws an ApiError based on the response object.
  */
-declare function throwApiError(response: {
+export declare function throwApiError(response: {
     status: number;
     statusText: string;
     error?: unknown;
