@@ -324,12 +324,13 @@ export class UserData extends NotifierModel {
     // New Methods for UserData
     async fetchUserData(refresh = false) {
         if (!this.userData || refresh) {
+            this.userData = this.userData || [];
             const newUserData = await UserDataModel.fetchExistingFromSupabase(
                 this.supabase,
                 { authId: this.authId }
             );
             const existingDataMap = new Map(
-                this.userData.map((instance) => [instance.id, instance])
+                (this.userData.map((instance) => [instance.id, instance])
             );
 
             newUserData.forEach((newInstance) => {
