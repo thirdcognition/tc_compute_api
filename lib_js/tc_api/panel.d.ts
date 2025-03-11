@@ -26,7 +26,7 @@ export declare class PanelFiles {
 /**
  * Interface for the PanelAPI object.
  */
-export declare const PanelAPI: {
+declare const PanelAPI: {
     getPanel(
         supabase: SupabaseClient,
         panelId: string
@@ -75,3 +75,5 @@ export declare const PanelAPI: {
         transcriptId: string
     ): Promise<PanelTranscriptSourceReferenceModel[]>;
 };
+
+export default PanelAPI;
