@@ -11,6 +11,7 @@ import {
     UserDataModel
 } from "../supabase/organizationInterfaces";
 import { ACLGroupUsersModel, ACLGroupModel } from "../supabase/aclInterfaces";
+import { NotifierModel } from "../prototypes/NotifierModelInterface";
 
 export interface UserAvatarData {
     email: string | null;
@@ -32,7 +33,7 @@ export interface UserOrganizationRequestData {
     isAdmin: boolean;
 }
 
-export interface UserData {
+export interface UserData extends NotifierModel<UserData> {
     authId: string;
     supabase: SupabaseClient;
     profile: UserProfileModel | null;
@@ -84,12 +85,6 @@ export interface UserData {
     ): Promise<OrganizationTeamMembersModel[]>;
     inOrganization(organizationId: string): Promise<boolean>;
     isAdminInOrganization(organizationId: string): Promise<boolean>;
-
-    listen(
-        callback: (model: UserData, ...args: unknown[]) => boolean | void
-    ): this;
-    notifyListeners(...args: unknown[]): void;
-
     // New Methods for UserData
     fetchUserData(refresh?: boolean): Promise<UserDataModel[]>;
     defineUserData(

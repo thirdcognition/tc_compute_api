@@ -14,8 +14,9 @@ import {
     OrganizationTeamModel,
     OrganizationRoleModel
 } from "./supabase/organizationInterfaces";
+import { NotifierModel } from "./prototypes/NotifierModelInterface";
 
-export interface User {
+export interface User extends NotifierModel<User> {
     supabase: SupabaseClient;
     model: UserData | null;
     authId: string;
@@ -62,9 +63,6 @@ export interface User {
     getOrganizationById(organizationId: string): Promise<OrganizationsModel>;
     fetchAclGroups(refresh?: boolean): Promise<void>;
     hasAccessToItem(itemId: string, itemType: string): Promise<boolean>;
-
-    listen(callback: (model: User, ...args: unknown[]) => boolean | void): this;
-    notifyListeners(...args: unknown[]): void;
 
     // New Getters
     getOrganization(): Promise<OrganizationsModel>;

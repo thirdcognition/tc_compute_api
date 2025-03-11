@@ -12,6 +12,7 @@ import {
     ACLGroupUsersWithItems,
     ACLGroupModel
 } from "../supabase/acl.js";
+import { NotifierModel } from "../prototypes/notifierModel.js";
 
 export class UserAvatarData {
     constructor(email = null, name = null, profilePicture = null) {
@@ -44,10 +45,9 @@ export class UserOrganizationRequestData {
     }
 }
 
-export class UserData {
+export class UserData extends NotifierModel {
     constructor(supabase, authId, userProfileData = null) {
-        this.listeners = [];
-        this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
+        super();
         this.authId = authId;
         this.supabase = supabase;
         this.profile = userProfileData;
@@ -59,22 +59,6 @@ export class UserData {
         this.userInAclGroup = null;
         this.aclGroup = null;
         this.userData = null; // To store fetched user_data
-    }
-
-    listen(callback) {
-        if (
-            typeof callback === "function" &&
-            this.listeners.indexOf(callback) === -1
-        ) {
-            this.listeners.push(callback);
-        }
-        return this;
-    }
-
-    notifyListeners(...args) {
-        this.listeners = this.listeners.filter(
-            (listener) => listener(this, ...args) !== false
-        );
     }
 
     async saveAllToSupabase() {
@@ -340,10 +324,24 @@ export class UserData {
     // New Methods for UserData
     async fetchUserData(refresh = false) {
         if (!this.userData || refresh) {
-            this.userData = await UserDataModel.fetchExistingFromSupabase(
+            const newUserData = await UserDataModel.fetchExistingFromSupabase(
                 this.supabase,
                 { authId: this.authId }
             );
+            const existingDataMap = new Map(
+                this.userData.map((instance) => [instance.id, instance])
+            );
+
+            newUserData.forEach((newInstance) => {
+                if (existingDataMap.has(newInstance.id)) {
+                    existingDataMap
+                        .get(newInstance.id)
+                        .updateFromInstance(newInstance);
+                } else {
+                    this.userData.push(newInstance);
+                    newInstance.listen(this.boundNotifyListeners);
+                }
+            });
         }
         return this.userData;
     }

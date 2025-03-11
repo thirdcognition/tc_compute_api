@@ -1,10 +1,11 @@
 import { UserData } from "./structures/userData.js";
 import { OrganizationUsersModel } from "./supabase/organization.js";
+import { NotifierModel } from "../prototypes/notifierModel.js";
 
-class User {
+class User extends NotifierModel {
     constructor(supabase, authId, userData = null) {
-        this.listeners = [];
-        this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
+        super();
+
         this.supabase = supabase;
         this.model = userData;
         this.authId = authId;
@@ -12,22 +13,6 @@ class User {
         this._initializeTask = null;
         this._avatar = null;
         this._preferences = null;
-    }
-
-    listen(callback) {
-        if (
-            typeof callback === "function" &&
-            this.listeners.indexOf(callback) === -1
-        ) {
-            this.listeners.push(callback);
-        }
-        return this;
-    }
-
-    notifyListeners(...args) {
-        this.listeners = this.listeners.filter(
-            (listener) => listener(this, ...args) !== false
-        );
     }
 
     get isInitialized() {

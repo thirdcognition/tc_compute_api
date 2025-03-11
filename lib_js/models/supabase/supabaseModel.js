@@ -1,5 +1,5 @@
-// Import the validate function from the uuid package
 import { validate as validateUUID } from "uuid";
+import { NotifierModel } from "../prototypes/notifierModel.js";
 import { v4 as uuidv4 } from "uuid";
 import { throwApiError } from "../../helpers/errors.js";
 
@@ -57,15 +57,14 @@ function castToType(type, value) {
     }
 }
 
-export class SupabaseModel {
+export class SupabaseModel extends NotifierModel {
     static TABLE_NAME = "";
     static TABLE_FIELDS = {};
 
     constructor(args) {
+        super();
         this.attributes = {}; // Combined object for data, dataTypes, and dbColumn
         this.dirty = true;
-        this.listeners = []; // Array to store listener callbacks
-        this.boundNotifyListeners = (...args) => this.notifyListeners(...args);
         for (const [key, field] of Object.entries(
             this.constructor.TABLE_FIELDS
         )) {
@@ -161,22 +160,6 @@ export class SupabaseModel {
         });
     }
 
-    listen(callback) {
-        if (
-            typeof callback === "function" &&
-            this.listeners.indexOf(callback) === -1
-        ) {
-            this.listeners.push(callback);
-        }
-        return this;
-    }
-
-    notifyListeners(...args) {
-        this.listeners = this.listeners.filter(
-            (listener) => listener(this, ...args) !== false
-        );
-    }
-
     getAttribute(name) {
         if (name in this.attributes) {
             return this.attributes[name];
@@ -189,7 +172,7 @@ export class SupabaseModel {
             if (this.constructor.validateAttribute(name, value)) {
                 this.dirty = true;
                 this.attributes[name] = value;
-                this.notifyListeners(); // Notify listeners on attribute set
+                this.notifyListeners("update_" + name); // Notify listeners on attribute set
             } else {
                 throw new Error(`Invalid value ${value} for attribute ${name}`);
             }
@@ -615,15 +598,53 @@ export class SupabaseModel {
         return data;
     }
 
+    updateFromInstance(instance) {
+        if (!instance || !(instance instanceof this.constructor)) {
+            throw new Error(
+                "Invalid instance passed. It must be an instance of the same model."
+            );
+        }
+
+        let changes = false;
+
+        for (const attributeName in this.TABLE_FIELDS) {
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    instance.attributes,
+                    attributeName
+                )
+            ) {
+                changes =
+                    changes ||
+                    this.attributes[attributeName] !==
+                        instance.attribute[attributeName];
+                this.attributes[attributeName] =
+                    instance.attributes[attributeName];
+            }
+        }
+        this.dirty = false;
+        if (changes) {
+            this.notifyListeners("update_model"); // Notify listeners on update from instance
+            return changes;
+        }
+    }
+
     updateFromDbData(dbData) {
+        let changes = false;
         for (const dbColumn in dbData) {
             const attributeName = this.mapDbColumnToKey(dbColumn);
             if (attributeName in this.TABLE_FIELDS) {
+                changes =
+                    changes ||
+                    this.attributes[attributeName] !== dbData[dbColumn];
                 this.attributes[attributeName] = dbData[dbColumn];
             }
         }
         this.dirty = false;
-        this.notifyListeners(); // Notify listeners on update from DB data
+        if (changes) {
+            this.notifyListeners("update_model"); // Notify listeners on update from DB data
+            return changes;
+        }
     }
 
     static fromDbData(dbData) {

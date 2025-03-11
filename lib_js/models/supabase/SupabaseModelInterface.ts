@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { NotifierModel } from "../prototypes/NotifierModelInterface";
 
-export interface SupabaseModel<T> {
+export interface SupabaseModel<T> extends NotifierModel<T> {
     saveToSupabase(
         supabase: SupabaseClient,
         instance: T,
@@ -38,7 +39,5 @@ export interface SupabaseModel<T> {
     update(supabase: SupabaseClient): Promise<T>;
     delete(supabase: SupabaseClient, idColumn?: string): Promise<T>;
     exists(supabase: SupabaseClient, idColumn?: string): Promise<boolean>;
-
-    listen(callback: (model: T, ...args: unknown[]) => boolean | void): this;
-    notifyListeners(...args: unknown[]): void;
+    updateFromInstance(instance: T): boolean;
 }
