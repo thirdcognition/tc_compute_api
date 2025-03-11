@@ -343,6 +343,12 @@ export class UserData extends NotifierModel {
                     newInstance.listen(this.boundNotifyListeners);
                 }
             });
+            const newUserDataIds = new Set(
+                newUserData.map((instance) => instance.id)
+            );
+            this.userData = this.userData.filter((instance) =>
+                newUserDataIds.has(instance.id)
+            );
         }
         return this.userData;
     }
