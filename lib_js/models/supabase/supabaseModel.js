@@ -617,7 +617,7 @@ export class SupabaseModel extends NotifierModel {
                 changes =
                     changes ||
                     this.attributes[attributeName] !==
-                        instance.attribute[attributeName];
+                        instance.attributes[attributeName];
                 this.attributes[attributeName] =
                     instance.attributes[attributeName];
             }
