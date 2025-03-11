@@ -1,6 +1,6 @@
 import { UserData } from "./structures/userData.js";
 import { OrganizationUsersModel } from "./supabase/organization.js";
-import { NotifierModel } from "../prototypes/notifierModel.js";
+import { NotifierModel } from "./prototypes/notifierModel.js";
 
 class User extends NotifierModel {
     constructor(supabase, authId, userData = null) {
