@@ -13,3 +13,7 @@ export interface FetchWithAuthParams {
     method: string;
     body: Record<string, unknown>;
 }
+
+export function fetchWithAuth(
+    params: FetchWithAuthParams
+): Promise<FetchWithAuthResponse>;

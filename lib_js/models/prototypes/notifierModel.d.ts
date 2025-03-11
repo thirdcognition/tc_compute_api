@@ -1,6 +1,6 @@
 export interface NotifierModel<T> {
     listeners: Array<{
-        event: string;
+        events: string | string[];
         callback: (
             event: string,
             instance: T,

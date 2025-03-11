@@ -1,7 +1,6 @@
-import { SourceModel } from "../supabase/sources.js";
-
 import { UrlResult } from "./urlResult.js";
 import { NewsArticle } from "./newsArticle.js";
+import { SourceModel } from "../supabase/sources.js";
 import { Enum } from "../supabase/supabaseModel.js";
 
 class ResolveStateEnum extends Enum {

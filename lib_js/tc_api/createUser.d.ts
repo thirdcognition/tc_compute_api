@@ -1,8 +1,8 @@
 // tc_api/CreateUserInterfaces.ts
 
 import { SupabaseClient } from "@supabase/supabase-js";
-import { ApiConfig } from "../helpers/ApiHelperInterfaces";
-import { UserOrganizationRequestData } from "../models/structures/UserDataInterfaces";
+import { ApiConfig } from "../helpers/ApiHelper";
+import { UserOrganizationRequestData } from "../models/structures/userData";
 
 export interface CreateUserParams {
     organizationId: string;

@@ -9,9 +9,9 @@ import {
     OrganizationTeamMembersModel,
     OrganizationUsersModel,
     UserDataModel
-} from "../supabase/organizationInterfaces";
-import { ACLGroupUsersModel, ACLGroupModel } from "../supabase/aclInterfaces";
-import { NotifierModel } from "../prototypes/NotifierModelInterface";
+} from "../supabase/organization";
+import { ACLGroupUsersModel, ACLGroupModel } from "../supabase/acl";
+import { NotifierModel } from "../prototypes/notifierModel";
 
 export interface UserAvatarData {
     email: string | null;

@@ -5,7 +5,7 @@ import {
     UserData,
     UserAvatarData,
     UserPreferencesData
-} from "./structures/UserDataInterfaces";
+} from "./structures/userData";
 import {
     OrganizationsModel,
     UserProfileModel,
@@ -13,8 +13,8 @@ import {
     OrganizationUsersModel,
     OrganizationTeamModel,
     OrganizationRoleModel
-} from "./supabase/organizationInterfaces";
-import { NotifierModel } from "./prototypes/NotifierModelInterface";
+} from "./supabase/organization";
+import { NotifierModel } from "./prototypes/notifierModel";
 
 export interface User extends NotifierModel<User> {
     supabase: SupabaseClient;

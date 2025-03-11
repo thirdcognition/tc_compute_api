@@ -1,4 +1,4 @@
-import { SupabaseModel } from "./SupabaseModelInterface";
+import { SupabaseModel } from "./supabaseModel";
 
 export enum SourceTypeEnum {
     DOCUMENT = "document",

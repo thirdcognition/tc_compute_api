@@ -1,4 +1,4 @@
-import { SupabaseModel } from "./SupabaseModelInterface";
+import { SupabaseModel } from "./supabaseModel";
 
 export interface ContextQuery extends SupabaseModel<ContextQuery> {
     id: string;

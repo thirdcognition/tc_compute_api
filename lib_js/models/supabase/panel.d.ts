@@ -2,8 +2,8 @@ import {
     AudioMetadata,
     PanelMetadata,
     TranscriptMetadata
-} from "../structures/PanelInterfaces";
-import { SupabaseModel } from "./SupabaseModelInterface";
+} from "../structures/panel";
+import { SupabaseModel } from "./supabaseModel";
 
 export enum ProcessStateEnum {
     NONE = "none",

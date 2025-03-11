@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { WebSource } from "./webSource.js";
+import { WebSource } from "./webSource";
 import { SourceModel, SourceRelationshipModel } from "../supabase/sources";
 
 export interface WebSourceCollection {

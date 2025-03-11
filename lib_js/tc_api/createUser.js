@@ -1,5 +1,5 @@
 import "server-only";
-import { UserOrganizationRequestData } from "../models/data/userData.js";
+import { UserOrganizationRequestData } from "../models/structures/userData.js";
 import { ApiConfig, fetchWithAuth } from "../helpers/ApiHelper.js";
 import {
     UserProfileModel,

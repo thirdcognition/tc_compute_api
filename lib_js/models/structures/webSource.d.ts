@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { UrlResult } from "./urlResult.js";
-import { NewsArticle } from "./newsArticle.js";
+import { UrlResult } from "./urlResult";
+import { NewsArticle } from "./newsArticle";
 import { SourceModel } from "../supabase/sources";
 
 export enum ResolveState {

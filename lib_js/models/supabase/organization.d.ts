@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SupabaseModel } from "./SupabaseModelInterface";
+import { SupabaseModel } from "./supabaseModel";
 
 export interface UserProfileModel extends SupabaseModel<UserProfileModel> {
     id?: string;
