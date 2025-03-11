@@ -16,7 +16,7 @@ import {
 } from "./supabase/organization";
 import { NotifierModel } from "./prototypes/notifierModel";
 
-declare class User extends NotifierModel<User> {
+export declare class User extends NotifierModel<User> {
     supabase: SupabaseClient;
     model: UserData | null;
     authId: string;
@@ -76,6 +76,6 @@ declare class User extends NotifierModel<User> {
     matchUserData(filters: Partial<UserDataModel>): Promise<UserDataModel[]>;
 }
 
-declare class GetCurrentUserParams {
+export declare class GetCurrentUserParams {
     supabase: SupabaseClient;
 }

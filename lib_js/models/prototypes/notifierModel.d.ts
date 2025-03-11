@@ -13,7 +13,7 @@ export interface NotifyResult<T> {
     args: unknown[];
 }
 
-declare class NotifierModel<T> {
+export declare class NotifierModel<T> {
     listeners: Listener<T>[];
     boundNotifyListeners: (
         event: string,

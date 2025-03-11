@@ -3,12 +3,12 @@ import {
     YleNewsConfig,
     TechCrunchNewsConfig,
     HackerNewsConfig
-} from "./SourcesInterfaces";
+} from "./sources";
 
 /**
  * Interface representing the structure and methods of a HostProfile.
  */
-declare class HostProfile {
+export declare class HostProfile {
     name: string;
     persona: string;
     role: string;
@@ -17,7 +17,7 @@ declare class HostProfile {
 /**
  * Interface representing the structure and methods of a ConversationConfig.
  */
-declare class ConversationConfig {
+export declare class ConversationConfig {
     output_language?: string;
     conversation_style?: string[];
     roles_person_1?: HostProfile | null;
@@ -37,7 +37,7 @@ declare class ConversationConfig {
 /**
  * Interface representing the structure and methods of a PanelRequestData.
  */
-declare class PanelRequestData {
+export declare class PanelRequestData {
     title: string;
     inputSource: string | string[];
     inputText?: string;
@@ -63,7 +63,7 @@ declare class PanelRequestData {
     isPublic?: boolean;
 }
 
-declare class SummaryReference {
+export declare class SummaryReference {
     id?: string;
     title: string;
     image?: string | null;
@@ -74,7 +74,7 @@ declare class SummaryReference {
 /**
  * Interface representing the structure and methods of a SummarySubject.
  */
-declare class SummarySubject {
+export declare class SummarySubject {
     title: string;
     description: string;
     references: (string | SummaryReference)[];
@@ -83,13 +83,13 @@ declare class SummarySubject {
 /**
  * Interface representing the structure and methods of a TranscriptSummary.
  */
-declare class TranscriptSummary {
+export declare class TranscriptSummary {
     subjects: SummarySubject[];
     description: string;
     title: string;
 }
 
-declare class PanelMetadata {
+export declare class PanelMetadata {
     title?: string; // Optional title.
     input_source?: string | string[]; // Optional input source (string or string array).
     input_text?: string; // Optional input text.
@@ -108,7 +108,7 @@ declare class PanelMetadata {
     description?: string; // Optional description.
 }
 
-declare class TranscriptMetadata {
+export declare class TranscriptMetadata {
     images?: string[]; // List of image URLs.
     longform?: boolean; // Indicates if it's long-form content.
     subjects?: SummarySubject[]; // List of subjects with descriptions and references.
@@ -116,7 +116,7 @@ declare class TranscriptMetadata {
     conversation_config?: ConversationConfig; // Details for panel setup and dialogue.
 }
 
-declare class AudioMetadata {
+export declare class AudioMetadata {
     tts_model?: string; // Optional TTS model.
     conversation_config?: ConversationConfig; // Optional conversation configuration.
 }

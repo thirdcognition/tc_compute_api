@@ -2,7 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { WebSource } from "./webSource";
 import { SourceModel, SourceRelationshipModel } from "../supabase/sources";
 
-declare class WebSourceCollection {
+export declare class WebSourceCollection {
     sourceModel: SourceModel | null;
     relationships: SourceRelationshipModel[] | null;
     webSources: WebSource[];

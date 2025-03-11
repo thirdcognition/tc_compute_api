@@ -13,7 +13,7 @@ export enum ProcessStateEnum {
     DONE = "done"
 }
 
-declare class PanelAudioModel extends SupabaseModel<PanelAudioModel> {
+export declare class PanelAudioModel extends SupabaseModel<PanelAudioModel> {
     id?: string;
     panelId: string;
     transcriptId: string;
@@ -34,7 +34,7 @@ declare class PanelAudioModel extends SupabaseModel<PanelAudioModel> {
     lang?: string;
 }
 
-declare class PanelDiscussionModel extends SupabaseModel<PanelDiscussionModel> {
+export declare class PanelDiscussionModel extends SupabaseModel<PanelDiscussionModel> {
     id?: string;
     title?: string;
     tags?: string[];
@@ -48,7 +48,7 @@ declare class PanelDiscussionModel extends SupabaseModel<PanelDiscussionModel> {
     organizationId?: string;
 }
 
-declare class PanelTranscriptModel extends SupabaseModel<PanelTranscriptModel> {
+export declare class PanelTranscriptModel extends SupabaseModel<PanelTranscriptModel> {
     id?: string;
     panelId: string;
     title?: string;
@@ -72,7 +72,7 @@ declare class PanelTranscriptModel extends SupabaseModel<PanelTranscriptModel> {
     lang?: string;
 }
 
-declare class PanelTranscriptOrderModel extends SupabaseModel<PanelTranscriptOrderModel> {
+export declare class PanelTranscriptOrderModel extends SupabaseModel<PanelTranscriptOrderModel> {
     id?: string;
     panelId: string;
     transcriptId?: string;
@@ -88,7 +88,7 @@ declare class PanelTranscriptOrderModel extends SupabaseModel<PanelTranscriptOrd
     organizationId?: string;
 }
 
-declare class PanelTranscriptSourceReferenceModel extends SupabaseModel<PanelTranscriptSourceReferenceModel> {
+export declare class PanelTranscriptSourceReferenceModel extends SupabaseModel<PanelTranscriptSourceReferenceModel> {
     id?: string;
     transcriptId: string;
     sourceId: string;

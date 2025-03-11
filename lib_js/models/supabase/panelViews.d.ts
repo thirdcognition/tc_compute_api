@@ -1,6 +1,6 @@
 import { SupabaseModel } from "./supabaseModel";
 
-declare class ViewUserPanelDiscussionModel extends SupabaseModel<ViewUserPanelDiscussionModel> {
+export declare class ViewUserPanelDiscussionModel extends SupabaseModel<ViewUserPanelDiscussionModel> {
     userDataId?: string;
     panelDiscussionId?: string;
     authId?: string;
@@ -13,7 +13,7 @@ declare class ViewUserPanelDiscussionModel extends SupabaseModel<ViewUserPanelDi
     userDataUpdatedAt?: Date;
 }
 
-declare class ViewUserPanelTranscriptModel extends SupabaseModel<ViewUserPanelTranscriptModel> {
+export declare class ViewUserPanelTranscriptModel extends SupabaseModel<ViewUserPanelTranscriptModel> {
     userDataId?: string;
     panelTranscriptId?: string;
     authId?: string;
@@ -30,7 +30,7 @@ declare class ViewUserPanelTranscriptModel extends SupabaseModel<ViewUserPanelTr
     userDataUpdatedAt?: Date;
 }
 
-declare class ViewUserPanelAudioModel extends SupabaseModel<ViewUserPanelAudioModel> {
+export declare class ViewUserPanelAudioModel extends SupabaseModel<ViewUserPanelAudioModel> {
     userDataId?: string;
     panelAudioId?: string;
     authId?: string;

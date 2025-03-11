@@ -9,7 +9,7 @@ export enum ResolveState {
     UNRESOLVED = "unresolved"
 }
 
-declare class WebSource {
+export declare class WebSource {
     title: string;
     originalSource: string;
     resolvedSource?: string | null;

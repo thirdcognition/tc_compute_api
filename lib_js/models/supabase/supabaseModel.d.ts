@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { NotifierModel } from "../prototypes/notifierModel";
 
-declare class SupabaseModel<T> extends NotifierModel<T> {
+export declare class SupabaseModel<T> extends NotifierModel<T> {
     saveToSupabase(
         supabase: SupabaseClient,
         instance: T,

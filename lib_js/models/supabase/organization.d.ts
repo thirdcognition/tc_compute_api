@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseModel } from "./supabaseModel";
 
-declare class UserProfileModel extends SupabaseModel<UserProfileModel> {
+export declare class UserProfileModel extends SupabaseModel<UserProfileModel> {
     id?: string;
     authId?: string;
     email?: string;
@@ -20,7 +20,7 @@ declare class UserProfileModel extends SupabaseModel<UserProfileModel> {
     activeConversationId?: string;
 }
 
-declare class UserDataModel extends SupabaseModel<UserDataModel> {
+export declare class UserDataModel extends SupabaseModel<UserDataModel> {
     id?: string;
     authId?: string;
     item: string;
@@ -30,7 +30,7 @@ declare class UserDataModel extends SupabaseModel<UserDataModel> {
     updatedAt?: Date;
 }
 
-declare class OrganizationRoleModel extends SupabaseModel<OrganizationRoleModel> {
+export declare class OrganizationRoleModel extends SupabaseModel<OrganizationRoleModel> {
     id?: string;
     name: string;
     description?: string;
@@ -43,7 +43,7 @@ declare class OrganizationRoleModel extends SupabaseModel<OrganizationRoleModel>
     organizationId?: string;
 }
 
-declare class OrganizationTeamModel extends SupabaseModel<OrganizationTeamModel> {
+export declare class OrganizationTeamModel extends SupabaseModel<OrganizationTeamModel> {
     id?: string;
     name: string;
     metadata?: Record<string, unknown>;
@@ -55,7 +55,7 @@ declare class OrganizationTeamModel extends SupabaseModel<OrganizationTeamModel>
     organizationId?: string;
 }
 
-declare class OrganizationTeamMembersModel extends SupabaseModel<OrganizationTeamMembersModel> {
+export declare class OrganizationTeamMembersModel extends SupabaseModel<OrganizationTeamMembersModel> {
     authId: string;
     userId: string;
     teamId: string;
@@ -67,7 +67,7 @@ declare class OrganizationTeamMembersModel extends SupabaseModel<OrganizationTea
     organizationId?: string;
 }
 
-declare class OrganizationUsersModel extends SupabaseModel<OrganizationUsersModel> {
+export declare class OrganizationUsersModel extends SupabaseModel<OrganizationUsersModel> {
     authId?: string;
     userId?: string;
     organizationId?: string;
@@ -97,7 +97,7 @@ declare class OrganizationUsersModel extends SupabaseModel<OrganizationUsersMode
     ): Promise<OrganizationUsersModel>;
 }
 
-declare class OrganizationsModel extends SupabaseModel<OrganizationsModel> {
+export declare class OrganizationsModel extends SupabaseModel<OrganizationsModel> {
     id?: string;
     defaultAclGroupId?: string;
     name?: string;

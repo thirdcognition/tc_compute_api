@@ -1,7 +1,7 @@
 /**
  * TypeScript interface representing the structure and methods of a NewsArticle.
  */
-declare class NewsArticle {
+export declare class NewsArticle {
     title: string;
     topic: string;
     subject?: string | null;

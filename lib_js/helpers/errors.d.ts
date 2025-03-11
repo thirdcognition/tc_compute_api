@@ -1,7 +1,7 @@
 /**
  * Represents an API error with detailed information.
  */
-declare class ApiError {
+export declare class ApiError {
     name: string; // Name of the error (e.g., "ApiError")
     code: number; // HTTP status code
     message: string; // Status text or error message
