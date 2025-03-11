@@ -15,8 +15,8 @@ export interface NotifierModel<T> {
             instance: T,
             ...args: unknown[]
         ) => boolean | void,
-        events: string | string[]
+        events?: string | string[]
     ): this;
-    wait(events: string | string[]): Promise<unknown[]>;
+    wait(events?: string | string[]): Promise<unknown[]>;
     notifyListeners(event: string, ...args: unknown[]): boolean;
 }
