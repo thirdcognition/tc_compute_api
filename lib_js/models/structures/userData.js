@@ -330,7 +330,7 @@ export class UserData extends NotifierModel {
                 { authId: this.authId }
             );
             const existingDataMap = new Map(
-                (this.userData.map((instance) => [instance.id, instance])
+                this.userData.map((instance) => [instance.id, instance])
             );
 
             newUserData.forEach((newInstance) => {
