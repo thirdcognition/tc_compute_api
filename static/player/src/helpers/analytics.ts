@@ -14,7 +14,7 @@ const DEBUG_MODE = true; // process.env.REACT_APP_DEBUG_MODE === "true";
 export const SESSION_KEY = "app_session";
 export const HEARTBEAT_INTERVAL = 10000; // 10 seconds
 
-declare class Session {
+export interface Session {
     id: string;
     startTime: number;
     lastHeartbeat: number;
