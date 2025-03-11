@@ -43,6 +43,12 @@ export declare class User extends NotifierModel<User> {
     readonly roles: OrganizationRoleModel[];
     readonly memberships: OrganizationUsersModel[];
 
+    constructor(
+        supabase: SupabaseClient,
+        authId: string,
+        userData?: UserData | null
+    );
+
     // Methods acting as setters
     setActiveOrganization(organizationId: string): Promise<void>;
     setActiveConversation(conversationId: string): Promise<void>;

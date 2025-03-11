@@ -9,6 +9,20 @@ export enum ResolveState {
     UNRESOLVED = "unresolved"
 }
 
+export type SourceMetadata = {
+    image: string | null;
+    publishDate: string | null;
+    children:
+        | {
+              image: string | null;
+              title: string | null;
+              publishDate: string | null;
+              url: string | null;
+              source: string | null;
+          }[]
+        | null;
+};
+
 export declare class WebSource {
     title: string;
     originalSource: string;
@@ -23,24 +37,34 @@ export declare class WebSource {
     categories?: string[];
     linkedItems?: string[]; // Assuming linked items are strings
     lang?: string | null;
-    metadata?: {
-        image: string | null;
-        publishDate: string | null;
-        children:
-            | {
-                  image: string | null;
-                  title: string | null;
-                  publishDate: string | null;
-                  url: string | null;
-                  source: string | null;
-              }[]
-            | null;
-    };
+    metadata?: Metadata;
     ownerId?: string | null;
     organizationId?: string | null;
     urlResult?: UrlResult | null;
     article?: NewsArticle | null;
     resolveState: ResolveState; // Add resolveState field
+
+    constructor(params: {
+        title: string;
+        originalSource: string;
+        resolvedSource?: string | null;
+        source: string;
+        rssSource?: string | null;
+        sourceId?: string | null;
+        description?: string | null;
+        originalContent?: string | null;
+        image?: string | null;
+        publishDate?: Date | null;
+        categories?: string[];
+        linkedItems?: string[];
+        lang?: string | null;
+        metadata?: SourceMetadata;
+        ownerId?: string | null;
+        organizationId?: string | null;
+        urlResult?: UrlResult | null;
+        article?: NewsArticle | null;
+        resolveState?: ResolveState;
+    });
 
     /**
      * Update the WebSource instance based on the provided object.

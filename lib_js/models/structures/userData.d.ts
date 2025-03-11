@@ -17,6 +17,12 @@ export declare class UserAvatarData {
     email: string | null;
     name: string | null;
     profilePicture: string | null;
+
+    constructor(
+        email?: string | null,
+        name?: string | null,
+        profilePicture?: string | null
+    );
 }
 
 export declare class UserPreferencesData {
@@ -24,6 +30,13 @@ export declare class UserPreferencesData {
     metadata: Record<string, unknown> | null;
     preferences: Record<string, unknown> | null;
     paymentDetails: Record<string, unknown> | null;
+
+    constructor(
+        lang?: string | null,
+        metadata?: Record<string, unknown> | null,
+        preferences?: Record<string, unknown> | null,
+        paymentDetails?: Record<string, unknown> | null
+    );
 }
 
 export declare class UserOrganizationRequestData {
@@ -31,6 +44,13 @@ export declare class UserOrganizationRequestData {
     authId: string | null;
     metadata: Record<string, unknown>;
     isAdmin: boolean;
+
+    constructor(
+        email?: string | null,
+        authId?: string | null,
+        metadata?: Record<string, unknown>,
+        isAdmin?: boolean
+    );
 }
 
 export declare class UserData extends NotifierModel<UserData> {
@@ -45,6 +65,12 @@ export declare class UserData extends NotifierModel<UserData> {
     userInAclGroup: ACLGroupUsersModel[] | null;
     aclGroup: ACLGroupModel[] | null;
     userData: UserDataModel[] | null;
+
+    constructor(
+        supabase: SupabaseClient,
+        authId: string,
+        userProfileData?: UserProfileModel | null
+    );
 
     // Methods
     saveAllToSupabase(): Promise<void>;

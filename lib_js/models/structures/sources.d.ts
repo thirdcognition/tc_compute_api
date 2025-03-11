@@ -20,6 +20,17 @@ export declare class GoogleNewsConfig {
     location?: string | string[] | null;
     since?: string;
     articles?: number | null;
+
+    constructor(params: {
+        feed_type?: GooglenewsFeedType | null;
+        lang?: string;
+        country?: string;
+        topic?: string | string[] | null;
+        query?: string | null;
+        location?: string | string[] | null;
+        since?: string;
+        articles?: number | null;
+    });
 }
 
 /**
@@ -46,6 +57,14 @@ export declare class HackerNewsConfig {
     points?: number | null;
     comments?: number | null;
     articles?: number | null;
+
+    constructor(params: {
+        feed_type: HackerNewsFeedType;
+        query?: string | null;
+        points?: number | null;
+        comments?: number | null;
+        articles?: number | null;
+    });
 }
 
 /**
@@ -53,6 +72,8 @@ export declare class HackerNewsConfig {
  */
 export declare class TechCrunchNewsConfig {
     articles?: number | null;
+
+    constructor(params: { articles?: number | null });
 }
 
 /**
@@ -82,4 +103,13 @@ export declare class YleNewsConfig {
     topics?: string[] | null;
     locations?: string[] | null;
     lang?: YleLanguage;
+
+    constructor(params: {
+        feed_type?: YleFeedType | null;
+        type?: YleFeedType | null;
+        articles?: number | null;
+        topics?: string[] | null;
+        locations?: string[] | null;
+        lang?: YleLanguage;
+    });
 }

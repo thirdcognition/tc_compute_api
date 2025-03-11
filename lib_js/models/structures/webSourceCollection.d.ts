@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { WebSource } from "./webSource";
+import { WebSource, SourceMetadata } from "./webSource";
 import { SourceModel, SourceRelationshipModel } from "../supabase/sources";
 
 export declare class WebSourceCollection {
@@ -17,17 +17,25 @@ export declare class WebSourceCollection {
     ownerId: string | null;
     organizationId: string | null;
     lang: string | null;
-    metadata: {
-        image: string | null;
-        publish_date: string | null;
-        children: {
-            image: string | null;
-            title: string | null;
-            publish_date: string | null;
-            url: string | null;
-            source: string | null;
-        }[];
-    } | null;
+    metadata: SourceMetadata | null;
+
+    constructor(params: {
+        webSources?: WebSource[];
+        sourceModel?: SourceModel | null;
+        relationships?: SourceRelationshipModel[] | null;
+        title?: string | null;
+        description?: string | null;
+        categories?: string[];
+        maxAmount?: number | null;
+        mainItem?: boolean;
+        image?: string | null;
+        publishDate?: Date | null;
+        ownerId?: string | null;
+        organizationId?: string | null;
+        sourceId?: string | null;
+        lang?: string | null;
+        metadata?: SourceMetadata | null;
+    });
 
     shortId(): string;
     loadFromSupabase(supabase: SupabaseClient, id: string): Promise<void>;

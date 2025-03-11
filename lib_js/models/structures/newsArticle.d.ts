@@ -12,6 +12,18 @@ export declare class NewsArticle {
     image?: string | null;
     categories?: string[];
 
+    constructor(params: {
+        title: string;
+        topic: string;
+        subject?: string | null;
+        description: string;
+        summary: string;
+        article: string;
+        lang: string;
+        image?: string | null;
+        categories?: string[];
+    });
+
     /**
      * Convert the NewsArticle instance to a JSON object.
      * @returns {Object} JSON representation of the NewsArticle.

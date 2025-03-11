@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { NotifierModel } from "../prototypes/notifierModel";
 
 export declare class SupabaseModel<T> extends NotifierModel<T> {
+    constructor(args: Record<string, unknown>);
     saveToSupabase(
         supabase: SupabaseClient,
         instance: T,
