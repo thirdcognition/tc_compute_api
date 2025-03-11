@@ -34,7 +34,7 @@ export type CreateOrganizationUserRequestData = {
 /**
  * Interface for the CreateUserAPI object.
  */
-export declare class CreateUserAPI {
+export declare const CreateUserAPI: {
     convertToCreateOrganizationUserRequestData(
         requestData: ConvertToCreateOrganizationUserRequestDataParams
     ): CreateOrganizationUserRequestData;
@@ -51,4 +51,4 @@ export declare class CreateUserAPI {
         requestData: UserOrganizationRequestData,
         apiConfig: ApiConfig
     ): Promise<unknown>;
-}
+};
