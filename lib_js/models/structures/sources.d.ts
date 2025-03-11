@@ -11,7 +11,7 @@ export enum GooglenewsFeedType {
 /**
  * Interface representing the structure and methods of a GoogleNewsConfig.
  */
-export interface GoogleNewsConfig {
+declare class GoogleNewsConfig {
     feed_type?: GooglenewsFeedType | null;
     lang?: string;
     country?: string;
@@ -40,7 +40,7 @@ export enum HackerNewsFeedType {
 /**
  * Interface representing the structure and methods of a HackerNewsConfig.
  */
-export interface HackerNewsConfig {
+declare class HackerNewsConfig {
     feed_type: HackerNewsFeedType;
     query?: string | null;
     points?: number | null;
@@ -51,7 +51,7 @@ export interface HackerNewsConfig {
 /**
  * Interface representing the structure and methods of a TechCrunchNewsConfig.
  */
-export interface TechCrunchNewsConfig {
+declare class TechCrunchNewsConfig {
     articles?: number | null;
 }
 
@@ -75,7 +75,7 @@ export enum YleLanguage {
 /**
  * Interface representing the structure and methods of a YleNewsConfig.
  */
-export interface YleNewsConfig {
+declare class YleNewsConfig {
     feed_type?: YleFeedType | null;
     type?: YleFeedType | null;
     articles?: number | null;

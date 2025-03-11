@@ -4,20 +4,20 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { ApiConfig } from "../helpers/ApiHelper";
 import { UserOrganizationRequestData } from "../models/structures/userData";
 
-export interface CreateUserParams {
+declare class CreateUserParams {
     organizationId: string;
     requestData: UserOrganizationRequestData;
     apiConfig: ApiConfig;
 }
 
-export interface CreateOrganizationUserParams {
+declare class CreateOrganizationUserParams {
     supabase: SupabaseClient;
     organizationId: string;
     requestData: UserOrganizationRequestData;
     apiConfig: ApiConfig;
 }
 
-export interface ConvertToCreateOrganizationUserRequestDataParams {
+declare class ConvertToCreateOrganizationUserRequestDataParams {
     email: string;
     authId: string;
     metadata: Record<string, unknown>; // JSON object
@@ -34,7 +34,7 @@ export type CreateOrganizationUserRequestData = {
 /**
  * Interface for the CreateUserAPI object.
  */
-export interface CreateUserAPI {
+declare class CreateUserAPI {
     convertToCreateOrganizationUserRequestData(
         requestData: ConvertToCreateOrganizationUserRequestDataParams
     ): CreateOrganizationUserRequestData;

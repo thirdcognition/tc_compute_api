@@ -9,7 +9,7 @@ export enum ResolveState {
     UNRESOLVED = "unresolved"
 }
 
-export interface WebSource {
+declare class WebSource {
     title: string;
     originalSource: string;
     resolvedSource?: string | null;

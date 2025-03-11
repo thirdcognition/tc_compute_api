@@ -13,27 +13,27 @@ import {
 import { ACLGroupUsersModel, ACLGroupModel } from "../supabase/acl";
 import { NotifierModel } from "../prototypes/notifierModel";
 
-export interface UserAvatarData {
+declare class UserAvatarData {
     email: string | null;
     name: string | null;
     profilePicture: string | null;
 }
 
-export interface UserPreferencesData {
+declare class UserPreferencesData {
     lang: string | null;
     metadata: Record<string, unknown> | null;
     preferences: Record<string, unknown> | null;
     paymentDetails: Record<string, unknown> | null;
 }
 
-export interface UserOrganizationRequestData {
+declare class UserOrganizationRequestData {
     email: string | null;
     authId: string | null;
     metadata: Record<string, unknown>;
     isAdmin: boolean;
 }
 
-export interface UserData extends NotifierModel<UserData> {
+declare class UserData extends NotifierModel<UserData> {
     authId: string;
     supabase: SupabaseClient;
     profile: UserProfileModel | null;

@@ -9,7 +9,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 /**
  * Represents the detailed information about a panel, including its transcripts and audios.
  */
-export interface PanelDetails {
+declare class PanelDetails {
     panel: PanelDiscussionModel;
     transcripts: PanelTranscriptModel[];
     audios: PanelAudioModel[];
@@ -18,7 +18,7 @@ export interface PanelDetails {
 /**
  * Represents the public URLs for transcripts and audios associated with a panel.
  */
-export interface PanelFiles {
+declare class PanelFiles {
     transcriptUrls: Record<string, string>;
     audioUrls: Record<string, string>;
 }
@@ -26,7 +26,7 @@ export interface PanelFiles {
 /**
  * Interface for the PanelAPI object.
  */
-export interface PanelAPI {
+declare class PanelAPI {
     getPanel(
         supabase: SupabaseClient,
         panelId: string

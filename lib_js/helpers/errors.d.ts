@@ -1,7 +1,7 @@
 /**
  * Represents an API error with detailed information.
  */
-export interface ApiError {
+declare class ApiError {
     name: string; // Name of the error (e.g., "ApiError")
     code: number; // HTTP status code
     message: string; // Status text or error message
@@ -12,7 +12,7 @@ export interface ApiError {
  * Function signature for throwApiError.
  * Throws an ApiError based on the response object.
  */
-export function throwApiError(response: {
+declare function throwApiError(response: {
     status: number;
     statusText: string;
     error?: unknown;

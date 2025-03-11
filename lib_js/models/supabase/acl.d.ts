@@ -12,7 +12,7 @@ export enum UserACLEnum {
     RO = "ro"
 }
 
-export interface ACLGroupModel extends SupabaseModel<ACLGroupModel> {
+declare class ACLGroupModel extends SupabaseModel<ACLGroupModel> {
     id?: string;
     name: string;
     description?: string;
@@ -24,7 +24,7 @@ export interface ACLGroupModel extends SupabaseModel<ACLGroupModel> {
     organizationId?: string;
 }
 
-export interface ACLGroupItemsModel extends SupabaseModel<ACLGroupItemsModel> {
+declare class ACLGroupItemsModel extends SupabaseModel<ACLGroupItemsModel> {
     aclGroupId: string;
     acl?: ACLEnum;
     itemId: string;
@@ -37,7 +37,7 @@ export interface ACLGroupItemsModel extends SupabaseModel<ACLGroupItemsModel> {
     organizationId?: string;
 }
 
-export interface ACLGroupUsersModel extends SupabaseModel<ACLGroupUsersModel> {
+declare class ACLGroupUsersModel extends SupabaseModel<ACLGroupUsersModel> {
     authId: string;
     userId: string;
     aclGroupId: string;
@@ -49,7 +49,7 @@ export interface ACLGroupUsersModel extends SupabaseModel<ACLGroupUsersModel> {
     organizationId?: string;
 }
 
-export interface ACLGroupUsersWithItemsModel {
+declare class ACLGroupUsersWithItemsModel {
     organizationId?: string;
     aclGroupId: string;
     itemId: string;

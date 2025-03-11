@@ -1,4 +1,4 @@
-export interface UrlResult {
+declare class UrlResult {
     orig_url?: string | null;
     resolved_url?: string | null;
     title?: string | null;

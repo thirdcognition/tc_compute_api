@@ -12,7 +12,7 @@ export enum SourceTypeEnum {
     COLLECTION = "collection"
 }
 
-export interface SourceModel extends SupabaseModel<SourceModel> {
+declare class SourceModel extends SupabaseModel<SourceModel> {
     id: string;
     originalSource?: string;
     resolvedSource?: string;
@@ -32,7 +32,7 @@ export interface SourceModel extends SupabaseModel<SourceModel> {
     updatedBy?: string;
 }
 
-export interface SourceChunkModel extends SupabaseModel<SourceChunkModel> {
+declare class SourceChunkModel extends SupabaseModel<SourceChunkModel> {
     id: string;
     sourceId?: string;
     chunkNextId?: string;
@@ -45,8 +45,7 @@ export interface SourceChunkModel extends SupabaseModel<SourceChunkModel> {
     organizationId?: string;
 }
 
-export interface SourceRelationshipModel
-    extends SupabaseModel<SourceRelationshipModel> {
+declare class SourceRelationshipModel extends SupabaseModel<SourceRelationshipModel> {
     sourceId: string;
     relatedSourceId: string;
     relationshipType?: string;

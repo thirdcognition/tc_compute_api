@@ -8,7 +8,7 @@ import {
 /**
  * Interface representing the structure and methods of a HostProfile.
  */
-export interface HostProfile {
+declare class HostProfile {
     name: string;
     persona: string;
     role: string;
@@ -17,7 +17,7 @@ export interface HostProfile {
 /**
  * Interface representing the structure and methods of a ConversationConfig.
  */
-export interface ConversationConfig {
+declare class ConversationConfig {
     output_language?: string;
     conversation_style?: string[];
     roles_person_1?: HostProfile | null;
@@ -37,7 +37,7 @@ export interface ConversationConfig {
 /**
  * Interface representing the structure and methods of a PanelRequestData.
  */
-export interface PanelRequestData {
+declare class PanelRequestData {
     title: string;
     inputSource: string | string[];
     inputText?: string;
@@ -63,7 +63,7 @@ export interface PanelRequestData {
     isPublic?: boolean;
 }
 
-export interface SummaryReference {
+declare class SummaryReference {
     id?: string;
     title: string;
     image?: string | null;
@@ -74,7 +74,7 @@ export interface SummaryReference {
 /**
  * Interface representing the structure and methods of a SummarySubject.
  */
-export interface SummarySubject {
+declare class SummarySubject {
     title: string;
     description: string;
     references: (string | SummaryReference)[];
@@ -83,13 +83,13 @@ export interface SummarySubject {
 /**
  * Interface representing the structure and methods of a TranscriptSummary.
  */
-export interface TranscriptSummary {
+declare class TranscriptSummary {
     subjects: SummarySubject[];
     description: string;
     title: string;
 }
 
-export interface PanelMetadata {
+declare class PanelMetadata {
     title?: string; // Optional title.
     input_source?: string | string[]; // Optional input source (string or string array).
     input_text?: string; // Optional input text.
@@ -108,7 +108,7 @@ export interface PanelMetadata {
     description?: string; // Optional description.
 }
 
-export interface TranscriptMetadata {
+declare class TranscriptMetadata {
     images?: string[]; // List of image URLs.
     longform?: boolean; // Indicates if it's long-form content.
     subjects?: SummarySubject[]; // List of subjects with descriptions and references.
@@ -116,7 +116,7 @@ export interface TranscriptMetadata {
     conversation_config?: ConversationConfig; // Details for panel setup and dialogue.
 }
 
-export interface AudioMetadata {
+declare class AudioMetadata {
     tts_model?: string; // Optional TTS model.
     conversation_config?: ConversationConfig; // Optional conversation configuration.
 }

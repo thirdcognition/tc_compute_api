@@ -1,19 +1,19 @@
 // helpers/ApiHelperInterfaces.ts
 
-export interface ApiConfig {
+declare class ApiConfig {
     host: string;
     port: number;
     authToken: string;
     refreshToken: string;
 }
 
-export interface FetchWithAuthParams {
+declare class FetchWithAuthParams {
     apiConfig: ApiConfig;
     endpoint: string;
     method: string;
     body: Record<string, unknown>;
 }
 
-export function fetchWithAuth(
+declare function fetchWithAuth(
     params: FetchWithAuthParams
 ): Promise<FetchWithAuthResponse>;
