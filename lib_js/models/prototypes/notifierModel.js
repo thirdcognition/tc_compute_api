@@ -8,9 +8,10 @@ export class NotifierModel {
     }
 
     listen(callback, events = "_any_") {
-        if (Array.isArray(events)) {
-            events.sort();
+        if (!Array.isArray(events)) {
+            events = [events];
         }
+        events.sort();
 
         if (
             typeof callback === "function" &&
@@ -40,9 +41,7 @@ export class NotifierModel {
 
     notifyListeners(event, ...args) {
         this.listeners = this.listeners.filter((listener) => {
-            const listenerEvents = Array.isArray(listener.event)
-                ? listener.event
-                : [listener.event];
+            const listenerEvents = listener.events;
             if (
                 listenerEvents.includes(event) ||
                 listenerEvents.includes("_any_")
