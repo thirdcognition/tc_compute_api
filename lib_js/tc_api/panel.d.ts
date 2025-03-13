@@ -34,24 +34,24 @@ declare const PanelAPI: {
 
     listPanels(supabase: SupabaseClient): Promise<PanelDiscussionModel[]>;
 
-    getPanelDetails(
-        supabase: SupabaseClient,
-        panelId: string
-    ): Promise<PanelDetails>;
+    // getPanelDetails(
+    //     supabase: SupabaseClient,
+    //     panelId: string
+    // ): Promise<PanelDetails>;
 
-    getPanelFiles(
-        supabase: SupabaseClient,
-        panelId: string
-    ): Promise<PanelFiles>;
+    // getPanelFiles(
+    //     supabase: SupabaseClient,
+    //     panelId: string
+    // ): Promise<PanelFiles>;
 
     getPanelTranscript(
         supabase: SupabaseClient,
         transcriptId: string
     ): Promise<PanelTranscriptModel>;
 
-    listPanelTranscripts(
-        supabase: SupabaseClient
-    ): Promise<PanelTranscriptModel[]>;
+    // listPanelTranscripts(
+    //     supabase: SupabaseClient
+    // ): Promise<PanelTranscriptModel[]>;
 
     listPanelTranscriptsByPanelId(
         supabase: SupabaseClient,
@@ -63,11 +63,16 @@ declare const PanelAPI: {
         audioId: string
     ): Promise<PanelAudioModel>;
 
-    listPanelAudios(supabase: SupabaseClient): Promise<PanelAudioModel[]>;
+    // listPanelAudios(supabase: SupabaseClient): Promise<PanelAudioModel[]>;
 
-    listPanelAudiosByPanelId(
+    // listPanelAudiosByPanelId(
+    //     supabase: SupabaseClient,
+    //     panelId: string
+    // ): Promise<PanelAudioModel[]>;
+
+    listPanelAudiosByTranscriptId(
         supabase: SupabaseClient,
-        panelId: string
+        transcriptId: string
     ): Promise<PanelAudioModel[]>;
 
     getPanelTranscriptSources(

@@ -3,34 +3,34 @@ import { NotifierModel } from "../prototypes/notifierModel";
 
 export declare class SupabaseModel<T> extends NotifierModel<T> {
     constructor(args: Record<string, unknown>);
-    saveToSupabase(
+    static saveToSupabase(
         supabase: SupabaseClient,
         instance: T,
         onConflict?: string[]
     ): Promise<T>;
-    upsertToSupabase(
+    static upsertToSupabase(
         supabase: SupabaseClient,
         instances: T[],
         onConflict?: string[],
         idColumn?: string
     ): Promise<T[]>;
-    fetchFromSupabase(
+    static fetchFromSupabase(
         supabase: SupabaseClient,
         value?: Partial<T>,
         idColumn?: string
     ): Promise<T | null>;
-    fetchExistingFromSupabase(
+    static fetchExistingFromSupabase(
         supabase: SupabaseClient,
         filter?: Partial<T>,
         values?: Partial<T>[],
         idColumn?: string
     ): Promise<T[]>;
-    existsInSupabase(
+    static existsInSupabase(
         supabase: SupabaseClient,
         value?: Partial<T>,
         idColumn?: string
     ): Promise<boolean>;
-    deleteFromSupabase(
+    static deleteFromSupabase(
         supabase: SupabaseClient,
         value?: Partial<T>,
         idColumn?: string

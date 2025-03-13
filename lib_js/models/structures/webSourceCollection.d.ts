@@ -39,7 +39,7 @@ export declare class WebSourceCollection {
 
     shortId(): string;
     loadFromSupabase(supabase: SupabaseClient, id: string): Promise<void>;
-    loadLinkedSourcesAsCollection(
+    static loadLinkedSourcesAsCollection(
         supabase: SupabaseClient,
         source: string | WebSource
     ): Promise<WebSourceCollection | null>;

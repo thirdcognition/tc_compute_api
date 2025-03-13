@@ -82,6 +82,4 @@ export declare class User extends NotifierModel<User> {
     matchUserData(filters: Partial<UserDataModel>): Promise<UserDataModel[]>;
 }
 
-export declare class GetCurrentUserParams {
-    supabase: SupabaseClient;
-}
+export declare function getCurrentUser(supabase: SupabaseClient): Promise<User>;
