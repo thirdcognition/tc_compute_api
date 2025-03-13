@@ -75,6 +75,11 @@ export class PanelAudioModel extends SupabaseModel {
             default: null
         }
     };
+
+    getContentUrl(supabase) {
+        return supabase.storage.from(this.bucketId).getPublicUrl(this.file)
+            .publicURL;
+    }
 }
 
 // Define PanelDiscussionModel
@@ -175,6 +180,31 @@ export class PanelTranscriptModel extends SupabaseModel {
             default: null
         }
     };
+
+    getContentUrl(supabase) {
+        return supabase.storage.from(this.bucketId).getPublicUrl(this.file)
+            .publicURL;
+    }
+
+    async fetchContent(supabase) {
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.access_token;
+        if (!accessToken) {
+            throw new Error("Access token is required to make the request.");
+        }
+
+        const response = await fetch(this.getContentUrl(supabase), {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("Error fetching transcript");
+        }
+
+        return response.text();
+    }
 }
 
 // Define PanelTranscriptOrderModel

@@ -1,3 +1,4 @@
+import { SupabaseClient } from "@supabase/supabase-js";
 import {
     AudioMetadata,
     PanelMetadata,
@@ -32,6 +33,8 @@ export declare class PanelAudioModel extends SupabaseModel<PanelAudioModel> {
     ownerId?: string;
     organizationId?: string;
     lang?: string;
+
+    getContentUrl(supabase: SupabaseClient): string;
 }
 
 export declare class PanelDiscussionModel extends SupabaseModel<PanelDiscussionModel> {
@@ -70,6 +73,9 @@ export declare class PanelTranscriptModel extends SupabaseModel<PanelTranscriptM
     ownerId?: string;
     organizationId?: string;
     lang?: string;
+
+    getContentUrl(supabase: SupabaseClient): string;
+    async fetchContent(supabase: SupabaseClient): string;
 }
 
 export declare class PanelTranscriptOrderModel extends SupabaseModel<PanelTranscriptOrderModel> {
