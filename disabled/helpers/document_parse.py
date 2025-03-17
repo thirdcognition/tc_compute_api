@@ -1,3 +1,7 @@
+# when enabling this file, add these packageS:
+# pymupdf
+# rapidocr-onnxruntime
+
 # from enum import Enum
 import io
 import os
@@ -7,6 +11,7 @@ from typing import Iterable, List, Sequence, Union
 import numpy as np
 import fitz
 
+# requires rapidocr-onnxruntime
 from rapidocr_onnxruntime import RapidOCR
 
 # from source.db.source import db_source_exists, get_db_sources, save_db_source
