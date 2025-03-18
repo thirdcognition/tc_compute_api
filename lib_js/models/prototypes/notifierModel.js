@@ -15,11 +15,12 @@ export class NotifierModel {
 
         if (
             typeof callback === "function" &&
-            !this.listeners.some((listener) =>
-                Array.isArray(listener.events) && Array.isArray(events)
-                    ? listener.events.toString() === events.toString()
-                    : listener.events === events &&
-                      listener.callback === callback
+            !this.listeners.some(
+                (listener) =>
+                    (Array.isArray(listener.events) && Array.isArray(events)
+                        ? listener.events.toString() === events.toString()
+                        : listener.events === events) &&
+                    listener.callback === callback
             )
         ) {
             this.listeners.push({ events, callback });
