@@ -78,7 +78,7 @@ export class PanelAudioModel extends SupabaseModel {
 
     getContentUrl(supabase) {
         return supabase.storage.from(this.bucketId).getPublicUrl(this.file).data
-            .publicURL;
+            .publicUrl;
     }
 }
 
@@ -183,7 +183,7 @@ export class PanelTranscriptModel extends SupabaseModel {
 
     getContentUrl(supabase) {
         return supabase.storage.from(this.bucketId).getPublicUrl(this.file).data
-            .publicURL;
+            .publicUrl;
     }
 
     async fetchContent(supabase) {
