@@ -17,7 +17,7 @@ export declare class NotifierModel<T> {
     listeners: Listener<T>[];
     boundNotifyListeners: (
         event: string,
-        instance: T,
+        instance: unknown,
         ...args: unknown[]
     ) => boolean;
 
