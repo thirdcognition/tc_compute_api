@@ -374,7 +374,19 @@ export class UserData extends NotifierModel {
             }
         }
 
-        return await userDataItem.create(this.supabase);
+        const item = await userDataItem.create(this.supabase);
+        if (this.userData) {
+            const existingItemIndex = this.userData.findIndex(
+                (existingItem) => existingItem.id === item.id
+            );
+
+            if (existingItemIndex > -1) {
+                this.userData[existingItemIndex] = item;
+            } else {
+                this.userData.push(item);
+            }
+        }
+        return item;
     }
 
     async matchUserData(filters, refresh = false) {
