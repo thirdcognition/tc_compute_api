@@ -6,7 +6,8 @@ import {
     rolesPerson1Options,
     rolesPerson2Options,
     dialogueStructureOptions,
-    engagementTechniquesOptions
+    engagementTechniquesOptions,
+    outputLanguageOptions
 } from "./options.js";
 import { getWordCountDescription } from "./helpers/ui.js";
 import CronjobComponent from "./components/CronjobComponent.jsx";
@@ -81,7 +82,9 @@ function TranscriptDetailEdit({
         if (discussionData) {
             const articleCount = calculateArticleCount(discussionData);
             const newMaxWordCount =
-                articleCount * (longForm || articleCount === 1 ? 500 : 300);
+                articleCount === 1
+                    ? 1000
+                    : articleCount * (longForm ? 500 : 300);
             setMaxWordCount(newMaxWordCount);
             if (wordCount > newMaxWordCount) {
                 setWordCount(newMaxWordCount);
@@ -498,6 +501,45 @@ function TranscriptDetailEdit({
                                             }
                                             className="w-full"
                                         />
+                                    </Form.Group>
+                                </Card.Body>
+                            </Card>
+
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
+                                        Output Language:
+                                    </Card.Title>
+                                    <Form.Group
+                                        controlId="outputLanguage"
+                                        className="mb-4"
+                                    >
+                                        <Form.Label className="font-semibold">
+                                            Output Language (Note: Selected
+                                            voice models should align with the
+                                            language):
+                                        </Form.Label>
+                                        <Form.Control
+                                            as="select"
+                                            value={outputLanguage}
+                                            onChange={(e) =>
+                                                setOutputLanguage(
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="w-full"
+                                        >
+                                            {outputLanguageOptions.map(
+                                                (language) => (
+                                                    <option
+                                                        value={language}
+                                                        key={language}
+                                                    >
+                                                        {language}
+                                                    </option>
+                                                )
+                                            )}
+                                        </Form.Control>
                                     </Form.Group>
                                 </Card.Body>
                             </Card>

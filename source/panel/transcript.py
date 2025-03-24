@@ -304,7 +304,12 @@ def create_panel_transcript(
 
     title = construct_transcript_title(panel, conversation_config, request_data)
     panel_transcript = create_and_update_panel_transcript(
-        supabase_client, request_data, title, conversation_config, request_data.longform
+        supabase_client,
+        request_data,
+        title,
+        conversation_config,
+        request_data.longform,
+        (conversation_config.output_language if conversation_config else "english"),
     )
     transcript_ids = []
     try:
@@ -443,6 +448,8 @@ def create_panel_transcript(
         if metadata.get("languages"):
             languages = metadata.get("languages")
             for language in languages:
+                if str(language).lower() == panel_transcript.lang.lower():
+                    continue
                 transcript_ids.append(
                     create_panel_transcript_translation(
                         request_data=request_data,
@@ -471,7 +478,7 @@ def create_panel_transcript_translation(
     transcript: str,
     language: str,
     sources: List[WebSource | WebSourceCollection],
-    combined_sources: str = "",
+    combined_sources: List[WebSource | WebSourceCollection | str] = [],
     supabase_client: Client = None,
 ) -> UUID:
     conversation_config, metadata, panel = fetch_panel_metadata_and_config(
@@ -510,7 +517,7 @@ def create_panel_transcript_translation(
         # ordered_groups = group_web_sources(web_sources)
 
         final_transcript = transcript_translate(
-            transcript, language, sources, conversation_config
+            transcript, language, combined_sources, conversation_config
         )
 
         transcript_summaries = transcript_summary_writer(

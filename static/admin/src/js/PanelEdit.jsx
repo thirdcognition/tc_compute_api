@@ -142,6 +142,36 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     taskStatus={taskStatus}
                 />
             )}
+
+            {taskStatus !== "idle" &&
+            taskStatus !== "success" &&
+            taskStatus !== "failure" ? null : (
+                <TranscriptDetailEdit
+                    panelId={panelId}
+                    discussionData={discussionData}
+                    taskStatus={taskStatus}
+                    initiatePolling={initiatePolling}
+                    visible={transcriptData && transcriptData.length === 0}
+                />
+            )}
+            {transcriptData &&
+                transcriptData.length > 0 &&
+                (taskStatus !== "idle" &&
+                taskStatus !== "success" &&
+                taskStatus !== "failure" ? (
+                    <div className="processing-container border p-3 mb-4 rounded">
+                        <h3 className="font-bold mb-3">Processing...</h3>
+                        <p>Please wait while the task is being processed.</p>
+                    </div>
+                ) : (
+                    <AudioDetailEdit
+                        panelId={panelId}
+                        transcriptData={transcriptData}
+                        taskStatus={taskStatus}
+                        initiatePolling={initiatePolling}
+                        visible={!transcriptData || transcriptData.length === 0}
+                    />
+                ))}
             {transcriptData && (
                 <Accordion defaultActiveKey={0}>
                     {transcriptData.map((transcript, index) => (
@@ -203,35 +233,6 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     ))}
                 </Accordion>
             )}
-            {taskStatus !== "idle" &&
-            taskStatus !== "success" &&
-            taskStatus !== "failure" ? null : (
-                <TranscriptDetailEdit
-                    panelId={panelId}
-                    discussionData={discussionData}
-                    taskStatus={taskStatus}
-                    initiatePolling={initiatePolling}
-                    visible={transcriptData && transcriptData.length === 0}
-                />
-            )}
-            {transcriptData &&
-                transcriptData.length > 0 &&
-                (taskStatus !== "idle" &&
-                taskStatus !== "success" &&
-                taskStatus !== "failure" ? (
-                    <div className="processing-container border p-3 mb-4 rounded">
-                        <h3 className="font-bold mb-3">Processing...</h3>
-                        <p>Please wait while the task is being processed.</p>
-                    </div>
-                ) : (
-                    <AudioDetailEdit
-                        panelId={panelId}
-                        transcriptData={transcriptData}
-                        taskStatus={taskStatus}
-                        initiatePolling={initiatePolling}
-                        visible={!transcriptData || transcriptData.length === 0}
-                    />
-                ))}
         </div>
     );
 }

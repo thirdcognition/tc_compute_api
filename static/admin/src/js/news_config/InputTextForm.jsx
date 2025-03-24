@@ -5,7 +5,8 @@ function InputTextForm({
     initialText = "",
     onTextChange,
     label = "",
-    textarea = true
+    textarea = true,
+    rows = 5
 }) {
     const [text, setText] = useState(initialText);
 
@@ -20,7 +21,7 @@ function InputTextForm({
             )}
             <Form.Control
                 as={textarea ? "textarea" : "input"}
-                rows={5}
+                rows={rows}
                 placeholder="Enter text here..."
                 value={text}
                 onChange={(e) => setText(e.target.value)}

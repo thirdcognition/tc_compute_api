@@ -41,8 +41,8 @@ class ConversationConfig(BaseModel):
     dialogue_structure: Optional[List[str]] = None
     engagement_techniques: Optional[List[str]] = None
     user_instructions: Optional[str] = None
-    podcast_name: Optional[str] = custom_config["podcast_name"]
-    podcast_tagline: Optional[str] = custom_config["podcast_tagline"]
+    podcast_name: Optional[str] = None
+    podcast_tagline: Optional[str] = None
     creativity: Optional[float] = custom_config["creativity"]
     word_count: Optional[int] = custom_config["word_count"]
     longform: Optional[bool] = False
@@ -58,6 +58,8 @@ class PanelRequestData(BaseModel):
     longform: bool = False
     bucket_name: str = "public_panels"
     display_tag: Optional[str] = ""
+    podcast_name: Optional[str] = custom_config["podcast_name"]
+    podcast_tagline: Optional[str] = custom_config["podcast_tagline"]
     conversation_config: Optional[ConversationConfig] = ConversationConfig()
     panel_id: Optional[UUID] = None
     transcript_parent_id: Optional[str] = None
