@@ -304,7 +304,12 @@ def create_panel_transcript(
 
     title = construct_transcript_title(panel, conversation_config, request_data)
     panel_transcript = create_and_update_panel_transcript(
-        supabase_client, request_data, title, conversation_config, request_data.longform
+        supabase_client,
+        request_data,
+        title,
+        conversation_config,
+        request_data.longform,
+        (conversation_config.output_language if conversation_config else "english"),
     )
     transcript_ids = []
     try:
@@ -443,7 +448,7 @@ def create_panel_transcript(
         if metadata.get("languages"):
             languages = metadata.get("languages")
             for language in languages:
-                if str(language).lower() == transcript.lang:
+                if str(language).lower() == panel_transcript.lang:
                     continue
                 transcript_ids.append(
                     create_panel_transcript_translation(
