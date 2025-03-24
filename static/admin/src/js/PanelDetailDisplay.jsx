@@ -351,9 +351,24 @@ const PanelDetailDisplay = ({ panel, isEditMode = false, taskStatus }) => {
                         <Card className="mb-4">
                             <Card.Body>
                                 <Card.Title>Static text content</Card.Title>
-                                <div className="ml-4 mb-2">
-                                    <p>{inputText}</p>
-                                </div>
+                                <Accordion>
+                                    <Accordion.Item eventKey="0">
+                                        <Accordion.Header>
+                                            View Content
+                                        </Accordion.Header>
+                                        <Accordion.Body>
+                                            <div className="ml-4 mb-2">
+                                                <p
+                                                    style={{
+                                                        whiteSpace: "pre-wrap"
+                                                    }}
+                                                >
+                                                    {inputText}
+                                                </p>
+                                            </div>
+                                        </Accordion.Body>
+                                    </Accordion.Item>
+                                </Accordion>
                             </Card.Body>
                         </Card>
                     )}

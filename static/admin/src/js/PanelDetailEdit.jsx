@@ -231,11 +231,13 @@ function PanelDetailEdit({
                         <Card.Body>
                             <Form.Group controlId="languages">
                                 <Form.Label className="font-semibold text-left">
-                                    Extra languages:
+                                    Translations:
                                     <br />
                                     <small className="text-muted font-normal">
                                         Note: Test all languages with voice
-                                        models
+                                        models. <br /> If transcript
+                                        output_language matches selected
+                                        language, translation is skipped.
                                     </small>
                                 </Form.Label>
                                 <Form.Control
@@ -251,19 +253,11 @@ function PanelDetailEdit({
                                     }
                                     className="w-full"
                                 >
-                                    {outputLanguageOptions
-                                        .filter(
-                                            (item) =>
-                                                item.toLowerCase() !== "english"
-                                        )
-                                        .map((language) => (
-                                            <option
-                                                value={language}
-                                                key={language}
-                                            >
-                                                {language}
-                                            </option>
-                                        ))}
+                                    {outputLanguageOptions.map((language) => (
+                                        <option value={language} key={language}>
+                                            {language}
+                                        </option>
+                                    ))}
                                 </Form.Control>
                                 <Form.Text className="text-muted ml-2">
                                     English is enabled by default
