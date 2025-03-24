@@ -812,6 +812,9 @@ def transcript_summary_writer(
             new_references = []
             for reference in item.references:
                 for source in sources:
+                    if isinstance(source, str):
+                        continue
+
                     match = source.find_match(reference)
                     if match:
                         new_references.append(

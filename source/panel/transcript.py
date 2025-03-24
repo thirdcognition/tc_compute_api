@@ -443,6 +443,8 @@ def create_panel_transcript(
         if metadata.get("languages"):
             languages = metadata.get("languages")
             for language in languages:
+                if str(language).lower() == transcript.lang:
+                    continue
                 transcript_ids.append(
                     create_panel_transcript_translation(
                         request_data=request_data,

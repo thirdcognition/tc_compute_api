@@ -36,7 +36,9 @@ function PanelDetailEdit({
     const [hackerNewsConfigs, setHackerNewsConfigs] = useState(
         panel.metadata?.hackernews || []
     );
-    const [inputText, setInputText] = useState(panel.inputText || "");
+    const [inputText, setInputText] = useState(
+        panel.metadata?.input_text || ""
+    );
     const [yleNewsConfigs, setYleNewsConfigs] = useState(
         panel.metadata?.yle_news || []
     );
@@ -49,10 +51,11 @@ function PanelDetailEdit({
     const [segments, setSegments] = useState(
         parseInt(panel.metadata?.segments || 5)
     );
-    const [languages, setLanguages] = useState(
-        panel.metadata?.languages || ["English"]
-    );
+    const [languages, setLanguages] = useState(panel.metadata?.languages || []);
     const [isPublic, setIsPublic] = useState(panel.is_public || false);
+    const [podcastName, setPodcastName] = useState("");
+    const [podcastTagline, setPodcastTagline] = useState("");
+
     const handlePanelSubmit = async (e) => {
         e.preventDefault();
         const panelData = {
@@ -68,9 +71,12 @@ function PanelDetailEdit({
             newsItems,
             segments,
             languages,
-            is_public: isPublic
+            is_public: isPublic,
+            podcastName: podcastName,
+            podcastTagline: podcastTagline
         };
 
+        // console.log(JSON.stringify(panelData, null, 2));
         if (panel.id) {
             // Update existing panel
             handleUpdatePanel(panel.id, {
@@ -101,7 +107,7 @@ function PanelDetailEdit({
             // Create new panel
             handleCreatePanel(panelData)
                 .then((response) => {
-                    console.log("handleCreatePanel response:", response); // Debugging log
+                    // console.log("handleCreatePanel response:", response); // Debugging log
                     const { panelId, success } = response;
                     if (success && panelId) {
                         if (setSelectedPanel) setSelectedPanel(panelId);
@@ -150,6 +156,38 @@ function PanelDetailEdit({
                                     onTextChange={setTitle}
                                     textarea={false}
                                 />
+                            </Form.Group>
+                        </Card.Body>
+                    </Card>
+                    <Card className="mb-4">
+                        <Card.Header>Podcast Name</Card.Header>
+                        <Card.Body>
+                            <Form.Group controlId="podcastName">
+                                <InputTextForm
+                                    initialText={podcastName}
+                                    onTextChange={setPodcastName}
+                                    textarea={false}
+                                />
+                                <Form.Text className="text-muted">
+                                    If left empty, a predefined default will be
+                                    used.
+                                </Form.Text>
+                            </Form.Group>
+                        </Card.Body>
+                    </Card>
+                    <Card className="mb-4">
+                        <Card.Header>Podcast Tagline</Card.Header>
+                        <Card.Body>
+                            <Form.Group controlId="podcastTagline">
+                                <InputTextForm
+                                    initialText={podcastTagline}
+                                    onTextChange={setPodcastTagline}
+                                    textarea={false}
+                                />
+                                <Form.Text className="text-muted">
+                                    If left empty, a predefined default will be
+                                    used.
+                                </Form.Text>
                             </Form.Group>
                         </Card.Body>
                     </Card>
@@ -334,6 +372,7 @@ function PanelDetailEdit({
                                     <InputTextForm
                                         initialText={inputText}
                                         onTextChange={setInputText}
+                                        rows={15}
                                     />
                                 </Accordion.Body>
                             </Accordion.Item>

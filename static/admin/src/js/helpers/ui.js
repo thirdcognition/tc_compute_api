@@ -144,20 +144,20 @@ export const formatCronjob = (cronjob_str) => {
 export const getWordCountDescription = (wordCount, maxWordCount) => {
     const percentage = (wordCount / maxWordCount) * 100;
     if (percentage <= 10)
-        return `shortest (${wordCount} words, ~${Math.round(wordCount / 250)} min)`;
+        return `shortest (${wordCount} words, ~${Math.round(wordCount / 100)} min)`;
     if (percentage <= 20)
-        return `shorter (${wordCount} words ~${Math.round(wordCount / 250)} min)`;
+        return `shorter (${wordCount} words ~${Math.round(wordCount / 100)} min)`;
     if (percentage <= 30)
-        return `short (${wordCount} words ~${Math.round(wordCount / 250)} min)`;
+        return `short (${wordCount} words ~${Math.round(wordCount / 100)} min)`;
     if (percentage <= 40)
-        return `medium - (${wordCount} words ~${Math.round(wordCount / 250)} min)`;
+        return `medium - (${wordCount} words ~${Math.round(wordCount / 100)} min)`;
     if (percentage <= 60)
-        return `medium (${wordCount} words ~${Math.round(wordCount / 250)} min)`;
+        return `medium (${wordCount} words ~${Math.round(wordCount / 100)} min)`;
     if (percentage <= 70)
-        return `medium + (${wordCount} words ~${Math.round(wordCount / 250)} min)`;
+        return `medium + (${wordCount} words ~${Math.round(wordCount / 100)} min)`;
     if (percentage <= 80)
-        return `long (${wordCount} words ~${Math.round(wordCount / 250)} min)`;
+        return `long (${wordCount} words ~${Math.round(wordCount / 100)} min)`;
     if (percentage <= 90)
-        return `longer (${wordCount} words ~${Math.round(wordCount / 250)} min)`;
-    return `longest (${wordCount} words ~${Math.round(wordCount / 250)} min)`;
+        return `longer (${wordCount} words ~${Math.round(wordCount / 100)} min)`;
+    return `longest (${wordCount} words ~${Math.round(wordCount / 100)} min)`;
 };

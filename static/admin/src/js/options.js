@@ -32,11 +32,15 @@ export const dialogueStructureOptions = [
     "Introduction",
     "Main Content Summary",
     "Conclusion",
-    "Scene Setting",
-    "Character Introduction",
-    "Rising Action",
-    "Climax",
-    "Resolution"
+    "Deep Dive Discussion",
+    "Expert Commentary",
+    "Storytelling Segment",
+    "Actionable Insights",
+    "Recurring Segment",
+    "Case Studies",
+    "Quick Tips",
+    "Industry News Breakdown",
+    "Closing Remarks"
 ];
 
 export const engagementTechniquesOptions = [

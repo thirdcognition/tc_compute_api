@@ -54,6 +54,8 @@ export const handleCreatePanel = async (params) => {
               (config) => Object.keys(config).length > 0
           )
         : [];
+
+    // console.log(JSON.stringify(params, null, 2));
     try {
         const panelId = await createPanel({
             title: params.title,
@@ -70,7 +72,9 @@ export const handleCreatePanel = async (params) => {
             languages: params.languages,
             ...(params.is_public !== undefined && {
                 is_public: params.is_public
-            })
+            }),
+            podcast_name: params.podcastName || "",
+            podcast_tagline: params.podcastTagline || ""
         });
 
         return { panelId, success: true };
@@ -108,10 +112,10 @@ export const handleUpdatePanel = async (panelId, params) => {
     try {
         const panelData = {
             title: params.title,
-            input_text: params.inputText,
             input_source: linksArray,
             metadata: {
                 ...params.metadata,
+                input_text: params.inputText,
                 display_tag: params.displayTag,
                 news_guidance: params.newsGuidance,
                 news_items: parseInt(params.newsItems || 5),
@@ -120,7 +124,9 @@ export const handleUpdatePanel = async (panelId, params) => {
                 yle_news: yleNewsArray,
                 techcrunch_news: techCrunchNewsArray,
                 hackernews: hackerNewsArray,
-                languages: params.languages
+                languages: params.languages,
+                podcast_name: params.podcastName || "",
+                podcast_tagline: params.podcastTagline || ""
             },
             ...(params.is_public !== undefined && {
                 is_public: params.is_public
@@ -129,7 +135,7 @@ export const handleUpdatePanel = async (panelId, params) => {
         };
 
         const results = await updatePanel(panelId, panelData);
-        console.log(results);
+        // console.log(results);
         return { success: true };
     } catch (error) {
         console.error("Error updating panel:", error);
