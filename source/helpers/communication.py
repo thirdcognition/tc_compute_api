@@ -53,9 +53,11 @@ def send_email_about_new_shows_task(transcript_ids: list[str]):
         .execute()
     )
     email = [
-        (user["email"] if user is not None and user["email"] is not None else "")
+        user["email"]
         for user in users.data
-        if user is not None and user["email"] is not None
+        if user is not None
+        and user["email"] not in (None, "", "none")
+        and "@" in user["email"]
     ]
     # email = "markus@thirdcognition.com"
     if email is not None:
