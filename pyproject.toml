@@ -53,6 +53,7 @@ mailchimp-marketing = "^3.0.80"
 langchain-google-genai = "^2.0.9"
 google-cloud-translate = "^3.20.0"
 trafilatura = "^2.0.0"
+exponent-server-sdk = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.9.1"

@@ -22,6 +22,7 @@ class UserProfileModel(SupabaseModel):
     active_panel_id: Optional[UUID] = Field(default=None)
     preferences: Optional[Dict] = Field(default=None)
     payment_details: Optional[Dict] = Field(default=None)
+    notification_data: Optional[Dict] = Field(default=None)
     disabled: bool = Field(default=False)
     disabled_at: Optional[datetime] = Field(default=None)
     created_at: Optional[datetime] = Field(default=None)

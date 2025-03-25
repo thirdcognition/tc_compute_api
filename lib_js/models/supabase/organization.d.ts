@@ -12,6 +12,7 @@ export declare class UserProfileModel extends SupabaseModel<UserProfileModel> {
     activePanelId?: string;
     preferences?: Record<string, unknown>;
     paymentDetails?: Record<string, unknown>;
+    notificationData?: Record<string, unknown>;
     disabled?: boolean;
     disabledAt?: Date;
     createdAt?: Date;

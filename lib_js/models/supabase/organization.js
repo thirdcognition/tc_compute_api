@@ -28,6 +28,11 @@ export class UserProfileModel extends SupabaseModel {
             required: false,
             dbColumn: "payment_details"
         },
+        notificationData: {
+            type: "json",
+            required: false,
+            dbColumn: "notification_data"
+        },
         disabled: { type: "boolean", required: false, dbColumn: "disabled" },
         disabledAt: { type: "date", required: false, dbColumn: "disabled_at" },
         createdAt: { type: "date", required: false, dbColumn: "created_at" },
