@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     backend_cors_origins: list[AnyHttpUrl] = [""]
     backend_cors_origins: list[Union[AnyHttpUrl, str]] = ["*"]
 
+    posthog_api_key: str = Field(default_factory=lambda: os.getenv("POSTHOG_API_KEY"))
+    posthog_host: str = Field(default_factory=lambda: os.getenv("POSTHOG_HOST"))
+
     file_repository_path: str = Field(
         default_factory=lambda: str(
             Path(os.path.abspath(__file__)).parent.parent.parent.parent
@@ -106,6 +109,14 @@ class Settings(BaseSettings):
     )
     enable_mailchimp: bool = Field(
         default_factory=lambda: os.getenv("ENABLE_MAILCHIMP", "false").lower() == "true"
+    )
+
+    enable_push_notifications: bool = Field(
+        default_factory=lambda: os.getenv("ENABLE_PUSH_NOTIFICATIONS", "false").lower()
+        == "true"
+    )
+    expo_token: str = Field(
+        default_factory=lambda: os.getenv("EXPO_ACCESS_TOKEN", "").lower()
     )
 
     podcast_name: str = Field(

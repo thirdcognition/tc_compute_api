@@ -26,11 +26,20 @@ GET {{host}}:{{port}}/communication/mailchimp/templates HTTP/1.1
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
-@transcript_id = 52a69cd8-3818-46aa-a3d7-302b5b17271c
+# @transcript_id = 52a69cd8-3818-46aa-a3d7-302b5b17271c
+@transcript_id = ff71f390-f15d-427a-86b0-5d9e88c8ace4
 
-### Fetch Mailchimp Templates request
+### Fetch Transcript Email
 # @name sendTranscriptEmail
 POST {{host}}:{{port}}/communication/send-transcript-email HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+["{{transcript_id}}"]
+
+### Send Transcript Notification
+# @name sendTranscriptNotification
+POST {{host}}:{{port}}/communication/send-transcript-push-notifications HTTP/1.1
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 

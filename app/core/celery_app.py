@@ -25,6 +25,7 @@ celery_app = Celery(
     include=[
         "source.panel.tasks",
         "source.helpers.communication",
+        "source.helpers.push_notifications",
         "source.tasks.utils",
         "source.tasks.web_sources",
         "source.tasks.transcript",
