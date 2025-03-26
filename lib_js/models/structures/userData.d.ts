@@ -30,12 +30,14 @@ export declare class UserPreferencesData {
     metadata: Record<string, unknown> | null;
     preferences: Record<string, unknown> | null;
     paymentDetails: Record<string, unknown> | null;
+    notificationData: Record<string, unknown> | null;
 
     constructor(
         lang?: string | null,
         metadata?: Record<string, unknown> | null,
         preferences?: Record<string, unknown> | null,
-        paymentDetails?: Record<string, unknown> | null
+        paymentDetails?: Record<string, unknown> | null,
+        notificationData?: Record<string, unknown> | null
     );
 }
 

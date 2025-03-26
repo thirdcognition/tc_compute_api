@@ -125,7 +125,8 @@ class User extends NotifierModel {
                 lang: this.model.profile.lang,
                 metadata: this.model.profile.metadata,
                 preferences: this.model.profile.preferences,
-                paymentDetails: this.model.profile.paymentDetails
+                paymentDetails: this.model.profile.paymentDetails,
+                notificationData: this.model.profile.notificationData
             };
         }
         return this._preferences;
@@ -136,6 +137,7 @@ class User extends NotifierModel {
         this.model.profile.metadata = newPreferences.metadata;
         this.model.profile.preferences = newPreferences.preferences;
         this.model.profile.paymentDetails = newPreferences.paymentDetails;
+        this.model.profile.notificationData = newPreferences.notificationData;
         this._preferences = newPreferences;
         await this.model.profile.update(this.supabase);
     }
