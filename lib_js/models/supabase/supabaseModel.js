@@ -168,15 +168,60 @@ export class SupabaseModel extends NotifierModel {
     }
 
     setAttribute(name, value) {
-        if (this.attributes[name] !== value) {
+        if (!this.constructor.deepEquals(this.attributes[name], value)) {
             if (this.constructor.validateAttribute(name, value)) {
                 this.dirty = true;
-                this.attributes[name] = value;
+                this.attributes[name] = this.constructor.cloneAttribute(
+                    name,
+                    value
+                );
                 this.notifyListeners("update_" + name); // Notify listeners on attribute set
             } else {
                 throw new Error(`Invalid value ${value} for attribute ${name}`);
             }
         }
+    }
+
+    static deepEquals(obj1, obj2) {
+        // If types are different, return false immediately
+        if (typeof obj1 !== typeof obj2) return false;
+
+        // If the values are primitives or directly unequal, return false
+        if (
+            obj1 === null ||
+            obj2 === null ||
+            typeof obj1 !== "object" ||
+            typeof obj2 !== "object"
+        ) {
+            return obj1 === obj2;
+        }
+
+        // If both objects are arrays
+        if (Array.isArray(obj1) && Array.isArray(obj2)) {
+            if (obj1.length !== obj2.length) return false;
+            for (let i = 0; i < obj1.length; i++) {
+                if (!SupabaseModel.deepEquals(obj1[i], obj2[i])) return false;
+            }
+            return true;
+        }
+
+        // If both are objects
+        const keys1 = Object.keys(obj1);
+        const keys2 = Object.keys(obj2);
+
+        // If the set of keys is different, return false
+        if (keys1.length !== keys2.length) return false;
+
+        for (const key of keys1) {
+            if (
+                !keys2.includes(key) ||
+                !SupabaseModel.deepEquals(obj1[key], obj2[key])
+            ) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     static validateAttribute(name, value) {
@@ -230,6 +275,52 @@ export class SupabaseModel extends NotifierModel {
                 return typeof value === "string" && validateUUID(value);
             default:
                 return true;
+        }
+    }
+
+    static cloneAttribute(name, value) {
+        const config = this.TABLE_FIELDS[name];
+
+        if (!config) {
+            return value; // No type defined, return value as-is
+        }
+
+        const { type } = config;
+
+        if (value === null || value === undefined) {
+            return value; // Retain null/undefined values
+        }
+
+        switch (type) {
+            case "string":
+                return String(value);
+            case "number":
+            case "float":
+                return parseFloat(value);
+            case "integer":
+                return parseInt(value, 10);
+            case "boolean":
+                return Boolean(value);
+            case "json":
+                try {
+                    return JSON.parse(JSON.stringify(value)); // Deep clone for JSON
+                } catch (e) {
+                    console.error(e);
+                    return null; // Return null on failure
+                }
+            case "array":
+                return Array.isArray(value) ? [...value] : [];
+            case "date":
+            case "timestamp": {
+                const dateValue = new Date(value);
+                return isNaN(dateValue.getTime()) ? null : dateValue;
+            }
+            case "uuid":
+                return typeof value === "string" && validateUUID(value)
+                    ? value
+                    : null;
+            default:
+                return value; // For unsupported types, return as-is
         }
     }
 

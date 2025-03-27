@@ -121,24 +121,28 @@ class User extends NotifierModel {
 
     get preferences() {
         if (!this._preferences && this.model?.profile) {
-            this._preferences = {
-                lang: this.model.profile.lang,
-                metadata: this.model.profile.metadata,
-                preferences: this.model.profile.preferences,
-                paymentDetails: this.model.profile.paymentDetails,
-                notificationData: this.model.profile.notificationData
-            };
+            this._preferences = JSON.parse(
+                JSON.stringify({
+                    lang: this.model.profile.lang,
+                    metadata: this.model.profile.metadata,
+                    preferences: this.model.profile.preferences,
+                    paymentDetails: this.model.profile.paymentDetails,
+                    notificationData: this.model.profile.notificationData
+                })
+            );
         }
         return this._preferences;
     }
 
     async setPreferences(newPreferences) {
-        this.model.profile.lang = newPreferences.lang;
-        this.model.profile.metadata = newPreferences.metadata;
-        this.model.profile.preferences = newPreferences.preferences;
-        this.model.profile.paymentDetails = newPreferences.paymentDetails;
-        this.model.profile.notificationData = newPreferences.notificationData;
-        this._preferences = newPreferences;
+        const clonedPreferences = JSON.parse(JSON.stringify(newPreferences));
+        this.model.profile.lang = clonedPreferences.lang;
+        this.model.profile.metadata = clonedPreferences.metadata;
+        this.model.profile.preferences = clonedPreferences.preferences;
+        this.model.profile.paymentDetails = clonedPreferences.paymentDetails;
+        this.model.profile.notificationData =
+            clonedPreferences.notificationData;
+        this._preferences = clonedPreferences;
         await this.model.profile.update(this.supabase);
     }
 
