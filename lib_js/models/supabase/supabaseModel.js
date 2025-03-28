@@ -565,10 +565,37 @@ export class SupabaseModel extends NotifierModel {
         let query = supabase.from(this.TABLE_NAME).select("*");
 
         if (filter !== null) {
-            if (typeof filter === "object") {
+            if (typeof filter === "object" && !Array.isArray(filter)) {
                 for (const key in filter) {
+                    const item = filter[key];
                     const dbColumn = this.TABLE_FIELDS[key]?.dbColumn || key;
-                    query = query.eq(dbColumn, filter[key]);
+
+                    if (typeof item === "object" && !Array.isArray(item)) {
+                        for (const op in item) {
+                            const val = item[op];
+                            console.debug(`op: ${op}, val: ${val}`);
+
+                            if (op === "neq" && val === null) {
+                                query = query.not().is(dbColumn, null);
+                            } else {
+                                try {
+                                    if (typeof query[op] === "function") {
+                                        query = query[op](dbColumn, val);
+                                    } else {
+                                        throw new Error(
+                                            `${op} is not a valid method`
+                                        );
+                                    }
+                                } catch (e) {
+                                    console.error(
+                                        `Unable to complete filter: ${e.message}`
+                                    );
+                                }
+                            }
+                        }
+                    } else {
+                        query = query.eq(dbColumn, item);
+                    }
                 }
             } else {
                 const dbColumn =

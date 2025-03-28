@@ -1,7 +1,7 @@
 @host = http://127.0.0.1
 @port = 4000
 @email = markus@thirdcognition.com
-@password = password123
+@password = tc_123_admin
 
 ### Login request
 # @name login
@@ -27,7 +27,7 @@ Accept: application/json
 Authorization: Bearer {{accessToken}}
 
 # @transcript_id = 52a69cd8-3818-46aa-a3d7-302b5b17271c
-@transcript_id = ff71f390-f15d-427a-86b0-5d9e88c8ace4
+@transcript_id = c793c1d9-22cc-44df-8c87-429f8f185066
 
 ### Fetch Transcript Email
 # @name sendTranscriptEmail
@@ -43,4 +43,6 @@ POST {{host}}:{{port}}/communication/send-transcript-push-notifications HTTP/1.1
 Accept: application/json
 Authorization: Bearer {{accessToken}}
 
-["{{transcript_id}}"]
+
+
+# ["{{transcript_id}}"]

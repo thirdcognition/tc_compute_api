@@ -8,14 +8,16 @@ from exponent_server_sdk import (
 )
 from pydantic import BaseModel, Field
 from requests.exceptions import ConnectionError, HTTPError
+from supabase import Client
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_service_client
 from source.load_env import SETTINGS
 import json
 import time
+from datetime import datetime, timedelta
 
 from source.models.supabase.organization import UserDataModel, UserProfileModel
-from source.models.supabase.panel import PanelTranscript
+from source.models.supabase.panel import PanelDiscussion, PanelTranscript
 from app.core.posthog_client import PostHogAnalytics, PostHogEvents
 
 
@@ -25,13 +27,39 @@ class UserPushNotification(BaseModel):
 
 
 @celery_app.task
-def send_new_shows_push_notifications_task(transcript_ids: list[str]):
+def task_send_push_notifications_for_new_tasks():
+    if not SETTINGS.enable_push_notifications:
+        print("[Notifications] Push notifications are disabled.")
+        return
+
+    supabase = get_sync_supabase_service_client()
+
+    ts = (datetime.now() - timedelta(days=1)).isoformat()
+
+    print(f"[Notifications] Fetching new transcripts since: {ts}")
+    transcripts: list[
+        PanelTranscript
+    ] = PanelTranscript.fetch_existing_from_supabase_sync(
+        supabase,
+        filter={"created_at": {"gt": ts}},
+    )
+    # Sort transcripts by 'updated_at' in descending order
+    transcripts = sorted(transcripts, key=lambda t: t.updated_at, reverse=True)
+    print(
+        f"[Notifications] Send notification for Transcripts: {['\n\n'.join(f'{transcript.title} ({transcript.id}) - {transcript.created_at}' for transcript in transcripts)]}"
+    )
+
+    send_push_notifications_for_tasks(supabase, transcripts)
+
+
+@celery_app.task
+def task_send_push_notifications_for_tasks(transcript_ids: list[str]):
     """
     Celery task to send push notifications about new transcripts.
     """
-    print(
-        f"[Notifications] Push notifications enabled: {SETTINGS.enable_push_notifications}"
-    )
+    # print(
+    #     f"[Notifications] Push notifications enabled: {SETTINGS.enable_push_notifications}"
+    # )
     if not SETTINGS.enable_push_notifications:
         print("[Notifications] Push notifications are disabled.")
         return
@@ -52,7 +80,28 @@ def send_new_shows_push_notifications_task(transcript_ids: list[str]):
         supabase,
         values=transcript_ids if isinstance(transcript_ids, list) else [transcript_ids],
     )
+
+    send_push_notifications_for_tasks(supabase, transcripts)
+
+
+def send_push_notifications_for_tasks(
+    supabase: Client, transcripts: list[PanelTranscript]
+):
     # print(f"[Notifications] Fetched transcripts: {transcripts}")
+
+    if len(transcripts) == 0:
+        print("[Notifications] Unable to find transcripts")
+        return
+
+    transcript_ids = [transcript.id for transcript in transcripts]
+    panel_ids = list({transcript.panel_id for transcript in transcripts})
+
+    panel_list = PanelDiscussion.fetch_existing_from_supabase_sync(
+        supabase,
+        values=panel_ids,
+    )
+
+    panels = {panel.id: panel for panel in panel_list}
 
     if len(transcripts) == 0:
         print(
@@ -62,28 +111,65 @@ def send_new_shows_push_notifications_task(transcript_ids: list[str]):
 
     user_notifications: dict[str, UserPushNotification] = {}
 
+    print("[Notifications] Fetch Panel User Data")
+    all_user_data_panels = UserDataModel.fetch_existing_from_supabase_sync(
+        supabase,
+        filter={"item": "panel_subscription"},
+        id_column="target_id",
+        values=panel_ids,
+    )
+    print("[Notifications] Fetch Transcript User Data")
+    all_user_data_transcripts = UserDataModel.fetch_existing_from_supabase_sync(
+        supabase,
+        id_column="target_id",
+        values=transcript_ids,
+        # values = {"target_id": transcript.id},
+    )
+    all_user_ids = list(
+        {user_data_instance.auth_id for user_data_instance in all_user_data_transcripts}
+    )
+    print("[Notifications] Fetch Connected User Profile Data")
+    all_users = UserProfileModel.fetch_existing_from_supabase_sync(
+        supabase,
+        filter={
+            "notification_data": {"neq": None},
+            "last_sign_in_at": {
+                "gt": (datetime.now() - timedelta(weeks=1)).isoformat()
+            },
+        },
+        values=all_user_ids,
+        id_column="auth_id",
+    )
+
     for transcript in transcripts:
-        print(f"[Notifications] Fetching user data for panel ID: {transcript.panel_id}")
-        user_data = UserDataModel.fetch_existing_from_supabase_sync(
-            supabase,
-            filter={"target_id": transcript.panel_id, "item": "panel_subscription"},
-        )
+        user_data_panels = [
+            user_data
+            for user_data in all_user_data_panels
+            if user_data.target_id == transcript.panel_id
+        ]
+        user_data_transcripts = [
+            user_data
+            for user_data in all_user_data_transcripts
+            if user_data.target_id == transcript.id
+        ]
 
-        user_ids = [user_data_instance.auth_id for user_data_instance in user_data]
-
-        print(f"[Notifications] Fetching user profiles for user IDs: {user_ids}")
-        users = UserProfileModel.fetch_existing_from_supabase_sync(
-            supabase,
-            filter={"notification_data": {"neq": None}},
-            values=user_ids,
-            id_column="auth_id",
-        )
+        user_ids = [user_data.auth_id for user_data in user_data_panels]
+        users = [user for user in all_users if user.auth_id in user_ids]
 
         for user in users:
             if user_notifications.get(user.auth_id) is None:
                 user_notifications[user.auth_id] = UserPushNotification(user=user)
             if transcript.lang.lower() == user.lang.lower():
-                user_notifications[user.auth_id].transcripts.append(transcript)
+                transcript_user_data = [
+                    user_data_instance
+                    for user_data_instance in user_data_transcripts
+                    if user_data_instance.auth_id == user.auth_id
+                ]
+                if len(transcript_user_data) == 0:
+                    print(
+                        f"[Notifications] Add transcript {transcript.title} ({transcript.id=}) for {user.name} ({user.auth_id=})"
+                    )
+                    user_notifications[user.auth_id].transcripts.append(transcript)
 
     push_client = PushClient()
     messages = []
@@ -94,18 +180,23 @@ def send_new_shows_push_notifications_task(transcript_ids: list[str]):
     for notification in user_notifications.values():
         push_tokens = notification.user.notification_data
 
-        if not push_tokens:
+        if not push_tokens or len(notification.transcripts) == 0:
             continue
 
-        title = notification.transcripts[0].title
-        body = notification.transcripts[0].metadata["description"]
+        panel = panels[notification.transcripts[0].panel_id]
+
+        # title = notification.transcripts[0].title
+
+        # body = notification.transcripts[0].metadata["description"]
+        title = f"{notification.user.name.split(' ')[0] + ', t' if notification.user.name else 'T'}oday on {panel.metadata['display_tag'] or panel.title}"
+        body = notification.transcripts[0].title
         data = {"transcript_ids": [str(notification.transcripts[0].id)]}
 
         if len(notification.transcripts) > 1:
-            title = "New episodes!"
-            body = "\n".join(
-                [transcript.title for transcript in notification.transcripts]
-            )
+            # title = "New episodes!"
+            # body = "\n".join(
+            #     [transcript.title for transcript in notification.transcripts]
+            # )
             data = {
                 "transcript_ids": [
                     str(transcript.id) for transcript in notification.transcripts
@@ -113,6 +204,8 @@ def send_new_shows_push_notifications_task(transcript_ids: list[str]):
             }
 
         track_id = f"notification_{notification.user.auth_id}_{int((time.time() % 307584000) * 10000)}"
+
+        data["track_id"] = track_id
 
         analytics.track_event(
             PostHogEvents.NOTIFICATION_SEND,
@@ -146,6 +239,10 @@ def send_new_shows_push_notifications_task(transcript_ids: list[str]):
                     "device": device_id,
                 }
             )
+
+    if len(messages) == 0:
+        print("[Notifications] No notifications sent.")
+        return
 
     responses = []
 

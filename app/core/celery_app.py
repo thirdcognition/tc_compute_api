@@ -101,17 +101,26 @@ celery_app.conf.update(
 
 # Schedule the generate_transcripts_task to run daily at 9am
 celery_app.conf.beat_schedule = {
-    "generate-transcripts-every-30min": {
+    "generate-transcripts-every-1h": {
         "task": "source.panel.tasks.generate_transcripts_task",
-        # "schedule": crontab(hour=4, minute=30),
         "schedule": crontab(hour="*/1"),
+        # "schedule": crontab(hour=4, minute=30),
         # "schedule": crontab(minute="*/30"),
         # "schedule": crontab(minute="*/2"),
         # if IN_PRODUCTION else crontab(minute="*/2"),
         "args": (
             None,
             True,
-        ),  # json.dumps([None, True]),  # Replace with actual access token if needed
+        ),
+    },
+    "send-push-notifications-1d": {
+        "task": "source.helpers.push_notifications.task_send_push_notifications_for_new_tasks",
+        "schedule": crontab(hour="8"),
+        # "schedule": crontab(hour=8, minute=0, day_of_week="1-5"), # Weekdays only
+        "args": (
+            None,
+            True,
+        ),
     },
 }
 

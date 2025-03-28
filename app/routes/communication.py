@@ -1,7 +1,11 @@
+from typing import Optional
 from fastapi import APIRouter, HTTPException
 from source.api.mailchimp.read import get_lists, get_templates
 from source.helpers.communication import send_email_about_new_shows_task
-from source.helpers.push_notifications import send_new_shows_push_notifications_task
+from source.helpers.push_notifications import (
+    task_send_push_notifications_for_new_tasks,
+    task_send_push_notifications_for_tasks,
+)
 
 router = APIRouter()
 
@@ -33,13 +37,21 @@ async def fetch_mailchimp_templates():
 
 
 @router.post("/communication/send-transcript-push-notifications")
-async def send_push_notifications_about_new_shows(transcript_ids: list[str]):
+async def send_push_notifications_about_new_shows(
+    transcript_ids: Optional[list[str]] = None,
+):
     """
     Endpoint to send push notifications about specified transcript IDs.
     """
     try:
-        send_new_shows_push_notifications_task.delay(transcript_ids)
-        return {"message": "Push notification task initiated successfully."}
+        if transcript_ids:
+            task_send_push_notifications_for_tasks.delay(transcript_ids)
+            return {
+                "message": "Push notification task for specified transcript IDs initiated successfully."
+            }
+        else:
+            task_send_push_notifications_for_new_tasks.delay()
+            return {"message": "General push notification task initiated successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
