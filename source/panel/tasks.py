@@ -146,21 +146,28 @@ def process_transcript_task(
     panel_id = transcript.panel_id
     latest_transcript = transcript  # Default to the current transcript
 
-    # Fetch the latest transcript if available
-    all_transcripts_with_parent = PanelTranscript.fetch_existing_from_supabase_sync(
-        supabase_client, filter={"transcript_parent_id": {"neq": None}}
-    )
-    transcripts_by_parent = {}
-    for t in all_transcripts_with_parent:
-        if t.transcript_parent_id not in transcripts_by_parent:
-            transcripts_by_parent[t.transcript_parent_id] = []
-        transcripts_by_parent[t.transcript_parent_id].append(t)
+    # all_transcripts_with_parent = PanelTranscript.fetch_existing_from_supabase_sync(
+    #     supabase_client, filter={"transcript_parent_id": {"eq": transcript_id}}
+    # )
+    # transcripts_by_parent = {}
+    # for t in all_transcripts_with_parent:
+    #     if t.transcript_parent_id not in transcripts_by_parent:
+    #         transcripts_by_parent[t.transcript_parent_id] = []
+    #     transcripts_by_parent[t.transcript_parent_id].append(t)
 
-    if transcript_id in transcripts_by_parent:
-        transcripts_by_parent[transcript_id].sort(
-            key=lambda x: x.updated_at, reverse=True
-        )
-        latest_transcript = transcripts_by_parent[transcript_id][0]
+    # if transcript_id in transcripts_by_parent:
+    #     transcripts_by_parent[transcript_id].sort(
+    #         key=lambda x: x.updated_at, reverse=True
+    #     )
+    #     latest_transcript = transcripts_by_parent[transcript_id][0]
+
+    # Fetch the latest transcript if available
+    all_transcripts = PanelTranscript.fetch_existing_from_supabase_sync(
+        supabase_client, filter={"transcript_parent_id": {"eq": transcript_id}}
+    )
+
+    all_transcripts.sort(key=lambda x: x.updated_at, reverse=True)
+    latest_transcript = all_transcripts[0]
 
     now_aware = datetime.datetime.now(datetime.timezone.utc)
     cron = croniter(
