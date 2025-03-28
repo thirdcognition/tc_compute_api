@@ -61,8 +61,10 @@ class Settings(BaseSettings):
     backend_cors_origins: list[AnyHttpUrl] = [""]
     backend_cors_origins: list[Union[AnyHttpUrl, str]] = ["*"]
 
-    posthog_api_key: str = Field(default_factory=lambda: os.getenv("POSTHOG_API_KEY"))
-    posthog_host: str = Field(default_factory=lambda: os.getenv("POSTHOG_HOST"))
+    posthog_api_key: str = Field(
+        default_factory=lambda: os.getenv("BACKEND_POSTHOG_API_KEY")
+    )
+    posthog_host: str = Field(default_factory=lambda: os.getenv("BACKEND_POSTHOG_HOST"))
 
     file_repository_path: str = Field(
         default_factory=lambda: str(
