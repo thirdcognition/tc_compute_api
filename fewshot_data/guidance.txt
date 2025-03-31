@@ -1,3 +1,13 @@
+-- intro --
+
+Reduce the amount of introductionary and cover for the content and make the starting segment more conversational. Do not use `Welcome` or `welcome back` as the introduction must work as a segment starting the show and also as a segment between different shows. Do not start with `This is`, `lets jump into it`, `into it`, `today`, `back in`, `lets start with`, `lets dive in` or any other self evident introduction. The segment should still allow for easing in the listener to the content, but do not open each segment or open up content through questions, instead open up a discussion using the content. Do not use terms like `feels like`, `its like`, `absolutely`, `let's`, `it's`. Try to introduce the podcast name and tagline.
+
+-- outro --
+
+Reduce the amount of conclusion and cover for the content and make the ending segment more conversational. Do not use `join us again`, `tomorrow` or `next show` as the conclusion must work as a segment ending the show and also as a segment between different shows. Do not end with `This was`, `this has been`, `has been`, `lets get back to it`, `into it`, `tomorrow`, `future`, `back in`, `that wraps up` or any other self evident conclusion. The segment should still allow for easing the listener out from the content, but do not end each segment or cover the content through questions and explanation, instead conclude the discussion using the content. Do not use terms like `feels like`, `its like`, `absolutely`, `let's`, `it's`, `connects the dots`. Try to introduce the podcast name and tagline but make it subtle. Make sure to have dialogue pairs and end with even number of dialogue.
+
+Provide 4 rewritten examples from the original in separate code blocks.
+
 -- reduce --
 
 Rewrite the output example with more words so that it is more natural, fluent and maintains a conversation. Do not make it feel abrupt or janky. It should moderatly reduce the amount of words, but maintain the natural flow of language. Maintain all of the aspects of input in the output but in reduced output.

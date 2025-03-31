@@ -249,7 +249,28 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                 segments:
                     transcript.metadata?.segments ||
                     panelData?.metadata?.segments ||
-                    5
+                    5,
+                shortIntroAndConclusion: (
+                    transcript.metadata?.conversation_config ??
+                    panelData?.metadata?.conversation_config
+                )?.short_intro_and_conclusion,
+                disableIntroAndConclusion: (
+                    transcript.metadata?.conversation_config ??
+                    panelData?.metadata?.conversation_config
+                )?.disable_intro_and_conclusion,
+                ttsModel: (transcript.metadata ?? panelData?.metadata)
+                    .tts_model,
+                defaultVoiceQuestion: (
+                    transcript.metadata ?? panelData?.metadata
+                )?.conversation_config?.text_to_speech?.[
+                    (transcript.metadata ?? panelData?.metadata)?.tts_model
+                ]?.default_voices?.question,
+                defaultVoiceAnswer: (transcript.metadata ?? panelData?.metadata)
+                    ?.conversation_config?.text_to_speech?.[
+                    (transcript.metadata ?? panelData?.metadata)?.tts_model
+                ]?.default_voices?.answer,
+                languages: (transcript.metadata ?? panelData?.metadata)
+                    ?.conversation_config?.text_to_speech
             });
             if (success && taskId) {
                 console.log(
@@ -500,12 +521,32 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                         )}
                         <Card className="mb-4">
                             <Card.Body>
-                                <Card.Title>Process Mode</Card.Title>
+                                <Card.Title>
+                                    Transcript processing options
+                                </Card.Title>
                                 <Card.Text>
                                     <strong>
                                         Process every article separately:
                                     </strong>{" "}
                                     {transcript.metadata?.longform
+                                        ? "Yes"
+                                        : "No"}
+                                    <br />
+                                    <strong>
+                                        Use short introduction and conclusion
+                                        segments:
+                                    </strong>{" "}
+                                    {transcript.metadata?.conversation_config
+                                        ?.short_intro_and_conclusion
+                                        ? "Yes"
+                                        : "No"}
+                                    <br />
+                                    <strong>
+                                        Disable introduction and conclusion
+                                        segments:
+                                    </strong>{" "}
+                                    {transcript.metadata?.conversation_config
+                                        ?.disable_intro_and_conclusion
                                         ? "Yes"
                                         : "No"}
                                 </Card.Text>

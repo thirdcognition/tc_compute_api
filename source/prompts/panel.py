@@ -951,12 +951,12 @@ transcript_intro_writer = PromptFormatter(
        INSTRUCTION:
         - Your task is to create an engaging introduction for a podcast.
         - Use the provided content to generate a comprehensive description of all topics in the upcoming episode.
-        - If relevant, briefly reference previous episodes to highlight ongoing narratives or recurring themes.
+        - If relevant, briefly reference previous episodes to highlight ongoing and developing events or recurring topics.
         - Integrate the descriptions into the following dialogue format:
-          <Person1> "Welcome to [Podcast Name] - [Podcast Tagline]! This time, we're discussing [few words about the episode]!"</Person1>
-          <Person2> "[intro for person2] [question towards, or a reference to the podcast and what it will be about]"</Person2>
-          <Person1> "We'll start with [topic 1], then move on to [topic 2], followed by [topic 3], and finally, we'll wrap up with [topic n]."</Person1>
-          <Person2> "[show interest to topics]. [start/continuation phrase]"</Person2>
+            <Person1> "There’s so much to unpack when it comes to [few words about the episode]. [Podcast Name] - [Podcast Tagline] brings these ideas into focus."</Person1>
+            <Person2> "[intro for person2] [tie in the podcast theme with an engaging perspective on the subject]."</Person2>
+            <Person1> "[Seamlessly transition into topic 1, connecting it to the broader theme of the discussion]."</Person1>
+            <Person2> "[Acknowledge the depth of the topic and set up momentum for the conversation to evolve]."</Person2>
         - Ensure the introduction is concise, engaging, and adheres to the specified format.
         - Maintain the language specified by the user.
         - Use advanced TTS-specific markup to enhance the naturalness of the conversation.
@@ -1003,6 +1003,75 @@ transcript_intro_writer = PromptFormatter(
 )
 
 transcript_intro_writer.parser = TranscriptParser()
+
+transcript_short_intro_writer = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        IDENTITY:
+        {transcript_template["identity"]}
+
+        {PRE_THINK_INSTRUCT}
+
+       INSTRUCTION:
+        - Your task is to create an engaging introduction for a podcast.
+        - Use the provided content to generate a brief intro for the topics in the upcoming episode.
+        - If relevant, briefly reference previous episodes to highlight recurring topics.
+        - Integrate the descriptions into the following dialogue format (include [Podcast Name] [Podcast Tagline] in a subtle way):
+            <Person1> "[few words about the episode to introduce it], [insight into content]."</Person1>
+            <Person2> "[intro for person2] [reflection or comment about the subject connecting to the podcast theme]."</Person2>
+            <Person1> "[Choose a smooth connection focusing on topic 1, transitioning attention]."</Person1>
+            <Person2> "[Acknowledgement of topic relevance and adding depth. Continuation phrase to advance discussion.]"</Person2>
+        - Ensure the introduction is concise, engaging.
+        - Maintain the language specified by the user.
+        - Use advanced TTS-specific markup to enhance the naturalness of the conversation.
+        - Avoid repetitive phrases and ensure the dialogue flows naturally.
+        - Incorporate engagement techniques to make the introduction dynamic and captivating.
+        - Do not use `Welcome` or `welcome back` as the introduction must work as a segment starting the show and also as a segment between different shows.
+        - Do not start with `This is`, `lets jump into it`, `into it`, `today`, `back in`, `lets start with`, `lets dive in` or any other self evident introduction.
+        - The segment should allow for easing the listener in to the content, but do not open each segment or open up content through questions, instead open up a discussion using the content.
+        - Do not use terms like `feels like`, `its like`, `absolutely`, `let's`, `it's`.
+
+        {ROLES_PERSON_INSTRUCT}
+
+        FORMAT:
+        {transcript_template["format"]}
+
+        {textwrap.indent(load_fewshot_examples('transcript_intro_short.txt'), prefix="        ")}
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Content start:
+        {content}
+        Content end.
+
+        Previous episodes:
+        {previous_episodes}
+        Previous episodes end.
+
+        Podcast configuration:
+        Current date: {date}
+        Current time: {time}
+        Podcast Name: {podcast_name}
+        Podcast Tagline: {podcast_tagline}
+        Language: {output_language}
+        Conversation Style: {conversation_style}
+        Person 1 role: {roles_person1}
+        Person 2 role: {roles_person2}
+        Engagement techniques: {engagement_techniques}
+        Other instructions: {user_instructions}
+
+        Write an introduction for the following transcript. Last line should enable a smooth transition to the first line of the transcript.
+
+        Transcript start:
+        {transcript}
+        Transcript end.
+        """
+    ),
+)
+
+transcript_short_intro_writer.parser = TranscriptParser()
 
 transcript_conclusion_writer = PromptFormatter(
     system=textwrap.dedent(
@@ -1057,6 +1126,64 @@ transcript_conclusion_writer = PromptFormatter(
 )
 
 transcript_conclusion_writer.parser = TranscriptParser()
+
+transcript_short_conclusion_writer = PromptFormatter(
+    system=textwrap.dedent(
+        f"""
+        {ACTOR_INTRODUCTIONS}
+        IDENTITY:
+        {transcript_template["identity"]}
+
+        {PRE_THINK_INSTRUCT}
+
+        INSTRUCTION:
+        - Your task is to write a conclusion for a podcast.
+        - Use the provided previous dialogue to generate conclude the topics discussed with for example following format:
+            <Person1> "[Reflective summary tied to topics discussed] [subtle tie to podcast_name and tagline]."</Person1>
+            <Person2> "[Reflection about discussion and its importance]. [Encouraging remark aligned with the podcast's focus/theme]."</Person2>
+            <Person1> "[Acknowledgment of the subject's relevance and gratitude to the audience]."</Person1>
+            <Person2> "[Farewell message incorporating tagline or tying to themes]!"</Person2>
+        - Ensure the conclusion is concise, engaging, and adheres to the specified format.
+        - Maintain the language specified by the user.
+        - Use advanced TTS-specific markup to enhance the naturalness of the conversation.
+        - Avoid repetitive phrases and ensure the dialogue flows naturally.
+        - Incorporate engagement techniques to make the conclusion dynamic and captivating.
+        - Do not use `join us again`, `tomorrow`, `this episode`, `today` or `next show` as the conclusion must work as a segment ending the show and also as a segment between different shows.
+        - Do not end with `This was`, `this has been`, `has been`, `lets get back to it`, `into it`, `tomorrow`, `future`, `back in`, `that wraps up`, `thank you for joining` or any other evident conclusion remark.
+        - The segment should still allow for easing the listener out from the content, but do not end each segment or cover the content through questions and explanation, instead conclude the discussion using the content.
+        - Do not use terms like `feels like`, `its like`, `absolutely`, `let's`, `it's`, `connects the dots`.
+
+
+        {ROLES_PERSON_INSTRUCT}
+
+        FORMAT:
+        {transcript_template["format"]}
+
+        {textwrap.indent(load_fewshot_examples('transcript_conclusion_short.txt'), prefix="        ")}
+        """
+    ),
+    user=textwrap.dedent(
+        """
+        Previous Dialogue:
+        {previous_dialogue}
+        Previous Dialogue end.
+
+        Podcast configuration:
+        Current date: {date}
+        Current time: {time}
+        Podcast Name: {podcast_name}
+        Podcast Tagline: {podcast_tagline}
+        Language: {output_language}
+        Conversation Style: {conversation_style}
+        Person 1 role: {roles_person1}
+        Person 2 role: {roles_person2}
+        Engagement techniques: {engagement_techniques}
+        Other instructions: {user_instructions}
+        """
+    ),
+)
+
+transcript_short_conclusion_writer.parser = TranscriptParser()
 
 transcript_summary_parser = PydanticOutputParser(pydantic_object=TranscriptSummary)
 

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from exponent_server_sdk import (
     PushClient,
     PushMessage,
@@ -223,7 +224,11 @@ def send_push_notifications_for_tasks(
         print(
             f"[Notifications] Preparing notification(s) for user: {notification.user.auth_id}"
         )
+        used_tokens = defaultdict(list)
         for device_id, push_token in push_tokens.items():
+            used_tokens[push_token].append(device_id)
+
+        for push_token, device_ids in used_tokens.items():
             messages.append(
                 {
                     "id": track_id,
@@ -236,7 +241,7 @@ def send_push_notifications_for_tasks(
                     ),
                     "user": notification.user,
                     "token": push_token,
-                    "device": device_id,
+                    "device": device_ids if len(device_ids) > 1 else device_ids[0],
                 }
             )
 

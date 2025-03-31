@@ -58,19 +58,26 @@ def create_panel_audio(
 
     tts_model = request_data.tts_model or metadata.get("tts_model", "geminimulti")
 
+    lang_voices = (
+        conversation_config.text_to_speech.get(transcript.lang.lower())
+        if conversation_config.text_to_speech is not None
+        else None
+    )
+
     # Construct title
     default_voices = (
         conversation_config.text_to_speech.get(tts_model, {}).get("default_voices", {})
         if conversation_config.text_to_speech is not None
         else {}
     )
+    title_voices = lang_voices if lang_voices else default_voices
     title_elements = [
         f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
         transcript.lang,
         f"Model: {tts_model}",
         (
-            f"Q: {default_voices.get('question')}, A: {default_voices.get('answer')}"
-            if default_voices.get("question") and default_voices.get("answer")
+            f"Q: {title_voices.get('question')}, A: {title_voices.get('answer')}"
+            if title_voices.get("question") and title_voices.get("answer")
             else None
         ),
     ]
@@ -107,11 +114,20 @@ def create_panel_audio(
     )
     panel_audio.file = bucket_audio_file
 
+    conv_conf = conversation_config.model_dump()
+
+    conv_conf["text_to_speech"] = {}
+    conv_conf["text_to_speech"][tts_model] = conversation_config.text_to_speech.get(
+        tts_model, {}
+    )
+    if lang_voices:
+        conv_conf["text_to_speech"][tts_model]["default_voices"] = lang_voices
+
     try:
         audio_file: str = generate_podcast(
             transcript_file=transcript_file,
             tts_model=tts_model,
-            conversation_config=conversation_config.model_dump(),
+            conversation_config=conv_conf,
         )
     except Exception as e:
         print(f"Error during audio generation: {e}")
@@ -122,7 +138,7 @@ def create_panel_audio(
             audio_file: str = generate_podcast(
                 transcript_file=transcript_file,
                 tts_model=tts_model,
-                conversation_config=conversation_config.model_dump(),
+                conversation_config=conv_conf,
             )
         except Exception as e:
             print(f"Error during second attempt of audio generation: {e}")

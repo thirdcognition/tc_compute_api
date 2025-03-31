@@ -81,6 +81,8 @@ from source.prompts.panel import (
     transcript_bridge_writer,
     transcript_intro_writer,
     transcript_conclusion_writer,
+    transcript_short_intro_writer,
+    transcript_short_conclusion_writer,
     transcript_summary_formatter,
     transcript_compress,
     transcript_extend,
@@ -492,6 +494,18 @@ CHAIN_CONFIG: Dict[str, tuple[str, PromptFormatter, bool]] = {
     "transcript_conclusion_writer": (
         "instruct",
         transcript_conclusion_writer,
+        False,
+        True,
+    ),
+    "transcript_short_intro_writer": (
+        "instruct",
+        transcript_short_intro_writer,
+        False,
+        True,
+    ),
+    "transcript_short_conclusion_writer": (
+        "instruct",
+        transcript_short_conclusion_writer,
         False,
         True,
     ),

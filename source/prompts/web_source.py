@@ -395,6 +395,7 @@ group_rss_items = PromptFormatter(
         - Each group must be directly connected by categories, alternative sources or description.
         - If the a list of alternative sources are specified use that to connect matching items where possible.
         - Do not group items just by title or category. Grouped item must share the same description, be of the same news item or be linked directly.
+        - Do not add items which are not directly connected to the same group. Group items must share news event.
         - Make sure to sort groups through similarity of titles/categories.
         - Sorting of the groups should be based on importance or significance of the news.
         - If defined use Instructions determine which items to place at the beginning and end of the ordered groups.
@@ -403,6 +404,8 @@ group_rss_items = PromptFormatter(
         - Return the result as a JSON object using the specified format.
         - If you are given instructions follow them as closely as possible.
         - ordered_groups and ordered_groups_titles cannot be empty. They must have the groups defined in them.
+        - If previous episodes are defined do not repeat the subjects and opt for items which are not related directly to previous subjects or items.
+        - Do not output previous episode items or references.
 
         Available category IDs:
         {news_taxonomy_str}
@@ -430,6 +433,10 @@ group_rss_items = PromptFormatter(
 
         RSS Items:
         {web_sources}
+
+        Previous episodes start.
+        {previous_episodes}
+        Previous episodes end
 
         Instructions:
         {instructions}

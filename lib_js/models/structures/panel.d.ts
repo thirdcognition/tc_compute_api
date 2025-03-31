@@ -34,6 +34,8 @@ export declare class ConversationConfig {
     longform?: boolean;
     text_to_speech?: Record<string, unknown>;
     location?: string;
+    short_intro_and_conclusion?: boolean;
+    disable_intro_and_conclusion?: boolean;
 
     constructor(params: {
         output_language?: string;
@@ -50,6 +52,8 @@ export declare class ConversationConfig {
         longform?: boolean;
         text_to_speech?: Record<string, unknown>;
         location?: string;
+        short_intro_and_conclusion?: boolean;
+        disable_intro_and_conclusion?: boolean;
     });
 }
 
@@ -198,6 +202,7 @@ export declare class TranscriptMetadata {
     subjects?: SummarySubject[]; // List of subjects with descriptions and references.
     description?: string; // Summary of the segment's discussion.
     conversation_config?: ConversationConfig; // Details for panel setup and dialogue.
+    tts_model?: string;
 
     constructor(params: {
         images?: string[];
@@ -205,6 +210,7 @@ export declare class TranscriptMetadata {
         subjects?: SummarySubject[];
         description?: string;
         conversation_config?: ConversationConfig;
+        tts_model?: string;
     });
 }
 

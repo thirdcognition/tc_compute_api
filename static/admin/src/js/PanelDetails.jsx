@@ -49,7 +49,7 @@ function PanelDetails({ panel }) {
         return <Navigate to={`/panel/${panel.id}/edit`} />;
     }
 
-    console.log(transcripts);
+    // console.log(transcripts);
 
     return (
         <div className="max-h-screen overflow-y-auto">

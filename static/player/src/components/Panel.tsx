@@ -81,7 +81,7 @@ const Panel: React.FC<PanelProps> = ({
     const [panelData, setPanelData] = useState<any>(null);
 
     useEffect(() => {
-        async function fetchPanels() {
+        async function fetchPanelData() {
             try {
                 const fetchedPanels = await fetchPanels();
                 setPanels(fetchedPanels);
@@ -89,7 +89,7 @@ const Panel: React.FC<PanelProps> = ({
                 console.error("Error fetching public panels:", error);
             }
         }
-        fetchPanels();
+        fetchPanelData();
     }, []);
 
     useEffect(() => {

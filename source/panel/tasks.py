@@ -144,7 +144,7 @@ def process_transcript_task(
         raise ValueError(f"Transcript with ID {transcript_id} not found.")
 
     panel_id = transcript.panel_id
-    latest_transcript = transcript  # Default to the current transcript
+    # latest_transcript = transcript  # Default to the current transcript
 
     # all_transcripts_with_parent = PanelTranscript.fetch_existing_from_supabase_sync(
     #     supabase_client, filter={"transcript_parent_id": {"eq": transcript_id}}
@@ -163,11 +163,20 @@ def process_transcript_task(
 
     # Fetch the latest transcript if available
     all_transcripts = PanelTranscript.fetch_existing_from_supabase_sync(
-        supabase_client, filter={"transcript_parent_id": {"eq": transcript_id}}
+        supabase_client,
+        filter={
+            "transcript_parent_id": {"eq": transcript_id},
+            "created_at": {
+                "gt": (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
+            },
+            "lang": transcript.lang,
+        },
     )
 
+    print(f"matching transcripts: {all_transcripts=}")
+
     all_transcripts.sort(key=lambda x: x.updated_at, reverse=True)
-    latest_transcript = all_transcripts[0]
+    latest_transcript = all_transcripts[0] if len(all_transcripts) > 0 else transcript
 
     now_aware = datetime.datetime.now(datetime.timezone.utc)
     cron = croniter(

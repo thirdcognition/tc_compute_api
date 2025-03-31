@@ -468,7 +468,11 @@ def transcript_intro_writer(
     current_time = current_datetime.strftime("%H:%M:%S")
     while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
         retries -= 1
-        result = get_chain("transcript_intro_writer").invoke(
+        result = get_chain(
+            "transcript_short_intro_writer"
+            if conversation_config.short_intro_and_conclusion
+            else "transcript_intro_writer"
+        ).invoke(
             {
                 "transcript": transcript,
                 "content": content,
@@ -516,7 +520,11 @@ def transcript_conclusion_writer(
     current_time = current_datetime.strftime("%H:%M:%S")
     while (result == "" or isinstance(result, BaseMessage)) and retries > 0:
         retries -= 1
-        result = get_chain("transcript_conclusion_writer").invoke(
+        result = get_chain(
+            "transcript_short_conclusion_writer"
+            if conversation_config.short_intro_and_conclusion
+            else "transcript_conclusion_writer"
+        ).invoke(
             {
                 "previous_dialogue": previous_dialogue,
                 "output_language": conversation_config.output_language,
@@ -1060,11 +1068,12 @@ def transcript_combiner(
     if content is None or len(content) < 1:
         raise ValueError("Content is empty, unable to generate transcript.")
 
-    combined_transcripts.append(
-        transcript_intro_writer(
-            "\n".join(transcripts), content, conversation_config, previous_episodes
+    if not conversation_config.disable_intro_and_conclusion:
+        combined_transcripts.append(
+            transcript_intro_writer(
+                "\n".join(transcripts), content, conversation_config, previous_episodes
+            )
         )
-    )
 
     for i in range(len(transcripts) - 1):
         try:
@@ -1096,11 +1105,12 @@ def transcript_combiner(
         print("Error: No transcripts provided to combine.")
         raise ValueError("No transcripts provided to combine.")
 
-    combined_transcripts.append(
-        transcript_conclusion_writer(
-            "\n\n".join(combined_transcripts), conversation_config
+    if not conversation_config.disable_intro_and_conclusion:
+        combined_transcripts.append(
+            transcript_conclusion_writer(
+                "\n\n".join(combined_transcripts), conversation_config
+            )
         )
-    )
 
     orig_transcript = "\n".join(combined_transcripts)
     transcript_content = orig_transcript

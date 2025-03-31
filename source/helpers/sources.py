@@ -3,7 +3,7 @@ import datetime
 import json
 import re
 import time
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Tuple, Type, Union
 from celery import group
 from celery.result import AsyncResult
 import feedparser
@@ -29,6 +29,7 @@ from source.models.structures.sources import (
     YleNewsConfig,
 )
 from source.models.structures.web_source_collection import WebSourceCollection
+from source.models.supabase.panel import PanelTranscript
 from source.tasks.web_sources import generate_resolve_tasks_for_websources
 
 
@@ -305,6 +306,7 @@ def fetch_links(
     min_amount=5,
     max_ids=5,
     tokens: tuple = None,
+    previous_episodes: List[Tuple[PanelTranscript, str]] = None,
 ) -> List[WebSourceCollection | WebSource]:
     min_amount = int(min_amount)
     max_ids = int(max_ids)
@@ -360,6 +362,7 @@ def fetch_links(
             min_amount=min_amount,
             max_ids=max_ids,
             user_ids=user_ids,
+            previous_episodes=previous_episodes,
         )
     else:
         resolve_items = all_items

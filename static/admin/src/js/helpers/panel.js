@@ -7,6 +7,8 @@ import {
     deletePanel,
     updatePanel
 } from "./fetch.js";
+import { outputLanguageOptions } from "../options.js";
+import { capitalizeFirstLetter } from "./lib.js";
 let dialogManager = {
     toggleDialog: null
 };
@@ -171,12 +173,22 @@ export const handleCreateTranscript = async (params) => {
     params.newsGuidance =
         params.newsGuidance || params.discussionData?.metadata?.news_guidance;
 
+    let ttsParams = {};
+    if (params.defaultVoiceQuestion) {
+        ttsParams = getTTSDetails(params);
+    }
+
     try {
         const taskId = await createTranscript({
             title: params.title,
             input_source: linksArray,
             input_text: inputText,
+            tts_model: params.ttsModel,
             conversation_config: {
+                short_intro_and_conclusion:
+                    params.shortIntroAndConclusion || false,
+                disable_intro_and_conclusion:
+                    params.disableIntroAndConclusion || false,
                 word_count: params.wordCount,
                 creativity: params.creativity,
                 conversation_style: params.conversationStyle,
@@ -193,7 +205,8 @@ export const handleCreateTranscript = async (params) => {
                         : (params.outputLanguage !== "English"
                               ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
                               : "") + params.userInstructions,
-                output_language: params.outputLanguage
+                output_language: params.outputLanguage,
+                text_to_speech: ttsParams
             },
             max_output_tokens: Math.min(params.wordCount * 5, 8192),
             longform: params.longForm,
@@ -212,31 +225,54 @@ export const handleCreateTranscript = async (params) => {
     }
 };
 
+export const getTTSDetails = (params) => {
+    const defaultTextToSpeechConfig = {
+        elevenlabs: {
+            default_voices: {
+                question: params.defaultVoiceQuestion,
+                answer: params.defaultVoiceAnswer
+            },
+            model: "eleven_multilingual_v2"
+        },
+        gemini: {
+            default_voices: {
+                question: params.defaultVoiceQuestion,
+                answer: params.defaultVoiceAnswer
+            }
+        }
+    };
+
+    const textToSpeechConfig = {
+        [params.ttsModel]: defaultTextToSpeechConfig[params.ttsModel]
+    };
+
+    if (params.languages) {
+        const availLangs = outputLanguageOptions.map((key) =>
+            key.toLowerCase()
+        );
+        const languages = Object.keys(params.languages)
+            .filter((key) => availLangs.includes(key))
+            .reduce((obj, key) => {
+                obj[capitalizeFirstLetter(key)] = params.languages[key];
+                return obj;
+            }, {});
+        for (const language in languages) {
+            textToSpeechConfig[language.toLowerCase()] = languages[language];
+        }
+    }
+
+    return textToSpeechConfig;
+};
+
 export const handleCreateAudio = async (params) => {
     try {
-        const textToSpeechConfig = {
-            elevenlabs: {
-                default_voices: {
-                    question: params.defaultVoiceQuestion,
-                    answer: params.defaultVoiceAnswer
-                },
-                model: "eleven_multilingual_v2"
-            },
-            gemini: {
-                default_voices: {
-                    question: params.defaultVoiceQuestion,
-                    answer: params.defaultVoiceAnswer
-                }
-            }
-        };
+        const textToSpeechConfig = getTTSDetails(params);
 
         const taskId = await createAudio({
             title: params.title,
             tts_model: params.ttsModel,
             conversation_config: {
-                text_to_speech: {
-                    [params.ttsModel]: textToSpeechConfig[params.ttsModel]
-                }
+                text_to_speech: textToSpeechConfig
             },
             bucket_name: "public_panels",
             panel_id: params.panelId,

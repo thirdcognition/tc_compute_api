@@ -80,6 +80,7 @@ def fetch_links_and_process_articles(
     min_amount=5,
     max_ids=5,
     tokens: tuple = None,
+    previous_episodes: List[Tuple[PanelTranscript, str]] = None,
 ) -> List[WebSource | WebSourceCollection]:
     article_news_items = []
     for news_item in fetch_links(
@@ -90,6 +91,7 @@ def fetch_links_and_process_articles(
         min_amount=min_amount,
         max_ids=max_ids,
         tokens=tokens,
+        previous_episodes=previous_episodes,
     ):
         article_news_items.append(news_item)
     return article_news_items
@@ -159,6 +161,7 @@ def create_and_update_panel_transcript(
         type="segment",
         metadata={
             "longform": longform,
+            "tts_model": request_data.tts_model,
             "conversation_config": conversation_config.model_dump(),
         },
         generation_cronjob=request_data.cronjob,
@@ -352,6 +355,10 @@ def create_panel_transcript(
         if len(input_sources) > 0:
             sources.extend(list(input_sources))
 
+        previous_transcripts_with_content = load_last_transcripts_with_content(
+            supabase_client, request_data.panel_id, 5
+        )
+
         ordered_groups = fetch_links_and_process_articles(
             supabase_client,
             sources,
@@ -360,6 +367,7 @@ def create_panel_transcript(
             min_amount=request_data.segments,
             max_ids=request_data.news_items,
             tokens=tokens,
+            previous_episodes=previous_transcripts_with_content,
         )
 
         for item in ordered_groups:
@@ -368,10 +376,6 @@ def create_panel_transcript(
             )
 
         # ordered_groups = group_web_sources(web_sources)
-
-        previous_transcripts_with_content = load_last_transcripts_with_content(
-            supabase_client, request_data.panel_id, 5
-        )
 
         previous_episodes = ""
 
@@ -547,7 +551,7 @@ def create_panel_transcript_translation(
 
 
 def load_last_transcripts_with_content(
-    supabase_client: Client, panel_id: UUID, num_transcripts: int, lang: str = "english"
+    supabase_client: Client, panel_id: UUID, num_transcripts: int, lang: str = "English"
 ) -> List[Tuple[PanelTranscript, str]]:
     """
     Load the last N transcripts for a given panelId from Supabase, including their content.
@@ -561,18 +565,30 @@ def load_last_transcripts_with_content(
         List[Tuple[PanelTranscript, str]]: A list of tuples, each containing a transcript object and its content.
     """
     # Fetch transcripts for the given panel_id
+    # transcripts = PanelTranscript.fetch_existing_from_supabase_sync(
+    #     supabase_client,
+    #     filter={"panel_id": str(panel_id)},
+    # )
+
     transcripts = PanelTranscript.fetch_existing_from_supabase_sync(
         supabase_client,
-        filter={"panel_id": str(panel_id)},
+        filter={
+            "panel_id": str(panel_id),
+            "created_at": {
+                "gt": (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
+            },
+            "process_state": "done",
+            "lang": lang,
+        },
     )
 
     # Sort by updated_at in descending order and limit to num_transcripts
-    transcripts = [
-        t
-        for t in transcripts
-        if t.process_state == ProcessState.done
-        and (not t.lang or str(t.lang).lower() == str(lang).lower())
-    ]
+    # transcripts = [
+    #     t
+    #     for t in transcripts
+    #     if t.process_state == ProcessState.done
+    #     and (not t.lang or str(t.lang).lower() == str(lang).lower())
+    # ]
     transcripts.sort(key=lambda t: t.updated_at)
     transcripts = transcripts[:num_transcripts]
 

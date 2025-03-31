@@ -62,7 +62,7 @@ function AppContent() {
 
     useEffect(() => {
         if (session.isAuthenticated()) {
-            fetchPanels();
+            fetchPanelData();
         }
         setLoading(false);
     }, []);
@@ -89,7 +89,7 @@ function AppContent() {
         }
     }, [loading, routeId, panels]);
 
-    async function fetchPanels() {
+    async function fetchPanelData() {
         try {
             const panelsData = await fetchPanels();
             const sortedPanels = Array.isArray(panelsData)
@@ -105,7 +105,7 @@ function AppContent() {
     }
 
     async function handleLogin() {
-        await fetchPanels();
+        await fetchPanelData();
         navigate(redirectPath);
     }
 

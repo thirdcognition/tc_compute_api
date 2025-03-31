@@ -27,7 +27,9 @@ export class ConversationConfig {
         word_count = 200,
         longform = false,
         text_to_speech = {},
-        location = "Finland"
+        location = "Finland",
+        short_intro_and_conclusion = false,
+        disable_intro_and_conclusion = false
     } = {}) {
         this.output_language = output_language;
         this.conversation_style = conversation_style;
@@ -43,6 +45,8 @@ export class ConversationConfig {
         this.longform = longform;
         this.text_to_speech = text_to_speech;
         this.location = location;
+        this.short_intro_and_conclusion = short_intro_and_conclusion;
+        this.disable_intro_and_conclusion = disable_intro_and_conclusion;
     }
 }
 
@@ -183,13 +187,15 @@ export class TranscriptMetadata {
         longform,
         subjects,
         description,
-        conversation_config
+        conversation_config,
+        tts_model
     }) {
         this.images = images; // List of image URLs.
         this.longform = longform; // Indicates if it's long-form content.
         this.subjects = subjects; // List of subjects with descriptions and references.
         this.description = description; // Summary of the segment's discussion.
         this.conversation_config = conversation_config; // Details for panel setup and dialogue.
+        this.tts_model = tts_model;
     }
 }
 

@@ -1,11 +1,13 @@
 import datetime
-from typing import List
+from typing import List, Tuple
 
 from langsmith import traceable
 from source.chains.init import get_chain
+from source.models.structures.panel import SummaryReference, TranscriptMetadata
 from source.models.structures.user import UserIDs
 from source.models.structures.web_source import WebSource
 from source.models.structures.web_source_collection import WebSourceCollection
+from source.models.supabase.panel import PanelTranscript
 from source.prompts.web_source import WebSourceGrouping
 
 
@@ -78,6 +80,7 @@ def group_rss_items(
     min_amount=5,
     max_ids=5,
     user_ids: UserIDs = None,
+    previous_episodes: List[Tuple[PanelTranscript, str]] = None,
 ) -> List[WebSourceCollection]:
     uniq_sources: dict[str, WebSource] = {}
     for source in web_sources:
@@ -110,6 +113,35 @@ def group_rss_items(
 
     print(f"Number of unique sources: {len(source_ids)}, sort and group start.")
 
+    previous_episodes_str = ""
+    if previous_episodes:
+        for prev_item in previous_episodes:
+            metadata: TranscriptMetadata = TranscriptMetadata(**prev_item[0].metadata)
+            try:
+                previous_episodes_str += (
+                    "\n".join(
+                        [
+                            (
+                                f"{subject.title}:\nDescription: {subject.description}\nReferences:\n"
+                                + "\n - ".join(
+                                    [
+                                        (
+                                            f"{ref.title}"
+                                            if isinstance(ref, SummaryReference)
+                                            else ref
+                                        )
+                                        for ref in subject.references
+                                    ]
+                                )
+                            )
+                            for subject in metadata.subjects
+                        ]
+                    )
+                    + "\n\n"
+                )
+            except Exception as e:
+                print(f"Failed to use previous items: {e}")
+
     grouping: WebSourceGrouping = None
     params = {
         "datetime": str(datetime.datetime.now()),
@@ -124,6 +156,7 @@ def group_rss_items(
         "instructions": guidance,
         "min_groups": min_amount,
         "max_ids": max_ids,
+        "previous_episodes": previous_episodes_str,
     }
     grouping = get_chain("group_rss_items_sync").invoke(params)
 

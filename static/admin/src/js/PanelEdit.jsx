@@ -149,6 +149,7 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                 <TranscriptDetailEdit
                     panelId={panelId}
                     discussionData={discussionData}
+                    transcriptData={transcriptData}
                     taskStatus={taskStatus}
                     initiatePolling={initiatePolling}
                     visible={transcriptData && transcriptData.length === 0}

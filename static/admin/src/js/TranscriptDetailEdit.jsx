@@ -10,12 +10,14 @@ import {
     outputLanguageOptions
 } from "./options.js";
 import { getWordCountDescription } from "./helpers/ui.js";
+import AudioDetailEdit from "./AudioDetailEdit.jsx";
 import CronjobComponent from "./components/CronjobComponent.jsx";
 import { FaTimes } from "react-icons/fa";
 
 function TranscriptDetailEdit({
     panelId,
     discussionData,
+    transcriptData,
     taskStatus,
     initiatePolling,
     visible
@@ -52,6 +54,13 @@ function TranscriptDetailEdit({
     const [outputLanguage, setOutputLanguage] = useState("English");
     const [cronjob, setCronjob] = useState(""); // Default to empty string if not defined
     const [longForm, setLongForm] = useState(false);
+    const [shortIntroAndConclusion, setShortIntroAndConclusion] =
+        useState(false);
+    const [disableIntroAndConclusion, setDisableIntroAndConclusion] =
+        useState(false);
+    const [selectedTranscript, setSelectedTranscript] = useState(null);
+
+    const [audioDetails, setAudioDetails] = useState({});
 
     const calculateArticleCount = (data) => {
         const linksArray = data?.metadata?.input_source || [];
@@ -92,10 +101,38 @@ function TranscriptDetailEdit({
         }
     };
 
+    const applyTranscriptSettings = (transcript) => {
+        if (transcript) {
+            const metadata = transcript.metadata || {};
+            const conversationConfig = metadata.conversation_config || {};
+
+            console.log("metadta", metadata);
+
+            setWordCount(conversationConfig.word_count || 1000);
+            setConversationStyle(conversationConfig.conversation_style || []);
+            setRolesPerson1(conversationConfig.roles_person1 || {});
+            setRolesPerson2(conversationConfig.roles_person2 || {});
+            setDialogueStructure(conversationConfig.dialogue_structure || []);
+            setEngagementTechniques(
+                conversationConfig.engagement_techniques || []
+            );
+            setUserInstructions(conversationConfig.user_instructions || "");
+            setOutputLanguage(conversationConfig.output_language || "English");
+            setShortIntroAndConclusion(
+                conversationConfig.short_intro_and_conclusion || false
+            );
+            setDisableIntroAndConclusion(
+                conversationConfig.disable_intro_and_conclusion || false
+            );
+            setLongForm(metadata.longform || false);
+        }
+    };
+
     useEffect(updateMaxWordCount, [discussionData, wordCount, longForm]);
 
     const handleTranscriptSubmit = async (e) => {
         e.preventDefault();
+
         if (panelId) {
             handleCreateTranscript({
                 panelId,
@@ -110,7 +147,10 @@ function TranscriptDetailEdit({
                 userInstructions,
                 outputLanguage,
                 longForm,
-                cronjob
+                cronjob,
+                shortIntroAndConclusion,
+                disableIntroAndConclusion,
+                ...audioDetails
             }).then(({ taskId, success }) => {
                 if (success && taskId) {
                     initiatePolling(taskId, "transcript");
@@ -129,6 +169,78 @@ function TranscriptDetailEdit({
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
+                                        Select Transcript:
+                                    </Card.Title>
+                                    <Form.Group controlId="transcriptSelect">
+                                        <Form.Label>
+                                            Select a transcript to copy its
+                                            settings:
+                                        </Form.Label>
+                                        <Form.Control
+                                            as="select"
+                                            value={selectedTranscript?.id || ""}
+                                            onChange={(e) => {
+                                                const selected =
+                                                    transcriptData.find(
+                                                        (transcript) =>
+                                                            transcript.id ===
+                                                            e.target.value
+                                                    );
+                                                if (selected) {
+                                                    setSelectedTranscript(
+                                                        selected
+                                                    );
+                                                    applyTranscriptSettings(
+                                                        selected
+                                                    );
+                                                }
+                                            }}
+                                            className="w-full"
+                                        >
+                                            <option value=""></option>
+                                            {transcriptData &&
+                                                transcriptData
+                                                    .filter(
+                                                        (transcript) =>
+                                                            transcript.process_state ===
+                                                            "done"
+                                                    )
+                                                    .sort(
+                                                        (a, b) =>
+                                                            new Date(
+                                                                b.created_at
+                                                            ) -
+                                                            new Date(
+                                                                a.created_at
+                                                            )
+                                                    )
+                                                    .map(
+                                                        (transcript, index) => (
+                                                            <option
+                                                                key={
+                                                                    transcript.id
+                                                                }
+                                                                value={
+                                                                    transcript.id
+                                                                }
+                                                            >
+                                                                Transcript{" "}
+                                                                {transcriptData.length -
+                                                                    index}
+                                                                :{" "}
+                                                                {
+                                                                    transcript.title
+                                                                }
+                                                            </option>
+                                                        )
+                                                    )}
+                                        </Form.Control>
+                                    </Form.Group>
+                                </Card.Body>
+                            </Card>
+                            <Card className="mb-4">
+                                <Card.Body>
+                                    <Card.Title className="font-bold text-lg">
                                         Update Cycle:
                                     </Card.Title>
                                     <Form.Group controlId="cronjob">
@@ -139,7 +251,6 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
@@ -166,12 +277,11 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
                             {calculateArticleCount(discussionData) > 1 && (
                                 <Card className="mb-4">
                                     <Card.Body>
                                         <Card.Title className="font-bold text-lg">
-                                            Process Articles:
+                                            Transcript processing options:
                                         </Card.Title>
                                         <Form.Group controlId="longForm">
                                             <div className="flex items-center mb-2.5">
@@ -191,10 +301,59 @@ function TranscriptDetailEdit({
                                                 </label>
                                             </div>
                                         </Form.Group>
+                                        <Form.Group controlId="disableIntroAndConclusion">
+                                            <div className="flex items-center mb-2.5">
+                                                <label className="mr-2.5">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={
+                                                            disableIntroAndConclusion
+                                                        }
+                                                        onChange={(e) => {
+                                                            setDisableIntroAndConclusion(
+                                                                e.target.checked
+                                                            );
+                                                            if (
+                                                                e.target.checked
+                                                            ) {
+                                                                setShortIntroAndConclusion(
+                                                                    false
+                                                                );
+                                                            }
+                                                        }}
+                                                    />
+                                                    {
+                                                        " Disable introduction and conclusion segments"
+                                                    }
+                                                </label>
+                                            </div>
+                                        </Form.Group>
+                                        <Form.Group controlId="shortIntroAndConclusion">
+                                            <div className="flex items-center mb-2.5">
+                                                <label className="mr-2.5">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={
+                                                            shortIntroAndConclusion
+                                                        }
+                                                        onChange={(e) =>
+                                                            setShortIntroAndConclusion(
+                                                                e.target.checked
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            disableIntroAndConclusion
+                                                        }
+                                                    />
+                                                    {
+                                                        " Use short introduction and conclusion segments"
+                                                    }
+                                                </label>
+                                            </div>
+                                        </Form.Group>
                                     </Card.Body>
                                 </Card>
                             )}
-
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
@@ -231,7 +390,6 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
@@ -296,7 +454,6 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
@@ -361,7 +518,6 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
@@ -446,7 +602,6 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
@@ -483,7 +638,6 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
@@ -504,7 +658,6 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
                             <Card className="mb-4">
                                 <Card.Body>
                                     <Card.Title className="font-bold text-lg">
@@ -543,7 +696,24 @@ function TranscriptDetailEdit({
                                     </Form.Group>
                                 </Card.Body>
                             </Card>
-
+                            <AudioDetailEdit returnData={setAudioDetails} />
+                            {audioDetails &&
+                                audioDetails["defaultVoiceAnswer"] && (
+                                    <Card className="mb-4">
+                                        <Card.Body>
+                                            <Card.Title className="font-bold text-lg">
+                                                Voice details:
+                                            </Card.Title>
+                                            <pre>
+                                                {JSON.stringify(
+                                                    audioDetails,
+                                                    null,
+                                                    4
+                                                )}
+                                            </pre>
+                                        </Card.Body>
+                                    </Card>
+                                )}
                             <Button
                                 variant="primary"
                                 type="submit"

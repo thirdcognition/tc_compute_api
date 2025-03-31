@@ -48,6 +48,8 @@ class ConversationConfig(BaseModel):
     longform: Optional[bool] = False
     text_to_speech: Optional[dict] = {}
     location: Optional[str] = "Finland"
+    short_intro_and_conclusion: Optional[bool] = False
+    disable_intro_and_conclusion: Optional[bool] = False
 
 
 class PanelRequestData(BaseModel):
@@ -84,7 +86,7 @@ class PanelRequestData(BaseModel):
 
 
 class SummaryReference(BaseModel):
-    id: Optional[str]
+    id: Optional[Union[str | UUID]] = None
     title: str
     image: Optional[str] = None
     url: Optional[str] = None
@@ -152,23 +154,28 @@ class PanelMetadata(BaseModel):
 
 class TranscriptMetadata(BaseModel):
     images: Optional[List[str]] = Field(
-        ..., title="Images", description="List of image URLs."
+        None, title="Images", description="List of image URLs."
     )
     longform: Optional[bool] = Field(
-        ..., title="Longform", description="Indicates if it's long-form content."
+        None, title="Longform", description="Indicates if it's long-form content."
     )
     subjects: Optional[List[SummarySubject]] = Field(
-        ...,
+        None,
         title="Subjects",
         description="List of subjects with descriptions and references.",
     )
     description: Optional[str] = Field(
-        ..., title="Description", description="Summary of the segment's discussion."
+        None, title="Description", description="Summary of the segment's discussion."
     )
     conversation_config: Optional[ConversationConfig] = Field(
-        ...,
+        None,
         title="Conversation Configuration",
         description="Details for panel setup and dialogue.",
+    )
+    tts_model: Optional[str] = Field(
+        None,
+        title="TTS model",
+        description="Text to speech model name",
     )
 
 
