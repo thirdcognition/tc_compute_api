@@ -7,7 +7,7 @@ import { Player } from "./Player.tsx";
 import { Session, trackEvent } from "../helpers/analytics.ts";
 import session from "../helpers/session.tsx";
 // import { capitalizeFirstLetter } from "../helpers/lib.ts";
-import { outputLanguageOptions } from "../helpers/options";
+import { outputLanguageOptions } from "../helpers/options.ts";
 const Accordion: React.FC<{
     title: string;
     setOpen?: boolean; // Optional prop
