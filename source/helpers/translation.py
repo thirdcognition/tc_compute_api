@@ -30,7 +30,7 @@ def string_to_iso_code(language_name: str) -> Optional[str]:
     # Fetch supported languages and build the mapping
     global LANGUAGE_NAME_TO_ISO
     LANGUAGE_NAME_TO_ISO = LANGUAGE_NAME_TO_ISO or {
-        lang["name"].lower(): lang["language"]
+        str(lang["name"]).lower(): lang["language"]
         for lang in translate_client.get_languages()
     }
 

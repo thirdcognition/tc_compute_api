@@ -160,7 +160,7 @@ def send_push_notifications_for_tasks(
         for user in users:
             if user_notifications.get(user.auth_id) is None:
                 user_notifications[user.auth_id] = UserPushNotification(user=user)
-            if transcript.lang.lower() == user.lang.lower():
+            if transcript.lang == user.lang:
                 transcript_user_data = [
                     user_data_instance
                     for user_data_instance in user_data_transcripts

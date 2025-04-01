@@ -14,7 +14,7 @@ export class HostProfile {
  */
 export class ConversationConfig {
     constructor({
-        output_language = "English",
+        output_language = "en",
         conversation_style = ["casual", "humorous"],
         roles_person1 = null,
         roles_person2 = null,

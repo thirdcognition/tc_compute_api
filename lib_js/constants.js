@@ -8,4 +8,22 @@ const Constants = Object.freeze({
     })
 });
 
+export const defaultLanguages = {
+    en: "English",
+    fi: "Finnish",
+    sv: "Swedish",
+    da: "Danish",
+    de: "German",
+    fr: "French",
+    nl: "Dutch",
+    es: "Spanish",
+    pt: "Portuguese",
+    it: "Italian",
+    el: "Greek",
+    zh: "Chinese",
+    ja: "Japanese",
+    ru: "Russian",
+    ar: "Arabic"
+};
+
 export default Constants;

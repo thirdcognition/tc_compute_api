@@ -196,15 +196,15 @@ export const handleCreateTranscript = async (params) => {
                 roles_person2: params.rolesPerson2,
                 dialogue_structure: params.dialogueStructure,
                 engagement_techniques: params.engagementTechniques,
-                user_instructions:
-                    params.outputLanguage !== "English" &&
-                    params.userInstructions.indexOf(
-                        "Make sure to write numbers as text in the specified language"
-                    ) !== -1
-                        ? params.userInstructions
-                        : (params.outputLanguage !== "English"
-                              ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
-                              : "") + params.userInstructions,
+                user_instructions: params.userInstructions,
+                // params.outputLanguage !== "en" &&
+                // params.userInstructions.indexOf(
+                //     "Make sure to write numbers as text in the specified language"
+                // ) !== -1
+                //     ? params.userInstructions
+                //     : (params.outputLanguage !== "en"
+                //           ? " Make sure to write numbers as text in the specified language. So e.g. in English 10 in is ten, and 0.1 is zero point one."
+                //           : "") + params.userInstructions,
                 output_language: params.outputLanguage,
                 text_to_speech: ttsParams
             },
@@ -247,17 +247,15 @@ export const getTTSDetails = (params) => {
     };
 
     if (params.languages) {
-        const availLangs = outputLanguageOptions.map((key) =>
-            key.toLowerCase()
-        );
+        const availLangs = Object.keys(outputLanguageOptions);
         const languages = Object.keys(params.languages)
             .filter((key) => availLangs.includes(key))
             .reduce((obj, key) => {
-                obj[capitalizeFirstLetter(key)] = params.languages[key];
+                obj[key] = params.languages[key];
                 return obj;
             }, {});
         for (const language in languages) {
-            textToSpeechConfig[language.toLowerCase()] = languages[language];
+            textToSpeechConfig[language] = languages[language];
         }
     }
 

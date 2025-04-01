@@ -55,23 +55,23 @@ export const engagementTechniquesOptions = [
     "historical references"
 ];
 
-export const outputLanguageOptions = [
-    "English",
-    "Finnish",
-    "Swedish",
-    "Danish",
-    "German",
-    "French",
-    "Dutch",
-    "Spanish",
-    "Portuguese",
-    "Italian",
-    "Greek",
-    "Chinese",
-    "Japanese",
-    "Russian",
-    "Arabic"
-];
+export const outputLanguageOptions = {
+    en: "English",
+    fi: "Finnish",
+    sv: "Swedish",
+    da: "Danish",
+    de: "German",
+    fr: "French",
+    nl: "Dutch",
+    es: "Spanish",
+    pt: "Portuguese",
+    it: "Italian",
+    el: "Greek",
+    zh: "Chinese",
+    ja: "Japanese",
+    ru: "Russian",
+    ar: "Arabic"
+};
 
 export const defaultTtsModelOptions = [
     {

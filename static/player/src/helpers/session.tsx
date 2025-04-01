@@ -26,7 +26,7 @@ class Session {
     }
 
     getLanguage(): string {
-        return localStorage.getItem("language") || "english";
+        return localStorage.getItem("language") || "en";
     }
 
     setPanelId(panelId: string): void {

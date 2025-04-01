@@ -253,11 +253,13 @@ function PanelDetailEdit({
                                     }
                                     className="w-full"
                                 >
-                                    {outputLanguageOptions.map((language) => (
-                                        <option value={language} key={language}>
-                                            {language}
-                                        </option>
-                                    ))}
+                                    {Object.entries(outputLanguageOptions).map(
+                                        ([langId, language]) => (
+                                            <option value={langId} key={langId}>
+                                                {language}
+                                            </option>
+                                        )
+                                    )}
                                 </Form.Control>
                                 <Form.Text className="text-muted ml-2">
                                     English is enabled by default

@@ -11,7 +11,11 @@ from source.chains.init import get_chain
 # )
 from source.models.structures.web_source import WebSource
 from source.models.structures.web_source_collection import WebSourceCollection
-from source.models.structures.panel import ConversationConfig, SummaryReference
+from source.models.structures.panel import (
+    ConversationConfig,
+    OutputLanguageOptions,
+    SummaryReference,
+)
 from source.prompts.panel import (
     TranscriptQualityCheck,
     TranscriptSummary,
@@ -43,7 +47,9 @@ def verify_transcript_quality(
         {
             "content": content,
             "transcript": transcript,
-            "output_language": conversation_config.output_language,
+            "output_language": OutputLanguageOptions[
+                conversation_config.output_language
+            ].value,
             "conversation_style": conversation_config.conversation_style,
             "roles_person1": str(conversation_config.roles_person1),
             "roles_person2": str(conversation_config.roles_person2),
@@ -287,7 +293,9 @@ def _transcript_rewriter(
             {
                 "content": content,
                 "transcript": transcript,
-                "output_language": conversation_config.output_language,
+                "output_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
                 "conversation_style": conversation_config.conversation_style,
                 "roles_person1": str(conversation_config.roles_person1),
                 "roles_person2": str(conversation_config.roles_person2),
@@ -363,7 +371,9 @@ def transcript_writer(
         result = get_chain("transcript_writer").invoke(
             {
                 "content": content,
-                "output_language": conversation_config.output_language,
+                "output_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
                 "conversation_style": conversation_config.conversation_style,
                 "roles_person1": str(conversation_config.roles_person1),
                 "roles_person2": str(conversation_config.roles_person2),
@@ -427,7 +437,9 @@ def transcript_bridge_writer(
             {
                 "transcript1": transcript_1,
                 "transcript2": transcript_2,
-                "output_language": conversation_config.output_language,
+                "output_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
                 "conversation_style": conversation_config.conversation_style,
                 "roles_person1": str(conversation_config.roles_person1),
                 "roles_person2": str(conversation_config.roles_person2),
@@ -476,7 +488,9 @@ def transcript_intro_writer(
             {
                 "transcript": transcript,
                 "content": content,
-                "output_language": conversation_config.output_language,
+                "output_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
                 "conversation_style": conversation_config.conversation_style,
                 "roles_person1": str(conversation_config.roles_person1),
                 "roles_person2": str(conversation_config.roles_person2),
@@ -527,7 +541,9 @@ def transcript_conclusion_writer(
         ).invoke(
             {
                 "previous_dialogue": previous_dialogue,
-                "output_language": conversation_config.output_language,
+                "output_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
                 "conversation_style": conversation_config.conversation_style,
                 "roles_person1": str(conversation_config.roles_person1),
                 "roles_person2": str(conversation_config.roles_person2),
@@ -582,7 +598,9 @@ def transcript_compress(
         result = get_chain("transcript_compress").invoke(
             {
                 "transcript": prev_result,
-                "output_language": conversation_config.output_language,
+                "output_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
                 "roles_person1": str(conversation_config.roles_person1),
                 "roles_person2": str(conversation_config.roles_person2),
                 "user_instructions": conversation_config.user_instructions,
@@ -663,7 +681,9 @@ def transcript_extend(
             {
                 "transcript": prev_result,
                 "content": content,
-                "output_language": conversation_config.output_language,
+                "output_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
                 "conversation_style": conversation_config.conversation_style,
                 "roles_person1": str(conversation_config.roles_person1),
                 "roles_person2": str(conversation_config.roles_person2),
@@ -740,8 +760,10 @@ def _transcript_translate(
         result = get_chain("transcript_translate").invoke(
             {
                 "transcript": transcript,
-                "source_language": conversation_config.output_language,
-                "target_language": target_language,
+                "source_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
+                "target_language": OutputLanguageOptions[target_language].value,
                 "conversation_style": conversation_config.conversation_style,
                 "roles_person1": str(conversation_config.roles_person1),
                 "roles_person2": str(conversation_config.roles_person2),
@@ -805,7 +827,9 @@ def transcript_summary_writer(
                 ),
                 "podcast_name": conversation_config.podcast_name,
                 "podcast_tagline": conversation_config.podcast_tagline,
-                "output_language": conversation_config.output_language,
+                "output_language": OutputLanguageOptions[
+                    conversation_config.output_language
+                ].value,
             }
         )
 

@@ -168,7 +168,7 @@ export async function fetchPanelDetails(panelId: string): Promise<{
                 transcript.lang?.toLowerCase() === language?.toLowerCase()
         );
         if (filteredTranscripts.length == 0) {
-            language = "english";
+            language = "en";
             filteredTranscripts = panelDetails.transcripts.filter(
                 (transcript: any) =>
                     transcript.lang?.toLowerCase() === language?.toLowerCase()

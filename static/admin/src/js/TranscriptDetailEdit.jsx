@@ -51,7 +51,7 @@ function TranscriptDetailEdit({
         "humor"
     ]);
     const [userInstructions, setUserInstructions] = useState("");
-    const [outputLanguage, setOutputLanguage] = useState("English");
+    const [outputLanguage, setOutputLanguage] = useState("en");
     const [cronjob, setCronjob] = useState(""); // Default to empty string if not defined
     const [longForm, setLongForm] = useState(false);
     const [shortIntroAndConclusion, setShortIntroAndConclusion] =
@@ -117,7 +117,7 @@ function TranscriptDetailEdit({
                 conversationConfig.engagement_techniques || []
             );
             setUserInstructions(conversationConfig.user_instructions || "");
-            setOutputLanguage(conversationConfig.output_language || "English");
+            setOutputLanguage(conversationConfig.output_language || "en");
             setShortIntroAndConclusion(
                 conversationConfig.short_intro_and_conclusion || false
             );
@@ -203,7 +203,8 @@ function TranscriptDetailEdit({
                                                     .filter(
                                                         (transcript) =>
                                                             transcript.process_state ===
-                                                            "done"
+                                                                "done" &&
+                                                            !transcript.transcript_parent_id
                                                     )
                                                     .sort(
                                                         (a, b) =>
@@ -682,16 +683,16 @@ function TranscriptDetailEdit({
                                             }
                                             className="w-full"
                                         >
-                                            {outputLanguageOptions.map(
-                                                (language) => (
-                                                    <option
-                                                        value={language}
-                                                        key={language}
-                                                    >
-                                                        {language}
-                                                    </option>
-                                                )
-                                            )}
+                                            {Object.entries(
+                                                outputLanguageOptions
+                                            ).map(([langId, language]) => (
+                                                <option
+                                                    value={langId}
+                                                    key={langId}
+                                                >
+                                                    {language}
+                                                </option>
+                                            ))}
                                         </Form.Control>
                                     </Form.Group>
                                 </Card.Body>

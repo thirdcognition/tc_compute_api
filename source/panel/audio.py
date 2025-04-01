@@ -59,7 +59,7 @@ def create_panel_audio(
     tts_model = request_data.tts_model or metadata.get("tts_model", "geminimulti")
 
     lang_voices = (
-        conversation_config.text_to_speech.get(transcript.lang.lower())
+        conversation_config.text_to_speech.get(transcript.lang)
         if conversation_config.text_to_speech is not None
         else None
     )

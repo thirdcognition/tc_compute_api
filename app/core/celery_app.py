@@ -115,7 +115,7 @@ celery_app.conf.beat_schedule = {
     },
     "send-push-notifications-1d": {
         "task": "source.helpers.push_notifications.task_send_push_notifications_for_new_tasks",
-        "schedule": crontab(hour="*/1", minute="0"),
+        "schedule": crontab(hour="7", minute="0"),
         # "schedule": crontab(minute="*/2"),
         # "schedule": crontab(hour=8, minute=0, day_of_week="1-5"), # Weekdays only
         # "args": (

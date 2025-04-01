@@ -239,7 +239,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                         ?.user_instructions || "",
                 outputLanguage:
                     transcript.metadata?.conversation_config?.output_language ||
-                    "English",
+                    "en",
                 longForm: transcript.metadata?.longform,
                 cronjob: "",
                 newsItems:

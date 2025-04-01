@@ -8,4 +8,6 @@ declare const Constants: {
     };
 };
 
+export declare const defaultLanguages: Record<string, string>;
+
 export default Constants;

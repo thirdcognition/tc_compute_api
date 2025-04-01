@@ -6,7 +6,8 @@ import { FaImage } from "react-icons/fa";
 import { Player } from "./Player.tsx";
 import { Session, trackEvent } from "../helpers/analytics.ts";
 import session from "../helpers/session.tsx";
-import { capitalizeFirstLetter } from "../helpers/lib.ts";
+// import { capitalizeFirstLetter } from "../helpers/lib.ts";
+import { outputLanguageOptions } from "../helpers/options";
 const Accordion: React.FC<{
     title: string;
     setOpen?: boolean; // Optional prop
@@ -117,15 +118,14 @@ const Panel: React.FC<PanelProps> = ({
 
             setPanelData(discussionData);
             if (discussionData?.metadata?.languages) {
-                const langs = { english: "English" };
+                const langs = { en: "English" };
                 for (
                     let index = 0;
                     index < discussionData.metadata?.languages.length;
                     index++
                 ) {
                     const element = discussionData.metadata?.languages[index];
-                    langs[element.toLowerCase()] =
-                        capitalizeFirstLetter(element);
+                    langs[element] = outputLanguageOptions[element]; //capitalizeFirstLetter(element);
                 }
 
                 setLanguageOptions(langs);

@@ -3,7 +3,6 @@ import { FaTimes } from "react-icons/fa";
 import { Form, Button, Accordion, Card } from "react-bootstrap";
 import { defaultTtsModelOptions, outputLanguageOptions } from "./options.js";
 import { handleCreateAudio } from "./helpers/panel.js";
-import { capitalizeFirstLetter } from "./helpers/lib.js";
 
 function AudioDetailEdit({
     panelId,
@@ -54,13 +53,11 @@ function AudioDetailEdit({
                 ) {
                     const tts = metadata.conversation_config.text_to_speech;
                     const defaults = tts[metadata.tts_model];
-                    const availLangs = outputLanguageOptions.map((key) =>
-                        key.toLowerCase()
-                    );
+                    const availLangs = Object.keys(outputLanguageOptions);
                     const languages = Object.keys(tts)
                         .filter((key) => availLangs.includes(key))
                         .reduce((obj, key) => {
-                            obj[capitalizeFirstLetter(key)] = tts[key];
+                            obj[key] = tts[key];
                             return obj;
                         }, {});
                     setDefaultVoiceAnswer(defaults.default_voices.answer);
@@ -92,7 +89,6 @@ function AudioDetailEdit({
     };
 
     const handleRemoveLanguage = (language) => {
-        // if (language !== "English") {
         setLanguageDetails((prev) => {
             const updated = { ...prev };
             delete updated[language];
@@ -357,16 +353,13 @@ function AudioDetailEdit({
                                         <option value="">
                                             Select a language
                                         </option>
-                                        {outputLanguageOptions.map(
-                                            (language) => (
-                                                <option
-                                                    key={language}
-                                                    value={language}
-                                                >
-                                                    {language}
-                                                </option>
-                                            )
-                                        )}
+                                        {Object.entries(
+                                            outputLanguageOptions
+                                        ).map(([langId, language]) => (
+                                            <option key={langId} value={langId}>
+                                                {language}
+                                            </option>
+                                        ))}
                                     </Form.Control>
                                 </Form.Group>
                                 <Button

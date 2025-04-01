@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 import os
 import json
 from typing import Optional, Union, List
@@ -33,8 +34,26 @@ class HostProfile(BaseModel):
         return f"Name: {self.name}, Role: {self.role}, Persona: {self.persona}"
 
 
+class OutputLanguageOptions(Enum):
+    en = "English"
+    fi = "Finnish"
+    sv = "Swedish"
+    da = "Danish"
+    de = "German"
+    fr = "French"
+    nl = "Dutch"
+    es = "Spanish"
+    pt = "Portuguese"
+    it = "Italian"
+    el = "Greek"
+    zh = "Chinese"
+    ja = "Japanese"
+    ru = "Russian"
+    ar = "Arabic"
+
+
 class ConversationConfig(BaseModel):
-    output_language: Optional[str] = "English"
+    output_language: Optional[str] = "en"
     conversation_style: Optional[List[str]] = custom_config["conversation_style"]
     roles_person1: Optional[HostProfile] = None
     roles_person2: Optional[HostProfile] = None

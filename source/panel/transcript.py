@@ -66,9 +66,7 @@ def fetch_panel_metadata_and_config(
         config["roles_person2"] = {"role": config.get("roles_person2", "")}
 
     conversation_config = ConversationConfig(**config)
-    conversation_config.output_language = (
-        conversation_config.output_language or "English"
-    )
+    conversation_config.output_language = conversation_config.output_language or "en"
     return conversation_config, metadata, panel
 
 
@@ -149,7 +147,7 @@ def create_and_update_panel_transcript(
     title: str,
     conversation_config: ConversationConfig,
     longform: bool,
-    language: str = "english",
+    language: str = "en",
     parent_id: str = None,
 ) -> PanelTranscript:
     panel_transcript = PanelTranscript(
@@ -312,7 +310,7 @@ def create_panel_transcript(
         title,
         conversation_config,
         request_data.longform,
-        (conversation_config.output_language if conversation_config else "english"),
+        (conversation_config.output_language if conversation_config else "en"),
     )
     transcript_ids = []
     try:
@@ -452,7 +450,7 @@ def create_panel_transcript(
         if metadata.get("languages"):
             languages = metadata.get("languages")
             for language in languages:
-                if str(language).lower() == panel_transcript.lang.lower():
+                if str(language) == panel_transcript.lang:
                     continue
                 transcript_ids.append(
                     create_panel_transcript_translation(
@@ -551,7 +549,7 @@ def create_panel_transcript_translation(
 
 
 def load_last_transcripts_with_content(
-    supabase_client: Client, panel_id: UUID, num_transcripts: int, lang: str = "English"
+    supabase_client: Client, panel_id: UUID, num_transcripts: int, lang: str = "en"
 ) -> List[Tuple[PanelTranscript, str]]:
     """
     Load the last N transcripts for a given panelId from Supabase, including their content.
@@ -587,7 +585,7 @@ def load_last_transcripts_with_content(
     #     t
     #     for t in transcripts
     #     if t.process_state == ProcessState.done
-    #     and (not t.lang or str(t.lang).lower() == str(lang).lower())
+    #     and (not t.lang or str(t.lang) == str(lang))
     # ]
     transcripts.sort(key=lambda t: t.updated_at)
     transcripts = transcripts[:num_transcripts]
