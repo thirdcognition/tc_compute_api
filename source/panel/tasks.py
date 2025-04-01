@@ -173,7 +173,7 @@ def process_transcript_task(
         },
     )
 
-    print(f"matching transcripts: {all_transcripts=}")
+    # print(f"matching transcripts: {all_transcripts=}")
 
     all_transcripts.sort(key=lambda x: x.updated_at, reverse=True)
     latest_transcript = all_transcripts[0] if len(all_transcripts) > 0 else transcript

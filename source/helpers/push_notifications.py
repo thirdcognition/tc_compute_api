@@ -129,7 +129,7 @@ def send_push_notifications_for_tasks(
     all_user_ids = list(
         {user_data_instance.auth_id for user_data_instance in all_user_data_transcripts}
     )
-    print("[Notifications] Fetch Connected User Profile Data")
+    print(f"[Notifications] Fetch Connected User Profile Data {all_user_ids=}")
     all_users = UserProfileModel.fetch_existing_from_supabase_sync(
         supabase,
         filter={
@@ -208,18 +208,21 @@ def send_push_notifications_for_tasks(
 
         data["track_id"] = track_id
 
-        analytics.track_event(
-            PostHogEvents.NOTIFICATION_SEND,
-            {
-                "notification_id": track_id,
-                "transcript_ids": [
-                    transcript.id for transcript in notification.transcripts
-                ],
-                "notification_title": title,
-                "notification_body": body,
-            },
-            user=notification.user,
-        )
+        try:
+            analytics.track_event(
+                PostHogEvents.NOTIFICATION_SEND,
+                {
+                    "notification_id": track_id,
+                    "transcript_ids": [
+                        transcript.id for transcript in notification.transcripts
+                    ],
+                    "notification_title": title,
+                    "notification_body": body,
+                },
+                user=notification.user,
+            )
+        except Exception as e:
+            print(f"[Notifications] Unable to track analytics event. {e=}")
 
         print(
             f"[Notifications] Preparing notification(s) for user: {notification.user.auth_id}"
@@ -248,6 +251,8 @@ def send_push_notifications_for_tasks(
     if len(messages) == 0:
         print("[Notifications] No notifications sent.")
         return
+
+    # print(f"[Notifications]  {messages=}")
 
     responses = []
 
@@ -301,15 +306,18 @@ def send_push_notifications_for_tasks(
             user.notification_data = notification_data
             user.update_sync(supabase=supabase)
         except PushTicketError as e:
-            analytics.track_event(
-                PostHogEvents.NOTIFICATION_FAIL,
-                {
-                    "notification_id": response["id"],
-                    "notification_token": response["token"],
-                    "error": e.push_response,
-                },
-                user=response["user"],
-            )
+            try:
+                analytics.track_event(
+                    PostHogEvents.NOTIFICATION_FAIL,
+                    {
+                        "notification_id": response["id"],
+                        "notification_token": response["token"],
+                        "error": e.push_response,
+                    },
+                    user=response["user"],
+                )
+            except Exception as e:
+                print(f"[Notifications] Unable to track analytics event. {e=}")
         except (PushServerError, ConnectionError, HTTPError) as exc:
             print(
                 f"[Notifications] Error sending push notification: {exc}. Retrying..."
@@ -358,25 +366,31 @@ def send_push_notifications_for_tasks(
 
     for track_id in track_success:
         response = track_success[track_id][0]
-        analytics.track_event(
-            PostHogEvents.NOTIFICATION_SUCCESS,
-            {
-                "notification_id": response["id"],
-                "notification_token": response["token"],
-            },
-            user=response["user"],
-        )
+        try:
+            analytics.track_event(
+                PostHogEvents.NOTIFICATION_SUCCESS,
+                {
+                    "notification_id": response["id"],
+                    "notification_token": response["token"],
+                },
+                user=response["user"],
+            )
+        except Exception as e:
+            print(f"[Notifications] Unable to track analytics event. {e=}")
     for track_id in track_fail:
         fail_items = track_fail[track_id]
         for response in fail_items:
             ticket: PushTicket = response["receipt"]
             error = ticket.details.get("error", None)
-            analytics.track_event(
-                PostHogEvents.NOTIFICATION_FAIL,
-                {
-                    "notification_id": response["id"],
-                    "notification_token": response["token"],
-                    "error": error,
-                },
-                user=response["user"],
-            )
+            try:
+                analytics.track_event(
+                    PostHogEvents.NOTIFICATION_FAIL,
+                    {
+                        "notification_id": response["id"],
+                        "notification_token": response["token"],
+                        "error": error,
+                    },
+                    user=response["user"],
+                )
+            except Exception as e:
+                print(f"[Notifications] Unable to track analytics event. {e=}")
