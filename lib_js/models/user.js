@@ -28,9 +28,8 @@ class User extends NotifierModel {
 
     async _initialize() {
         if (this.model === null) {
-            this.model = new UserData(this.supabase, this.authId).listen(
-                this.boundNotifyListeners
-            );
+            this.model = new UserData(this.supabase, this.authId);
+            this.model.listen(this.boundNotifyListeners);
         }
         await this.model.fetchUserProfile();
         await this.model.fetchOrganizations();
@@ -58,7 +57,10 @@ class User extends NotifierModel {
                 this.model.authId,
                 organization.id,
                 setAsAdmin
-            ).listen(this.model.boundNotifyListeners);
+            );
+            this.model.asUser[organization.id].listen(
+                this.model.boundNotifyListeners
+            );
         }
         this.model.saveAllToSupabase(this.supabase);
     }
