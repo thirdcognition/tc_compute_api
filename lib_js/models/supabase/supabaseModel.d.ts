@@ -23,7 +23,9 @@ export declare class SupabaseModel<T> extends NotifierModel<T> {
         supabase: SupabaseClient,
         filter?: Partial<T>,
         values?: Partial<T>[],
-        idColumn?: string
+        idColumn?: string,
+        limit?: number,
+        start?: number
     ): Promise<T[]>;
     static existsInSupabase(
         supabase: SupabaseClient,

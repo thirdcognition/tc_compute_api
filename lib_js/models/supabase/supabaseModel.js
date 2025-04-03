@@ -557,7 +557,9 @@ export class SupabaseModel extends NotifierModel {
         supabase,
         filter = null,
         values = [],
-        idColumn = "id"
+        idColumn = "id",
+        limit = null,
+        start = null
     ) {
         if (!this.TABLE_NAME)
             throw new Error("TABLE_NAME must be set for the model.");
@@ -629,6 +631,13 @@ export class SupabaseModel extends NotifierModel {
                     this.TABLE_FIELDS[idColumn]?.dbColumn || idColumn;
                 query = query.in(dbColumn, strValues);
             }
+        }
+
+        if (limit !== null && start === null) {
+            query = query.limit(limit);
+        }
+        if (limit !== null && start !== null) {
+            query = query.range(start, limit);
         }
 
         const response = await query; //.select();
