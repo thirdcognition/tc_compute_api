@@ -13,6 +13,7 @@ import {
     ACLGroupModel
 } from "../supabase/acl.js";
 import { NotifierModel } from "../prototypes/notifierModel.js";
+import { rolesPerson1Options } from "../../../static/admin/src/js/options.js";
 
 export class UserAvatarData {
     constructor(email = null, name = null, profilePicture = null) {
@@ -137,7 +138,11 @@ export class UserData extends NotifierModel {
                 this.supabase,
                 { auth_id: this.authId }
             );
-            this.profile.listen(this.boundNotifyListeners);
+            if (this.profile) {
+                this.profile.listen(this.boundNotifyListeners);
+            } else {
+                console.log("Unable to initialize user profile");
+            }
         }
         return this.profile || null;
     }
