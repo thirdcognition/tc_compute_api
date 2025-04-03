@@ -148,9 +148,11 @@ export class UserData extends NotifierModel {
                 .from("organizations")
                 .select("*, organization_users(auth_id)")
                 .eq("organization_users.auth_id", this.authId);
-            this.organizations = response.data.map((data) =>
-                new OrganizationsModel(data).listen(this.boundNotifyListeners)
-            );
+            this.organizations = response.data.map((data) => {
+                const org = new OrganizationsModel(data);
+                org.listen(this.boundNotifyListeners);
+                return org;
+            });
         }
         return this.organizations;
     }
