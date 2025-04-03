@@ -141,23 +141,27 @@ export class UserData extends NotifierModel {
             if (this.profile) {
                 this.profile.listen(this.boundNotifyListeners);
             } else {
-                let retryCount = 1;
-                const retryProfile = setInterval(async () => {
-                    this.profile = await UserProfileModel.fetchFromSupabase(
-                        this.supabase,
-                        { auth_id: this.authId }
-                    );
-                    if (this.profile) {
-                        this.profile.listen(this.boundNotifyListeners);
-                        if (this.organizations.length == 0) {
-                            this.fetchOrganizations(refresh);
-                        }
-                        clearInterval(retryProfile);
-                    } else {
-                        console.log("Retry profile init fail", retryCount++);
-                    }
-                }, 500);
-                console.log("Unable to initialize user profile");
+                // let retryCount = 1;
+                // const retryProfile = setInterval(async () => {
+                //     this.profile = await UserProfileModel.fetchFromSupabase(
+                //         this.supabase,
+                //         { auth_id: this.authId }
+                //     );
+                //     if (this.profile) {
+                //         this.profile.listen(this.boundNotifyListeners);
+                //         if (this.organizations.length == 0) {
+                //             this.fetchOrganizations(refresh);
+                //         }
+                //         clearInterval(retryProfile);
+                //     } else {
+                //         console.log(
+                //             "Retry profile init fail",
+                //             this.authId,
+                //             retryCount++
+                //         );
+                //     }
+                // }, 500);
+                console.log("Unable to initialize user profile", this.authId);
             }
         }
         return this.profile || null;
