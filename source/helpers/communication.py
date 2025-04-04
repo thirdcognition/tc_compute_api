@@ -47,21 +47,34 @@ def send_email_about_new_shows_task(transcript_ids: list[str]):
 
     supabase = get_sync_supabase_service_client()
     # Fetch all users
+    # users: APIResponse = (
+    #     supabase.from_("user_profile")
+    #     .select("id, name, email, organization_users(user_id, organization_id)")
+    #     .neq("email", None)
+    #     .eq("organization_users.organization_id", SETTINGS.tc_org_id)
+    #     .neq("organization_users", None)
+    #     .execute()
+    # )
     users: APIResponse = (
-        supabase.from_("user_profile")
-        .select("id, name, email, organization_users(user_id, organization_id)")
-        .eq("organization_users.organization_id", SETTINGS.tc_org_id)
+        supabase.from_("organization_users")
+        .select("user_id, organization_id, user_profile(id, name, email)")
+        .eq("organization_id", SETTINGS.tc_org_id)
+        .neq("user_profile.email", None)
         .execute()
     )
+
     email = [
-        user["email"]
+        user["user_profile"]["email"]
         for user in users.data
         if user is not None
-        and user["email"] not in (None, "", "none")
-        and "@" in user["email"]
+        and user["user_profile"] is not None
+        and "@" in user["user_profile"]["email"]
     ]
+
+    # pretty_print(email, "emails", True, print)
+
     # email = "markus@thirdcognition.com"
-    if email is not None:
+    if email is not None and len(email) > 0:
         send_new_shows_email_task.delay(email, transcript_ids)
 
 
