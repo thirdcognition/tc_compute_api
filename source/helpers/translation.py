@@ -3,7 +3,7 @@ from typing import List, Optional
 from google.cloud import translate_v2 as translate
 from google.auth.credentials import AnonymousCredentials
 from source.load_env import SETTINGS
-from source.prompts.panel import TranscriptParser
+from source.prompts.panel.base import TranscriptParser
 
 
 LANGUAGE_NAME_TO_ISO: dict

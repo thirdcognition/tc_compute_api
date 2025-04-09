@@ -102,6 +102,14 @@ class QuestionClassifierParser(BaseOutputParser[tuple[bool, BaseMessage]]):
         if isinstance(text, BaseMessage):
             text = text.content
 
+        if "xml" in text:
+            xml_block = re.search(r"```xml\n(.*?)\n```", text, re.DOTALL)
+            if xml_block:
+                xml_string = xml_block.group(1).strip()
+
+                print("Extracted XML string:", xml_string)
+                text = xml_string
+
         # Remove <think> tags and <output> tags (keeping their content) before processing
         if isinstance(text, str):
             text = clean_tags(text, ["think", "reflection"]).strip()

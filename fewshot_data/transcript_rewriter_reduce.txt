@@ -1,103 +1,54 @@
 EXAMPLE 1:
 Input:
-<Person1>I went to the store earlier...</Person1>
-<Person2>Oh? What for?</Person2>
-<Person1>Just to pick up some apples.</Person1>
-<Person2>What kind of apples did you buy?</Person2>
-<Person1>Granny Smith. They’re my favorite for baking pies.</Person1>
-<Person2>Good choice. They’re perfect for that.</Person2>
+<Person1>Alright, let’s kick things off with Trump’s tariffs... a ten percent tariff on Chinese imports is officially in effect... China’s swift retaliation includes tariffs on United States coal, natural gas, and crude oil, along with export controls on rare earth minerals. What’s your take on this escalating trade war?</Person1>
+<Person2>It’s a significant escalation... China’s countermeasures, especially the export controls on rare earth minerals, are a strategic move... This isn’t just a trade spat anymore—it’s an economic chess game... And let’s not forget the United States Postal Service decision to briefly halt inbound packages from China...</Person2>
+<Person1>Right, the United States Postal Service decision... It’s a clear sign of how deeply these tariffs are disrupting not just trade but everyday operations. What does this mean for consumers...?</Person1>
+<Person2>It’s going to hit consumers hard, especially in sectors like electronics and footwear... Families will feel this pinch... And for businesses, especially smaller ones, the cost of adapting... can be crippling.</Person2>
 
 Output:
-<Person1>Went to the store earlier for apples.</Person1>
-<Person2>Apples, huh? What kind?</Person2>
-<Person1>Granny Smith—the best for making pies!</Person1>
-<Person2>Absolutely. They’re perfect for baking pies. Good pick!</Person2>
+<Person1>Trump's ten percent tariffs on Chinese goods, met by China's retaliation on energy and rare earths and disrupting logistics like the United States Postal Service, raise concerns. How does this affect consumers and businesses?</Person1>
+<Person2>It's a major escalation hitting consumers hard, especially via imports like electronics and footwear. Smaller businesses face crippling adaptation costs in this economic chess game.</Person2>
 
 EXAMPLE 2:
 Input:
-<Person1>What kind of cheese do you like?</Person1>
-<Person2>I really like</Person2>
-<Person1>Wait, let me guess. Edam?</Person1>
-<Person2>Yes! How did you know?</Person2>
-<Person1>It’s a classic. I love it too, especially with crackers.</Person1>
-<Person2>Exactly! It’s simple but so good.</Person2>
+<Person1>Speaking of adaptation... Chipotle... diversified their avocado supply chain... but not every company has the resources... What about smaller businesses? How are they coping?</Person1>
+<Person2>Smaller businesses are in a tough spot... lack the capital or infrastructure to quickly pivot... Many are forced to pass costs onto consumers... uncertainty... makes long-term planning nearly impossible...</Person2>
+<Person1>And the uncertainty isn’t just domestic. Internationally... Canada announced retaliatory tariffs... European leaders are bracing... How do you see this playing out on the global stage?</Person1>
+<Person2>It’s a precarious situation... If this escalates further, we could see a fragmentation of global trade alliances... fundamentally change how global trade operates.</Person2>
 
 Output:
-<Person1>What’s your favorite cheese?</Person1>
-<Person2>Edam! I’ve loved it for years. What about you?</Person1>
-<Person1>Same here! Nothing beats it with a handful of crackers—it’s just perfect.</Person1>
-<Person2>Absolutely! It’s got that simple, delicious vibe that’s just so comforting.</Person2>
+<Person1>While large companies like Chipotle adapt to tariffs, smaller businesses struggle with costs and uncertainty. How might this impact international trade relations and alliances?</Person1>
+<Person2>They're in a tough spot, lacking resources to pivot and facing planning paralysis. Globally, this risks fragmenting trade alliances and fundamentally altering international commerce if escalations continue.</Person2>
 
 EXAMPLE 3:
 Input:
-<Person1>Have you ever been to Paris?</Person1>
-<Person2>No, but I’d love to visit someday.</Person2>
-<Person1>It’s amazing. The Eiffel Tower is breathtaking.</Person1>
-<Person2>I can only imagine. Did you go to the top?</Person2>
-<Person1>Yes, and the view was incredible. You can see the whole city.</Person1>
-<Person2>That sounds unforgettable. I hope I can experience it one day.</Person2>
+<Person1>Let’s transition to Topic 2: Alphabet’s decision to revise its artificial intelligence ethical guidelines... removed their commitment to avoid using artificial intelligence for weapons and surveillance... What does this mean for the tech industry?</Person1>
+<Person2>This is a seismic shift... Alphabet... signals a prioritization of competitiveness over caution. Critics are understandably worried about the potential misuse of artificial intelligence... It’s a Pandora’s box...</Person2>
+<Person1>And the timing is interesting. Alphabet’s earnings report showed... revenue, slightly below expectations, and their stock dropped seven point five percent. Could this move be a reaction to financial pressure?</Person1>
+<Person2>That’s a possibility, but it also reflects the broader reality of artificial intelligence’s evolution... The question is whether this shift will erode public trust...</Person2>
 
 Output:
-<Person1>Ever been to Paris?</Person1>
-<Person2>Not yet, but it’s on my bucket list. Everyone says it’s stunning!</Person2>
-<Person1>It truly is. The Eiffel Tower’s view is out of this world—it’s like seeing the whole city in one snapshot.</Person1>
-<Person2>Sounds magical. I’d love to stand there someday and take it all in.</Person2>
+<Person1>Alphabet revised its artificial intelligence ethics, dropping restrictions on weapons and surveillance use, citing competition. Given their recent stock drop, could this be financially motivated, and what are the risks?</Person1>
+<Person2>It's a major shift prioritizing competitiveness over caution, potentially linked to finances but also artificial intelligence's evolution. The main risk is eroding public trust and the potential misuse of artificial intelligence, like autonomous weapons.</Person2>
 
 EXAMPLE 4:
 Input:
-<Person1>Do you enjoy hiking?</Person1>
-<Person2>Yes, especially in the mountains.</Person2>
-<Person1>Same here! The views are always worth the effort.</Person1>
-<Person2>Absolutely. I recently hiked a trail with a waterfall at the end.</Person2>
-<Person1>That sounds amazing. I love trails with waterfalls.</Person1>
-<Person2>It was. The sound of the water was so calming after the hike.</Person2>
+<Person1>...Moshfegh’s family lost everything... insurance only covers about half... relying on a GoFundMe... insurance companies are retreating from high-risk areas... It’s a systemic issue...</Person1>
+<Person2>Right. Even the California FAIR Plan... has major limitations. Higher premiums, less coverage—it’s a broken system. Families are questioning whether homeownership in California is even viable anymore. What needs to change?</Person2>
+<Person1>We need real collaboration between insurers and the government to create sustainable solutions... Without systemic reform, we’re going to see more families pushed to the brink.</Person1>
+<Person2>Absolutely. Well, that wraps up today’s episode...</Person2>
 
 Output:
-<Person1>Do you like hiking?</Person1>
-<Person2>Oh, I love it! Especially when it's in the mountains—the fresh air and the challenge are unbeatable.</Person2>
-<Person1>Totally agree. And the views always make the climb worth it!</Person1>
-<Person2>No doubt about it. I recently hiked this trail with a stunning waterfall at the end—it was so peaceful to just sit there and listen to the water after the trek.</Person2>
+<Person1>With families losing homes to wildfires, insurance retreating, and even the FAIR Plan proving inadequate, is California homeownership viable? What's the solution?</Person1>
+<Person2>It's a systemic crisis requiring insurer-government collaboration for sustainable solutions. Without reform protecting people's futures, more families will be pushed to the brink.</Person2>
 
 EXAMPLE 5:
 Input:
-<Person1>I went to the store earlier...</Person1>
-<Person2>Oh? What for?</Person2>
-<Person1>Just to pick up some apples.</Person1>
-<Person2>What kind of apples did you buy?</Person2>
+<Person1>Absolutely. Well, that wraps up today’s episode of Noisebites Staging. We covered everything from tariffs and trade tensions to tech shifts and human resilience. Any final thoughts?</Person1>
+<Person2>Just that it’s more important than ever to stay informed and prepared. These issues are complex, but understanding them is the first step toward navigating them effectively.</Person2>
+<Person1>Couldn’t agree more. Thank you to our listeners for joining us today. Stay curious, stay informed, and we’ll catch you next time on Noisebites Staging!</Person1>
+<Person2>Take care, everyone!</Person2>
 
 Output:
-<Person1>I went to the store and grabbed some apples. They looked really fresh!</Person1>
-<Person2>Fresh apples are the best. Did you go with something sweet or tart?</Person2>
-
-EXAMPLE 6:
-Input:
-<Person1>Do you enjoy hiking?</Person1>
-<Person2>Yes, especially in the mountains.</Person2>
-<Person1>Same here! The views are always worth the effort.</Person1>
-<Person2>Absolutely. I recently hiked a trail with a waterfall at the end.</Person2>
-
-Output:
-<Person1>Do you enjoy hiking? It’s such a great way to explore nature!</Person1>
-<Person2>Absolutely! Mountains are my favorite, and I love discovering spots like waterfalls along the trails.</Person2>
-
-EXAMPLE 7:
-Input:
-<Person1>Have you seen the latest episode of that series?</Person1>
-<Person2>Not yet. Is it good?</Person2>
-<Person1>It’s fantastic. The twist at the end blew my mind.</Person1>
-<Person2>Now I’m even more excited to watch it.</Person2>
-
-Output:
-<Person1>You caught the latest episode of that series? It’s mind-blowing!</Person1>
-<Person2>Not yet, but hearing that twist is amazing has me pumped to watch it soon!</Person2>
-
-EXAMPLE 8:
-Input:
-<Person1>Do you play any musical instruments?</Person1>
-<Person2>Yes, I play the guitar.</Person2>
-<Person1>That’s awesome. Do you play acoustic or electric?</Person1>
-<Person2>Both, but I prefer acoustic for its warm tone.</Person2>
-
-Output:
-<Person1>Do you play any musical instruments? I’ve always thought it’d be cool to learn one.</Person1>
-<Person2>Yeah, I play guitar—both acoustic and electric. Acoustic’s my favorite; there’s something about its warm tone that I love.</Person2>
+<Person1>Wrapping up today's episode covering tariffs, tech, and resilience. Final thoughts?</Person1>
+<Person2>Stay informed and prepared; understanding these complex issues is key. Thanks for listening, take care!</Person2>

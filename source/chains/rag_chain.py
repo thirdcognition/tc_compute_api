@@ -16,7 +16,7 @@ from langchain_core.runnables import (
 
 from source.models.config.logging import logger
 from source.chains.base import BaseChain, keep_chain_params, log_chain_params
-from source.chains.init import get_chain, get_llm
+from source.chains import get_chain, get_llm  # Updated import
 from source.helpers.shared import print_params
 from source.prompts.base import PromptFormatter
 from source.prompts.chat import question

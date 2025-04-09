@@ -150,6 +150,53 @@ class TranscriptSummary(BaseModel):
     )
 
 
+class TranscriptIssueCoverage(str, Enum):
+    WHOLE_TRANSCRIPT = "whole transcript"
+    MULTIPLE_SEGMENTS = "multiple segments"
+    SINGLE_SEGMENT = "single segment"
+
+
+class TranscriptQualityIssue(BaseModel):
+    title: str = Field(..., title="Title", description="Title describing the issue.")
+    details: str = Field(
+        ..., title="Issue details", description="Details about the issue."
+    )
+    suggestions: str = Field(
+        ..., title="Suggested fix", description="Suggestion on how to fix the issue."
+    )
+    transcript_segments: list[str] = Field(
+        ...,
+        title="Transcript segments",
+        description="One or more segments which have the issue and need to be fixed. Format should match original content: <personN>...</personN><personM>...</personM>",
+        min_length=1,
+    )
+    severity: int = Field(
+        ...,
+        title="Issue severity",
+        description="How severe is this issue with a scale from 1 to 5. 5 being most severe.",
+        min=1,
+        max=5,
+    )
+    issue_coverage: TranscriptIssueCoverage = Field(
+        ...,
+        title="Issue coverage",
+        description="Coverage for the issue impacting the transcript: 'whole transcript', 'multiple segments', or 'single segment'.",
+    )
+
+
+class TranscriptQualityCheck(BaseModel):
+    pass_test: bool = Field(
+        ...,
+        title="Valid transcript",
+        description="Boolean indicating whether the transcript passes the quality check. Set to True only if no issues are present.",
+    )
+    issues: List[TranscriptQualityIssue] = Field(
+        ...,
+        title="Issues",
+        description="List of issues for the transcript, if any.",
+    )
+
+
 class PanelMetadata(BaseModel):
     title: Optional[str] = None
     input_source: Optional[Union[str, List[str]]] = None

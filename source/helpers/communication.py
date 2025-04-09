@@ -23,7 +23,7 @@ from source.models.supabase.panel import (
     PanelTranscript,
     PanelTranscriptSourceReference,
 )
-from source.prompts.panel import TranscriptSummary
+from source.models.structures.panel import TranscriptSummary
 
 
 # Assuming a function to get the Supabase client

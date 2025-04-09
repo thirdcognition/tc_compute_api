@@ -1,6 +1,6 @@
 from langsmith import traceable
 from langchain_core.messages import BaseMessage
-from source.chains.init import get_chain
+from source.chains import get_chain  # Updated import
 from source.models.structures.news_article import NewsArticle
 from source.models.structures.url_result import UrlResult
 from typing import Tuple

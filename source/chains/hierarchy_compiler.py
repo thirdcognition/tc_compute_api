@@ -3,7 +3,7 @@ from typing import Callable, Dict, List, Optional
 from langchain_core.messages import AIMessage
 from pydantic import BaseModel
 
-from source.chains.init import get_chain
+from source.chains import get_chain  # Updated import
 from source.load_env import SETTINGS
 from source.models.config.logging import logger
 

@@ -63,9 +63,21 @@ def clean_tags(text: str, tags: list[str]) -> str:
 
 
 PRE_THINK_INSTRUCT = """
-        Reason through the query inside <think> tags, and then provide your final response inside <output> tags.
-        If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.
-        """
+Think step-by-step to plan your response. Use <think> tags to contain your reasoning process.
+If you realize a mistake or need to refine your thinking, correct it directly within the <think> tags.
+Once your reasoning is complete and correct, provide the final response inside <output> tags.
+
+Example:
+<think>
+1.  Analyze the user's request. The user wants X.
+2.  Initial thought: Provide Y.
+3.  Correction: Actually, Z would be a better response because of [reason].
+4.  Final plan: Respond with Z, ensuring it addresses the core request for X.
+</think>
+<output>
+This is the final output Z.
+</output>
+"""
 
 # PRE_THINK_INSTRUCT = ""
 
@@ -294,6 +306,14 @@ class TagsParser(BaseOutputParser[Union[str, Dict]]):
 
         if isinstance(text, str):
             text = text.strip()
+
+        if "xml" in text:
+            xml_block = re.search(r"```xml\n(.*?)\n```", text, re.DOTALL)
+            if xml_block:
+                xml_string = xml_block.group(1).strip()
+
+                print("Extracted XML string:", xml_string)
+                text = xml_string
 
         tag_html_parser.feed(
             f"<root>{text}</root>"

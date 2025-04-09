@@ -21,11 +21,9 @@ from source.helpers.sources import (
     fetch_links,
     manage_news_sources,
 )
-from source.llm_exec.panel_exec import (
-    transcript_combiner,
-    transcript_summary_writer,
-    transcript_translate,
-)
+from source.llm_exec.panel.structure import transcript_combiner
+from source.llm_exec.panel.summary import transcript_summary_writer
+from source.llm_exec.panel.modify import transcript_translate
 from source.models.structures.user import UserIDs
 from source.tasks.transcript import (
     generate_and_verify_transcript_task,

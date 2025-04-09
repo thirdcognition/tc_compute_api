@@ -20,7 +20,7 @@ from langchain.schema.document import Document
 
 from source.load_env import SETTINGS
 from source.models.config.logging import logger
-from source.chains.init import get_embeddings
+from source.chains import get_embeddings  # Updated import
 
 # from source.models.concepts import ConceptDataTable
 # from source.models.source import SourceContents

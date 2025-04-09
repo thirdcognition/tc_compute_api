@@ -2,17 +2,17 @@ EXAMPLE 1:
 Input:
 Transcript 1:
 <person1>The internet plays a huge role in our lives, but few consider its origins. Mia, how did it develop from a military project?</person1>
-<person2>It started with ARPANET in the 1960s, created by the U.S. Department of Defense during the Cold War. It introduced packet-switching, which enabled computers to communicate in new ways.</person2>
+<person2>It started with the ARPANET in the nineteen sixties, created by the United States Department of Defense during the Cold War. It introduced packet-switching, which enabled computers to communicate in new ways.</person2>
 <person1>It’s fascinating how it shifted from national security to what we use daily. What came next?</person1>
-<person2>By the 1970s, email was introduced, revolutionizing communication. Around the same time, TCP/IP protocols emerged, allowing networks to connect seamlessly—still the foundation of today’s internet.</person2>
+<person2>By the nineteen seventies, email was introduced, revolutionizing communication. Around the same time, T C P I P protocols emerged, allowing networks to connect seamlessly—still the foundation of today’s internet.</person2>
 <person1>Email changed everything, but when did the public really gain access?</person1>
-<person2>In the early 1990s, the World Wide Web and browsers like Mosaic made the internet user-friendly. This sparked e-commerce, messaging, and online communities.</person2>
+<person2>In the early nineteen nineties, the World Wide Web and browsers like Mosaic made the internet user-friendly. This sparked e-commerce, messaging, and online communities.</person2>
 <person1>Turning it into a public space brought opportunities—and challenges.</person1>
 <person2>True. Privacy issues, misinformation, and the digital divide are key concerns. Innovation must address these challenges responsibly.</person2>
-<person1>With IoT and 5G, the changes just keep coming. What’s your take?</person1>
-<person2>IoT links devices to improve daily life, while 5G enhances speed and low latency for real-time interactions. Both fuel innovation we’re still beginning to grasp.</person2>
+<person1>With the Internet of Things and five gee, the changes just keep coming. What’s your take?</person1>
+<person2>The Internet of Things links devices to improve daily life, while fifth generation enhances speed and low latency for real-time interactions. Both fuel innovation we’re still beginning to grasp.</person2>
 <person1>It’s amazing to think about its progression. Looking back really puts it in perspective.</person1>
-<person2>From ARPANET to today, the internet’s evolution reflects technical advancements and cultural shifts. Balancing innovation with responsibility is the next step.</person2>
+<person2>From the ARPANET to today, the internet’s evolution reflects technical advancements and cultural shifts. Balancing innovation with responsibility is the next step.</person2>
 
 Transcript 2:
 <person1>Climate change is no longer a distant problem. Heatwaves, floods—these extreme events are accelerating, and they’re affecting lives everywhere. Mia, it’s overwhelming, don’t you think?</person1>
@@ -27,10 +27,10 @@ Transcript 2:
 <person2>Hope matters, but action drives results. Science, grassroots efforts, and policy working together scale smaller successes into broader solutions. Collaboration makes it possible.</person2>
 
 Output:
-<person1>The internet shifted society in unbelievable ways. It’s a clear example of how innovation can redefine our world when applied effectively.</person1>
-<person2>We need that same drive now. Climate change brings challenges that touch every aspect of life, from weather extremes to resources.</person2>
-<person1>Renewables could reshape our energy systems, but the focus needs to include equitable access and local impacts.</person1>
-<person2>True progress means building systems that support communities while addressing global concerns.</person2>
+<person1>That evolution of the internet is staggering, and the call to balance innovation with responsibility is so important.</person1>
+<person2>It really is. Thinking about global challenges that demand that same balance, climate change immediately comes to mind.</person2>
+<person1>It's become such a pressing issue, with tangible impacts like extreme weather events.</person1>
+<person2>And similar to tech, addressing it involves harnessing innovation, like renewable energy, but doing so equitably.</person2>
 
 EXAMPLE 2:
 Input:
@@ -57,10 +57,10 @@ Transcript 2:
 <person2>It will. Gardening has a way of grounding you while teaching patience and care. You’ll enjoy it.</person2>
 
 Output:
-<person1>Repairing polarization feels slow, but steady. It’s about building trust through thoughtful efforts, big and small.</person1>
-<person2>Small efforts are powerful. Gardening, for instance, is a hands-on way to nurture something while staying present.</person2>
-<person1>Funny, I’ve been considering trying that—maybe some simple herbs for my balcony.</person1>
-<person2>Good idea. Herbs like parsley or basil grow well in tight spaces and are rewarding to care for.</person2>
+<person1>Undoing polarization requires such a coordinated effort, combining systemic changes with individual actions.</person1>
+<person2>It's a huge undertaking. Sometimes shifting focus to something tangible and personal, like nurturing a plant, can offer a different kind of perspective.</person2>
+<person1>It's interesting you mention that; I've been considering starting a small herb garden myself.</person1>
+<person2>That's a wonderful way to connect with something simple and find a bit of calm amidst the complexity.</person2>
 
 EXAMPLE 3:
 Input:
@@ -85,16 +85,16 @@ Transcript 2:
 <person2>Agreed. Intentional use is key. Social media can connect and empower, but only if you approach it with awareness and set limits that work for you.</person2>
 
 Output:
-<person1>Those moments show the depth of connection, but online, it often becomes something else.</person1>
-<person2>Social media shifts connection into performance, encouraging people to curate instead of share honestly.</person2>
-<person1>And that curation leads to comparisons that can be damaging, pulling people further from their own realities.</person1>
-<person2>The troubling part is how intentional it all feels—it’s built to hold attention, no matter the cost.</person2>
+<person1>Travel really underscores how profound genuine human connections can be, changing how we see things.</person1>
+<person2>It does. Which makes the contrast stark when you think about 'connection' in the digital space, particularly social media.</person2>
+<person1>It often feels less like authentic sharing and more like performance, creating pressure to project perfection.</person1>
+<person2>That curated reality and the resulting comparisons are definitely a challenge inherent in those platforms.</person2>
 
 EXAMPLE 4:
 Input:
-Rewrite 1:
+Transcript 1:
 <person1>Artificial intelligence reshapes industries, yet challenges us to reconcile innovation with ethics. How should that balance be achieved, Sam?</person1>
-<person2>That’s complex, Ava. AI has transformative potential in healthcare, education, and climate modeling. However, without oversight, there’s a risk of privacy intrusions and bias magnification.</person2>
+<person2>That’s complex, Ava. Artificial intelligence has transformative potential in healthcare, education, and climate modeling. However, without oversight, there’s a risk of privacy intrusions and bias magnification.</person2>
 <person1>Given issues like facial recognition and data collection, privacy remains a significant concern. What steps ensure individual rights are safeguarded?</person1>
 <person2>Focus on transparency and regulation. Establishing clear ethical guidelines during development and conducting robust data audits can mitigate potential harm.</person2>
 <person1>Another pressing issue is bias. Training datasets that lack diversity can reinforce systemic inequities. How can accountability be ensured here?</person1>
@@ -102,7 +102,7 @@ Rewrite 1:
 <person1>So achieving trust requires both technical refinement and cultural evolution?</person1>
 <person2>Fusing technological advancements with accountability ensures forward progress without compromising human values.</person2>
 
-Rewrite 2:
+Transcript 2:
 <person1>Chess feels so dynamic. The strategic depth almost seems artistic. What draws you to this game, Sam?</person1>
 <person2>The combination of logic and creativity is captivating. Each match tells a unique story. For instance, gambits add unpredictability while testing one’s adaptability.</person2>
 <person1>I’ve focused on improving lately, but endgames remain a struggle. There’s a pressure shift as pieces leave the board.</person1>
@@ -113,7 +113,7 @@ Rewrite 2:
 <person2>An excellent idea. Timeless strategies from the masters often reveal insights that remain relevant in contemporary play.</person2>
 
 Output:
-<person1>Fusing technological advancements with accountability ensures forward progress without compromising human values.</person1>
-<person2>That reminds me of chess—how each move builds a foundation and demands careful thought.</person2>
-<person1>And yet, creativity plays a big role in shaping the game’s direction amid all that structure.</person1>
-<person2>Gambits really highlight that blend, forcing quick decisions with lasting impact.</person2>
+<person1>So, successfully integrating artificial intelligence hinges on that careful fusion of technological power with ethical accountability.</person1>
+<person2>That blend of structure and human values reminds me a bit of chess – a game built on logic but demanding creativity.</person2>
+<person1>That's an apt comparison. Both involve navigating complex systems where strategic thinking is key.</person1>
+<person2>And where calculated moves, like gambits in chess, can significantly alter the outcome, demanding adaptability.</person2>

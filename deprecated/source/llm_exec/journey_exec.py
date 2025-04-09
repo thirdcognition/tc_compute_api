@@ -1,5 +1,5 @@
 import asyncio
-from source.chains.init import get_chain
+from source.chains import get_chain  # Updated import
 from source.helpers.journey import match_title_to_cat_and_key
 from source.load_env import SETTINGS
 

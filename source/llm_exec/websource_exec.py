@@ -2,7 +2,7 @@ import datetime
 from typing import List, Tuple
 
 from langsmith import traceable
-from source.chains.init import get_chain
+from source.chains import get_chain  # Updated import
 from source.models.structures.panel import SummaryReference, TranscriptMetadata
 from source.models.structures.user import UserIDs
 from source.models.structures.web_source import WebSource
