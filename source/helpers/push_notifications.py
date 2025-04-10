@@ -12,6 +12,8 @@ from requests.exceptions import ConnectionError, HTTPError
 from supabase import Client
 from app.core.celery_app import celery_app
 from app.core.supabase import get_sync_supabase_service_client
+
+# from source.helpers.shared import pretty_print
 from source.load_env import SETTINGS
 import json
 import time
@@ -112,35 +114,40 @@ def send_push_notifications_for_tasks(
 
     user_notifications: dict[str, UserPushNotification] = {}
 
-    print("[Notifications] Fetch Panel User Data")
+    # print(f"[Notifications] Fetch Panel User Data for {panel_ids=}")
     all_user_data_panels = UserDataModel.fetch_existing_from_supabase_sync(
         supabase,
         filter={"item": "panel_subscription"},
         id_column="target_id",
         values=panel_ids,
     )
-    print("[Notifications] Fetch Transcript User Data")
+    # print("[Notifications] Fetch Transcript User Data")
     all_user_data_transcripts = UserDataModel.fetch_existing_from_supabase_sync(
         supabase,
         id_column="target_id",
         values=transcript_ids,
         # values = {"target_id": transcript.id},
     )
+    # pretty_print(all_user_data_panels, "[Notifications] User data", True, print)
     all_user_ids = list(
-        {user_data_instance.auth_id for user_data_instance in all_user_data_transcripts}
+        {user_data_instance.auth_id for user_data_instance in all_user_data_panels}
     )
-    print(f"[Notifications] Fetch Connected User Profile Data {all_user_ids=}")
+    # print(f"[Notifications] all connected user ids {all_user_ids=}")
+
+    print(
+        f"[Notifications] Fetch Connected User Profile Data (since {(datetime.now() - timedelta(weeks=1)).isoformat()}) {all_user_ids=}"
+    )
     all_users = UserProfileModel.fetch_existing_from_supabase_sync(
         supabase,
         filter={
             "notification_data": {"neq": None},
-            "last_sign_in_at": {
-                "gt": (datetime.now() - timedelta(weeks=1)).isoformat()
-            },
+            "updated_at": {"gt": (datetime.now() - timedelta(weeks=1)).isoformat()},
         },
         values=all_user_ids,
         id_column="auth_id",
     )
+
+    # pretty_print(all_users, "[Notifications] Matching users", True, print)
 
     for transcript in transcripts:
         user_data_panels = [
@@ -167,9 +174,9 @@ def send_push_notifications_for_tasks(
                     if user_data_instance.auth_id == user.auth_id
                 ]
                 if len(transcript_user_data) == 0:
-                    print(
-                        f"[Notifications] Add transcript {transcript.title} ({transcript.id=}) for {user.name} ({user.auth_id=})"
-                    )
+                    # print(
+                    #     f"[Notifications] Add transcript {transcript.title} ({transcript.id=}) for {user.name} ({user.auth_id=})"
+                    # )
                     user_notifications[user.auth_id].transcripts.append(transcript)
 
     push_client = PushClient()
@@ -224,9 +231,9 @@ def send_push_notifications_for_tasks(
         except Exception as e:
             print(f"[Notifications] Unable to track analytics event. {e=}")
 
-        print(
-            f"[Notifications] Preparing notification(s) for user: {notification.user.auth_id}"
-        )
+        # print(
+        #     f"[Notifications] Preparing notification(s) for user: {notification.user.auth_id}"
+        # )
         used_tokens = defaultdict(list)
         for device_id, push_token in push_tokens.items():
             used_tokens[push_token].append(device_id)
@@ -252,7 +259,15 @@ def send_push_notifications_for_tasks(
         print("[Notifications] No notifications sent.")
         return
 
-    # print(f"[Notifications]  {messages=}")
+    print(
+        "[Notifications] Preparing to send notifications:\n"
+        + "\n".join(
+            [
+                f"{message['user'].email}: {message['message'].title}"
+                for message in messages
+            ]
+        )
+    )
 
     responses = []
 
