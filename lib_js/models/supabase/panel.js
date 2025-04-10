@@ -188,7 +188,7 @@ export class PanelTranscriptModel extends SupabaseModel {
 
     async fetchContent(supabase) {
         const { data } = await supabase.auth.getSession();
-        const accessToken = data.access_token;
+        const accessToken = data?.session?.access_token;
         if (!accessToken) {
             throw new Error("Access token is required to make the request.");
         }
