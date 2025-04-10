@@ -22,8 +22,8 @@ export declare class HostProfile {
 export declare class ConversationConfig {
     output_language?: string;
     conversation_style?: string[];
-    roles_person_1?: HostProfile | null;
-    roles_person_2?: HostProfile | null;
+    roles_person1?: HostProfile | null;
+    roles_person2?: HostProfile | null;
     dialogue_structure?: string[] | null;
     engagement_techniques?: string[] | null;
     user_instructions?: string | null;
@@ -40,8 +40,8 @@ export declare class ConversationConfig {
     constructor(params: {
         output_language?: string;
         conversation_style?: string[];
-        roles_person_1?: HostProfile | null;
-        roles_person_2?: HostProfile | null;
+        roles_person1?: HostProfile | null;
+        roles_person2?: HostProfile | null;
         dialogue_structure?: string[] | null;
         engagement_techniques?: string[] | null;
         user_instructions?: string | null;
