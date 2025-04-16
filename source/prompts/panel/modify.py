@@ -24,6 +24,15 @@ transcript_rewriter = PromptFormatter(
         {transcript_template["instructions"]["rewriter"]}
         {transcript_template["length"]["maintain"]}
 
+        **TTS Normalization Requirements (Apply to all revised sections and ensure they are preserved throughout):**
+        *   All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals) must always be written out as words (e.g., "ten" for 10, "zero point one" for 0.1, "two thousand twenty-four" for 2024, "may fifth" for May 5th, "first" for 1st, "forty-two dollars and fifty cents" for $42.50, "five five five, five five five, five five five five" for 555-555-5555, "three point one four" for 3.14, "two-thirds" for ⅔, "fourteen" for XIV unless a title, then "the fourteenth").
+        *   All abbreviations and units must always be expanded to their full spoken forms or natural vocalizations (e.g., "five gee" for 5G, "ten centimeters" for 10cm, "ten million" for 10M, "megabyte" for MB, "and so on" for etc., "Doctor" for Dr., "Avenue" for Ave., "Street" for St. except in names like "St. Patrick").
+        *   Alphanumeric shortcuts and symbols must be expanded (e.g., "control z" for Ctrl + Z, "one hundred percent" for 100%).
+        *   URLs must be written as spoken (e.g., "eleven labs dot io slash docs" for elevenlabs.io/docs).
+        *   Dates, times, and addresses must be written out in natural spoken form (e.g., "January first, two-thousand twenty-four" for 2024-01-01, "two thirty PM" for 14:30, "one two three Main Street, Anytown, United States of America" for 123 Main St, Anytown, USA).
+        *   If a specific spoken format is required for a context, follow the explicit instructions in the prompt.
+        *   Never revert any normalized text to symbols, digits, abbreviations, or non-spoken forms.
+
         **Speaker Role Interpretation:**
         {ROLES_PERSON_INSTRUCT}
 
@@ -71,7 +80,8 @@ transcript_rewriter = PromptFormatter(
             *   Main Item: {main_item}
 
         **Request:**
-        Revise the transcript above *only* to address the specified `Issues to Fix`, following all instructions in the system prompt and using the provided configuration. Maintain the original approximate `word_count`. Return the *entire* transcript (including unchanged parts) in the correct format.
+        Revise the transcript above *only* to address the specified `Issues to Fix`, following all instructions in the system prompt and using the provided configuration. Maintain the original approximate `word_count`.
+        All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals), abbreviations, units, symbols, phone numbers, URLs, dates, times, and addresses must remain fully written out in natural spoken form (e.g., "ten" for 10, "five gee" for 5G, "forty-two dollars and fifty cents" for $42.50, "control z" for Ctrl + Z, "eleven labs dot io slash docs" for elevenlabs.io/docs, "January first, two-thousand twenty-four" for 2024-01-01, etc.) and must never be reverted to symbols, digits, abbreviations, or non-spoken forms. Return the *entire* transcript (including unchanged parts) in the correct format.
         """
     ),
 )
@@ -139,7 +149,8 @@ transcript_rewriter_extend = PromptFormatter(
             *   Main Item: {main_item}
 
         **Request:**
-        Revise the transcript above to address the specified `Issues to Fix` AND significantly extend its length using the `Content` and context. Follow all instructions in the system prompt and use the provided configuration. Aim to exceed the target `word_count`. Return the *entire*, extended, and fixed transcript in the correct format. Do not return the original transcript unchanged.
+        Revise the transcript above to address the specified `Issues to Fix` AND significantly extend its length using the `Content` and context. Follow all instructions in the system prompt and use the provided configuration. Aim to exceed the target `word_count`.
+        All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals), abbreviations, units, symbols, phone numbers, URLs, dates, times, and addresses must remain fully written out in natural spoken form (e.g., "ten" for 10, "five gee" for 5G, "forty-two dollars and fifty cents" for $42.50, "control z" for Ctrl + Z, "eleven labs dot io slash docs" for elevenlabs.io/docs, "January first, two-thousand twenty-four" for 2024-01-01, etc.) and must never be reverted to symbols, digits, abbreviations, or non-spoken forms. Return the *entire*, extended, and fixed transcript in the correct format. Do not return the original transcript unchanged.
         """
     ),
 )
@@ -155,7 +166,7 @@ transcript_rewriter_reduce = PromptFormatter(
     system=textwrap.dedent(
         f"""
         **Role:** You are an Oscar-winning screenwriter specialized in revising and significantly compressing podcast transcripts based on specific feedback, while preserving all key information.
-        **Identity:** {transcript_template["identity_reduce"]} # Note: Using reduce identity
+        **Identity:** {transcript_template["identity_reduce"]}
 
         **Thinking Process Guidance:**
         {PRE_THINK_INSTRUCT}
@@ -163,8 +174,8 @@ transcript_rewriter_reduce = PromptFormatter(
         **Core Task:** Revise the provided podcast transcript to address the specific issues listed in the `feedback` (from user prompt) AND significantly reduce its length to meet the target `word_count`, while retaining all essential content.
 
         **Static Revision & Reduction Instructions:**
-        {transcript_template["instructions"]["rewriter"]} # Apply fixes as specified
-        {transcript_template["length"]["reduce"]} # Focus on significant compression
+        {transcript_template["instructions"]["rewriter"]}
+        {transcript_template["length"]["reduce"]}
 
         **Speaker Role Interpretation:**
         {ROLES_PERSON_INSTRUCT}
@@ -173,7 +184,7 @@ transcript_rewriter_reduce = PromptFormatter(
         {textwrap.indent(load_fewshot_examples('transcript_rewriter_reduce.txt'), prefix="        ")}
 
         **Output Format:**
-        {transcript_template["format"]} # Ensure numbers/abbreviations remain text
+        {transcript_template["format"]}
         """
     ),
     user=textwrap.dedent(
@@ -212,7 +223,8 @@ transcript_rewriter_reduce = PromptFormatter(
             *   Main Item: {main_item}
 
         **Request:**
-        Revise the transcript above to address the specified `Issues to Fix` AND significantly reduce its length to meet the target `word_count`, while preserving all essential content. Follow all instructions in the system prompt and use the provided configuration. Return the *entire*, compressed, and fixed transcript in the correct format (maintaining text for numbers/abbreviations). Do not return the original transcript unchanged.
+        Revise the transcript above to address the specified `Issues to Fix` AND significantly reduce its length to meet the target `word_count`, while preserving all essential content.
+        All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals), abbreviations, units, symbols, phone numbers, URLs, dates, times, and addresses must remain fully written out in natural spoken form (e.g., "ten" for 10, "five gee" for 5G, "forty-two dollars and fifty cents" for $42.50, "control z" for Ctrl + Z, "eleven labs dot io slash docs" for elevenlabs.io/docs, "January first, two-thousand twenty-four" for 2024-01-01, etc.) and must never be reverted to symbols, digits, abbreviations, or non-spoken forms. Return the *entire*, compressed, and fixed transcript in the correct format. Do not return the original transcript unchanged.
         """
     ),
 )
@@ -310,7 +322,7 @@ transcript_compress = PromptFormatter(
         1.  **Analyze Input:** Read the `transcript` and identify key information, redundant phrases, and opportunities for conciseness. Note the target length implicitly defined by the need to reduce.
         2.  **Plan Compression:** Strategize how to rephrase sentences, combine ideas, and remove non-essential words without losing meaning or conversational feel.
         3.  **Draft Compressed Dialogue:** Rewrite the transcript turn-by-turn, focusing on brevity and precision.
-        4.  **Verify:** Check that all key information is retained, the conversational structure is intact, and the length is significantly reduced. Ensure number/abbreviation format is maintained.
+        4.  **Verify:** Check that all key information is retained, the conversational structure is intact, and the length is significantly reduced. Ensure all TTS normalization requirements are maintained.
 
         **Core Task:** Reduce and compress the length of the provided transcript significantly, while maintaining *all* original content, meaning, and conversational structure.
 
@@ -320,7 +332,14 @@ transcript_compress = PromptFormatter(
         *   **Preservation:** Retain *all* key information, context, and meaning. This is length reduction, not content omission.
         *   **Method:** Consolidate dialogue, rephrase for brevity, remove filler/unnecessary words. Focus on precision.
         *   **Structure:** Maintain the `<personN>...</personN>` structure and speaker sequence. Do not remove or add speaker tags.
-        *   **Formatting Constraint:** Do *not* revert numbers/abbreviations back to symbols/digits. Maintain the text/vocalization format (e.g., 'ten', 'five gee', 'ten centimeters', 'and so on').
+        *   **TTS Normalization Requirements (Must be strictly maintained during compression):**
+            - All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals) must always be written out as words (e.g., "ten" for 10, "zero point one" for 0.1, "two thousand twenty-four" for 2024, "may fifth" for May 5th, "first" for 1st, "forty-two dollars and fifty cents" for $42.50, "five five five, five five five, five five five five" for 555-555-5555, "three point one four" for 3.14, "two-thirds" for ⅔, "fourteen" for XIV unless a title, then "the fourteenth").
+            - All abbreviations and units must always be expanded to their full spoken forms or natural vocalizations (e.g., "five gee" for 5G, "ten centimeters" for 10cm, "ten million" for 10M, "megabyte" for MB, "and so on" for etc., "Doctor" for Dr., "Avenue" for Ave., "Street" for St. except in names like "St. Patrick").
+            - Alphanumeric shortcuts and symbols must be expanded (e.g., "control z" for Ctrl + Z, "one hundred percent" for 100%).
+            - URLs must be written as spoken (e.g., "eleven labs dot io slash docs" for elevenlabs.io/docs).
+            - Dates, times, and addresses must be written out in natural spoken form (e.g., "January first, two-thousand twenty-four" for 2024-01-01, "two thirty PM" for 14:30, "one two three Main Street, Anytown, United States of America" for 123 Main St, Anytown, USA).
+            - If a specific spoken format is required for a context, follow the explicit instructions in the prompt.
+            - Never revert any normalized text to symbols, digits, abbreviations, or non-spoken forms.
 
         **Speaker Role Interpretation:**
         {ROLES_PERSON_INSTRUCT}
@@ -349,7 +368,8 @@ transcript_compress = PromptFormatter(
         *   Other instructions: {user_instructions}
 
         **Request:**
-        Significantly reduce and shorten the provided `{transcript}` while preserving all its content, meaning, and structure. Follow all system prompt instructions and adhere to the specified configuration (`output_language`, roles, etc.). Ensure numbers/abbreviations remain in text/vocalization format. Return the *entire* compressed transcript. Do not return the original transcript unchanged.
+        Significantly reduce and shorten the provided `{transcript}` while preserving all its content, meaning, and structure.
+        All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals), abbreviations, units, symbols, phone numbers, URLs, dates, times, and addresses must remain fully written out in natural spoken form (e.g., "ten" for 10, "five gee" for 5G, "forty-two dollars and fifty cents" for $42.50, "control z" for Ctrl + Z, "eleven labs dot io slash docs" for elevenlabs.io/docs, "January first, two-thousand twenty-four" for 2024-01-01, etc.) and must never be reverted to symbols, digits, abbreviations, or non-spoken forms. Return the *entire* compressed transcript. Do not return the original transcript unchanged.
         """
     ),
 )
@@ -359,25 +379,34 @@ transcript_compress.parser = TranscriptParser()
 transcript_translate = PromptFormatter(
     system=textwrap.dedent(
         f"""
-        **Role:** You are a skilled translator specialized in accurately translating conversational transcripts while preserving original context, tone, structure, and formatting.
+        **Role:** You are a skilled translator specialized in accurately translating conversational transcripts while preserving original context, tone, structure, formatting, and TTS normalization.
 
         **Core Task:** Translate the provided transcript (from user prompt) into the specified target language.
 
         **Static Instructions & Guidelines:**
 
-        *   **Exact Translation:** Translate the content within speaker tags precisely. Do *not* add, remove, or modify information.
+        *   **Natural Discussion:** Ensure the resulting translation reads like a natural, fluent discussion in the target language. Avoid rigid or overly literal translations that feel out of place or awkward in conversational contexts.
+        *   **Intent-Focused Translation:** Translate the content within speaker tags to convey the **intent and meaning** accurately, even if it requires rephrasing. Avoid word-for-word translations unless they perfectly convey the original meaning.
         *   **Formatting Preservation:** Maintain the exact `<personN>...</personN>` structure, including the speaker tags themselves (e.g., `<person1>` remains `<person1>`). Maintain approximate original length.
         *   **Tone & Flow:** Preserve the original conversational tone, flow, context, humor, sarcasm, or formality.
         *   **Linguistic Accuracy:** Ensure grammatical correctness in the target language.
         *   **Idioms & Colloquialisms:** Adapt expressions to natural equivalents in the target language, preserving meaning and cultural relevance. Use casual, everyday language where appropriate.
-        *   **Numbers/Abbreviations (Target Language):** Write all numbers, abbreviations, and units in their correct textual or vocalized form *in the target language*.
+        *   **TTS Normalization Requirements (Must be strictly maintained in the target language):**
+            - All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals) must always be written out as words in the target language (e.g., "ten" for 10, "zero point one" for 0.1, "two thousand twenty-four" for 2024, "may fifth" for May 5th, "first" for 1st, "forty-two dollars and fifty cents" for $42.50, "five five five, five five five, five five five five" for 555-555-5555, "three point one four" for 3.14, "two-thirds" for ⅔, "fourteen" for XIV unless a title, then "the fourteenth").
+            - All abbreviations and units must always be expanded to their full spoken forms or natural vocalizations in the target language (e.g., "five gee" for 5G, "ten centimeters" for 10cm, "ten million" for 10M, "megabyte" for MB, "and so on" for etc., "Doctor" for Dr., "Avenue" for Ave., "Street" for St. except in names like "St. Patrick").
+            - Alphanumeric shortcuts and symbols must be expanded (e.g., "control z" for Ctrl + Z, "one hundred percent" for 100%).
+            - URLs must be written as spoken (e.g., "eleven labs dot io slash docs" for elevenlabs.io/docs).
+            - Dates, times, and addresses must be written out in natural spoken form (e.g., "January first, two-thousand twenty-four" for 2024-01-01, "two thirty PM" for 14:30, "one two three Main Street, Anytown, United States of America" for 123 Main St, Anytown, USA).
+            - If a specific spoken format is required for a context, follow the explicit instructions in the prompt.
+            - Never revert any normalized text to symbols, digits, abbreviations, or non-spoken forms.
         *   **Punctuation:** Use punctuation and grammar conventions appropriate for the target language's conversational style.
         *   **Dialogue Elements:** Keep interruptions, pauses, or overlapping dialogue structurally similar to the original.
         *   **Cultural Nuances:** Avoid literal translations of culturally unique phrases; use functional equivalents or clarify if necessary.
+        *   **Rewriting When Necessary:** Reword phrases where a direct translation would lose the original meaning, intent, or tone, ensuring the result feels natural and consistent with the target language's conversational norms.
 
         **Output Format:**
         {transcript_template["format"]}
-        - Ensure the output uses the correct text/vocalization format for numbers/abbreviations *in the target language*.
+        - Ensure the output uses the correct text/vocalization format for numbers/abbreviations and all TTS normalization requirements *in the target language*.
         """
     ),
     user=textwrap.dedent(
@@ -401,7 +430,8 @@ transcript_translate = PromptFormatter(
         *   Other instructions: {user_instructions}
 
         **Request:**
-        Translate the transcript above from `{source_language}` to `{target_language}`. Follow all system prompt instructions meticulously, preserving content, structure, formatting, tone, and length. Ensure numbers/abbreviations are correctly formatted in `{target_language}`. Output the complete translated transcript in the specified format.
+        Translate the transcript above from `{source_language}` to `{target_language}`. Follow all system prompt instructions meticulously, preserving content, structure, formatting, tone, and length.
+        All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals), abbreviations, units, symbols, phone numbers, URLs, dates, times, and addresses must be fully written out in natural spoken form in the target language (e.g., "ten" for 10, "five gee" for 5G, "forty-two dollars and fifty cents" for $42.50, "control z" for Ctrl + Z, "eleven labs dot io slash docs" for elevenlabs.io/docs, "January first, two-thousand twenty-four" for 2024-01-01, etc.) and must never be reverted to symbols, digits, abbreviations, or non-spoken forms. Output the complete translated transcript in the specified format.
         """
     ),
 )

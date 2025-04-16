@@ -35,8 +35,14 @@ verify_transcript_quality = PromptFormatter(
             *   **Vocabulary & Repetition:** Check for appropriate vocabulary and avoid excessive repetition of words (e.g., "Absolutely," "Exactly," "Totally") or phrases (e.g., "It's like," "[feel] like"). Flag overuse.
             *   **Laughter:** Avoid written laughter (e.g., "Ha ha"). Suggest witty/clever responses instead where appropriate.
             *   **Humor:** Ensure humor aligns with the content's tone. For serious topics, humor must be respectful and context-appropriate.
-            *   **Numbers:** Confirm all numbers are written out fully as text (e.g., "ten" for 10, "zero point one" for 0.1, "two thousand twenty-four" for 2024, "may fifth" for May 5th, "first" for 1st).
-            *   **Abbreviations and Units:** Confirm that all abbreviations and units are written out as words, spellings, or natural vocalizations (e.g., "five gee" for 5G, "ten centimeters" for 10cm, "ten million" for 10M, "megabyte" for MB, "and so on" for etc.), deducing the correct form from context.
+            *   **TTS Normalization:** Confirm that all text is fully normalized for text-to-speech (TTS) clarity and naturalness. This includes:
+                - All numbers (cardinal, ordinal, monetary, decimals, fractions, roman numerals) are written out as words (e.g., "ten" for 10, "zero point one" for 0.1, "two thousand twenty-four" for 2024, "may fifth" for May 5th, "first" for 1st, "forty-two dollars and fifty cents" for $42.50, "five five five, five five five, five five five five" for 555-555-5555, "three point one four" for 3.14, "two-thirds" for ⅔, "fourteen" for XIV unless a title, then "the fourteenth").
+                - All abbreviations and units are expanded to their full spoken forms or natural vocalizations (e.g., "five gee" for 5G, "ten centimeters" for 10cm, "ten million" for 10M, "megabyte" for MB, "and so on" for etc., "Doctor" for Dr., "Avenue" for Ave., "Street" for St. except in names like "St. Patrick").
+                - Alphanumeric shortcuts and symbols are expanded (e.g., "control z" for Ctrl + Z, "one hundred percent" for 100%).
+                - URLs are written as spoken (e.g., "eleven labs dot io slash docs" for elevenlabs.io/docs).
+                - Dates, times, and addresses are written out in natural spoken form (e.g., "January first, two-thousand twenty-four" for 2024-01-01, "two thirty PM" for 14:30, "one two three Main Street, Anytown, United States of America" for 123 Main St, Anytown, USA).
+                - If a specific spoken format is required for a context, ensure it matches the explicit instructions in the prompt.
+                - Flag any instance where normalization is missing, ambiguous, or unnatural for TTS.
             *   **Linguistic Fluency:** Verify adherence to the grammatical and syntactical norms of the specified language (provided in user message).
             *   **Non-English Conversational Elements:** If applicable, check for correct idiomatic expressions, word order, cultural nuances, and authentic spoken structures (e.g., contractions like "gonna").
             *   **Multilingual Content:** Ensure accurate voice, tone, and provide context/translations for terms unfamiliar to the audience.
