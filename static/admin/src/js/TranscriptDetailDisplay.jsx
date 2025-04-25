@@ -1,122 +1,324 @@
 import { useState, useEffect } from "react";
-import AudioDetailDisplay from "./AudioDetailDisplay.jsx";
-import { handleCreateTranscript } from "./helpers/panel.js";
+import { Button, Card, Accordion } from "react-bootstrap"; // Keep Accordion for nested source display
+
 import {
     fetchPanelDetails,
     fetchTranscriptContent,
     updateTranscript
 } from "./helpers/fetch.js";
-import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
 import {
-    processStateIcon,
-    getWordCountDescription,
-    formatCronjob
-} from "./helpers/ui.js";
-import { FaTimes, FaClock, FaCalendarAlt } from "react-icons/fa";
-import CronjobComponent from "./components/CronjobComponent.jsx";
-import { Button, Card, Accordion } from "react-bootstrap";
+    showConfirmationDialog,
+    handleDeleteItem,
+    handleCreateTranscript
+} from "./helpers/panel.js";
+import { getWordCountDescription, formatCronjob } from "./helpers/ui.js";
 import { pollTaskStatus } from "./helpers/pollState.js";
+import { prepareDuplicateTranscriptParams } from "./helpers/transcriptHelpers.js"; // Import helper
 
+// Shared Components
+import AudioDetailDisplay from "./AudioDetailDisplay.jsx"; // Keep this specific display component
+import CronjobComponent from "./components/CronjobComponent.jsx";
+import StatusHeader from "./components/StatusHeader.jsx";
+import ErrorMessage from "./components/ErrorMessage.jsx";
+import SectionCard from "./components/SectionCard.jsx";
+import ObjectDisplay from "./components/ObjectDisplay.jsx";
+import DetailAccordion from "./components/DetailAccordion.jsx";
+import RemoveButton from "./components/RemoveButton.jsx";
+
+// --- Main Component ---
 const TranscriptDetailDisplay = ({ transcript }) => {
-    const [showDetails, setShowDetails] = useState(false);
+    // --- State ---
     const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
     const [transcriptContent, setTranscriptContent] = useState("");
     const [cronjob, setCronjob] = useState(
         transcript.generation_cronjob || transcript.metadata?.cronjob || ""
-    ); // Editable cronjob in seconds
-    const config = transcript.metadata?.conversation_config || {};
-    const [panelData, setPanelData] = useState([]);
+    );
+    const [panelData, setPanelData] = useState(null); // For discussionData if needed for recreate
     const [audios, setAudios] = useState([]);
-    const [transcriptUrls, setTranscriptUrls] = useState({});
-    const [audioUrls, setAudioUrls] = useState({});
+    const [transcriptUrls, setTranscriptUrls] = useState({}); // Needed for fetching content
+    const [audioUrls, setAudioUrls] = useState({}); // Passed down to AudioDetailDisplay
     const [transcriptSources, setTranscriptSources] = useState([]);
-    const [, setIsPolling] = useState(false);
+    const [, setIsPolling] = useState(false); // Keep for pollTaskStatus callback
     const [isSourcesVisible, setIsSourcesVisible] = useState(false);
-    const [taskStatus, setTaskStatus] = useState("idle");
+    const [taskStatus, setTaskStatus] = useState("idle"); // For recreate button state
 
+    // --- Derived Data ---
+    const config = transcript.metadata?.conversation_config || {};
+    const metadata = transcript.metadata || {};
+
+    // --- Effects ---
     useEffect(() => {
+        // Fetch related data when transcript ID changes
         fetchPanelDetails(transcript.panel_id).then((response) => {
-            setPanelData(response.discussionData);
-            const processedSources = Object.entries(
-                response.transcriptSources || {}
-            ).map(([id, sources]) => {
-                const transcript = response.transcriptData.find(
-                    (t) => t.id === id
-                );
-                if (
-                    Array.isArray(transcript?.metadata?.subjects) &&
-                    typeof transcript.metadata.subjects[0] === "object"
-                ) {
+            setPanelData(response.discussionData); // Store discussion data if needed
+            setAudioUrls(response.filesData.audio_urls);
+            setTranscriptUrls(response.filesData.transcript_urls);
+            setAudios(response.audioData || []); // Ensure audios is an array
+
+            // Process sources (simplified logic from original)
+            const sourcesById = response.transcriptSources || {};
+            const processed = Object.entries(sourcesById)
+                .map(([id, sources]) => {
+                    const t = response.transcriptData.find(
+                        (tr) => tr.id === id
+                    );
+                    // Prefer subjects if available and structured correctly
+                    if (
+                        Array.isArray(t?.metadata?.subjects) &&
+                        typeof t.metadata.subjects[0] === "object"
+                    ) {
+                        return { id, data: t.metadata.subjects };
+                    }
+                    // Fallback to processing transcriptSources array
                     return {
                         id,
-                        data: transcript.metadata?.subjects
+                        data: Array.isArray(sources)
+                            ? sources.map((s) => ({
+                                  id: s?.id,
+                                  url: s?.data?.url || "",
+                                  title: s?.data?.title || "",
+                                  publish_date: s?.data?.publish_date || "",
+                                  image:
+                                      s?.data?.image ||
+                                      t?.metadata?.images?.[
+                                          sources.indexOf(s)
+                                      ] ||
+                                      ""
+                              }))
+                            : []
                     };
-                }
-                // Fallback to processing transcriptSources
-                return {
-                    id,
-                    data: sources.map((s, i) => ({
-                        id: s?.id,
-                        url: s?.data?.url || "",
-                        title: s?.data?.title || "",
-                        publish_date: s?.data?.publish_date || "",
-                        image:
-                            s?.data?.image ||
-                            transcript?.metadata?.images?.[i] ||
-                            ""
-                    }))
-                };
-            });
-
-            setTranscriptSources(processedSources);
-            setTranscriptUrls(response.filesData.transcript_urls);
-            setAudioUrls(response.filesData.audio_urls);
-            setAudios(response.audioData);
-        });
-    }, [transcript.panel_id, transcript.id]);
-
-    const toggleTranscriptVisibility = (transcriptId) => {
-        if (!isTranscriptVisible && transcriptUrls[transcriptId]) {
-            fetchTranscriptContent(transcriptUrls[transcriptId])
-                .then((text) => {
-                    setTranscriptContent(text);
-                    setIsTranscriptVisible(true);
                 })
-                .catch((error) =>
-                    console.error("Error fetching transcript:", error)
-                );
-        } else {
-            setIsTranscriptVisible(!isTranscriptVisible);
+                .filter((p) => p.id === transcript.id); // Only keep sources for the current transcript
+
+            setTranscriptSources(processed[0]?.data || []); // Get data for the current transcript or empty array
+        });
+    }, [transcript.panel_id, transcript.id]); // Rerun if panel or transcript ID changes
+
+    // --- Handlers ---
+    // Handler for the DetailAccordion's onItemToggle prop
+    const handleAccordionItemToggle = (item, isOpen) => {
+        // Check if the toggled item is the transcript section
+        if (item.id === "transcript") {
+            setIsTranscriptVisible(isOpen); // Update visibility state
+
+            // Fetch content only if opening and content isn't already loaded/loading
+            if (isOpen && !transcriptContent) {
+                const transcriptUrl = transcriptUrls[transcript.id];
+                if (transcriptUrl) {
+                    setTranscriptContent("Loading transcript..."); // Indicate loading
+                    fetchTranscriptContent(transcriptUrl)
+                        .then((text) => {
+                            // Check state again in case it was closed quickly
+                            setIsTranscriptVisible((currentVis) => {
+                                if (currentVis) {
+                                    // Only update if still visible
+                                    setTranscriptContent(text);
+                                }
+                                return currentVis;
+                            });
+                        })
+                        .catch((error) => {
+                            console.error("Error fetching transcript:", error);
+                            setIsTranscriptVisible((currentVis) => {
+                                if (currentVis) {
+                                    // Only update if still visible
+                                    setTranscriptContent(
+                                        "Error loading transcript."
+                                    );
+                                }
+                                return currentVis;
+                            });
+                        });
+                } else {
+                    setIsTranscriptVisible((currentVis) => {
+                        if (currentVis) {
+                            // Only update if still visible
+                            setTranscriptContent("Transcript URL not found.");
+                        }
+                        return currentVis;
+                    });
+                }
+            } else if (!isOpen) {
+                // Optional: Clear content when closing
+                // setTranscriptContent("");
+            }
+        }
+        // Handle other items if needed, e.g., sources visibility
+        else if (item.id === "sources") {
+            setIsSourcesVisible(isOpen);
         }
     };
 
-    const renderTranscript = (transcriptContent) => {
-        const personRegex = /<([^>]+)>([^<]+)<\/\1>/g;
-        const matches = [...transcriptContent.matchAll(personRegex)];
-
-        return matches.map((match, index) => (
-            <div
-                key={index}
-                className="flex items-start mb-2 p-2 border-b border-gray-300"
-            >
-                <strong className="text-blue-600 w-24">{match[1]}</strong>
-                <span className="text-gray-700 flex-1">{match[2].trim()}</span>
-            </div>
-        ));
+    const handleUpdateTranscriptCron = async (newCronjob) => {
+        try {
+            const updatedTranscript = await updateTranscript(
+                transcript.id,
+                transcript, // Pass the current transcript data
+                newCronjob
+            );
+            setCronjob(updatedTranscript.generation_cronjob || "");
+        } catch (error) {
+            console.error("Error updating transcript cronjob:", error);
+            alert("Failed to update schedule.");
+        }
     };
 
-    const sourceItem = (option) => (
-        <Card key={option.url} className="mb-4">
+    const handleDuplicateTranscript = async () => {
+        setTaskStatus("processing");
+        try {
+            // Prepare parameters using the helper function
+            const params = prepareDuplicateTranscriptParams(
+                transcript,
+                panelData
+            );
+
+            if (!params) {
+                // Handle error if params couldn't be prepared
+                setTaskStatus("failure");
+                alert(
+                    "Failed to prepare parameters for transcript duplication."
+                );
+                return;
+            }
+
+            const { taskId, success } = await handleCreateTranscript(params);
+            if (success && taskId) {
+                initiatePolling(taskId, "transcript"); // Use the component's polling initiator
+            } else {
+                setTaskStatus("failure");
+                alert("Failed to initiate transcript duplication.");
+            }
+        } catch (error) {
+            console.error("Error duplicating transcript:", error);
+            setTaskStatus("failure");
+            alert("An error occurred while duplicating the transcript.");
+        }
+    };
+
+    const initiatePolling = (taskId, type) => {
+        setTaskStatus("processing");
+        setIsPolling(true); // Indicate polling started
+        setTimeout(() => {
+            pollTaskStatus(
+                taskId,
+                type,
+                () => {
+                    setTaskStatus("success");
+                    setIsPolling(false); /* TODO: Refresh data? */
+                },
+                () => {
+                    setTaskStatus("failure");
+                    setIsPolling(false);
+                },
+                () => {
+                    console.error("Error polling task status");
+                    setTaskStatus("failure");
+                    setIsPolling(false);
+                },
+                (pollingStatus) => setIsPolling(pollingStatus) // Update polling state
+            );
+        }, 1000);
+    };
+
+    const refreshAudios = () => {
+        fetchPanelDetails(transcript.panel_id).then((response) => {
+            setAudios(response.audioData || []);
+            setAudioUrls(response.filesData.audio_urls);
+        });
+    };
+
+    const handleDeleteAudio = (audioId) => {
+        handleDeleteItem({ type: "audio", id: audioId }, refreshAudios);
+    };
+
+    // --- Render Functions ---
+
+    // Renders the transcript text content with speaker tags highlighted
+    const renderTranscriptContent = (content) => {
+        if (!content) return <p>Loading transcript...</p>;
+        if (content === "Error loading transcript.")
+            return <p className="text-red-500">{content}</p>; // Tailwind for error
+
+        // Regex to capture tag (e.g., Person1), optional emote, and text, allowing other attributes
+        const segmentRegex =
+            /<([A-Za-z]+[0-9]+)(?:[^>]*emote="([^"]*)")?[^>]*>([^<]+)<\/\1>/g;
+        const matches = [...content.matchAll(segmentRegex)];
+        const wordCount = content.replace(/<[^>]+>/g, "").split(/\s+/).length;
+
+        // Get person roles for name mapping
+        const personRoles = config?.person_roles || {};
+
+        if (matches.length > 0) {
+            return (
+                <>
+                    <p className="mb-2 text-gray-500 text-sm">
+                        Word Count: {wordCount}
+                    </p>
+                    {matches.map((match, index) => {
+                        const tagName = match[1]; // e.g., "Person1"
+                        const emote = match[2]; // e.g., "excited" or undefined
+                        const text = match[3].trim(); // The actual transcript line
+
+                        // Extract number from tag (e.g., "1" from "Person1")
+                        const personNumberMatch = tagName.match(/[0-9]+/);
+                        const personNumber = personNumberMatch
+                            ? personNumberMatch[0]
+                            : null;
+
+                        // Get display name from config, fallback to tag name
+                        const speakerName =
+                            personNumber && personRoles[personNumber]?.name
+                                ? personRoles[personNumber].name
+                                : tagName;
+
+                        return (
+                            <div
+                                key={index}
+                                className="flex mb-2 border-b pb-2"
+                            >
+                                <span className="font-semibold text-blue-600 mr-3 min-w-[80px] flex-shrink-0">
+                                    {speakerName}
+                                </span>
+                                <span className="flex-1">
+                                    {text}
+                                    {emote && (
+                                        <div className="text-gray-400 ml-1">
+                                            - {emote}
+                                        </div>
+                                    )}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </>
+            );
+        } else {
+            // No matches found, display raw content
+            return (
+                <>
+                    <p className="mb-2 text-gray-500 text-sm">
+                        Word Count: {wordCount}
+                    </p>
+                    {/* Use whitespace-pre-wrap to preserve line breaks and spacing */}
+                    <p className="whitespace-pre-wrap">{content}</p>
+                </>
+            );
+        }
+    };
+
+    // Renders a single source item card
+    const renderSourceItem = (option, index) => (
+        <Card key={option.url || option.title || index} className="mb-3">
             {option.image && (
                 <Card.Img
                     variant="top"
                     src={option.image}
                     alt={option.title}
-                    className="rounded object-cover"
+                    style={{ maxHeight: "150px", objectFit: "cover" }}
                 />
             )}
             <Card.Body>
-                <Card.Title>
+                <Card.Title as="h6">
                     {Array.isArray(option.url) && option.url.length > 1 ? (
                         <Accordion>
                             <Accordion.Item eventKey="0">
@@ -124,15 +326,15 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                                     {option.title}
                                 </Accordion.Header>
                                 <Accordion.Body>
-                                    {option.url.map((url, index) => (
+                                    {option.url.map((url, idx) => (
                                         <a
-                                            key={index}
-                                            href={url.trim()}
+                                            key={idx}
+                                            href={url?.trim()}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-xs block text-gray-500 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                                            className="d-block small text-truncate"
                                         >
-                                            {index + 1}: {url.trim()}
+                                            {idx + 1}: {url?.trim()}
                                         </a>
                                     ))}
                                 </Accordion.Body>
@@ -147,491 +349,277 @@ const TranscriptDetailDisplay = ({ transcript }) => {
                             }
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs block text-gray-500 hover:underline overflow-hidden text-ellipsis whitespace-nowrap"
+                            className="text-decoration-none"
                         >
                             {option.title}
                         </a>
                     )}
                 </Card.Title>
-                <Card.Text>
-                    {new Date(option.publish_date).toLocaleString()}
-                </Card.Text>
+                {option.publish_date && (
+                    <Card.Text className="text-muted small mt-1">
+                        Published:{" "}
+                        {new Date(option.publish_date).toLocaleDateString()}
+                    </Card.Text>
+                )}
             </Card.Body>
         </Card>
     );
 
-    const renderSources = (id) => {
-        return (
-            transcriptSources
-                ?.filter((t) => t.id === id)
-                ?.at(0)
-                ?.data?.filter((i) => !!i.title)
-                ?.map((option) => {
-                    console.log("option", option);
-                    if (option.references) {
-                        return (
-                            <Accordion key={option.title} className="mb-4">
-                                <Accordion.Item eventKey="0">
-                                    <Accordion.Header>
-                                        {option.title}
-                                    </Accordion.Header>
-                                    <Accordion.Body>
-                                        <Card.Text className="mb-4">
-                                            {option.description}
-                                        </Card.Text>
-                                        {option.references.map(sourceItem)}
-                                    </Accordion.Body>
-                                </Accordion.Item>
-                            </Accordion>
-                        );
-                    } else {
-                        return sourceItem(option);
-                    }
-                }) || <div>No sources found.</div>
-        );
-    };
-
-    const toggleSourcesVisibility = () => {
-        setIsSourcesVisible(!isSourcesVisible);
-    };
-
-    const handleUpdateTranscript = async (newCronjob) => {
-        try {
-            const updatedTranscript = await updateTranscript(
-                transcript.id,
-                transcript,
-                newCronjob
-            );
-            setCronjob(updatedTranscript.generation_cronjob || "");
-        } catch (error) {
-            console.error("Error updating transcript:", error);
+    // Renders the list of sources
+    const renderSourcesList = () => {
+        if (!transcriptSources || transcriptSources.length === 0) {
+            return <p>No sources found.</p>;
         }
-    };
 
-    const handleDuplicateTranscript = async () => {
-        setTaskStatus("processing");
-        try {
-            const { taskId, success } = await handleCreateTranscript({
-                panelId: transcript.panel_id,
-                discussionData: { metadata: transcript.metadata },
-                wordCount:
-                    transcript.metadata?.conversation_config?.word_count ||
-                    2500,
-                creativity:
-                    transcript.metadata?.conversation_config?.creativity || 0.7,
-                conversationStyle:
-                    transcript.metadata?.conversation_config
-                        ?.conversation_style || [],
-                rolesPerson1:
-                    transcript.metadata?.conversation_config?.roles_person1 ||
-                    "",
-                rolesPerson2:
-                    transcript.metadata?.conversation_config?.roles_person2 ||
-                    "",
-                dialogueStructure:
-                    transcript.metadata?.conversation_config
-                        ?.dialogue_structure || [],
-                engagementTechniques:
-                    transcript.metadata?.conversation_config
-                        ?.engagement_techniques || [],
-                userInstructions:
-                    transcript.metadata?.conversation_config
-                        ?.user_instructions || "",
-                outputLanguage:
-                    transcript.metadata?.conversation_config?.output_language ||
-                    "en",
-                longForm: transcript.metadata?.longform,
-                cronjob: "",
-                newsItems:
-                    transcript.metadata?.news_items ||
-                    panelData?.metadata?.news_items ||
-                    5,
-                segments:
-                    transcript.metadata?.segments ||
-                    panelData?.metadata?.segments ||
-                    5,
-                shortIntroAndConclusion: (
-                    transcript.metadata?.conversation_config ??
-                    panelData?.metadata?.conversation_config
-                )?.short_intro_and_conclusion,
-                disableIntroAndConclusion: (
-                    transcript.metadata?.conversation_config ??
-                    panelData?.metadata?.conversation_config
-                )?.disable_intro_and_conclusion,
-                ttsModel: (transcript.metadata ?? panelData?.metadata)
-                    .tts_model,
-                defaultVoiceQuestion: (
-                    transcript.metadata ?? panelData?.metadata
-                )?.conversation_config?.text_to_speech?.[
-                    (transcript.metadata ?? panelData?.metadata)?.tts_model
-                ]?.default_voices?.question,
-                defaultVoiceAnswer: (transcript.metadata ?? panelData?.metadata)
-                    ?.conversation_config?.text_to_speech?.[
-                    (transcript.metadata ?? panelData?.metadata)?.tts_model
-                ]?.default_voices?.answer,
-                languages: (transcript.metadata ?? panelData?.metadata)
-                    ?.conversation_config?.text_to_speech
-            });
-            if (success && taskId) {
-                console.log(
-                    "Transcript duplicated successfully, taskId:",
-                    taskId
+        return transcriptSources.map((option, index) => {
+            if (option.references) {
+                // Handle grouped sources (like from subjects)
+                return (
+                    <Accordion key={option.title || index} className="mb-3">
+                        <Accordion.Item eventKey="0">
+                            <Accordion.Header>{option.title}</Accordion.Header>
+                            <Accordion.Body>
+                                {option.description && (
+                                    <Card.Text className="mb-3">
+                                        {option.description}
+                                    </Card.Text>
+                                )}
+                                {option.references.map(renderSourceItem)}
+                            </Accordion.Body>
+                        </Accordion.Item>
+                    </Accordion>
                 );
-                initiatePolling(taskId, "transcript");
             } else {
-                setTaskStatus("failure");
+                // Handle individual source items
+                return renderSourceItem(option, index);
             }
-        } catch (error) {
-            console.error("Error duplicating transcript:", error);
-            setTaskStatus("failure");
-        }
-    };
-
-    const initiatePolling = (taskId, type) => {
-        setTaskStatus("processing"); // Set initial taskStatus
-        setTimeout(() => {
-            pollTaskStatus(
-                taskId,
-                type,
-                () => {
-                    setTaskStatus("success");
-                },
-                () => {
-                    setTaskStatus("failure");
-                },
-                () => {
-                    console.error("Error polling task status");
-                    setTaskStatus("failure");
-                },
-                (isPolling) => setIsPolling(isPolling)
-            );
-        }, 1000);
-    };
-
-    const refreshAudios = () => {
-        fetchPanelDetails(transcript.panel_id).then((response) => {
-            setAudios(response.audioData);
         });
     };
 
-    const handleDeleteAudio = (audioId) => {
-        handleDeleteItem({ type: "audio", id: audioId }, refreshAudios);
+    // Renders the display for Person Roles
+    const renderPersonRolesDisplay = () => {
+        let personRolesData = {};
+        if (config.person_roles) {
+            personRolesData = config.person_roles;
+        } else {
+            /* backward compatibility logic */
+        }
+
+        if (!personRolesData || Object.keys(personRolesData).length === 0)
+            return null;
+
+        return (
+            <SectionCard title="Person Roles">
+                {Object.entries(personRolesData).map(([id, roleObj]) => (
+                    <Card key={id} className="mb-3">
+                        <Card.Header as="h6">
+                            Person {id}: {roleObj.name || "N/A"}
+                        </Card.Header>
+                        <Card.Body>
+                            {roleObj.role && (
+                                <Card.Subtitle className="mb-2 text-muted">
+                                    Role: {roleObj.role}
+                                </Card.Subtitle>
+                            )}
+                            {roleObj.persona && (
+                                <Card.Text>
+                                    <strong>Persona:</strong> {roleObj.persona}
+                                </Card.Text>
+                            )}
+                            {roleObj.voice_config && (
+                                <div className="mt-2">
+                                    <strong>Voice Config:</strong>
+                                    <ObjectDisplay
+                                        data={roleObj.voice_config}
+                                    />
+                                </div>
+                            )}
+                        </Card.Body>
+                    </Card>
+                ))}
+            </SectionCard>
+        );
     };
 
+    // Renders the main details section within an accordion body
+    const renderDetailsBody = () => (
+        <>
+            {!transcript.transcript_parent_id && (
+                <SectionCard title="Scheduling">
+                    {cronjob ? (
+                        <>
+                            <p>{formatCronjob(cronjob)}</p>
+                            <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => handleUpdateTranscriptCron("")}
+                            >
+                                Clear Schedule
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <CronjobComponent
+                                value={cronjob}
+                                onChange={setCronjob}
+                            />
+                            <Button
+                                size="sm"
+                                className="mt-2"
+                                onClick={() =>
+                                    handleUpdateTranscriptCron(cronjob)
+                                }
+                            >
+                                Save Schedule
+                            </Button>
+                        </>
+                    )}
+                </SectionCard>
+            )}
+            {config.word_count && (
+                <SectionCard title="Length">
+                    <p>{getWordCountDescription(config.word_count, 4000)}</p>
+                </SectionCard>
+            )}
+            {config.conversation_style?.length > 0 && (
+                <SectionCard title="Conversation Style">
+                    <p>{config.conversation_style.join(", ")}</p>
+                </SectionCard>
+            )}
+            {renderPersonRolesDisplay()}
+            {config.dialogue_structure?.length > 0 && (
+                <SectionCard title="Dialogue Structure">
+                    <p>{config.dialogue_structure.join(" → ")}</p>
+                </SectionCard>
+            )}
+            {config.engagement_techniques?.length > 0 && (
+                <SectionCard title="Engagement Techniques">
+                    <p>{config.engagement_techniques.join(", ")}</p>
+                </SectionCard>
+            )}
+            {config.user_instructions && (
+                <SectionCard title="User Instructions">
+                    <p>{config.user_instructions}</p>
+                </SectionCard>
+            )}
+            {config.output_language && (
+                <SectionCard title="Output Language">
+                    <p>{config.output_language}</p>
+                </SectionCard>
+            )}
+            <SectionCard title="Transcript Processing Options">
+                <p>
+                    <strong>Process every article separately:</strong>{" "}
+                    {metadata.longform ? "Yes" : "No"}
+                </p>
+                <p>
+                    <strong>Use short intro/conclusion:</strong>{" "}
+                    {config.short_intro_and_conclusion ? "Yes" : "No"}
+                </p>
+                <p>
+                    <strong>Disable intro/conclusion:</strong>{" "}
+                    {config.disable_intro_and_conclusion ? "Yes" : "No"}
+                </p>
+            </SectionCard>
+        </>
+    );
+
+    // Renders the list of associated audios
+    const renderAudioListBody = () => {
+        const filteredAudios = audios.filter(
+            (audio) => audio.transcript_id === transcript.id
+        );
+        if (filteredAudios.length === 0) {
+            return <p>No audio generated for this transcript yet.</p>;
+        }
+        return (
+            <DetailAccordion
+                items={filteredAudios}
+                itemKey="id"
+                renderHeader={(audio) => audio.title || `Audio ${audio.id}`}
+                renderBody={(audio) => (
+                    <div className="position-relative">
+                        <RemoveButton
+                            onClick={() =>
+                                showConfirmationDialog(
+                                    "Are you sure you want to delete this audio? This action cannot be undone.",
+                                    () => handleDeleteAudio(audio.id)
+                                )
+                            }
+                            className="position-absolute top-0 end-0 m-2" // Position top-right
+                            ariaLabel="Delete Audio"
+                            size="sm"
+                        />
+                        <AudioDetailDisplay
+                            audio={audio}
+                            audioUrl={audioUrls[audio.id]}
+                        />
+                    </div>
+                )}
+                className="mt-0" // Remove default top margin if nested
+            />
+        );
+    };
+
+    // --- Main Render ---
     return (
         <>
+            {/* Recreate Button (only for non-child transcripts) */}
             {!transcript.transcript_parent_id && (
                 <Button
                     onClick={handleDuplicateTranscript}
-                    className={`w-full py-2 mb-4 flex items-center justify-center ${
-                        taskStatus === "processing"
-                            ? "bg-gray-500 border-gray-800 text-white"
-                            : "bg-green-500 border-green-800 text-white"
-                    }`}
+                    className={`w-full py-2 mb-3 d-flex align-items-center justify-content-center ${taskStatus === "processing" ? "btn-secondary" : "btn-success"}`}
                     disabled={taskStatus === "processing"}
                 >
-                    {taskStatus === "idle" && "Recreate Transcript"}
-                    {taskStatus === "processing" && "Processing..."}
-                    {taskStatus === "success" && "Success"}
-                    {taskStatus === "failure" && "Failed"}
+                    {taskStatus === "processing"
+                        ? "Processing..."
+                        : "Recreate Transcript"}
                 </Button>
             )}
-            <div className="flex items-center mb-4">
-                <span className="mr-2">
-                    {processStateIcon(transcript.process_state)}
-                </span>
-                <div class="flex-1 self-center">
-                    <span className="mr-2">
-                        <FaCalendarAlt className="inline-block" />
-                    </span>
-                    <span className="mr-2">
-                        {new Date(transcript.created_at).toLocaleString()}
-                    </span>
-                </div>
-                <div class="flex-1 self-center">
-                    <span className="mr-2">
-                        <FaClock className="inline-block" />
-                    </span>
-                    <span>
-                        {new Date(transcript.updated_at).toLocaleString()}
-                    </span>
-                </div>
-            </div>
-            {transcript.process_state_message && (
-                <Card className="mb-2 border-danger">
-                    <Card.Header className="bg-danger text-white">
-                        Error
-                    </Card.Header>
-                    <Card.Body>
-                        <Card.Text>
-                            {transcript.process_state_message}
-                        </Card.Text>
-                    </Card.Body>
-                </Card>
-            )}
-            <Accordion defaultActiveKey={showDetails ? "0" : null}>
-                <Accordion.Item eventKey="0">
-                    <Accordion.Header>
-                        {showDetails ? "Hide Details" : "Show More Details"}
-                    </Accordion.Header>
-                    <Accordion.Body>
-                        {!transcript.transcript_parent_id && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>Scheduling</Card.Title>
-                                    {transcript.generation_cronjob &&
-                                    cronjob ? (
-                                        <>
-                                            <Card.Text>
-                                                {formatCronjob(cronjob)}
-                                            </Card.Text>
-                                            <Button
-                                                variant="danger"
-                                                onClick={() => setCronjob("")}
-                                            >
-                                                Clear Schedule
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <CronjobComponent
-                                                value={cronjob}
-                                                onChange={setCronjob}
-                                            />
-                                            <Button
-                                                onClick={() =>
-                                                    handleUpdateTranscript(
-                                                        cronjob
-                                                    )
-                                                }
-                                            >
-                                                Save schedule
-                                            </Button>
-                                        </>
-                                    )}
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {config.word_count && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>Length</Card.Title>
-                                    <Card.Text>
-                                        {getWordCountDescription(
-                                            config.word_count,
-                                            4000
-                                        )}
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {config.conversation_style && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>Conversation Style</Card.Title>
-                                    <Card.Text>
-                                        {config.conversation_style.join(", ")}
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {config.roles_person1 && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>Person 1 Details</Card.Title>
-                                    <Card.Text>
-                                        <strong>Name:</strong>{" "}
-                                        {config.roles_person1.name || "Elton"}
-                                    </Card.Text>
-                                    <Card.Text>
-                                        <strong>Persona:</strong>{" "}
-                                        {config.roles_person1.persona ||
-                                            "Not set"}
-                                    </Card.Text>
-                                    <Card.Text>
-                                        <strong>Role:</strong>{" "}
-                                        {config.roles_person1.role}
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {config.roles_person2 && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>Person 2 Details</Card.Title>
-                                    <Card.Text>
-                                        <strong>Name:</strong>{" "}
-                                        {config.roles_person2.name || "Julia"}
-                                    </Card.Text>
-                                    <Card.Text>
-                                        <strong>Persona:</strong>{" "}
-                                        {config.roles_person2.persona ||
-                                            "Not set"}
-                                    </Card.Text>
-                                    <Card.Text>
-                                        <strong>Role:</strong>{" "}
-                                        {config.roles_person2.role}
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {config.dialogue_structure && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>Dialogue Structure</Card.Title>
-                                    <Card.Text>
-                                        {config.dialogue_structure.join(", ")}
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {config.engagement_techniques && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>
-                                        Engagement Techniques
-                                    </Card.Title>
-                                    <Card.Text>
-                                        {config.engagement_techniques.join(
-                                            ", "
-                                        )}
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {config.user_instructions && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>User Instructions</Card.Title>
-                                    <Card.Text>
-                                        {config.user_instructions}
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        {config.output_language && (
-                            <Card className="mb-4">
-                                <Card.Body>
-                                    <Card.Title>Output Language</Card.Title>
-                                    <Card.Text>
-                                        {config.output_language}
-                                    </Card.Text>
-                                </Card.Body>
-                            </Card>
-                        )}
-                        <Card className="mb-4">
-                            <Card.Body>
-                                <Card.Title>
-                                    Transcript processing options
-                                </Card.Title>
-                                <Card.Text>
-                                    <strong>
-                                        Process every article separately:
-                                    </strong>{" "}
-                                    {transcript.metadata?.longform
-                                        ? "Yes"
-                                        : "No"}
-                                    <br />
-                                    <strong>
-                                        Use short introduction and conclusion
-                                        segments:
-                                    </strong>{" "}
-                                    {transcript.metadata?.conversation_config
-                                        ?.short_intro_and_conclusion
-                                        ? "Yes"
-                                        : "No"}
-                                    <br />
-                                    <strong>
-                                        Disable introduction and conclusion
-                                        segments:
-                                    </strong>{" "}
-                                    {transcript.metadata?.conversation_config
-                                        ?.disable_intro_and_conclusion
-                                        ? "Yes"
-                                        : "No"}
-                                </Card.Text>
-                            </Card.Body>
-                        </Card>
-                    </Accordion.Body>
-                </Accordion.Item>
-                <Accordion.Item eventKey="1">
-                    <Accordion.Header
-                        onClick={() => {
-                            toggleTranscriptVisibility(transcript.id);
-                        }}
-                    >
-                        {isTranscriptVisible
+
+            {/* Status Header */}
+            <StatusHeader item={transcript} />
+
+            {/* Error Message */}
+            <ErrorMessage message={transcript.process_state_message} />
+
+            {/* Main Accordion for Details, Transcript, Sources */}
+            <DetailAccordion
+                onItemToggle={handleAccordionItemToggle} // Use the new callback
+                items={[
+                    {
+                        id: "details",
+                        header: "Show Details",
+                        body: renderDetailsBody
+                    },
+                    {
+                        id: "transcript",
+                        header: isTranscriptVisible // Header text now depends on state
                             ? "Hide Transcript"
-                            : "View Transcript"}
-                    </Accordion.Header>
-                    <Accordion.Body>
-                        {(transcriptContent && (
-                            <>
-                                <p className="mb-2">
-                                    Word Count:{" "}
-                                    {
-                                        transcriptContent
-                                            .replace(/<\/?person\d+>/gi, "")
-                                            .split(/\s+/).length
-                                    }
-                                </p>
-                                {renderTranscript(transcriptContent)}
-                            </>
-                        )) || <p>Loading transcript...</p>}
-                    </Accordion.Body>
-                </Accordion.Item>
-                {transcriptSources.length > 0 && (
-                    <Accordion.Item eventKey="2">
-                        <Accordion.Header onClick={toggleSourcesVisibility}>
-                            {isSourcesVisible ? "Hide Sources" : "View Sources"}
-                        </Accordion.Header>
-                        <Accordion.Body>
-                            {isSourcesVisible && renderSources(transcript.id)}
-                        </Accordion.Body>
-                    </Accordion.Item>
-                )}
-            </Accordion>
-            <Accordion className="mt-4">
-                {audios &&
-                    audios
-                        .filter(
-                            (audio) => audio.transcript_id === transcript.id
-                        )
-                        .map((audio, index) => (
-                            <Accordion.Item
-                                eventKey={index.toString()}
-                                key={audio.id}
-                            >
-                                <Accordion.Header>
-                                    {audio.title}
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                    <div className="relative">
-                                        <Button
-                                            variant="danger"
-                                            onClick={() =>
-                                                showConfirmationDialog(
-                                                    "Are you sure you want to delete this audio? This action cannot be undone.",
-                                                    () =>
-                                                        handleDeleteAudio(
-                                                            audio.id
-                                                        )
-                                                )
-                                            }
-                                            className="absolute top-1 right-1"
-                                            aria-label="Delete Audio"
-                                        >
-                                            <FaTimes className="inline-block" />
-                                        </Button>
-                                        <AudioDetailDisplay
-                                            audio={audio}
-                                            audioUrl={audioUrls[audio.id]}
-                                        />
-                                    </div>
-                                </Accordion.Body>
-                            </Accordion.Item>
-                        ))}
-            </Accordion>
+                            : "View Transcript",
+                        body: () => renderTranscriptContent(transcriptContent)
+                        // No onClick needed here anymore
+                    },
+                    transcriptSources.length > 0 && {
+                        id: "sources",
+                        header: isSourcesVisible // Header text depends on state
+                            ? "Hide Sources"
+                            : "View Sources",
+                        body: renderSourcesList
+                        // onClick handled by onItemToggle now
+                    }
+                ].filter(Boolean)} // Filter out sources item if empty
+                itemKey="id"
+                // renderHeader no longer needs to handle onClick
+                renderHeader={(item) => item.header}
+                renderBody={(item) => item.body()}
+                className="mb-4"
+            />
+
+            {/* Section for Associated Audios */}
+            <SectionCard title="Generated Audio" headerAs="h5">
+                {renderAudioListBody()}
+            </SectionCard>
         </>
     );
 };

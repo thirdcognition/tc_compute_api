@@ -71,8 +71,8 @@ transcript_rewriter = PromptFormatter(
             *   Target Word count: {word_count} (Maintain original length)
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Dialogue Structure: {dialogue_structure}
             *   Engagement techniques: {engagement_techniques}
             *   Location: {location}
@@ -141,8 +141,8 @@ transcript_rewriter_extend = PromptFormatter(
             *   Target Word count: {word_count} (Aim significantly higher)
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Dialogue Structure: {dialogue_structure}
             *   Engagement techniques: {engagement_techniques}
             *   Other instructions: {user_instructions}
@@ -215,8 +215,8 @@ transcript_rewriter_reduce = PromptFormatter(
             *   Target Word count: {word_count} (Compress to meet this)
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Dialogue Structure: {dialogue_structure}
             *   Engagement techniques: {engagement_techniques}
             *   Other instructions: {user_instructions}
@@ -298,8 +298,8 @@ transcript_extend = PromptFormatter(
         *   Podcast Tagline: {podcast_tagline}
         *   Dialogue Structure: {dialogue_structure}
         *   Conversation Style: {conversation_style}
-        *   Person 1 role: {roles_person1}
-        *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
         *   Engagement techniques: {engagement_techniques}
         *   Other instructions: {user_instructions}
 
@@ -363,8 +363,8 @@ transcript_compress = PromptFormatter(
         *   Current date: {date}
         *   Current time: {time}
         *   Language: {output_language}
-        *   Person 1 role: {roles_person1}
-        *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
         *   Other instructions: {user_instructions}
 
         **Request:**
@@ -424,8 +424,8 @@ transcript_translate = PromptFormatter(
         *   Podcast Name: {podcast_name} (for context only)
         *   Podcast Tagline: {podcast_tagline} (for context only)
         *   Conversation Style: {conversation_style} (to preserve tone)
-        *   Person 1 role: {roles_person1} (to preserve tone)
-        *   Person 2 role: {roles_person2} (to preserve tone)
+        *   Roles: (to preserve tone)
+            {person_roles}
         *   Engagement techniques: {engagement_techniques} (to preserve structure)
         *   Other instructions: {user_instructions}
 

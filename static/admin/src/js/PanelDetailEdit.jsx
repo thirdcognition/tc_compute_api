@@ -1,16 +1,23 @@
-import { useState, useEffect } from "react";
-import { Form, Button, Card, Accordion } from "react-bootstrap";
+import { useState } from "react";
+import { Form, Button, Accordion } from "react-bootstrap"; // Keep Accordion for now, might remove if DetailAccordion replaces all uses
+import PropTypes from "prop-types";
+
+// Helpers & Options
 import { handleCreatePanel, handleUpdatePanel } from "./helpers/panel.js";
+import { outputLanguageOptions } from "./options.js";
+
+// News Config Forms (Keep these specific forms)
 import LinkForm from "./news_config/LinkForm";
 import GoogleNewsConfigForm from "./news_config/GoogleNewsConfigForm";
 import YleNewsConfigForm from "./news_config/YleNewsConfigForm";
 import TechCrunchNewsConfigForm from "./news_config/TechCrunchNewsConfigForm";
 import HackerNewsConfigForm from "./news_config/HackerNewsConfigForm";
-import InputTextForm from "./news_config/InputTextForm";
-import ArticleCountComponent from "./components/ArticleCountComponent";
-import { outputLanguageOptions } from "./options.js";
+import InputTextForm from "./news_config/InputTextForm"; // Used for simple text inputs
 
-import PropTypes from "prop-types";
+// Shared & Existing Components
+import ArticleCountComponent from "./components/ArticleCountComponent";
+import SectionCard from "./components/SectionCard.jsx"; // Import shared component
+// DetailAccordion might be usable for the news configs, let's evaluate
 
 function PanelDetailEdit({
     panel = {},
@@ -22,6 +29,7 @@ function PanelDetailEdit({
     setRedirectToPanel,
     onCancel
 }) {
+    // --- State ---
     const [title, setTitle] = useState(panel.title || "");
     const [displayTag, setDisplayTag] = useState(
         panel.metadata?.display_tag || ""
@@ -53,16 +61,20 @@ function PanelDetailEdit({
     );
     const [languages, setLanguages] = useState(panel.metadata?.languages || []);
     const [isPublic, setIsPublic] = useState(panel.is_public || false);
-    const [podcastName, setPodcastName] = useState("");
-    const [podcastTagline, setPodcastTagline] = useState("");
+    const [podcastName, setPodcastName] = useState(
+        panel.metadata?.podcast_name || ""
+    ); // Initialize from panel metadata
+    const [podcastTagline, setPodcastTagline] = useState(
+        panel.metadata?.podcast_tagline || ""
+    ); // Initialize from panel metadata
 
+    // --- Handlers ---
     const handlePanelSubmit = async (e) => {
         e.preventDefault();
         const panelData = {
             title,
             displayTag,
             inputText,
-            links,
             googleNewsConfigs,
             yleNewsConfigs,
             techCrunchNewsConfigs,
@@ -71,33 +83,40 @@ function PanelDetailEdit({
             newsItems,
             segments,
             languages,
-            is_public: isPublic,
-            podcastName: podcastName,
-            podcastTagline: podcastTagline
+            podcastName,
+            podcastTagline,
+            links, // Keep links at top level if schema requires
+            is_public: isPublic
         };
 
-        // console.log(JSON.stringify(panelData, null, 2));
+        // Remove empty arrays from metadata to avoid storing empty configs
+        Object.keys(panelData).forEach((key) => {
+            if (Array.isArray(panelData[key]) && panelData[key].length === 0) {
+                delete panelData[key];
+            }
+        });
+
         if (panel.id) {
             // Update existing panel
-            handleUpdatePanel(panel.id, {
-                ...panel,
-                ...panelData
-            })
+            handleUpdatePanel(panel.id, panelData) // Pass combined data
                 .then((response) => {
-                    console.log("handleUpdatePanel response:", response); // Debugging log
+                    // console.log("handleUpdatePanel response:", response);
                     const { success } = response;
                     if (success) {
                         if (handleRefreshPanelData)
                             handleRefreshPanelData(panel.id);
                         if (fetchPanels) fetchPanels();
-                        if (onCancel) onCancel();
+                        if (onCancel) onCancel(); // Call onCancel on successful update
                     } else {
-                        console.log("Update panel success:", success); // Debugging log
+                        // console.log("Update panel success:", success);
                         alert("Error while updating panel.");
                     }
                 })
                 .catch((error) => {
-                    console.error("Error in handlePanelSubmit:", error); // Debugging log
+                    console.error(
+                        "Error in handlePanelSubmit (Update):",
+                        error
+                    );
                     alert("Error while updating panel.");
                 })
                 .finally(() => {
@@ -107,21 +126,24 @@ function PanelDetailEdit({
             // Create new panel
             handleCreatePanel(panelData)
                 .then((response) => {
-                    // console.log("handleCreatePanel response:", response); // Debugging log
-                    const { panelId, success } = response;
-                    if (success && panelId) {
-                        if (setSelectedPanel) setSelectedPanel(panelId);
-                        if (setPanelId) setPanelId(panelId);
+                    // console.log("handleCreatePanel response:", response);
+                    const { panelId: newPanelId, success } = response; // Rename to avoid conflict
+                    if (success && newPanelId) {
+                        if (setSelectedPanel) setSelectedPanel(newPanelId);
+                        if (setPanelId) setPanelId(newPanelId); // Set the new panel ID in parent
                         if (handleRefreshPanelData)
-                            handleRefreshPanelData(panelId);
+                            handleRefreshPanelData(newPanelId);
                         if (fetchPanels) fetchPanels();
-                        if (setRedirectToPanel) setRedirectToPanel(true);
+                        if (setRedirectToPanel) setRedirectToPanel(true); // Redirect if needed
                     } else {
                         alert("Error while creating panel.");
                     }
                 })
                 .catch((error) => {
-                    console.error("Error in handleCreatePanel:", error); // Debugging log
+                    console.error(
+                        "Error in handleCreatePanel (Create):",
+                        error
+                    );
                     alert("Error while creating panel.");
                 })
                 .finally(() => {
@@ -130,280 +152,253 @@ function PanelDetailEdit({
         }
     };
 
+    // Determine default open accordion item for news configs
     const defaultNewsConfigActiveKey = () => {
-        if (links && links.length > 0) return "0";
-        if (yleNewsConfigs && yleNewsConfigs.length > 0) return "1";
-        if (googleNewsConfigs && googleNewsConfigs.length > 0) return "2";
-        if (techCrunchNewsConfigs && techCrunchNewsConfigs.length > 0)
-            return "3";
-        if (hackerNewsConfigs && hackerNewsConfigs.length > 0) return "4";
-        return null; // Default to Links if no configs are defined
+        if (links?.length > 0) return "0";
+        if (yleNewsConfigs?.length > 0) return "1";
+        if (googleNewsConfigs?.length > 0) return "2";
+        if (techCrunchNewsConfigs?.length > 0) return "3";
+        if (hackerNewsConfigs?.length > 0) return "4";
+        if (inputText) return "5"; // Check inputText as well
+        return "0"; // Default to Links if nothing else has content
     };
 
+    // --- Main Render ---
     return (
-        <>
-            <div className="panel-container border p-3 mb-4 rounded">
-                <h3 className="font-bold mb-3">
-                    {panel.id ? "Edit Panel" : "Create Panel"}
-                </h3>
-                <Form onSubmit={handlePanelSubmit}>
-                    <Card className="mb-4">
-                        <Card.Header>Panel Name</Card.Header>
-                        <Card.Body>
-                            <Form.Group controlId="title">
-                                <InputTextForm
-                                    initialText={title}
-                                    onTextChange={setTitle}
-                                    textarea={false}
-                                />
-                            </Form.Group>
-                        </Card.Body>
-                    </Card>
-                    <Card className="mb-4">
-                        <Card.Header>Podcast Name</Card.Header>
-                        <Card.Body>
-                            <Form.Group controlId="podcastName">
-                                <InputTextForm
-                                    initialText={podcastName}
-                                    onTextChange={setPodcastName}
-                                    textarea={false}
-                                />
-                                <Form.Text className="text-muted">
-                                    If left empty, a predefined default will be
-                                    used.
-                                </Form.Text>
-                            </Form.Group>
-                        </Card.Body>
-                    </Card>
-                    <Card className="mb-4">
-                        <Card.Header>Podcast Tagline</Card.Header>
-                        <Card.Body>
-                            <Form.Group controlId="podcastTagline">
-                                <InputTextForm
-                                    initialText={podcastTagline}
-                                    onTextChange={setPodcastTagline}
-                                    textarea={false}
-                                />
-                                <Form.Text className="text-muted">
-                                    If left empty, a predefined default will be
-                                    used.
-                                </Form.Text>
-                            </Form.Group>
-                        </Card.Body>
-                    </Card>
-                    <Card className="mb-4">
-                        <Card.Header>
-                            Display tag <small>(shown at user selection)</small>
-                        </Card.Header>
-                        <Card.Body>
-                            <Form.Group controlId="displaytag">
-                                <InputTextForm
-                                    initialText={displayTag}
-                                    onTextChange={setDisplayTag}
-                                    textarea={false}
-                                />
-                            </Form.Group>
-                        </Card.Body>
-                    </Card>
-                    <Card className="mb-4">
-                        <Card.Header>Public Access</Card.Header>
-                        <Card.Body>
-                            <Form.Group controlId="public">
-                                <Form.Check
-                                    type="switch"
-                                    label="Public Panel"
-                                    checked={isPublic}
-                                    onChange={(e) =>
-                                        setIsPublic(e.target.checked)
-                                    }
-                                    className="font-semibold"
-                                />
-                                <Form.Text className="text-muted">
-                                    Toggle to make this panel public or private
-                                    <i>(hidden)</i>.
-                                </Form.Text>
-                            </Form.Group>
-                        </Card.Body>
-                    </Card>
-
-                    <Card className="mb-4">
-                        <Card.Header>Languages</Card.Header>
-                        <Card.Body>
-                            <Form.Group controlId="languages">
-                                <Form.Label className="font-semibold text-left">
-                                    Translations:
-                                    <br />
-                                    <small className="text-muted font-normal">
-                                        Note: Test all languages with voice
-                                        models. <br /> If transcript
-                                        output_language matches selected
-                                        language, translation is skipped.
-                                    </small>
-                                </Form.Label>
-                                <Form.Control
-                                    as="select"
-                                    multiple
-                                    value={languages}
-                                    onChange={(e) =>
-                                        setLanguages(
-                                            [...e.target.selectedOptions].map(
-                                                (option) => option.value
-                                            )
-                                        )
-                                    }
-                                    className="w-full"
-                                >
-                                    {Object.entries(outputLanguageOptions).map(
-                                        ([langId, language]) => (
-                                            <option value={langId} key={langId}>
-                                                {language}
-                                            </option>
-                                        )
-                                    )}
-                                </Form.Control>
-                                <Form.Text className="text-muted ml-2">
-                                    English is enabled by default
-                                </Form.Text>
-                            </Form.Group>
-                        </Card.Body>
-                    </Card>
-                    <ArticleCountComponent
-                        label="Requested total segments"
-                        value={segments}
-                        onChange={(value) => setSegments(value)}
+        <div className="panel-container border p-3 mb-4 rounded">
+            <h3 className="font-bold mb-3">
+                {panel.id ? "Edit Panel" : "Create Panel"}
+            </h3>
+            <Form onSubmit={handlePanelSubmit}>
+                {/* Use SectionCard for simple fields */}
+                <SectionCard title="Panel Name">
+                    <InputTextForm
+                        initialText={title}
+                        onTextChange={setTitle}
+                        textarea={false}
                     />
+                </SectionCard>
 
-                    <ArticleCountComponent
-                        label="Maximum news items per segment"
-                        value={newsItems}
-                        onChange={(value) => setNewsItems(value)}
+                <SectionCard title="Podcast Name">
+                    <InputTextForm
+                        initialText={podcastName}
+                        onTextChange={setPodcastName}
+                        textarea={false}
                     />
+                    <Form.Text className="text-muted">
+                        If left empty, a predefined default will be used.
+                    </Form.Text>
+                </SectionCard>
 
-                    <Form.Group
-                        controlId="news_configs"
-                        className="mt-4 border-t-2"
-                    >
-                        <Card className="my-4">
-                            <Card.Header>
-                                Guidance for LLM when organizing and filtering
-                                news items:
-                            </Card.Header>
-                            <Card.Body>
-                                <InputTextForm
-                                    initialText={newsGuidance}
-                                    onTextChange={setNewsGuidance}
-                                />
-                            </Card.Body>
-                        </Card>
+                <SectionCard title="Podcast Tagline">
+                    <InputTextForm
+                        initialText={podcastTagline}
+                        onTextChange={setPodcastTagline}
+                        textarea={false}
+                    />
+                    <Form.Text className="text-muted">
+                        If left empty, a predefined default will be used.
+                    </Form.Text>
+                </SectionCard>
 
-                        <Accordion
-                            defaultActiveKey={defaultNewsConfigActiveKey()}
-                        >
-                            <Accordion.Item eventKey="0">
-                                <Accordion.Header>
-                                    Links (defined: {links.length})
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                    <LinkForm
-                                        initialLinks={links}
-                                        onLinksChange={setLinks}
-                                    />
-                                </Accordion.Body>
-                            </Accordion.Item>
-                            <Accordion.Item eventKey="1">
-                                <Accordion.Header>
-                                    Yle News Configs (defined:{" "}
-                                    {yleNewsConfigs.length})
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                    <YleNewsConfigForm
-                                        initialConfigs={yleNewsConfigs}
-                                        onConfigsChange={setYleNewsConfigs}
-                                    />
-                                </Accordion.Body>
-                            </Accordion.Item>
-                            <Accordion.Item eventKey="2">
-                                <Accordion.Header>
-                                    Google News Configs (defined:{" "}
-                                    {googleNewsConfigs.length})
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                    <GoogleNewsConfigForm
-                                        initialConfigs={googleNewsConfigs}
-                                        onConfigsChange={setGoogleNewsConfigs}
-                                    />
-                                </Accordion.Body>
-                            </Accordion.Item>
-                            <Accordion.Item eventKey="3">
-                                <Accordion.Header>
-                                    TechCrunch News Config
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                    <TechCrunchNewsConfigForm
-                                        initialConfigs={techCrunchNewsConfigs}
-                                        onConfigsChange={
-                                            setTechCrunchNewsConfigs
-                                        }
-                                    />
-                                </Accordion.Body>
-                            </Accordion.Item>
-                            <Accordion.Item eventKey="4">
-                                <Accordion.Header>
-                                    Hacker News Configs (defined:{" "}
-                                    {hackerNewsConfigs.length})
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                    <HackerNewsConfigForm
-                                        initialConfigs={hackerNewsConfigs}
-                                        onConfigsChange={setHackerNewsConfigs}
-                                    />
-                                </Accordion.Body>
-                            </Accordion.Item>
-                            <Accordion.Item eventKey="5">
-                                <Accordion.Header>
-                                    Static text content to include in show
-                                    content
-                                </Accordion.Header>
-                                <Accordion.Body>
-                                    <InputTextForm
-                                        initialText={inputText}
-                                        onTextChange={setInputText}
-                                        rows={15}
-                                    />
-                                </Accordion.Body>
-                            </Accordion.Item>
-                        </Accordion>
-                    </Form.Group>
+                <SectionCard title="Display tag">
+                    <InputTextForm
+                        initialText={displayTag}
+                        onTextChange={setDisplayTag}
+                        textarea={false}
+                    />
+                    <Form.Text className="text-muted">
+                        Shown at user selection.
+                    </Form.Text>
+                </SectionCard>
 
-                    <div className="flex justify-between mt-4">
-                        <Button
-                            variant="secondary"
-                            onClick={onCancel}
-                            className="py-2"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="primary"
-                            type="submit"
-                            className="py-2"
-                            disabled={
-                                !panel.id &&
-                                taskStatus !== "idle" &&
-                                taskStatus !== "failure" &&
-                                taskStatus !== "success"
+                <SectionCard title="Public Access">
+                    <Form.Check
+                        type="switch"
+                        id="public-switch" // Add id for label association
+                        label="Public Panel"
+                        checked={isPublic}
+                        onChange={(e) => setIsPublic(e.target.checked)}
+                        className="font-semibold"
+                    />
+                    <Form.Text className="text-muted">
+                        Toggle to make this panel public or private{" "}
+                        <i>(hidden)</i>.
+                    </Form.Text>
+                </SectionCard>
+
+                <SectionCard title="Languages">
+                    <Form.Group controlId="languages">
+                        <Form.Label className="font-semibold text-left">
+                            Translations:
+                            <br />
+                            <small className="text-muted font-normal">
+                                Note: Test all languages with voice models.{" "}
+                                <br /> If transcript output_language matches
+                                selected language, translation is skipped.
+                                English is enabled by default.
+                            </small>
+                        </Form.Label>
+                        <Form.Control
+                            as="select"
+                            multiple
+                            value={languages}
+                            onChange={(e) =>
+                                setLanguages(
+                                    [...e.target.selectedOptions].map(
+                                        (o) => o.value
+                                    )
+                                )
                             }
+                            className="w-full"
+                            style={{ height: "150px" }} // Set height for multi-select
                         >
-                            {panel.id ? "Update Panel" : "Create Panel"}
-                        </Button>
-                    </div>
-                </Form>
-            </div>
-        </>
+                            {Object.entries(outputLanguageOptions).map(
+                                ([langId, language]) => (
+                                    <option value={langId} key={langId}>
+                                        {language} ({langId})
+                                    </option>
+                                )
+                            )}
+                        </Form.Control>
+                    </Form.Group>
+                </SectionCard>
+
+                {/* Keep ArticleCountComponent as is */}
+                <ArticleCountComponent
+                    label="Requested total segments"
+                    value={segments}
+                    onChange={(value) => setSegments(parseInt(value))} // Ensure value is number
+                />
+                <ArticleCountComponent
+                    label="Maximum news items per segment"
+                    value={newsItems}
+                    onChange={(value) => setNewsItems(parseInt(value))} // Ensure value is number
+                />
+
+                {/* News Guidance */}
+                <SectionCard title="News Guidance">
+                    <InputTextForm
+                        initialText={newsGuidance}
+                        onTextChange={setNewsGuidance}
+                        placeholder="Guidance for LLM when organizing and filtering news items..."
+                    />
+                </SectionCard>
+
+                {/* News Configs Accordion */}
+                <h4 className="mt-4 pt-3 border-top">News Sources</h4>
+                <Accordion
+                    defaultActiveKey={defaultNewsConfigActiveKey()}
+                    className="mb-4"
+                >
+                    {/* Event keys match the order in defaultNewsConfigActiveKey */}
+                    <Accordion.Item eventKey="0">
+                        <Accordion.Header>
+                            Links (defined: {links.length})
+                        </Accordion.Header>
+                        <Accordion.Body>
+                            <LinkForm
+                                initialLinks={links}
+                                onLinksChange={setLinks}
+                            />
+                        </Accordion.Body>
+                    </Accordion.Item>
+                    <Accordion.Item eventKey="1">
+                        <Accordion.Header>
+                            Yle News (defined: {yleNewsConfigs.length})
+                        </Accordion.Header>
+                        <Accordion.Body>
+                            <YleNewsConfigForm
+                                initialConfigs={yleNewsConfigs}
+                                onConfigsChange={setYleNewsConfigs}
+                            />
+                        </Accordion.Body>
+                    </Accordion.Item>
+                    <Accordion.Item eventKey="2">
+                        <Accordion.Header>
+                            Google News (defined: {googleNewsConfigs.length})
+                        </Accordion.Header>
+                        <Accordion.Body>
+                            <GoogleNewsConfigForm
+                                initialConfigs={googleNewsConfigs}
+                                onConfigsChange={setGoogleNewsConfigs}
+                            />
+                        </Accordion.Body>
+                    </Accordion.Item>
+                    <Accordion.Item eventKey="3">
+                        <Accordion.Header>
+                            TechCrunch News (defined:{" "}
+                            {techCrunchNewsConfigs.length})
+                        </Accordion.Header>
+                        <Accordion.Body>
+                            <TechCrunchNewsConfigForm
+                                initialConfigs={techCrunchNewsConfigs}
+                                onConfigsChange={setTechCrunchNewsConfigs}
+                            />
+                        </Accordion.Body>
+                    </Accordion.Item>
+                    <Accordion.Item eventKey="4">
+                        <Accordion.Header>
+                            Hacker News (defined: {hackerNewsConfigs.length})
+                        </Accordion.Header>
+                        <Accordion.Body>
+                            <HackerNewsConfigForm
+                                initialConfigs={hackerNewsConfigs}
+                                onConfigsChange={setHackerNewsConfigs}
+                            />
+                        </Accordion.Body>
+                    </Accordion.Item>
+                    <Accordion.Item eventKey="5">
+                        <Accordion.Header>Static Text Content</Accordion.Header>
+                        <Accordion.Body>
+                            <InputTextForm
+                                initialText={inputText}
+                                onTextChange={setInputText}
+                                rows={15}
+                                placeholder="Static text content to include in show content..."
+                            />
+                        </Accordion.Body>
+                    </Accordion.Item>
+                </Accordion>
+
+                {/* Action Buttons */}
+                <div className="d-flex justify-content-between mt-4">
+                    <Button
+                        variant="secondary"
+                        onClick={onCancel}
+                        className="py-2"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        className="py-2"
+                        disabled={
+                            // Disable create button if task is running
+                            !panel.id &&
+                            taskStatus &&
+                            taskStatus !== "idle" &&
+                            taskStatus !== "failure" &&
+                            taskStatus !== "success"
+                        }
+                    >
+                        {panel.id ? "Update Panel" : "Create Panel"}
+                    </Button>
+                </div>
+            </Form>
+        </div>
     );
 }
 
 PanelDetailEdit.propTypes = {
+    panel: PropTypes.object,
+    setPanelId: PropTypes.func,
+    taskStatus: PropTypes.string,
+    setSelectedPanel: PropTypes.func,
+    fetchPanels: PropTypes.func,
+    handleRefreshPanelData: PropTypes.func,
+    setRedirectToPanel: PropTypes.func,
     onCancel: PropTypes.func.isRequired
 };
 

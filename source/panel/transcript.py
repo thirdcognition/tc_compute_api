@@ -57,11 +57,6 @@ def fetch_panel_metadata_and_config(
         **base_conversation_config,
         **(request_data.conversation_config.model_dump() or {}),
     }
-    if not isinstance(config.get("roles_person1", {}), dict):
-        config["roles_person1"] = {"role": config.get("roles_person1", "")}
-
-    if not isinstance(config.get("roles_person2", {}), dict):
-        config["roles_person2"] = {"role": config.get("roles_person2", "")}
 
     conversation_config = ConversationConfig(**config)
     conversation_config.output_language = conversation_config.output_language or "en"
@@ -112,9 +107,16 @@ def construct_transcript_title(
             else None
         ),
         (
-            f"Roles: {str(conversation_config.roles_person1)}, {str(conversation_config.roles_person2)}"
-            if str(conversation_config.roles_person1)
-            and str(conversation_config.roles_person2)
+            (
+                "Roles:"
+                + " - ".join(
+                    [
+                        f"Person {key}: {str(role)}"
+                        for key, role in conversation_config.person_roles.items()
+                    ]
+                )
+            )
+            if conversation_config.person_roles
             else None
         ),
         (

@@ -6,24 +6,68 @@ import {
 } from "./sources";
 
 /**
- * Interface representing the structure and methods of a HostProfile.
+ * SpeakerConfig interface for TTS speaker properties.
+ */
+export interface SpeakerConfig {
+    voice?: string;
+    language?: string;
+    pitch?: string;
+    speaking_rate?: string | number;
+    stability?: number;
+    similarity_boost?: number;
+    style?: number;
+    use_speaker_boost?: boolean;
+    ssml_gender?: string;
+    use_emote?: boolean;
+    emote_pause?: string;
+    emote_merge_pause?: number;
+    [key: string]: any; // Allow extra fields for provider-specific options
+}
+
+/**
+ * TTSConfig interface for Text-to-Speech system and providers.
+ */
+export interface TTSConfig {
+    audio_format?: string;
+    output_directories?: { [key: string]: string };
+    temp_audio_dir?: string;
+    api_base?: string;
+    api_key?: string;
+    api_version?: string;
+    deployment?: string;
+    model?: string;
+    streaming?: boolean;
+    speed?: number;
+    language?: string;
+    [key: string]: any; // Allow extra fields for provider-specific options
+}
+
+/**
+ * HostProfile class representing a host's profile.
  */
 export declare class HostProfile {
     name: string;
     persona: string;
     role: string;
+    voice_config?: { [language: string]: { [index: number]: SpeakerConfig } };
 
-    constructor(params: { name?: string; persona?: string; role?: string });
+    constructor(params: {
+        name?: string;
+        persona?: string;
+        role?: string;
+        voice_config?: {
+            [language: string]: { [index: number]: SpeakerConfig };
+        };
+    });
 }
 
 /**
- * Interface representing the structure and methods of a ConversationConfig.
+ * ConversationConfig class representing the configuration for a conversation.
  */
 export declare class ConversationConfig {
     output_language?: string;
     conversation_style?: string[];
-    roles_person1?: HostProfile | null;
-    roles_person2?: HostProfile | null;
+    person_roles?: { [index: number]: HostProfile };
     dialogue_structure?: string[] | null;
     engagement_techniques?: string[] | null;
     user_instructions?: string | null;
@@ -32,7 +76,6 @@ export declare class ConversationConfig {
     creativity?: number;
     word_count?: number;
     longform?: boolean;
-    text_to_speech?: Record<string, unknown>;
     location?: string;
     short_intro_and_conclusion?: boolean;
     disable_intro_and_conclusion?: boolean;
@@ -40,8 +83,7 @@ export declare class ConversationConfig {
     constructor(params: {
         output_language?: string;
         conversation_style?: string[];
-        roles_person1?: HostProfile | null;
-        roles_person2?: HostProfile | null;
+        person_roles?: { [index: number]: HostProfile };
         dialogue_structure?: string[] | null;
         engagement_techniques?: string[] | null;
         user_instructions?: string | null;
@@ -50,7 +92,6 @@ export declare class ConversationConfig {
         creativity?: number;
         word_count?: number;
         longform?: boolean;
-        text_to_speech?: Record<string, unknown>;
         location?: string;
         short_intro_and_conclusion?: boolean;
         disable_intro_and_conclusion?: boolean;
@@ -58,57 +99,63 @@ export declare class ConversationConfig {
 }
 
 /**
- * Interface representing the structure and methods of a PanelRequestData.
+ * PanelRequestData class representing the data for a panel request.
  */
 export declare class PanelRequestData {
     title: string;
-    inputSource: string | string[];
-    inputText?: string;
-    ttsModel: string;
+    input_source: string | string[];
+    input_text?: string;
+    tts_model: string;
     longform: boolean;
-    bucketName: string;
-    displayTag?: string;
-    conversationConfig?: ConversationConfig;
-    panelId?: string | null;
-    transcriptParentId?: string | null;
-    transcriptId?: string | null;
-    googleNews?: GoogleNewsConfig | GoogleNewsConfig[] | null;
-    yleNews?: YleNewsConfig | YleNewsConfig[] | null;
-    techcrunchNews?: TechCrunchNewsConfig | TechCrunchNewsConfig[] | null;
+    bucket_name: string;
+    display_tag?: string;
+    podcast_name?: string;
+    podcast_tagline?: string;
+    conversation_config?: ConversationConfig;
+    tts_config?: { [language: string]: TTSConfig };
+    panel_id?: string | null;
+    transcript_parent_id?: string | null;
+    transcript_id?: string | null;
+    google_news?: GoogleNewsConfig | GoogleNewsConfig[] | null;
+    yle_news?: YleNewsConfig | YleNewsConfig[] | null;
+    techcrunch_news?: TechCrunchNewsConfig | TechCrunchNewsConfig[] | null;
     hackernews?: HackerNewsConfig | HackerNewsConfig[] | null;
-    newsGuidance?: string | null;
-    newsItems?: number;
+    news_guidance?: string | null;
+    news_items?: number;
     segments?: number;
     languages?: string[] | null;
     cronjob?: string | null;
-    ownerId?: string | null;
-    organizationId?: string | null;
-    isPublic?: boolean;
+    owner_id?: string | null;
+    organization_id?: string | null;
+    is_public?: boolean;
 
     constructor(params: {
         title?: string;
-        inputSource?: string | string[];
-        inputText?: string;
-        ttsModel?: string;
+        input_source?: string | string[];
+        input_text?: string;
+        tts_model?: string;
         longform?: boolean;
-        bucketName?: string;
-        displayTag?: string;
-        conversationConfig?: ConversationConfig;
-        panelId?: string | null;
-        transcriptParentId?: string | null;
-        transcriptId?: string | null;
-        googleNews?: GoogleNewsConfig | GoogleNewsConfig[] | null;
-        yleNews?: YleNewsConfig | YleNewsConfig[] | null;
-        techcrunchNews?: TechCrunchNewsConfig | TechCrunchNewsConfig[] | null;
+        bucket_name?: string;
+        display_tag?: string;
+        podcast_name?: string;
+        podcast_tagline?: string;
+        conversation_config?: ConversationConfig;
+        tts_config?: { [language: string]: TTSConfig };
+        panel_id?: string | null;
+        transcript_parent_id?: string | null;
+        transcript_id?: string | null;
+        google_news?: GoogleNewsConfig | GoogleNewsConfig[] | null;
+        yle_news?: YleNewsConfig | YleNewsConfig[] | null;
+        techcrunch_news?: TechCrunchNewsConfig | TechCrunchNewsConfig[] | null;
         hackernews?: HackerNewsConfig | HackerNewsConfig[] | null;
-        newsGuidance?: string | null;
-        newsItems?: number;
+        news_guidance?: string | null;
+        news_items?: number;
         segments?: number;
         languages?: string[] | null;
         cronjob?: string | null;
-        ownerId?: string | null;
-        organizationId?: string | null;
-        isPublic?: boolean;
+        owner_id?: string | null;
+        organization_id?: string | null;
+        is_public?: boolean;
     });
 }
 
@@ -129,7 +176,7 @@ export declare class SummaryReference {
 }
 
 /**
- * Interface representing the structure and methods of a SummarySubject.
+ * SummarySubject class representing a summary subject.
  */
 export declare class SummarySubject {
     title: string;
@@ -144,7 +191,7 @@ export declare class SummarySubject {
 }
 
 /**
- * Interface representing the structure and methods of a TranscriptSummary.
+ * TranscriptSummary class representing a transcript summary.
  */
 export declare class TranscriptSummary {
     subjects: SummarySubject[];
@@ -159,22 +206,23 @@ export declare class TranscriptSummary {
 }
 
 export declare class PanelMetadata {
-    title?: string; // Optional title.
-    input_source?: string | string[]; // Optional input source (string or string array).
-    input_text?: string; // Optional input text.
-    tts_model?: string; // Optional TTS model.
-    longform?: boolean; // Optional boolean indicating if long-form content.
-    display_tag?: string; // Optional display tag.
-    conversation_config?: ConversationConfig; // Optional conversation configuration.
-    google_news?: GoogleNewsConfig | GoogleNewsConfig[]; // Optional Google News configuration (single or array).
-    yle_news?: YleNewsConfig | YleNewsConfig[]; // Optional Yle News configuration (single or array).
-    techcrunch_news?: TechCrunchNewsConfig | TechCrunchNewsConfig[]; // Optional TechCrunch News configuration (single or array).
-    hackernews?: HackerNewsConfig | HackerNewsConfig[]; // Optional Hacker News configuration (single or array).
-    news_guidance?: string; // Optional news guidance.
-    news_items?: number; // Optional number of news items.
-    segments?: number; // Optional number of segments.
-    languages?: string[]; // Optional list of languages.
-    description?: string; // Optional description.
+    title?: string;
+    input_source?: string | string[];
+    input_text?: string;
+    tts_model?: string;
+    longform?: boolean;
+    display_tag?: string;
+    conversation_config?: ConversationConfig;
+    tts_config?: { [language: string]: TTSConfig };
+    google_news?: GoogleNewsConfig | GoogleNewsConfig[];
+    yle_news?: YleNewsConfig | YleNewsConfig[];
+    techcrunch_news?: TechCrunchNewsConfig | TechCrunchNewsConfig[];
+    hackernews?: HackerNewsConfig | HackerNewsConfig[];
+    news_guidance?: string;
+    news_items?: number;
+    segments?: number;
+    languages?: string[];
+    description?: string;
 
     constructor(params: {
         title?: string;
@@ -184,6 +232,7 @@ export declare class PanelMetadata {
         longform?: boolean;
         display_tag?: string;
         conversation_config?: ConversationConfig;
+        tts_config?: { [language: string]: TTSConfig };
         google_news?: GoogleNewsConfig | GoogleNewsConfig[];
         yle_news?: YleNewsConfig | YleNewsConfig[];
         techcrunch_news?: TechCrunchNewsConfig | TechCrunchNewsConfig[];
@@ -197,11 +246,12 @@ export declare class PanelMetadata {
 }
 
 export declare class TranscriptMetadata {
-    images?: string[]; // List of image URLs.
-    longform?: boolean; // Indicates if it's long-form content.
-    subjects?: SummarySubject[]; // List of subjects with descriptions and references.
-    description?: string; // Summary of the segment's discussion.
-    conversation_config?: ConversationConfig; // Details for panel setup and dialogue.
+    images?: string[];
+    longform?: boolean;
+    subjects?: SummarySubject[];
+    description?: string;
+    conversation_config?: ConversationConfig;
+    tts_config?: { [language: string]: TTSConfig };
     tts_model?: string;
 
     constructor(params: {
@@ -210,16 +260,19 @@ export declare class TranscriptMetadata {
         subjects?: SummarySubject[];
         description?: string;
         conversation_config?: ConversationConfig;
+        tts_config?: { [language: string]: TTSConfig };
         tts_model?: string;
     });
 }
 
 export declare class AudioMetadata {
-    tts_model?: string; // Optional TTS model.
-    conversation_config?: ConversationConfig; // Optional conversation configuration.
+    tts_model?: string;
+    conversation_config?: ConversationConfig;
+    tts_config?: { [language: string]: TTSConfig };
 
     constructor(params: {
         tts_model?: string;
         conversation_config?: ConversationConfig;
+        tts_config?: { [language: string]: TTSConfig };
     });
 }

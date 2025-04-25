@@ -2,10 +2,12 @@ import hashlib
 import re
 from typing import Union
 import os
+from lxml import etree as ET
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import BaseMessage
-from langchain_core.output_parsers.xml import XMLOutputParser
+
+# Removed: from langchain_core.output_parsers.xml import XMLOutputParser
 
 from source.prompts.base import BaseOutputParser, clean_tags
 from source.models.config.default_env import DEFAULT_PATH
@@ -38,124 +40,11 @@ ROLES_PERSON_INSTRUCT = """
 
 
 class TranscriptParser(BaseOutputParser[str]):
-    """Custom parser to process and validate podcast transcripts."""
+    """Custom parser to process and validate podcast transcripts using lxml."""
 
     def _strip_tags(self, text: str, tag: str) -> str:
         """Remove specific tags but keep their content."""
         return re.sub(rf"</?{tag}.*?>", "", text, flags=re.IGNORECASE)
-
-    # @classmethod
-    # def split_blocks(cls, text: str) -> List[str]:
-    #     """Split text into blocks based on <personN> tags, allowing for properties and whitespace."""
-    #     pattern = r"(<person\d+.*?>.*?</person\d+>)"
-    #     blocks = re.split(pattern, text, flags=re.DOTALL | re.IGNORECASE)
-    #     return [block.strip() for block in blocks if block.strip()]
-
-    # @classmethod
-    # def fix_blocks(cls, blocks):
-    #     corrected_blocks = []
-
-    #     for block in blocks:
-    #         match = re.match(
-    #             r"<person(\d+)(.*?)>(.*?)</person\1>", block, re.DOTALL | re.IGNORECASE
-    #         )
-    #         if match:
-    #             # Block is valid, so we add it back to the corrected_blocks list
-    #             corrected_blocks.append(block)
-    #         else:
-    #             # Check for critical mismatches in block, e.g., nested mismatched tags
-    #             if re.search(
-    #                 r"<person(\d+)>.*?</person(\d+)>", block, re.DOTALL | re.IGNORECASE
-    #             ):
-    #                 tag_mismatches = re.findall(
-    #                     r"<person(\d+)>.*?</person(\d+)>",
-    #                     block,
-    #                     re.DOTALL | re.IGNORECASE,
-    #                 )
-    #                 for opening, closing in tag_mismatches:
-    #                     if opening != closing:
-    #                         raise OutputParserException(
-    #                             f"Critical mismatch in block tags. Opening and closing tag do not match:\n\n{block}"
-    #                         )
-    #             # Attempt to repair malformed blocks
-    #             open_tags = re.findall(r"<person(\d+)>", block, re.IGNORECASE)
-    #             close_tags = re.findall(r"</person(\d+)>", block, re.IGNORECASE)
-
-    #             # Balance mismatched open and closing tags
-    #             if len(open_tags) > len(close_tags):
-    #                 for tag in open_tags[len(close_tags) :]:
-    #                     block += f"</person{tag}>"
-    #             elif len(close_tags) > len(open_tags):
-    #                 for tag in close_tags[len(open_tags) :]:
-    #                     block = f"<person{tag}>" + block
-
-    #             # Verify after fixing
-    #             fixed_match = re.match(
-    #                 r"<person(\d+)(.*?)>(.*?)</person\1>",
-    #                 block,
-    #                 re.DOTALL | re.IGNORECASE,
-    #             )
-    #             if fixed_match:
-    #                 corrected_blocks.append(block)
-    #             else:
-    #                 raise OutputParserException(
-    #                     f"Unable to automatically fix malformed block. Be sure to use the correct structure `<Person1>...</Person1><Person2>...</Person2>`:\n\n{block}"
-    #                 )
-
-    #     return corrected_blocks
-
-    # @classmethod
-    # def validate_and_merge_blocks(cls, blocks: List[str]) -> List[str]:
-    #     """Validate and merge consecutive blocks for the same speaker."""
-    #     merged_blocks = []
-    #     current_speaker = None
-    #     current_content = []
-
-    #     fixed_blocks = cls.fix_blocks(blocks)
-
-    #     for block in fixed_blocks:
-    #         match = re.match(
-    #             r"<person(\d+)(.*?)>(.*?)</person\1>", block, re.DOTALL | re.IGNORECASE
-    #         )
-    #         if not match:
-    #             raise OutputParserException(
-    #                 f"Malformed block. Verify format and correct tags <person[N]></person[N]>:\n\n{block}"
-    #             )
-
-    #         speaker, properties, content = match.groups()
-    #         content = content.strip()
-
-    #         if speaker == current_speaker:
-    #             current_content.append(content)
-    #         else:
-    #             if current_content:
-    #                 merged_blocks.append(
-    #                     f"<Person{current_speaker}{properties}>{' '.join(current_content)}</Person{current_speaker}>"
-    #                 )
-    #             current_speaker = speaker
-    #             current_content = [content]
-
-    #     if current_content:
-    #         merged_blocks.append(
-    #             f"<Person{current_speaker}{properties}>{' '.join(current_content)}</Person{current_speaker}>"
-    #         )
-
-    #     return merged_blocks
-
-    # def _ensure_alternating_speakers(self, blocks: List[str]) -> List[str]:
-    #     """Ensure the transcript alternates between speakers."""
-    #     if not blocks:
-    #         return blocks
-
-    #     first_speaker_match = re.match(r"<person(\d+)", blocks[0], re.IGNORECASE)
-    #     last_speaker_match = re.match(r"<person(\d+)", blocks[-1], re.IGNORECASE)
-
-    #     if not first_speaker_match or not last_speaker_match:
-    #         raise OutputParserException(
-    #             "Transcript must start and end with valid <personN> tags."
-    #         )
-
-    #     return blocks
 
     def parse(self, text: Union[str, BaseMessage]) -> str:
         """Parse input, handling both strings and BaseMessage objects."""
@@ -170,7 +59,6 @@ class TranscriptParser(BaseOutputParser[str]):
             xml_block = re.search(r"```xml\n(.*?)\n```", text, re.DOTALL)
             if xml_block:
                 xml_string = xml_block.group(1).strip()
-
                 print("Extracted XML string:", xml_string)
                 text = xml_string
 
@@ -180,45 +68,91 @@ class TranscriptParser(BaseOutputParser[str]):
         # Step 2: Remove <output> tags but keep their content
         text = self._strip_tags(text, "output")
 
-        if not text.startswith("<root>"):
-            text = f"<root>{text}</root>"
+        # print("Cleaned text for parsing:", text)
 
-        # Step 4: Parse XML
-        parser = XMLOutputParser()
+        # Ensure the text is wrapped in a root element if it isn't already
+        if not text.strip().startswith("<root>"):
+            if re.match(r"^\s*<Person\d+", text.strip(), re.IGNORECASE):
+                text = f"<root>{text}</root>"
+            else:
+                print(
+                    "Warning: Input text doesn't start with <root> or <PersonN>. Wrapping in <root>."
+                )
+                text = f"<root>{text}</root>"
+
+        # Step 4: Parse XML using lxml.etree
         try:
-            parsed = parser.parse(text)
-        except Exception as e:
-            raise OutputParserException(f"XML parsing failed: {e}")
+            # Use lxml's parser with recovery enabled
+            # Encode string to bytes for lxml parser
+            if isinstance(text, str):
+                text_bytes = text.strip().encode("utf-8")
+            elif isinstance(text, bytes):
+                text_bytes = text.strip()
+            else:
+                # Should not happen due to earlier type check, but safety first
+                raise TypeError(
+                    f"Unexpected type for text before parsing: {type(text).__name__}"
+                )
+
+            # Configure parser for security and recovery
+            # no_network=True prevents external DTD/entity resolution
+            # recover=True attempts to parse even with errors
+            # resolve_entities=False prevents entity expansion (important for security)
+            parser = ET.XMLParser(
+                recover=True, no_network=True, resolve_entities=False, encoding="utf-8"
+            )
+            root = ET.fromstring(text_bytes, parser=parser)
+
+            # Check if recovery actually happened and if the root is None (indicates severe error)
+            if root is None:
+                # Access parser error log if needed
+                error_log = parser.error_log
+                raise OutputParserException(
+                    f"XML parsing failed severely, unable to recover a root element. Error log: {error_log}\nInput text:\n{text}"
+                )
+
+        except ET.XMLSyntaxError as e:
+            # lxml provides detailed syntax errors
+            raise OutputParserException(
+                f"XML parsing failed: {e}\n"
+                f"Error details: {e.msg}\n"
+                f"Line: {e.lineno}, Column: {e.offset}\n"
+                f"Input text:\n{text}"
+            )
+        except Exception as e:  # Catch other potential exceptions
+            raise OutputParserException(
+                f"An unexpected error occurred during XML parsing: {e}\nInput text:\n{text}"
+            )
 
         blocks = []
 
-        for item in parsed["root"]:
-            for tag, content in item.items():
-                attrs = {k: v for k, v in content.items() if k != "#text"}
-                text_content = content["#text"]  # Guaranteed to exist
+        # Step 5: Process parsed elements and reconstruct tags
+        for element in root:
+            tag = element.tag
+            # Ensure attributes are strings, handle potential None values gracefully
+            attrs = {
+                k: str(v) if v is not None else "" for k, v in element.attrib.items()
+            }
+            text_content = (element.text or "").strip()
 
-                # Generate 'id' attribute based on text_content if it's not set
-                if "id" not in attrs:
-                    # Generate a hash-based unique id from text_content
-                    id_hash = hashlib.md5(text_content.encode()).hexdigest()[
-                        :8
-                    ]  # Short hash for brevity
-                    attrs["id"] = f"{id_hash}"
+            # Generate 'id' attribute based on text_content if it's not set and tag starts with 'Person'
+            if "id" not in attrs and tag.lower().startswith("person") and text_content:
+                id_hash = hashlib.md5(text_content.encode("utf-8")).hexdigest()[:8]
+                attrs["id"] = f"{id_hash}"
 
-                # Join attributes into a tag string
-                attrs_string = " ".join(f'{k}="{v}"' for k, v in attrs.items())
+            # Join attributes into a tag string, ensuring proper quoting
+            attrs_string = " ".join(f'{k}="{v}"' for k, v in attrs.items())
+
+            # Reconstruct the tag string
+            if attrs_string:
                 tag_string = f"<{tag} {attrs_string}>{text_content}</{tag}>"
+            else:
+                tag_string = f"<{tag}>{text_content}</{tag}>"
 
-                if tag_string:
-                    blocks.append(tag_string)
-        # # Step 3: Split text into blocks and validate formatting
-        # blocks = self.split_blocks(text)
+            if tag_string:
+                blocks.append(tag_string)
 
-        # # Step 4: Validate and merge consecutive blocks for the same speaker
-        # blocks = self.validate_and_merge_blocks(blocks)
-
-        # # Step 5: Ensure the transcript alternates between speakers
-        # blocks = self._ensure_alternating_speakers(blocks)
+        # Commented out sections remain unchanged
 
         return "\n".join(blocks)
 
@@ -292,7 +226,7 @@ transcript_template = {
         **Output Format Requirements:**
         *   Structure: Use the `<Person1>...</Person1><Person2>...</Person2>` format.
         *   Each <PersonN>-tag can have `emote`, `id` args. If they're defined in the input, then they must be kept.
-        *   `emote` argument can contain text to speech friendly description of how the person expresses his line. E.g. `"He spoke with excitement and a cheerful tone"`. Emote must match the person's profile and persona. If multiple tags are rewritten as one, rewrite the emote description to match.
+        *   `emote` argument can contain text to speech friendly description of how the person expresses his line. E.g. `"He spoke with excitement and a cheerful tone"`. Emote must match the person's profile and persona. If multiple tags are rewritten as one, rewrite the emote description to match. The description should be limited to voice and speech style, characteristics, and dynamics.
         *   `id` will be an id to refer the tag instance with. If there's none defined, do not define one, otherwise keep the one which has been previously defined. If multiple tags are rewritten as one, take the first id.
         *   Tagging: Ensure all speaker tags are correctly opened and closed (e.g., `<Person1>` closed by `</Person1>`).
         *   Encapsulation: All spoken text must be enclosed within speaker tags.

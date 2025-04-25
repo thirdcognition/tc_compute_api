@@ -1,12 +1,13 @@
-import os
-import tempfile
 import datetime
 import time
-from typing import Tuple
+from typing import Dict, Tuple
 from uuid import UUID
+from io import BytesIO
 from supabase import Client
-from podcastfy.client import generate_podcast
+from pydub import AudioSegment
 from app.core.supabase import get_sync_supabase_client
+from transcript_to_audio.schemas import TTSConfig, SpeakerConfig
+from transcript_to_audio.text_to_speech import TextToSpeech
 
 from source.models.supabase.panel import (
     ProcessState,
@@ -56,40 +57,44 @@ def create_panel_audio(
         }
     )
 
-    tts_model = request_data.tts_model or metadata.get("tts_model", "geminimulti")
+    tts_model = request_data.tts_model or metadata.get("tts_model", "elevenlabs")
+    tts_config = request_data.tts_config or metadata.get("tts_config", None)
+    if tts_config is not None:
+        tts_config = {
+            key: TTSConfig(**value) if isinstance(value, dict) else value
+            for key, value in tts_config.items()
+        }
+    else:
+        raise ValueError(f"Text to speech configs are missing! {request_data=}")
 
-    lang_voices = (
-        conversation_config.text_to_speech.get(transcript.lang)
-        if conversation_config.text_to_speech is not None
-        else None
-    )
+    voice_configs: Dict[int, SpeakerConfig] = {}
+    for key, role in conversation_config.person_roles.items():
+        voice_configs[key] = role.voice_config.get(
+            transcript.lang, next(iter(role.voice_config.values()))
+        )
+
+    lang_tts_config = tts_config.get(transcript.lang, next(iter(tts_config.values())))
 
     # Construct title
-    default_voices = (
-        conversation_config.text_to_speech.get(tts_model, {}).get("default_voices", {})
-        if conversation_config.text_to_speech is not None
-        else {}
-    )
-    title_voices = lang_voices if lang_voices else default_voices
     title_elements = [
         f"{panel.title} - {datetime.datetime.now().strftime('%Y-%m-%d')}",
         transcript.lang,
         f"Model: {tts_model}",
         (
-            f"Q: {title_voices.get('question')}, A: {title_voices.get('answer')}"
-            if title_voices.get("question") and title_voices.get("answer")
+            " | ".join([f"{key}: {value}" for key, value in voice_configs.items()])
+            if len(voice_configs.keys()) > 0
             else None
         ),
     ]
     title = " - ".join(filter(None, title_elements))
 
+    # Download transcript as string
     response = supabase_client.storage.from_(request_data.bucket_name).download(
         bucket_transcript_file
     )
-
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        tmp_file.write(response)
-        transcript_file = tmp_file.name
+    transcript_text = (
+        response.decode("utf-8") if isinstance(response, bytes) else response
+    )
 
     panel_audio: PanelAudio = PanelAudio(
         panel_id=panel_id,
@@ -101,6 +106,10 @@ def create_panel_audio(
         metadata={
             "conversation_config": conversation_config.model_dump(),
             "tts_model": tts_model,
+            "tts_config": {
+                key: value.model_dump() if hasattr(value, "model_dump") else value
+                for key, value in tts_config.items()
+            },
         },
         is_public=request_data.is_public,
         owner_id=request_data.owner_id,
@@ -114,31 +123,23 @@ def create_panel_audio(
     )
     panel_audio.file = bucket_audio_file
 
-    conv_conf = conversation_config.model_dump()
+    # Prepare TTS
+    tts = TextToSpeech(provider=tts_model, tts_config=lang_tts_config)
 
-    conv_conf["text_to_speech"] = {}
-    conv_conf["text_to_speech"][tts_model] = conversation_config.text_to_speech.get(
-        tts_model, {}
-    )
-    if lang_voices:
-        conv_conf["text_to_speech"][tts_model]["default_voices"] = lang_voices
-
+    # Try TTS conversion: returns (updated_transcript_path, audio_segment)
+    # audio_segment is a pydub.AudioSegment object
     try:
-        audio_file: str = generate_podcast(
-            transcript_file=transcript_file,
-            tts_model=tts_model,
-            conversation_config=conv_conf,
+        audio_segment: AudioSegment = None
+        updated_transcript_path, audio_segment = tts.convert_to_speech(
+            transcript_text, None, save_file=False
         )
     except Exception as e:
         print(f"Error during audio generation: {e}")
-
         # Retry logic
         try:
             time.sleep(60)  # Wait for 60 seconds before retrying
-            audio_file: str = generate_podcast(
-                transcript_file=transcript_file,
-                tts_model=tts_model,
-                conversation_config=conv_conf,
+            updated_transcript_path, audio_segment = tts.convert_to_speech(
+                transcript_text, voice_configs, None, save_file=False
             )
         except Exception as e:
             print(f"Error during second attempt of audio generation: {e}")
@@ -147,14 +148,24 @@ def create_panel_audio(
             panel_audio.update_sync(supabase=supabase_client)
             raise RuntimeError("Failed to generate podcast audio after retry") from e
 
-    os.remove(transcript_file)
-    with open(audio_file, "rb") as audio_src:
+    # Upload new transcript file to bucket (replace previous)
+    with open(updated_transcript_path, "rb") as new_transcript_file:
         supabase_client.storage.from_(request_data.bucket_name).upload(
-            bucket_audio_file, audio_src
+            bucket_transcript_file, new_transcript_file, overwrite=True
         )
+
+    # Export audio_segment (pydub.AudioSegment) to BytesIO and upload directly
+    audio_buffer = BytesIO()
+    audio_segment.export(audio_buffer, format="mp3")
+    audio_buffer.seek(0)
+    supabase_client.storage.from_(request_data.bucket_name).upload(
+        bucket_audio_file, audio_buffer
+    )
 
     panel_audio.process_state = ProcessState.done
     panel_audio.update_sync(supabase=supabase_client)
 
-    print(f"Uploading audio file: {audio_file} to bucket: {request_data.bucket_name}")
+    print(
+        f"Uploading audio file: {bucket_audio_file} to bucket: {request_data.bucket_name}"
+    )
     return panel_audio.id

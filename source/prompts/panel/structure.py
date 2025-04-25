@@ -70,8 +70,8 @@ transcript_combiner = PromptFormatter(
             *   Current time: {time}
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Dialogue Structure: {dialogue_structure}
             *   Engagement techniques: {engagement_techniques}
             *   Other instructions: {user_instructions}
@@ -165,8 +165,8 @@ transcript_writer = PromptFormatter(
             *   Conversation Style: {conversation_style}
             *   Dialogue Structure: {dialogue_structure}
             *   Engagement Techniques: {engagement_techniques}
-            *   Person 1 Role: {roles_person1}
-            *   Person 2 Role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Minimum Word Count: {word_count} (Aim significantly higher)
             *   Location Perspective: {location}
             *   Current Date: {date}
@@ -233,8 +233,8 @@ transcript_bridge_writer = PromptFormatter(
         *   Current time: {time}
         *   Language: {output_language}
         *   Conversation Style: {conversation_style}
-        *   Person 1 role: {roles_person1}
-        *   Person 2 role: {roles_person2}
+        *   Roles:
+            {person_roles}
         *   Dialogue Structure: {dialogue_structure}
         *   Engagement techniques: {engagement_techniques}
         *   Other instructions: {user_instructions}
@@ -307,8 +307,8 @@ transcript_intro_writer = PromptFormatter(
             *   Podcast Tagline: {podcast_tagline}
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Engagement techniques: {engagement_techniques}
             *   Other instructions: {user_instructions}
 
@@ -382,8 +382,8 @@ transcript_short_intro_writer = PromptFormatter(
             *   Podcast Tagline: {podcast_tagline}
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Engagement techniques: {engagement_techniques}
             *   Other instructions: {user_instructions}
 
@@ -447,8 +447,8 @@ transcript_conclusion_writer = PromptFormatter(
             *   Podcast Tagline: {podcast_tagline}
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Engagement techniques: {engagement_techniques}
             *   Other instructions: {user_instructions}
 
@@ -514,8 +514,8 @@ transcript_short_conclusion_writer = PromptFormatter(
             *   Podcast Tagline: {podcast_tagline}
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Engagement techniques: {engagement_techniques}
             *   Other instructions: {user_instructions}
 

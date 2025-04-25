@@ -2,9 +2,12 @@ from datetime import datetime
 from enum import Enum
 import os
 import json
-from typing import Optional, Union, List
+from typing import Dict, Optional, Union, List
 from uuid import UUID
 from pydantic import BaseModel, Field
+
+# Import TTSConfig from the new library
+from transcript_to_audio.schemas import TTSConfig, SpeakerConfig
 from source.models.structures.sources import (
     GoogleNewsConfig,
     YleNewsConfig,
@@ -29,6 +32,7 @@ class HostProfile(BaseModel):
     name: str = ""
     persona: str = ""
     role: str = ""
+    voice_config: Optional[Dict[str, SpeakerConfig]] = None
 
     def to_string(self) -> str:
         return f"Name: {self.name}, Role: {self.role}, Persona: {self.persona}"
@@ -55,8 +59,7 @@ class OutputLanguageOptions(Enum):
 class ConversationConfig(BaseModel):
     output_language: Optional[str] = "en"
     conversation_style: Optional[List[str]] = custom_config["conversation_style"]
-    roles_person1: Optional[HostProfile] = None
-    roles_person2: Optional[HostProfile] = None
+    person_roles: Optional[Dict[Union[int, str], HostProfile]] = None
     dialogue_structure: Optional[List[str]] = None
     engagement_techniques: Optional[List[str]] = None
     user_instructions: Optional[str] = None
@@ -65,7 +68,6 @@ class ConversationConfig(BaseModel):
     creativity: Optional[float] = custom_config["creativity"]
     word_count: Optional[int] = custom_config["word_count"]
     longform: Optional[bool] = False
-    text_to_speech: Optional[dict] = {}
     location: Optional[str] = "Finland"
     short_intro_and_conclusion: Optional[bool] = False
     disable_intro_and_conclusion: Optional[bool] = False
@@ -82,6 +84,7 @@ class PanelRequestData(BaseModel):
     podcast_name: Optional[str] = custom_config["podcast_name"]
     podcast_tagline: Optional[str] = custom_config["podcast_tagline"]
     conversation_config: Optional[ConversationConfig] = ConversationConfig()
+    tts_config: Optional[Dict[str, TTSConfig]] = None
     panel_id: Optional[UUID] = None
     transcript_parent_id: Optional[str] = None
     transcript_id: Optional[UUID] = None
@@ -205,6 +208,7 @@ class PanelMetadata(BaseModel):
     longform: Optional[bool] = None
     display_tag: Optional[str] = None
     conversation_config: Optional[ConversationConfig] = None
+    tts_config: Optional[Dict[str, TTSConfig]] = None
     google_news: Optional[Union[GoogleNewsConfig, List[GoogleNewsConfig]]] = None
     yle_news: Optional[Union[YleNewsConfig, List[YleNewsConfig]]] = None
     techcrunch_news: Optional[
@@ -238,6 +242,11 @@ class TranscriptMetadata(BaseModel):
         title="Conversation Configuration",
         description="Details for panel setup and dialogue.",
     )
+    tts_config: Optional[Dict[str, TTSConfig]] = Field(
+        None,
+        title="TTS Configuration",
+        description="Text to speech configuration",
+    )
     tts_model: Optional[str] = Field(
         None,
         title="TTS model",
@@ -251,3 +260,4 @@ class TranscriptMetadata(BaseModel):
 class AudioMetadata(BaseModel):
     tts_model: Optional[str] = None
     conversation_config: Optional[ConversationConfig] = None
+    tts_config: Optional[Dict[str, TTSConfig]] = None

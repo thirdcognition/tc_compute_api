@@ -3,7 +3,7 @@ from enum import Enum
 
 
 def count_words(text: str) -> int:
-    cleaned_text = re.sub(r"</?person\d+>", "", text, flags=re.IGNORECASE)
+    cleaned_text = re.sub(r"<[^>]+>", "", text)
     return len(cleaned_text.split())
 
 

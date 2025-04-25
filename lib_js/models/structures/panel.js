@@ -2,10 +2,16 @@
  * HostProfile class representing a host's profile.
  */
 export class HostProfile {
-    constructor({ name = "", persona = "", role = "" } = {}) {
+    constructor({
+        name = "",
+        persona = "",
+        role = "",
+        voice_config = undefined
+    } = {}) {
         this.name = name;
         this.persona = persona;
         this.role = role;
+        this.voice_config = voice_config;
     }
 }
 
@@ -16,8 +22,7 @@ export class ConversationConfig {
     constructor({
         output_language = "en",
         conversation_style = ["casual", "humorous"],
-        roles_person1 = null,
-        roles_person2 = null,
+        person_roles = undefined,
         dialogue_structure = null,
         engagement_techniques = null,
         user_instructions = null,
@@ -26,15 +31,13 @@ export class ConversationConfig {
         creativity = 0.7,
         word_count = 200,
         longform = false,
-        text_to_speech = {},
         location = "Finland",
         short_intro_and_conclusion = false,
         disable_intro_and_conclusion = false
     } = {}) {
         this.output_language = output_language;
         this.conversation_style = conversation_style;
-        this.roles_person1 = roles_person1;
-        this.roles_person2 = roles_person2;
+        this.person_roles = person_roles;
         this.dialogue_structure = dialogue_structure;
         this.engagement_techniques = engagement_techniques;
         this.user_instructions = user_instructions;
@@ -43,7 +46,6 @@ export class ConversationConfig {
         this.creativity = creativity;
         this.word_count = word_count;
         this.longform = longform;
-        this.text_to_speech = text_to_speech;
         this.location = location;
         this.short_intro_and_conclusion = short_intro_and_conclusion;
         this.disable_intro_and_conclusion = disable_intro_and_conclusion;
@@ -56,52 +58,58 @@ export class ConversationConfig {
 export class PanelRequestData {
     constructor({
         title = "New public morning show",
-        inputSource = "",
-        inputText = "",
-        ttsModel = "elevenlabs",
+        input_source = "",
+        input_text = "",
+        tts_model = "elevenlabs",
         longform = false,
-        bucketName = "public_panels",
-        displayTag = "",
-        conversationConfig = new ConversationConfig(),
-        panelId = null,
-        transcriptParentId = null,
-        transcriptId = null,
-        googleNews = null,
-        yleNews = null,
-        techcrunchNews = null,
+        bucket_name = "public_panels",
+        display_tag = "",
+        podcast_name = "",
+        podcast_tagline = "",
+        conversation_config = new ConversationConfig(),
+        tts_config = undefined,
+        panel_id = null,
+        transcript_parent_id = null,
+        transcript_id = null,
+        google_news = null,
+        yle_news = null,
+        techcrunch_news = null,
         hackernews = null,
-        newsGuidance = null,
-        newsItems = 5,
+        news_guidance = null,
+        news_items = 5,
         segments = 5,
         languages = null,
         cronjob = null,
-        ownerId = null,
-        organizationId = null,
-        isPublic = true
+        owner_id = null,
+        organization_id = null,
+        is_public = true
     } = {}) {
         this.title = title;
-        this.inputSource = inputSource;
-        this.inputText = inputText;
-        this.ttsModel = ttsModel;
+        this.input_source = input_source;
+        this.input_text = input_text;
+        this.tts_model = tts_model;
         this.longform = longform;
-        this.bucketName = bucketName;
-        this.displayTag = displayTag;
-        this.conversationConfig = conversationConfig;
-        this.panelId = panelId;
-        this.transcriptParentId = transcriptParentId;
-        this.transcriptId = transcriptId;
-        this.googleNews = googleNews;
-        this.yleNews = yleNews;
-        this.techcrunchNews = techcrunchNews;
+        this.bucket_name = bucket_name;
+        this.display_tag = display_tag;
+        this.podcast_name = podcast_name;
+        this.podcast_tagline = podcast_tagline;
+        this.conversation_config = conversation_config;
+        this.tts_config = tts_config;
+        this.panel_id = panel_id;
+        this.transcript_parent_id = transcript_parent_id;
+        this.transcript_id = transcript_id;
+        this.google_news = google_news;
+        this.yle_news = yle_news;
+        this.techcrunch_news = techcrunch_news;
         this.hackernews = hackernews;
-        this.newsGuidance = newsGuidance;
-        this.newsItems = newsItems;
+        this.news_guidance = news_guidance;
+        this.news_items = news_items;
         this.segments = segments;
         this.languages = languages;
         this.cronjob = cronjob;
-        this.ownerId = ownerId;
-        this.organizationId = organizationId;
-        this.isPublic = isPublic;
+        this.owner_id = owner_id;
+        this.organization_id = organization_id;
+        this.is_public = is_public;
     }
 }
 
@@ -152,6 +160,7 @@ export class PanelMetadata {
         longform = null,
         display_tag = null,
         conversation_config = null,
+        tts_config = undefined,
         google_news = null,
         yle_news = null,
         techcrunch_news = null,
@@ -162,46 +171,54 @@ export class PanelMetadata {
         languages = null,
         description = null
     } = {}) {
-        this.title = title; // Optional title.
-        this.input_source = input_source; // Optional input source (string or string array).
-        this.input_text = input_text; // Optional input text.
-        this.tts_model = tts_model; // Optional TTS model.
-        this.longform = longform; // Optional boolean indicating if long-form content.
-        this.display_tag = display_tag; // Optional display tag.
-        this.conversation_config = conversation_config; // Optional conversation configuration.
-        this.google_news = google_news; // Optional Google News configuration (single or array).
-        this.yle_news = yle_news; // Optional Yle News configuration (single or array).
-        this.techcrunch_news = techcrunch_news; // Optional TechCrunch News configuration (single or array).
-        this.hackernews = hackernews; // Optional Hacker News configuration (single or array).
-        this.news_guidance = news_guidance; // Optional news guidance.
-        this.news_items = news_items; // Optional number of news items.
-        this.segments = segments; // Optional number of segments.
-        this.languages = languages; // Optional list of languages.
-        this.description = description; // Optional description.
+        this.title = title;
+        this.input_source = input_source;
+        this.input_text = input_text;
+        this.tts_model = tts_model;
+        this.longform = longform;
+        this.display_tag = display_tag;
+        this.conversation_config = conversation_config;
+        this.tts_config = tts_config;
+        this.google_news = google_news;
+        this.yle_news = yle_news;
+        this.techcrunch_news = techcrunch_news;
+        this.hackernews = hackernews;
+        this.news_guidance = news_guidance;
+        this.news_items = news_items;
+        this.segments = segments;
+        this.languages = languages;
+        this.description = description;
     }
 }
 
 export class TranscriptMetadata {
     constructor({
-        images,
-        longform,
-        subjects,
-        description,
-        conversation_config,
-        tts_model
-    }) {
-        this.images = images; // List of image URLs.
-        this.longform = longform; // Indicates if it's long-form content.
-        this.subjects = subjects; // List of subjects with descriptions and references.
-        this.description = description; // Summary of the segment's discussion.
-        this.conversation_config = conversation_config; // Details for panel setup and dialogue.
+        images = undefined,
+        longform = undefined,
+        subjects = undefined,
+        description = undefined,
+        conversation_config = undefined,
+        tts_config = undefined,
+        tts_model = undefined
+    } = {}) {
+        this.images = images;
+        this.longform = longform;
+        this.subjects = subjects;
+        this.description = description;
+        this.conversation_config = conversation_config;
+        this.tts_config = tts_config;
         this.tts_model = tts_model;
     }
 }
 
 export class AudioMetadata {
-    constructor({ tts_model = null, conversation_config = null } = {}) {
-        this.tts_model = tts_model; // Optional TTS model.
-        this.conversation_config = conversation_config; // Optional conversation configuration.
+    constructor({
+        tts_model = undefined,
+        conversation_config = undefined,
+        tts_config = undefined
+    } = {}) {
+        this.tts_model = tts_model;
+        this.conversation_config = conversation_config;
+        this.tts_config = tts_config;
     }
 }

@@ -62,7 +62,7 @@ verify_transcript_quality = PromptFormatter(
             *   **Language:** Confirm the transcript matches the specified `output_language`.
             *   **Word Count:** Verify `transcript_length` requirements are met. If short, suggest specific areas for expansion.
             *   **Main Item:** If `main_item` is flagged, check if it's appropriately highlighted in the discussion.
-            *   **Roles & Style:** Ensure dialogue reflects the specified `roles_person1`, `roles_person2`, `conversation_style`, `dialogue_structure`, and `engagement_techniques`.
+            *   **Roles & Style:** Ensure dialogue reflects the specified `person_roles (Person 1, Person 2, etc)`, `conversation_style`, `dialogue_structure`, and `engagement_techniques`.
             *   **User Instructions:** Verify adherence to any `user_instructions`.
 
         **5. Quality Concerns:**
@@ -115,8 +115,8 @@ verify_transcript_quality = PromptFormatter(
             *   Current time: {time}
             *   Language: {output_language}
             *   Conversation Style: {conversation_style}
-            *   Person 1 role: {roles_person1}
-            *   Person 2 role: {roles_person2}
+            *   Roles:
+                {person_roles}
             *   Dialogue Structure: {dialogue_structure}
             *   Engagement techniques: {engagement_techniques}
             *   Other instructions: {user_instructions}

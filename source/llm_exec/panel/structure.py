@@ -49,8 +49,14 @@ def transcript_writer(
                         conversation_config.output_language
                     ].value,
                     "conversation_style": conversation_config.conversation_style,
-                    "roles_person1": str(conversation_config.roles_person1),
-                    "roles_person2": str(conversation_config.roles_person2),
+                    "person_roles": "\n".join(
+                        [
+                            f"Person {key}: {str(role)}"
+                            for key, role in conversation_config.person_roles.items()
+                        ]
+                        if conversation_config.person_roles
+                        else ""
+                    ),
                     "dialogue_structure": conversation_config.dialogue_structure,
                     "engagement_techniques": conversation_config.engagement_techniques,
                     "user_instructions": conversation_config.user_instructions,
@@ -122,8 +128,14 @@ def transcript_bridge_writer(
                         conversation_config.output_language
                     ].value,
                     "conversation_style": conversation_config.conversation_style,
-                    "roles_person1": str(conversation_config.roles_person1),
-                    "roles_person2": str(conversation_config.roles_person2),
+                    "person_roles": "\n".join(
+                        [
+                            f"Person {key}: {str(role)}"
+                            for key, role in conversation_config.person_roles.items()
+                        ]
+                        if conversation_config.person_roles
+                        else ""
+                    ),
                     "dialogue_structure": conversation_config.dialogue_structure,
                     "engagement_techniques": conversation_config.engagement_techniques,
                     "user_instructions": conversation_config.user_instructions,
@@ -179,8 +191,14 @@ def transcript_intro_writer(
                         conversation_config.output_language
                     ].value,
                     "conversation_style": conversation_config.conversation_style,
-                    "roles_person1": str(conversation_config.roles_person1),
-                    "roles_person2": str(conversation_config.roles_person2),
+                    "person_roles": "\n".join(
+                        [
+                            f"Person {key}: {str(role)}"
+                            for key, role in conversation_config.person_roles.items()
+                        ]
+                        if conversation_config.person_roles
+                        else ""
+                    ),
                     "dialogue_structure": conversation_config.dialogue_structure,
                     "engagement_techniques": conversation_config.engagement_techniques,
                     "user_instructions": conversation_config.user_instructions,
@@ -240,8 +258,14 @@ def transcript_conclusion_writer(
                         conversation_config.output_language
                     ].value,
                     "conversation_style": conversation_config.conversation_style,
-                    "roles_person1": str(conversation_config.roles_person1),
-                    "roles_person2": str(conversation_config.roles_person2),
+                    "person_roles": "\n".join(
+                        [
+                            f"Person {key}: {str(role)}"
+                            for key, role in conversation_config.person_roles.items()
+                        ]
+                        if conversation_config.person_roles
+                        else ""
+                    ),
                     "dialogue_structure": conversation_config.dialogue_structure,
                     "engagement_techniques": conversation_config.engagement_techniques,
                     "user_instructions": conversation_config.user_instructions,

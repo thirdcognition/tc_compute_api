@@ -1,4 +1,4 @@
-import { Spinner, Button, Accordion } from "react-bootstrap";
+import { Spinner, Button } from "react-bootstrap"; // Removed Accordion import
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import PanelDetailEdit from "./PanelDetailEdit.jsx";
@@ -10,21 +10,26 @@ import { urlFormatter } from "./helpers/url.js";
 import { pollTaskStatus } from "./helpers/pollState.js";
 import { fetchPanelDetails } from "./helpers/fetch.js";
 import { showConfirmationDialog, handleDeleteItem } from "./helpers/panel.js";
-import { FaTimes, FaClock, FaRegStar, FaSyncAlt } from "react-icons/fa";
+import { FaClock, FaRegStar, FaSyncAlt } from "react-icons/fa"; // Removed FaTimes as it's in RemoveButton
 
 import { getStatusBarStyle, getStatusSymbol } from "./helpers/ui.js";
+
+// Import shared components
+import DetailAccordion from "./components/DetailAccordion.jsx";
+import RemoveButton from "./components/RemoveButton.jsx";
 
 function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
     const [taskStatus, setTaskStatus] = useState("idle");
     const [isPolling, setIsPolling] = useState(false);
-    const [existingAudio, setExistingAudio] = useState(null);
+    // Remove unused state: existingAudio, transcriptUrls, audioUrls (handled within TranscriptDetailDisplay)
+    // const [existingAudio, setExistingAudio] = useState(null);
+    // const [transcriptUrls, setTranscriptUrls] = useState({});
+    // const [audioUrls, setAudioUrls] = useState({});
     const [panelId, setPanelId] = useState(initialPanelId || null);
     const [redirectToPanel, setRedirectToPanel] = useState(false);
 
     const [discussionData, setDiscussionData] = useState(null);
     const [transcriptData, setTranscriptData] = useState(null);
-    const [transcriptUrls, setTranscriptUrls] = useState({});
-    const [audioUrls, setAudioUrls] = useState({});
 
     useEffect(() => {
         if (initialPanelId) {
@@ -43,32 +48,37 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
 
     const handleRefreshPanelData = async (panelId) => {
         try {
-            const { discussionData, transcriptData, audioData, filesData } =
-                await fetchPanelDetails(panelId);
+            // Fetch only needed data at this level
+            const {
+                discussionData,
+                transcriptData /*, audioData, filesData */
+            } = await fetchPanelDetails(panelId);
             setDiscussionData(discussionData);
-            if (transcriptData.length > 0) {
+            if (transcriptData && transcriptData.length > 0) {
+                // Check if transcriptData is not null
                 const sortedTranscripts = transcriptData.sort((a, b) => {
                     const dateA = new Date(a.created_at);
                     const dateB = new Date(b.created_at);
                     return dateB - dateA; // Descending order
                 });
                 setTranscriptData(sortedTranscripts);
+            } else {
+                setTranscriptData([]); // Set to empty array if null or empty
             }
-            setExistingAudio(audioData);
-            const updatedTranscriptUrls = urlFormatter(
-                filesData.transcript_urls
-            );
-            const updatedAudioUrls = urlFormatter(filesData.audio_urls);
-            setTranscriptUrls(updatedTranscriptUrls);
-            setAudioUrls(updatedAudioUrls);
+            // Remove setting state for data handled internally by TranscriptDetailDisplay
+            // setExistingAudio(audioData);
+            // const updatedTranscriptUrls = urlFormatter(filesData.transcript_urls);
+            // const updatedAudioUrls = urlFormatter(filesData.audio_urls);
+            // setTranscriptUrls(updatedTranscriptUrls);
+            // setAudioUrls(updatedAudioUrls);
         } catch (error) {
             console.error("Error refreshing panel data:", error);
         }
     };
 
     const handlePollSuccess = () => {
-        fetchPanels();
-        handleRefreshPanelData(panelId);
+        if (fetchPanels) fetchPanels(); // Check if fetchPanels exists
+        if (panelId) handleRefreshPanelData(panelId); // Check if panelId exists
         setTaskStatus("idle");
     };
 
@@ -83,6 +93,7 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
 
     const initiatePolling = (taskId, type) => {
         setTaskStatus("processing"); // Set initial taskStatus
+        setIsPolling(true); // Ensure polling state is set
         setTimeout(() => {
             pollTaskStatus(
                 taskId,
@@ -90,34 +101,100 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                 handlePollSuccess,
                 handlePollFailure,
                 handlePollError,
-                (isPolling) => setIsPolling(isPolling)
+                (pollingStatus) => setIsPolling(pollingStatus) // Update polling state
             );
         }, 1000);
     };
 
-    const handleDelete = (deleteTarget) => {
-        handleDeleteItem(deleteTarget, () => handleRefreshPanelData(panelId));
+    // Renamed for clarity, used by RemoveButton callback
+    const handleDeleteTranscript = (transcriptId) => {
+        // Pass only the necessary callback to refresh this component's data
+        handleDeleteItem({ type: "transcript", id: transcriptId }, () =>
+            handleRefreshPanelData(panelId)
+        );
     };
 
     if (redirectToPanel) {
         return <Navigate to={`/panel/${panelId}`} />;
     }
 
+    // --- Render Functions for DetailAccordion ---
+    const renderTranscriptHeader = (transcript, index) => (
+        <div className="d-flex justify-content-between align-items-center w-100">
+            {/* Left side: Status Icons */}
+            <div
+                className="flex-shrink-0 me-3 d-flex flex-column align-items-center"
+                style={{ width: "20px" }}
+            >
+                {transcript.transcript_parent_id && (
+                    <FaSyncAlt
+                        className="text-blue-500 mb-1"
+                        title="Recurring Generation"
+                        size="0.9em"
+                    />
+                )}
+                {!transcript.transcript_parent_id &&
+                    (transcript.generation_cronjob ? (
+                        <FaClock
+                            className="text-green-500 mb-1"
+                            title="Scheduled Generation"
+                            size="0.9em"
+                        />
+                    ) : (
+                        <FaRegStar
+                            className="text-gray-500 mb-1"
+                            title="No Update Cycle"
+                            size="0.9em"
+                        />
+                    ))}
+            </div>
+
+            {/* Middle: Title */}
+            <div className="flex-grow-1 text-start mx-2">
+                {`Transcript ${transcriptData.length - index}`}:{" "}
+                {transcript.title || `ID: ${transcript.id.substring(0, 6)}`}
+            </div>
+
+            {/* Right side: Remove Button */}
+            <div className="flex-shrink-0 ms-2">
+                <RemoveButton
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent accordion toggle
+                        showConfirmationDialog(
+                            "Are you sure you want to delete this transcript? This action cannot be undone.",
+                            () => handleDeleteTranscript(transcript.id)
+                        );
+                    }}
+                    ariaLabel="Delete Transcript"
+                    size="sm" // Match previous size if needed
+                />
+            </div>
+        </div>
+    );
+
+    // Corrected: Only pass the transcript prop
+    const renderTranscriptBody = (transcript) => (
+        <TranscriptDetailDisplay transcript={transcript} />
+    );
+
+    // --- Main Render ---
     return (
         <div className="space-y-4">
+            {/* Status Bar */}
             <div
-                className={`status-bar p-2 text-white ${getStatusBarStyle(
+                className={`status-bar p-2 text-white text-center ${getStatusBarStyle(
                     taskStatus
                 )}`}
             >
-                <div className="flex items-center justify-center">
+                <div className="d-flex align-items-center justify-content-center">
                     {isPolling && (
                         <Spinner
                             animation="border"
+                            size="sm" // Smaller spinner
                             role="status"
-                            className="mr-2"
+                            className="me-2"
                         >
-                            <span className="sr-only">Building...</span>
+                            <span className="visually-hidden">Building...</span>
                         </Spinner>
                     )}
                     <div className="status-text">
@@ -125,6 +202,8 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     </div>
                 </div>
             </div>
+
+            {/* Panel Edit/Display */}
             {!panelId && (
                 <PanelDetailEdit
                     setPanelId={setPanelId}
@@ -133,16 +212,26 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     fetchPanels={fetchPanels}
                     handleRefreshPanelData={handleRefreshPanelData}
                     setRedirectToPanel={setRedirectToPanel}
+                    onCancel={() => {
+                        /* Define cancel behavior if needed */
+                    }} // Add onCancel if required by PanelDetailEdit
                 />
             )}
             {panelId && discussionData && (
                 <PanelDetailDisplay
                     panel={discussionData}
-                    isEditMode={true}
+                    // isEditMode={true} // Prop likely redundant now
                     taskStatus={taskStatus}
+                    // Pass necessary props for internal PanelDetailEdit instance
+                    setPanelId={setPanelId}
+                    setSelectedPanel={setSelectedPanel}
+                    fetchPanels={fetchPanels}
+                    handleRefreshPanelData={handleRefreshPanelData}
+                    setRedirectToPanel={setRedirectToPanel}
                 />
             )}
 
+            {/* Transcript Creation Form (Conditionally Rendered) */}
             {taskStatus !== "idle" &&
             taskStatus !== "success" &&
             taskStatus !== "failure" ? null : (
@@ -152,17 +241,21 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     transcriptData={transcriptData}
                     taskStatus={taskStatus}
                     initiatePolling={initiatePolling}
-                    visible={transcriptData && transcriptData.length === 0}
+                    visible={transcriptData && transcriptData.length === 0} // Keep visibility logic
                 />
             )}
+
+            {/* Audio Creation Form (Conditionally Rendered) */}
             {transcriptData &&
                 transcriptData.length > 0 &&
                 (taskStatus !== "idle" &&
                 taskStatus !== "success" &&
                 taskStatus !== "failure" ? (
-                    <div className="processing-container border p-3 mb-4 rounded">
-                        <h3 className="font-bold mb-3">Processing...</h3>
-                        <p>Please wait while the task is being processed.</p>
+                    <div className="processing-container border p-3 mb-4 rounded text-center">
+                        <h5 className="font-bold mb-2">Processing...</h5>
+                        <p className="text-muted">
+                            Please wait while the task is being processed.
+                        </p>
                     </div>
                 ) : (
                     <AudioDetailEdit
@@ -170,69 +263,20 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                         transcriptData={transcriptData}
                         taskStatus={taskStatus}
                         initiatePolling={initiatePolling}
-                        visible={!transcriptData || transcriptData.length === 0}
+                        visible={!transcriptData || transcriptData.length === 0} // Keep visibility logic
                     />
                 ))}
-            {transcriptData && (
-                <Accordion defaultActiveKey={0}>
-                    {transcriptData.map((transcript, index) => (
-                        <Accordion.Item eventKey={index}>
-                            <Accordion.Header>
-                                <div class="flex justify-between items-center w-full pr-4">
-                                    <div className="flex-none flex flex-col items-center gap-2">
-                                        {transcript.transcript_parent_id && (
-                                            <FaSyncAlt
-                                                className="inline-block mr-2 text-blue-500"
-                                                title="Recurring Generation"
-                                            />
-                                        )}
-                                        {!transcript.transcript_parent_id &&
-                                            (transcript.generation_cronjob ? (
-                                                <FaClock
-                                                    className="inline-block mr-2 text-green-500"
-                                                    title="Scheduled Generation"
-                                                />
-                                            ) : (
-                                                <FaRegStar
-                                                    className="inline-block mr-2 text-gray-500"
-                                                    title="No Update Cycle"
-                                                />
-                                            ))}
-                                    </div>
-                                    <div class="flex-1">
-                                        {`Transcript ${transcriptData.length - index}`}
-                                        : {transcript.title}
-                                    </div>
-                                    <Button
-                                        variant="danger"
-                                        onClick={() =>
-                                            showConfirmationDialog(
-                                                "Are you sure you want to delete this transcript? This action cannot be undone.",
-                                                () =>
-                                                    handleDelete({
-                                                        type: "transcript",
-                                                        id: transcript.id
-                                                    })
-                                            )
-                                        }
-                                        className="flex-none"
-                                        aria-label="Delete Transcript"
-                                    >
-                                        <FaTimes className="inline-block" />
-                                    </Button>
-                                </div>
-                            </Accordion.Header>
-                            <Accordion.Body>
-                                <TranscriptDetailDisplay
-                                    transcript={transcript}
-                                    transcriptUrls={transcriptUrls}
-                                    existingAudio={existingAudio}
-                                    audioUrls={audioUrls}
-                                />
-                            </Accordion.Body>
-                        </Accordion.Item>
-                    ))}
-                </Accordion>
+
+            {/* Transcript List Accordion */}
+            {transcriptData && transcriptData.length > 0 && (
+                <DetailAccordion
+                    items={transcriptData}
+                    itemKey="id" // Use transcript ID as the key
+                    renderHeader={renderTranscriptHeader}
+                    renderBody={renderTranscriptBody}
+                    defaultActiveKey={transcriptData[0]?.id} // Open the first transcript by default using its ID
+                    className="mt-4" // Add margin if needed
+                />
             )}
         </div>
     );

@@ -38,13 +38,13 @@ langserve = "^0.3.0"
 langsmith = "^0.1.139"
 aiofiles = "^24.1.0"
 async-lru = "^2.0.4"
-podcastfy = "^0.4.1"
 ffmpeg = "^1.4"
 celery = "^5.4.0"
 redis = "^5.2.1"
 flower = "^2.0.1"  # Added Flower for monitoring Celery tasks
 aiohttp = "^3.11.10"
 pygooglenews =  {git = "https://github.com/thirdcognition/pygooglenews.git"}
+transcript-to-audio =  {git = "https://github.com/mathatan/transcript_to_audio.git"}
 lxml = "^5.3.0"
 resend = "^2.5.1"
 feedparser = "^6.0.11"
