@@ -38,6 +38,9 @@ class Settings(BaseSettings):
             "GOOGLE_TRANSLATE_API_KEY", "your-default-api-key"
         )
     )
+    elevenlabs_api_key: str = Field(
+        default_factory=lambda: os.getenv("ELEVENLABS_API_KEY", "your-default-api-key")
+    )
     podcastfy_llm_model: str = Field(
         default_factory=lambda: os.getenv("PODCASTFY_MODEL", "azure/gpt-4o")
     )

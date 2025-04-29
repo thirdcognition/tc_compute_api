@@ -152,10 +152,8 @@ function PanelDetails({ panel }) {
             </div>
             <Card className="mb-3 shadow-lg">
                 <Card.Body>
-                    {/* Display Panel Details */}
                     <PanelDetailDisplay panel={panel} />
 
-                    {/* Transcript List Accordion */}
                     <h4 className="mt-4 mb-3">Transcripts</h4>
                     {transcripts.length > 0 ? (
                         <DetailAccordion

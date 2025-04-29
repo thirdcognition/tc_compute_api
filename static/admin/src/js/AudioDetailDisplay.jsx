@@ -30,10 +30,11 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
     // --- Render Functions for DetailAccordion ---
 
     const renderLanguageHeader = (lang) => (
-        <span className="font-semibold">{getLangName(lang)}</span>
+        <span className="font-semibold">{getLangName(lang.value)}</span>
     );
 
-    const renderLanguageBody = (lang) => {
+    const renderLanguageBody = (item) => {
+        const lang = item.value;
         const hosts = getHostsForLang(lang, personRoles); // Use imported helper, pass personRoles
         const langTtsConfig = ttsConfig[lang] || {};
 
@@ -121,7 +122,7 @@ const AudioDetailDisplay = ({ audio, audioUrl }) => {
             {sortedLanguages.length > 0 ? (
                 <DetailAccordion
                     items={sortedLanguages}
-                    itemKey={(lang) => lang}
+                    itemKey={(lang) => audio.id + "_" + lang}
                     renderHeader={renderLanguageHeader}
                     renderBody={renderLanguageBody}
                     defaultActiveKey={sortedLanguages[0]} // Open first language

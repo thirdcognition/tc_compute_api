@@ -130,12 +130,12 @@ export function getDefaultTTSConfigForProvider(provider) {
     const modelOption = defaultTtsModelOptions.find(
         (opt) => opt.value === provider
     );
-    console.log(
-        "get provider defaults",
-        provider,
-        modelOption,
-        defaultTtsModelOptions
-    );
+    // console.log(
+    //     "get provider defaults",
+    //     provider,
+    //     modelOption,
+    //     defaultTtsModelOptions
+    // );
     return {
         ...defaultTTSConfig,
         model:

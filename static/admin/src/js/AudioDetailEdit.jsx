@@ -7,16 +7,20 @@ import { handleCreateAudio } from "./helpers/panel.js";
 function AudioDetailEdit({
     panelId,
     transcriptData,
+    audioData, // Add audioData prop
     taskStatus,
     initiatePolling,
     visible // Controls the outer Accordion visibility
 }) {
     // --- State ---
     const [transcriptId, setTranscriptId] = useState(null);
+    const [audioId, setAudioId] = useState(null); // State for selected audio ID
+    // Parent state to hold the final config derived from TTSConfigSection via onChange
     const [ttsModel, setTtsModel] = useState("elevenlabs");
     const [ttsConfig, setTtsConfig] = useState({});
     const [personRoles, setPersonRoles] = useState({});
     const [baseAudioDetails, setBaseAudioDetails] = useState({});
+    const [activeMetadata, setActiveMetadata] = useState({});
 
     // Find the selected transcript and allowed languages
     const selectedTranscript =
@@ -29,24 +33,23 @@ function AudioDetailEdit({
                   )[0]
             : null);
 
-    const allowedLanguages = (() => {
-        const langs = selectedTranscript?.metadata?.languages;
-        if (Array.isArray(langs) && langs.length > 0) {
-            return langs;
-        }
-        return ["en"];
-    })();
+    // Find the selected audio object
+    const selectedAudio = audioData?.find((a) => a.id === audioId);
 
     // On transcript selection, extract all relevant details for audio creation
     useEffect(() => {
-        if (selectedTranscript) {
+        if (selectedTranscript || selectedAudio) {
             setTranscriptId(selectedTranscript.id);
-            const metadata = selectedTranscript.metadata || {};
+
+            const metadata =
+                (selectedAudio ?? selectedTranscript).metadata || {};
             const conversationConfig = metadata.conversation_config || {};
 
             setTtsModel(metadata.tts_model || "elevenlabs");
             setTtsConfig(metadata.tts_config || {});
             setPersonRoles(conversationConfig.person_roles || {});
+
+            setActiveMetadata(metadata);
 
             // Store all relevant details for audio creation (except ttsModel, ttsConfig, personRoles)
             setBaseAudioDetails({
@@ -79,7 +82,11 @@ function AudioDetailEdit({
             setBaseAudioDetails({});
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [transcriptData, transcriptId]);
+    }, [transcriptData, transcriptId, audioData, audioId]); // Rerun when transcript changes
+
+    // Determine the metadata source to pass to TTSConfigSection
+    // Use audio metadata if selected, otherwise fall back to transcript metadata
+    // const activeMetadata = (selectedAudio ?? selectedTranscript)?.metadata;
 
     // Handle submit button click
     const handleAudioSubmit = async () => {
@@ -105,6 +112,16 @@ function AudioDetailEdit({
         });
     };
 
+    const ttsChange = ({
+        ttsModel: newTtsModel,
+        ttsConfig: newTtsConfig,
+        personRoles: newPersonRoles
+    }) => {
+        setTtsModel(newTtsModel);
+        setTtsConfig(newTtsConfig);
+        setPersonRoles(newPersonRoles);
+    };
+
     // --- Main Render ---
     function renderContent() {
         return (
@@ -120,7 +137,7 @@ function AudioDetailEdit({
                             <option value="" disabled>
                                 -- Select a Transcript --
                             </option>
-                            {transcriptData
+                            {transcriptData // Keep existing transcript selector logic
                                 .filter((t) => t.process_state === "done")
                                 .sort(
                                     (a, b) =>
@@ -138,23 +155,74 @@ function AudioDetailEdit({
                     </SectionCard>
                 )}
 
+                {/* Audio Selector (only if audio data available) */}
+                {audioData && audioData.length > 0 && selectedTranscript && (
+                    <SectionCard title="Load Settings from Previous Audio (Optional)">
+                        <select
+                            value={audioId || ""}
+                            onChange={(e) => setAudioId(e.target.value)}
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">
+                                -- Use Transcript Settings --
+                            </option>
+                            {audioData
+                                .reduce((unique, current) => {
+                                    if (
+                                        !unique.some(
+                                            (item) =>
+                                                item.title === current.title
+                                        )
+                                    ) {
+                                        unique.push(current);
+                                    }
+                                    return unique;
+                                }, [])
+                                // .filter((a) => a.transcript_id === transcriptId)
+                                // .filter((a) => a.process_state === "done") // Filter for completed audio
+                                .sort(
+                                    (a, b) =>
+                                        new Date(b.created_at) -
+                                        new Date(a.created_at)
+                                ) // Sort by creation date, newest first
+                                .sort((a, b) =>
+                                    b.transcript_id.localeCompare(
+                                        a.transcript_id
+                                    )
+                                ) // Sort by creation date, newest first
+                                .map((a, index) => (
+                                    <option key={a.id} value={a.id}>
+                                        Audio {audioData.length - index}:{" "}
+                                        {a.title || "No title"} - Created:{" "}
+                                        {new Date(
+                                            a.created_at
+                                        ).toLocaleString()}
+                                    </option>
+                                ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Select an audio file to reuse its TTS model,
+                            configuration, and speaker settings.
+                        </p>
+                    </SectionCard>
+                )}
+
                 {/* TTS Provider, TTS Language Configurations, and Person Roles */}
                 <TTSConfigSection
-                    allowedLanguages={allowedLanguages}
-                    initialTtsModel={ttsModel}
-                    initialTtsConfig={ttsConfig}
-                    initialPersonRoles={personRoles}
+                    key={
+                        audioId
+                            ? "audio_tts_config_" + audioId
+                            : "transcript_tts_config_" + transcriptId
+                    }
+                    // Pass the metadata from the selected audio OR transcript
+                    // TTSConfigSection will internally derive its state from this
+                    metadata={activeMetadata}
+                    allowedLanguages={
+                        selectedAudio?.lang ?? selectedTranscript?.lang ?? "en"
+                    }
                     canEditRoles={false}
                     disableRoleFields={true}
-                    onChange={({
-                        ttsModel: newTtsModel,
-                        ttsConfig: newTtsConfig,
-                        personRoles: newPersonRoles
-                    }) => {
-                        setTtsModel(newTtsModel);
-                        setTtsConfig(newTtsConfig);
-                        setPersonRoles(newPersonRoles);
-                    }}
+                    onChange={ttsChange}
                 />
 
                 {/* Submit Button */}

@@ -30,6 +30,7 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
 
     const [discussionData, setDiscussionData] = useState(null);
     const [transcriptData, setTranscriptData] = useState(null);
+    const [audioData, setAudioData] = useState(null); // Add state for audio data
 
     useEffect(() => {
         if (initialPanelId) {
@@ -37,6 +38,7 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
         } else {
             setPanelId(null);
             setTranscriptData(null);
+            setAudioData(null); // Reset audio data too
         }
     }, [initialPanelId]);
 
@@ -48,12 +50,12 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
 
     const handleRefreshPanelData = async (panelId) => {
         try {
-            // Fetch only needed data at this level
-            const {
-                discussionData,
-                transcriptData /*, audioData, filesData */
-            } = await fetchPanelDetails(panelId);
+            // Fetch discussion, transcript, and audio data
+            const { discussionData, transcriptData, audioData } =
+                await fetchPanelDetails(panelId);
             setDiscussionData(discussionData);
+
+            // Handle Transcript Data
             if (transcriptData && transcriptData.length > 0) {
                 // Check if transcriptData is not null
                 const sortedTranscripts = transcriptData.sort((a, b) => {
@@ -65,8 +67,12 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
             } else {
                 setTranscriptData([]); // Set to empty array if null or empty
             }
-            // Remove setting state for data handled internally by TranscriptDetailDisplay
-            // setExistingAudio(audioData);
+
+            // Handle Audio Data
+            if (audioData && audioData.length > 0) {
+                setAudioData(audioData);
+            }
+            // Remove setting state for data handled internally by other components
             // const updatedTranscriptUrls = urlFormatter(filesData.transcript_urls);
             // const updatedAudioUrls = urlFormatter(filesData.audio_urls);
             // setTranscriptUrls(updatedTranscriptUrls);
@@ -261,6 +267,7 @@ function PanelEdit({ fetchPanels, setSelectedPanel, initialPanelId }) {
                     <AudioDetailEdit
                         panelId={panelId}
                         transcriptData={transcriptData}
+                        audioData={audioData} // Pass audioData prop
                         taskStatus={taskStatus}
                         initiatePolling={initiatePolling}
                         visible={!transcriptData || transcriptData.length === 0} // Keep visibility logic

@@ -24,22 +24,76 @@ import { getLangName } from "../helpers/languageHelpers";
 import { deepEqual } from "../helpers/lib.js";
 
 /**
+ * Helper to fill missing fields in personRoles.voice_config for all availableLanguages.
+ * - If voice_config[lang] exists, fill missing fields from defaults.
+ * - If not, copy first available voice_config (if any), set language, fill missing fields from defaults.
+ * - If no voice_config exists, use provider/language defaults.
+ * - Never add/remove/reorder roles; always use the structure of the input personRoles.
+ */
+function fillPersonRolesVoiceConfig(personRoles, availableLanguages, provider) {
+    const result = {};
+    Object.entries(personRoles).forEach(([roleIdx, roleObj]) => {
+        const newRole = { ...roleObj, voice_config: {} };
+        const existingVoiceConfigs = roleObj.voice_config || {};
+        // Find first available voice_config (deep copy)
+        let firstVoiceConfig = null;
+        for (const v of Object.values(existingVoiceConfigs)) {
+            if (v && typeof v === "object") {
+                firstVoiceConfig = { ...v };
+                break;
+            }
+        }
+        availableLanguages.forEach((lang) => {
+            let baseConfig = {};
+            if (existingVoiceConfigs[lang]) {
+                // Use existing, but fill missing fields from defaults
+                baseConfig = { ...existingVoiceConfigs[lang] };
+            } else if (firstVoiceConfig) {
+                // Copy first available config, but set language
+                baseConfig = { ...firstVoiceConfig, language: lang };
+            } else {
+                // Use provider/language defaults
+                baseConfig = {
+                    ...defaultSpeakerConfig,
+                    language: lang,
+                    voice: getDefaultVoiceForProvider(provider, roleIdx)
+                };
+            }
+            // Fill missing fields from defaultSpeakerConfig and provider/language defaults
+            const filledConfig = { ...defaultSpeakerConfig, ...baseConfig };
+            filledConfig.language = lang;
+            if (!filledConfig.voice) {
+                filledConfig.voice = getDefaultVoiceForProvider(
+                    provider,
+                    roleIdx
+                );
+            }
+            newRole.voice_config[lang] = filledConfig;
+        });
+        result[roleIdx] = newRole;
+    });
+    console.log("fillPersonRolesVoiceConfig", result);
+    return result;
+}
+
+/**
  * TTSConfigSection: Self-contained section for TTS Provider, TTS Language Configurations, and Person Roles.
  * - Manages its own state.
  * - Calls onChange({ ttsModel, ttsConfig, personRoles }) on any change.
+ * - Accepts a single `metadata` prop (from transcript or audio instance).
+ * - Extracts ttsModel, ttsConfig, personRoles from metadata (with fallback to defaults).
  * - Accepts disableRoleFields to disable editing of person role identity fields.
  * - Accepts canEditRoles to control add/remove role buttons.
  * - No <Form> or submit handling.
- * - Languages are fixed by allowedLanguages prop.
+ * - Languages are fixed by availableLanguages prop.
  */
 function TTSConfigSection({
-    initialTtsModel = "elevenlabs",
-    initialTtsConfig,
-    initialPersonRoles,
+    metadata = {},
     allowedLanguages,
     disableRoleFields = false,
     canEditRoles = false,
-    onChange
+    onChange,
+    key
 }) {
     // Compose role options from both sets
     const roleOptions = useMemo(
@@ -53,27 +107,79 @@ function TTSConfigSection({
         []
     );
 
+    const availableLanguages = useMemo(
+        () =>
+            Array.isArray(allowedLanguages)
+                ? allowedLanguages
+                : [allowedLanguages],
+        [allowedLanguages]
+    );
+
+    // --- Extract from metadata with fallback to defaults ---
+    const initialTtsModel = metadata?.tts_model || "elevenlabs";
+    const initialTtsConfig = metadata?.tts_config || {};
+    const initialPersonRoles =
+        metadata?.conversation_config?.person_roles || {};
+
     // --- State ---
     const [ttsModel, setTtsModel] = useState(initialTtsModel);
-    const [personRoles, setPersonRoles] = useState(initialPersonRoles || {});
-    const [ttsConfig, setTtsConfig] = useState({});
+    const [personRoles, setPersonRoles] = useState(
+        Object.keys(initialPersonRoles).length > 0
+            ? fillPersonRolesVoiceConfig(
+                  initialPersonRoles,
+                  availableLanguages,
+                  getProvider(initialTtsModel)
+              )
+            : buildDefaultPersonRoles(
+                  getProvider(initialTtsModel),
+                  availableLanguages
+              )
+    );
+    const [ttsConfig, setTtsConfig] = useState(
+        Object.keys(initialTtsConfig).length > 0
+            ? (() => {
+                  const provider = getProvider(initialTtsModel);
+                  const config = {};
+                  const defaults = getDefaultTTSConfigForProvider(provider);
+                  availableLanguages.forEach((lang) => {
+                      config[lang] = {
+                          ...defaults,
+                          ...(initialTtsConfig[lang] || {}),
+                          language: lang
+                      };
+                      if (!config[lang].audio_format)
+                          config[lang].audio_format =
+                              defaultTTSConfig.audio_format;
+                      if (!config[lang].model)
+                          config[lang].model =
+                              defaults.model || defaultTTSConfig.model;
+                      if (!config[lang].language) config[lang].language = lang;
+                  });
+                  return config;
+              })()
+            : buildDefaultTTSConfig(
+                  getProvider(initialTtsModel),
+                  availableLanguages
+              )
+    );
 
-    // Helper to get the default config for the current provider
-    const getProviderDefaultConfig = () => {
-        const provider = getProvider(ttsModel);
-        return getDefaultTTSConfigForProvider(provider);
-    };
+    // Keep ttsModel in sync with metadata
+    useEffect(() => {
+        setTtsModel(metadata?.tts_model || "elevenlabs");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [metadata?.tts_model]);
 
-    // On mount, use initialTtsConfig if provided, otherwise use provider defaults
+    // Sync ttsConfig with metadata, ttsModel, andavailableLanguages
     useEffect(() => {
         const provider = getProvider(ttsModel);
-        if (initialTtsConfig && Object.keys(initialTtsConfig).length > 0) {
+        const metaConfig = metadata?.tts_config || {};
+        if (Object.keys(metaConfig).length > 0) {
             const config = {};
             const defaults = getDefaultTTSConfigForProvider(provider);
-            allowedLanguages.forEach((lang) => {
+            availableLanguages.forEach((lang) => {
                 config[lang] = {
                     ...defaults,
-                    ...(initialTtsConfig[lang] || {}),
+                    ...(metaConfig[lang] || {}),
                     language: lang
                 };
                 if (!config[lang].audio_format)
@@ -85,71 +191,56 @@ function TTSConfigSection({
             });
             setTtsConfig(config);
         } else {
-            setTtsConfig(buildDefaultTTSConfig(provider, allowedLanguages));
+            setTtsConfig(buildDefaultTTSConfig(provider, availableLanguages));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Only on mount
+    }, [metadata?.tts_model, ttsModel, allowedLanguages]);
 
-    // On ttsModel change, update only provider-specific fields in ttsConfig
+    // Sync personRoles with metadata, ttsModel, and availableLanguages, RESETTING on key change
     useEffect(() => {
         const provider = getProvider(ttsModel);
-        setTtsConfig((prev) => {
-            const updated = { ...prev };
-            const providerDefaults = getDefaultTTSConfigForProvider(provider);
-            allowedLanguages.forEach((lang) => {
-                const prevLangConfig = prev[lang] || {};
-                updated[lang] = {
-                    ...prevLangConfig,
-                    audio_format: providerDefaults.audio_format,
-                    model: providerDefaults.model,
-                    language: lang
-                };
+        const metaRoles = metadata?.conversation_config?.person_roles || {};
+        let newPersonRoles;
 
-                if (!providerDefaults.model) {
-                    delete updated[lang].model;
-                }
-            });
-            return updated;
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ttsModel]);
-
-    // Initialize personRoles from props or default, for allowedLanguages and ttsModel
-    useEffect(() => {
-        const provider = getProvider(ttsModel);
-        if (initialPersonRoles && Object.keys(initialPersonRoles).length > 0) {
-            setPersonRoles(initialPersonRoles);
+        if (Object.keys(metaRoles).length > 0) {
+            // Calculate roles based on metadata
+            newPersonRoles = fillPersonRolesVoiceConfig(
+                metaRoles,
+                availableLanguages,
+                provider
+            );
         } else {
-            setPersonRoles(buildDefaultPersonRoles(provider, allowedLanguages));
+            // Calculate default roles
+            newPersonRoles = buildDefaultPersonRoles(
+                provider,
+                availableLanguages
+            );
         }
-        // Only depend on ttsModel to avoid feedback loop
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ttsModel]);
 
-    // When ttsModel changes, update the voice field in each role's voice_config for each language
+        // Always set the state when this effect runs (triggered by key or other deps).
+        // React handles optimization if the state is identical.
+        // This ensures a 'reset' semantic when the key changes, even if the resulting
+        // roles happen to be the same as the previous state.
+        if (!deepEqual(newPersonRoles, personRoles)) {
+            setPersonRoles(newPersonRoles);
+        }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        metadata?.conversation_config?.person_roles,
+        key,
+        ttsModel,
+        allowedLanguages
+    ]); // Explicitly list dependencies
+
+    // When ttsModel or availableLanguages changes, fill missing fields in current personRoles state
     useEffect(() => {
         const provider = getProvider(ttsModel);
-        setPersonRoles((prev) => {
-            const updated = {};
-            Object.entries(prev).forEach(([roleIdx, roleObj]) => {
-                const updatedRole = {
-                    ...roleObj,
-                    voice_config: { ...roleObj.voice_config }
-                };
-                allowedLanguages.forEach((lang) => {
-                    updatedRole.voice_config[lang] = {
-                        ...defaultSpeakerConfig,
-                        ...(roleObj.voice_config?.[lang] || {}),
-                        language: lang,
-                        voice: getDefaultVoiceForProvider(provider, roleIdx)
-                    };
-                });
-                updated[roleIdx] = updatedRole;
-            });
-            return updated;
-        });
+        setPersonRoles((prev) =>
+            fillPersonRolesVoiceConfig(prev, availableLanguages, provider)
+        );
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ttsModel]);
+    }, [ttsModel, allowedLanguages]);
 
     // Call onChange whenever any of the main state changes, but only if content actually changed
     const lastSent = useRef({ ttsModel, ttsConfig, personRoles });
@@ -159,6 +250,7 @@ function TTSConfigSection({
             JSON.stringify({ ttsModel, ttsConfig, personRoles })
         );
         if (!deepEqual(current, lastSent.current)) {
+            console.log("change", lastSent.current, current);
             lastSent.current = current;
             if (onChange) {
                 onChange(current);
@@ -168,11 +260,14 @@ function TTSConfigSection({
 
     // --- Handlers ---
     const handleTTSConfigChange = (lang, field, value) => {
+        const providerDefaults = getDefaultTTSConfigForProvider(
+            getProvider(ttsModel)
+        );
         setTtsConfig((prev) => ({
             ...prev,
             [lang]: {
                 ...(prev[lang] || {
-                    ...getProviderDefaultConfig(),
+                    ...providerDefaults,
                     language: lang
                 }),
                 [field]: value
@@ -194,7 +289,7 @@ function TTSConfigSection({
                 }),
                 voice_config: {}
             };
-            allowedLanguages.forEach((lang) => {
+            availableLanguages.forEach((lang) => {
                 newRoles[nextKey].voice_config[lang] = {
                     ...defaultSpeakerConfig,
                     language: lang,
@@ -268,7 +363,7 @@ function TTSConfigSection({
                     TTS Language Configurations
                 </Card.Title>
                 <Accordion alwaysOpen>
-                    {allowedLanguages.map((lang) => (
+                    {availableLanguages.map((lang) => (
                         <Accordion.Item
                             eventKey={lang + "-" + ttsModel}
                             key={lang + "-" + ttsModel}
@@ -354,7 +449,7 @@ function TTSConfigSection({
                             roleKey={item[0]}
                             roleObj={item[1]}
                             roleOptions={roleOptions}
-                            allowedLanguages={allowedLanguages}
+                            allowedLanguages={availableLanguages}
                             ttsModel={ttsModel}
                             onPersonRoleChange={handlePersonRoleChange}
                             disableRoleFields={disableRoleFields}

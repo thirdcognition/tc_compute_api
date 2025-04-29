@@ -150,6 +150,7 @@ def create_and_update_panel_transcript(
     language: str = "en",
     parent_id: str = None,
 ) -> PanelTranscript:
+    tts_config = request_data.tts_config or {}
     panel_transcript = PanelTranscript(
         panel_id=request_data.panel_id,
         title=title,
@@ -159,8 +160,12 @@ def create_and_update_panel_transcript(
         type="segment",
         metadata={
             "longform": longform,
-            "tts_model": request_data.tts_model,
             "conversation_config": conversation_config.model_dump(),
+            "tts_model": request_data.tts_model,
+            "tts_config": {
+                key: value.prune() if hasattr(value, "prune") else value
+                for key, value in tts_config.items()
+            },
         },
         generation_cronjob=request_data.cronjob,
         transcript_parent_id=parent_id or request_data.transcript_parent_id,
@@ -278,13 +283,12 @@ def generate_transcripts(
 
 def upload_transcript_to_supabase(
     supabase_client: Client,
+    panel: PanelDiscussion,
     panel_transcript: PanelTranscript,
     final_transcript: str,
     bucket_name: str,
 ):
-    bucket_transcript_file = (
-        f"panel_{panel_transcript.panel_id}_{panel_transcript.id}_transcript.txt"
-    )
+    bucket_transcript_file: str = f"{panel.id}/{panel_transcript.created_at.strftime('%Y-%m-%d')}_{panel_transcript.lang}_{panel_transcript.id}/transcript.txt"
     supabase_client.storage.from_(bucket_name).upload(
         path=bucket_transcript_file, file=final_transcript.encode("utf-8")
     )
@@ -442,6 +446,7 @@ def create_panel_transcript(
 
         upload_transcript_to_supabase(
             supabase_client,
+            panel,
             panel_transcript,
             final_transcript,
             request_data.bucket_name,
@@ -535,6 +540,7 @@ def create_panel_transcript_translation(
 
         upload_transcript_to_supabase(
             supabase_client,
+            panel,
             panel_transcript,
             final_transcript,
             request_data.bucket_name,

@@ -66,10 +66,23 @@ const DetailAccordion = ({
     // and potentially help with stability in the handleSelect closure.
     const itemsWithKeys = React.useMemo(
         () =>
-            items.map((item, index) => ({
-                ...item,
-                _generatedKey: generateKey(item, index)
-            })),
+            items.map((item, index) => {
+                if (
+                    typeof item === "object" &&
+                    item !== null &&
+                    !Array.isArray(item)
+                ) {
+                    return {
+                        ...item,
+                        _generatedKey: generateKey(item, index)
+                    };
+                } else {
+                    return {
+                        value: item,
+                        _generatedKey: generateKey(item, index)
+                    };
+                }
+            }),
         [items, itemKey]
     ); // Recalculate only if items or itemKey function changes
 

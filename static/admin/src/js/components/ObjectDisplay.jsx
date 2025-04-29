@@ -5,6 +5,7 @@ import React from "react";
  * Handles basic data types (string, number, boolean).
  */
 const ObjectDisplay = ({ data }) => {
+    // console.log("display data", data);
     if (data === null || data === undefined) {
         return <span className="text-muted">N/A</span>;
     }

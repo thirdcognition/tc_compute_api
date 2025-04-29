@@ -53,14 +53,6 @@ function TranscriptDetailEdit({
     const [personRoles, setPersonRoles] = useState({});
 
     // --- Allowed Languages ---
-    const allowedLanguages = (() => {
-        const langs = discussionData?.metadata?.languages;
-        if (Array.isArray(langs) && langs.length > 0) {
-            return langs;
-        }
-        return ["en"];
-    })();
-
     // --- Effects ---
     useEffect(() => {
         if (discussionData) {
@@ -176,6 +168,16 @@ function TranscriptDetailEdit({
             ))}
         </Form.Control>
     );
+
+    const ttsChange = ({
+        ttsModel: newTtsModel,
+        ttsConfig: newTtsConfig,
+        personRoles: newPersonRoles
+    }) => {
+        setTtsModel(newTtsModel);
+        setTtsConfig(newTtsConfig);
+        setPersonRoles(newPersonRoles);
+    };
 
     // --- Main Render ---
     return (
@@ -343,22 +345,13 @@ function TranscriptDetailEdit({
 
                         {/* TTS Provider, TTS Language Configurations, and Person Roles */}
                         <TTSConfigSection
-                            allowedLanguages={allowedLanguages}
-                            initialTtsModel={ttsModel}
-                            initialTtsConfig={ttsConfig}
-                            initialPersonRoles={personRoles}
+                            allowedLanguages={
+                                discussionData?.metadata?.languages ?? ["en"]
+                            }
+                            metadata={selectedTranscript?.metadata}
                             canEditRoles={true}
                             disableRoleFields={false}
-                            onChange={({
-                                ttsModel: newTtsModel,
-                                ttsConfig: newTtsConfig,
-                                personRoles: newPersonRoles
-                            }) => {
-                                console.log("on change do", newPersonRoles);
-                                setTtsModel(newTtsModel);
-                                setTtsConfig(newTtsConfig);
-                                setPersonRoles(newPersonRoles);
-                            }}
+                            onChange={ttsChange}
                         />
 
                         {/* Dialogue Structure */}

@@ -45,6 +45,8 @@ def is_near(number, target, percentage) -> RangeCheck:
     lower_bound = target - margin
     upper_bound = target + margin
 
+    print(f"Is Near: {number=}, {target=}, {lower_bound=}, {upper_bound=}")
+
     if number < lower_bound:
         return RangeCheck.BELOW
     elif number > upper_bound:

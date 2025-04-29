@@ -378,7 +378,6 @@ const Panel: React.FC<PanelProps> = ({
     );
 
     const renderSources = (sources) => {
-        console.log(sources);
         return (
             sources
                 ?.at(0)
