@@ -288,7 +288,8 @@ def upload_transcript_to_supabase(
     final_transcript: str,
     bucket_name: str,
 ):
-    bucket_transcript_file: str = f"{panel.id}/{panel_transcript.created_at.strftime('%Y-%m-%d')}_{panel_transcript.lang}_{panel_transcript.id}/transcript.txt"
+    formatted_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    bucket_transcript_file: str = f"{panel.id}/{formatted_date}_{panel_transcript.lang}_{panel_transcript.id}/transcript.txt"
     supabase_client.storage.from_(bucket_name).upload(
         path=bucket_transcript_file, file=final_transcript.encode("utf-8")
     )

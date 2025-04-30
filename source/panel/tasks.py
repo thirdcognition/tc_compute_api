@@ -247,6 +247,8 @@ def process_transcript_generation(
         input_text=metadata.get("input_text", ""),
         longform=metadata.get("longform", False),
         bucket_name=metadata.get("bucket_name", "public_panels"),
+        podcast_name=metadata.get("podcast_name", None),
+        podcast_tagline=metadata.get("podcast_tagline", None),
         conversation_config=conversation_config,
         panel_id=panel.id,
         google_news=metadata.get("google_news", None),
@@ -261,6 +263,8 @@ def process_transcript_generation(
         organization_id=str(panel.organization_id),
         transcript_parent_id=str(transcript.id),
         is_public=bool(panel.is_public),
+        tts_model=metadata.get("tts_model", None),
+        tts_config=metadata.get("tts_config", None),
     )
 
     print(f"Generating timed transcript for {transcript.id}.")

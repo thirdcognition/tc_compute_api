@@ -100,6 +100,23 @@ export const prepareDuplicateTranscriptParams = (transcript, panelData) => {
         shortIntroAndConclusion: config.short_intro_and_conclusion,
         disableIntroAndConclusion: config.disable_intro_and_conclusion,
         cronjob: "", // Always empty for duplicate
+
+        // --- Fields from panelData (discussionData) ---
+        inputSource: panelData.metadata?.input_source,
+        inputText: panelData.metadata?.input_text,
+        googleNewsConfigs: panelData.metadata?.google_news,
+        yleNewsConfigs: panelData.metadata?.yle_news,
+        techCrunchNewsConfigs: panelData.metadata?.techcrunch_news,
+        hackerNewsConfigs: panelData.metadata?.hackernews,
+        newsGuidance: panelData.metadata?.news_guidance,
+        newsItems: panelData.metadata?.news_items, // buildPanelRequestData uses both news_items and segments
+        segments: panelData.metadata?.segments,
+        languages: panelData.metadata?.languages,
+        displayTag: panelData.metadata?.display_tag,
+        podcastName: panelData.metadata?.podcast_name, // Prefer panel metadata over transcript's config?
+        podcastTagline: panelData.metadata?.podcast_tagline, // Prefer panel metadata?
+        is_public: panelData.is_public, // Use panel's public status
+
         // Include audio details if they were part of the original metadata?
         ttsModel: metadata.tts_model,
         ttsConfig: metadata.tts_config

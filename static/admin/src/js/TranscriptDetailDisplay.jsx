@@ -151,12 +151,15 @@ const TranscriptDetailDisplay = ({ transcript }) => {
 
     const handleUpdateTranscriptCron = async (newCronjob) => {
         try {
-            const updatedTranscript = await updateTranscript(
+            const updatedTranscriptResponse = await updateTranscript(
                 transcript.id,
                 transcript, // Pass the current transcript data
                 newCronjob
             );
-            setCronjob(updatedTranscript.generation_cronjob || "");
+            if (updatedTranscriptResponse.success) {
+                location.reload();
+                // setCronjob(updatedTranscript.generation_cronjob || "");
+            }
         } catch (error) {
             console.error("Error updating transcript cronjob:", error);
             alert("Failed to update schedule.");
@@ -446,7 +449,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
         <>
             {!transcript.transcript_parent_id && (
                 <SectionCard title="Scheduling">
-                    {cronjob ? (
+                    {transcript.generation_cronjob ? (
                         <>
                             <p>{formatCronjob(cronjob)}</p>
                             <Button

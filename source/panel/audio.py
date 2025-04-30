@@ -63,7 +63,9 @@ def create_panel_audio(
     )
 
     tts_model = request_data.tts_model or metadata.get("tts_model", "elevenlabs")
-    tts_config = request_data.tts_config or metadata.get("tts_config", None)
+    tts_config = request_data.tts_config or metadata.get(
+        "tts_config", {transcript.lang: TTSConfig(language=transcript.lang)}
+    )
     if tts_config is not None:
         tts_config = {
             key: TTSConfig(**value) if isinstance(value, dict) else value
