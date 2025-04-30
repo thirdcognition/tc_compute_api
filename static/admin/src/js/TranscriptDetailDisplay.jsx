@@ -158,7 +158,7 @@ const TranscriptDetailDisplay = ({ transcript }) => {
             );
             if (updatedTranscriptResponse.success) {
                 //location.reload();
-                setCronjob(updatedTranscript.response.generation_cronjob || "");
+                setCronjob(updatedTranscriptResponse.response.generation_cronjob || "");
             }
         } catch (error) {
             console.error("Error updating transcript cronjob:", error);
