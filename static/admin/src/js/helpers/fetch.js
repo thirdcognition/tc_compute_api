@@ -151,6 +151,45 @@ export async function fetchPanelDetails(panelId) {
     }
 }
 
+export async function updateTranscriptFile(transcriptId, content) {
+    try {
+        const response = await fetchData(
+            `/panel/transcript/${transcriptId}/update_file`,
+            {
+                method: "PUT",
+                headers: {
+                    // Explicitly define all required headers
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${session.getAccessToken()}` // Get token directly
+                },
+                body: JSON.stringify({ content: content })
+            }
+        );
+
+        // Assuming the API returns the updated transcript object on success
+        if (response && response.id === transcriptId) {
+            console.log("Transcript file updated successfully:", response);
+            return { success: true, transcript: response };
+        } else {
+            // Handle cases where the response might not be as expected
+            // even if the fetch itself didn't throw an error (e.g., status 200 but unexpected body)
+            console.error(
+                "Failed to update transcript file: Unexpected response format",
+                response
+            );
+            return {
+                success: false,
+                error: "Unexpected response format after update."
+            };
+        }
+    } catch (error) {
+        // fetchData already handles basic HTTP errors and unauthorized access
+        console.error("Error updating transcript file:", error);
+        // Re-throw or return a specific error structure
+        return { success: false, error: error.message || "Unknown error" };
+    }
+}
+
 export async function createPanel(data) {
     try {
         const result = await fetchData(`/panel/discussion`, {

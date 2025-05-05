@@ -1,5 +1,6 @@
 import datetime
 import time
+import os  # Import os module for path manipulation
 from typing import List, Tuple
 from uuid import UUID, uuid4
 from supabase import Client
@@ -288,14 +289,100 @@ def upload_transcript_to_supabase(
     final_transcript: str,
     bucket_name: str,
 ):
-    formatted_date = datetime.datetime.now().strftime("%Y-%m-%d")
-    bucket_transcript_file: str = f"{panel.id}/{formatted_date}_{panel_transcript.lang}_{panel_transcript.id}/transcript.txt"
+    # --- Start: Duplicate Content Check ---
+    existing_file_paths = []
+    previous_file_path = panel_transcript.file  # Store current file path before check
+
+    if panel_transcript.file:
+        existing_file_paths.append(panel_transcript.file)
+    if panel_transcript.metadata and "transcript_history" in panel_transcript.metadata:
+        existing_file_paths.extend(
+            panel_transcript.metadata.get("transcript_history", [])
+        )
+
+    # Remove potential duplicates or empty strings from the list
+    existing_file_paths = list(filter(None, set(existing_file_paths)))
+
+    for path_to_check in existing_file_paths:
+        try:
+            print(f"Checking for duplicate content against: {path_to_check}")
+            response = supabase_client.storage.from_(bucket_name).download(
+                path_to_check
+            )
+            existing_content = response.decode("utf-8")
+            if existing_content == final_transcript:
+                print(
+                    f"Duplicate content found matching existing file: {path_to_check}. Updating record to point to existing file."
+                )
+                # Update file pointer to the existing duplicate
+                panel_transcript.file = path_to_check
+                # Ensure metadata and history list exist
+                if panel_transcript.metadata is None:
+                    panel_transcript.metadata = {}
+                history: List[str] = panel_transcript.metadata.setdefault(
+                    "transcript_history", []
+                )
+                # Add the previous file path to history if it's valid and not already the last item
+                if (
+                    previous_file_path
+                    and previous_file_path != path_to_check
+                    and (not history or history[-1] != previous_file_path)
+                ):
+                    history.append(previous_file_path)
+                # Mark as done and save the updated record
+                panel_transcript.process_state = ProcessState.done
+                panel_transcript.update_sync(supabase=supabase_client)
+                return  # Exit early, record updated
+        except Exception as e:
+            # Log specific Supabase storage errors if possible, otherwise generic error
+            error_message = f"Warning: Could not check content of {path_to_check}: {getattr(e, 'message', repr(e))}"
+            print(error_message)
+            # Continue checking other files even if one fails
+
+    print("No duplicate content found. Proceeding with upload.")
+    # --- End: Duplicate Content Check ---
+
+    # --- Start: History and File Path Logic ---
+    if panel_transcript.metadata is None:
+        panel_transcript.metadata = {}
+
+    # Ensure transcript_history list exists and initialize if needed
+    history: List[str] = panel_transcript.metadata.setdefault("transcript_history", [])
+    current_file_path = panel_transcript.file
+
+    # Add the current file path to history if it exists and is not already the last item
+    if current_file_path and (not history or history[-1] != current_file_path):
+        history.append(current_file_path)
+
+    # Determine the new file path
+    if current_file_path:
+        # Reuse existing directory, create versioned filename with .xml extension
+        directory = os.path.dirname(current_file_path)
+        version_number = len(
+            history
+        )  # History contains previous paths, so len is next version index
+        new_filename = f"transcript_v{version_number}.xml"  # Use .xml
+        bucket_transcript_file = os.path.join(directory, new_filename)
+    else:
+        # Create a new path if no previous file exists, use .xml extension
+        formatted_date = datetime.datetime.now().strftime("%Y-%m-%d")
+        bucket_transcript_file: str = f"{panel.id}/{formatted_date}_{panel_transcript.lang}_{panel_transcript.id}/transcript.xml"  # Use .xml
+    # --- End: History and File Path Logic ---
+
+    # Upload the new file content, overwrite if exists
     supabase_client.storage.from_(bucket_name).upload(
-        path=bucket_transcript_file, file=final_transcript.encode("utf-8")
+        path=bucket_transcript_file,
+        file=final_transcript.encode("utf-8"),
+        file_options={"upsert": "true"},
     )
+
+    # Update the transcript record with the new file path and state
     panel_transcript.file = bucket_transcript_file
     panel_transcript.process_state = ProcessState.done
+    # update_sync saves the entire object, including metadata changes
+    # Only call update_sync here if we actually uploaded a new file
     panel_transcript.update_sync(supabase=supabase_client)
+    print(f"Successfully uploaded new transcript version: {bucket_transcript_file}")
 
 
 def create_panel_transcript(

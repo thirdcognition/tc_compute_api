@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from typing import List
 from app.core.supabase import (
     SupaClientDep,
@@ -37,6 +37,9 @@ from source.models.structures.panel import PanelRequestData
 from source.models.structures.web_source_collection import WebSourceCollection
 from source.models.supabase.panel import PanelDiscussion, PanelTranscript, PanelAudio
 from source.panel.panel import create_panel
+
+# Import the function to use
+from source.panel.transcript import upload_transcript_to_supabase
 from source.panel.tasks import (
     create_panel_audio_task,
     create_panel_task,
@@ -397,3 +400,66 @@ async def api_delete_panel_audio(
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise handle_exception(e, "Failed to delete panel audio", 500)
+
+
+# --- Pydantic model for the request body ---
+class TranscriptUpdateRequest(BaseModel):
+    content: str
+
+
+# --- New API Endpoint (Simplified) ---
+@router.put("/panel/transcript/{transcript_id}/update_file")
+async def api_update_panel_transcript_file(
+    transcript_id: str,
+    request_data: TranscriptUpdateRequest,
+    supabase: SupaClientDep,
+):
+    """
+    Updates the content of an existing transcript file in Supabase storage.
+    The transcript history metadata is managed within the upload function.
+    """
+    try:
+        tokens = await get_supabase_tokens(supabase)
+        supabase_sync = get_sync_supabase_client(
+            access_token=tokens[0], refresh_token=tokens[1]
+        )
+
+        # Fetch the existing transcript
+        panel_transcript = await get_panel_transcript(supabase, transcript_id)
+        if not panel_transcript:
+            raise HTTPException(status_code=404, detail="Panel transcript not found")
+
+        # Fetch the corresponding panel discussion
+        # Ensure panel_id is converted to string if needed by get_panel
+        panel = await get_panel(supabase, str(panel_transcript.panel_id))
+        if not panel:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Panel discussion {panel_transcript.panel_id} not found for transcript {transcript_id}",
+            )
+
+        # Call the modified upload function which now handles history internally
+        upload_transcript_to_supabase(
+            supabase_client=supabase_sync,
+            panel=panel,
+            panel_transcript=panel_transcript,
+            final_transcript=request_data.content,
+            # Use the bucket_id from the fetched transcript
+            bucket_name=panel_transcript.bucket_id,
+        )
+
+        # Return the transcript object. upload_transcript_to_supabase modified it
+        # and saved it synchronously via update_sync.
+        return panel_transcript
+
+    except HTTPException as he:
+        # Re-raise HTTPExceptions directly to let FastAPI handle them
+        raise he
+    except ValidationError as ve:
+        # Handle Pydantic validation errors
+        raise HTTPException(status_code=422, detail=str(ve))
+    except Exception as e:
+        # Use the existing exception handler for other errors
+        raise handle_exception(
+            e, f"Failed to update panel transcript file {transcript_id}", 500
+        )
